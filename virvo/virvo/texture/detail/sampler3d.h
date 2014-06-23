@@ -310,28 +310,33 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex3D(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize,
-    virvo::tex_filter_mode filter_mode = virvo::Nearest)
+VV_FORCE_INLINE ReturnT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, FloatT > coord)
 {
 
-    switch (filter_mode)
+    math::vector< 3, FloatT > texsize( tex.width(), tex.height(), tex.depth() );
+
+    switch (tex.get_filter_mode())
     {
 
     default:
         // fall-through
     case virvo::Nearest:
-        return nearest< ReturnT >( tex, coord, texsize );
+        return nearest< ReturnT >( tex.data, coord, texsize );
 
     case virvo::Linear:
-        return linear< ReturnT >( tex, coord, texsize );
+        return linear< ReturnT >( tex.data, coord, texsize );
 
     case virvo::BSpline:
-        // fall-through
+        return cubic8< ReturnT >( tex.data, coord, texsize );
+
     case virvo::BSplineInterpol:
-        return cubic8< ReturnT >( tex, coord, texsize );
+        return cubic< ReturnT >( tex.prefiltered_data, coord, texsize,
+            bspline::w0_func< FloatT >(), bspline::w1_func< FloatT >(),
+            bspline::w2_func< FloatT >(), bspline::w3_func< FloatT >() );
+
 
     case virvo::CardinalSpline:
-        return cubic< ReturnT >( tex, coord, texsize,
+        return cubic< ReturnT >( tex.data, coord, texsize,
             cspline::w0_func< FloatT >(), cspline::w1_func< FloatT >(),
             cspline::w2_func< FloatT >(), cspline::w3_func< FloatT >() );
 

@@ -117,6 +117,7 @@ set(VIRVO_HEADERS
   mem/new.h
   mem/swap.h
 
+  texture/detail/prefilter.h
   texture/detail/sampler1d.h
   texture/detail/sampler3d.h
   texture/detail/sampler_common.h

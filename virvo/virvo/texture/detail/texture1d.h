@@ -16,12 +16,13 @@ template
     typename T,
     tex_read_mode ReadMode
 >
-class texture< T, ReadMode, 1 > : public texture_base< T, ReadMode >
+class texture< T, ReadMode, 1 > : public texture_storage< T, texture< T, ReadMode, 1 > >,
+    public basic_filterable< T, texture< T, ReadMode, 1 > >
 {
 public:
 
-    typedef texture_base< T, ReadMode > base_type;
-    typedef typename base_type::value_type value_type;
+    typedef texture_storage< T, texture > storage_base;
+    typedef T value_type;
 
 
     texture() {}
@@ -34,14 +35,16 @@ public:
 
     value_type& operator()(size_t x)
     {
-        return base_type::data[x];
+        return storage_base::data[x];
     }
 
     value_type const& operator()(size_t x) const
     {
-        return base_type::data[x];
+        return storage_base::data[x];
     }
 
+
+    size_t size() const { return width_; }
 
     size_t width() const { return width_; }
 

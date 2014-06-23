@@ -282,7 +282,8 @@ struct Thread
 
 
 void  wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
-void  render(Thread* thread);
+template < typename T >
+void  render(virvo::texture< T, virvo::NormalizedFloat, 3 > const& volume, Thread* thread);
 void* renderFunc(void* args);
 
 
@@ -512,7 +513,11 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
 }
 
 template < typename VoxelT >
-void renderTile(const virvo::Tile& tile, const Thread* thread)
+void renderTile
+(
+    const virvo::Tile& tile,
+    virvo::texture< VoxelT, virvo::NormalizedFloat, 3 > const& volume,
+    const Thread* thread)
 {
   static const float_type opacityThreshold = 0.95f;
 
@@ -545,12 +550,6 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   const float diagonalVoxels = sqrtf(float(thread->render_params->vox[0] * thread->render_params->vox[0] +
                                            thread->render_params->vox[1] * thread->render_params->vox[1] +
                                            thread->render_params->vox[2] * thread->render_params->vox[2]));
-
-
-  virvo::texture< VoxelT, virvo::NormalizedFloat, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
-  volume.data = reinterpret_cast< VoxelT* >(*thread->raw);
-  volume.set_address_mode(virvo::Clamp);
-  volume.set_filter_mode( thread->render_params->filter_mode );
 
 
   typedef virvo::math::vector< 4, float > float4;
@@ -697,7 +696,12 @@ void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* spara
 }
 
 
-void render(Thread* thread)
+template < typename T >
+void render
+(
+    virvo::texture< T, virvo::NormalizedFloat, 3 > const& volume,
+    Thread* thread
+)
 {
   while (true)
   {
@@ -721,14 +725,7 @@ void render(Thread* thread)
     t.right  = std::min(t.left   + tilew, thread->render_params->rect.right);
     t.top    = std::min(t.bottom + tileh, thread->render_params->rect.top);
 
-    if (thread->render_params->bpc == 1)
-    {
-        renderTile< uint8_t >(t, thread);
-    }
-    else if (thread->render_params->bpc == 2)
-    {
-        renderTile< uint16_t >(t, thread);
-    }
+    renderTile(t, volume, thread);
 
     long num_tiles_fin = atom_fetch_and_add(&thread->sync_params->tile_fin_counter, 1);
 
@@ -760,6 +757,9 @@ void* renderFunc(void* args)
   }
 #endif
 
+  virvo::texture< uint8_t,  virvo::NormalizedFloat, 3 > volume8;
+  virvo::texture< uint16_t, virvo::NormalizedFloat, 3 > volume16;
+
   while (true)
   {
 
@@ -769,7 +769,35 @@ void* renderFunc(void* args)
       break;
     }
 
-    render(thread);
+    // TODO: volume at class scope, not one copy per thread.
+    // This probably necessitates to make the whole renderer a template. Arghh.
+
+    if (thread->render_params->bpc == 1)
+    {
+        volume8.resize
+        (
+            thread->render_params->vox[0],
+            thread->render_params->vox[1],
+            thread->render_params->vox[2]
+        );
+        volume8.data = reinterpret_cast< uint8_t* >(*thread->raw);
+        volume8.set_address_mode(virvo::Clamp);
+        volume8.set_filter_mode( thread->render_params->filter_mode );
+        render(volume8, thread);
+    }
+    else if (thread->render_params->bpc == 2)
+    {
+        volume16.resize
+        (
+            thread->render_params->vox[0],
+            thread->render_params->vox[1],
+            thread->render_params->vox[2]
+        );
+        volume16.data = reinterpret_cast< uint16_t* >(*thread->raw);
+        volume16.set_address_mode(virvo::Clamp);
+        volume16.set_filter_mode( thread->render_params->filter_mode );
+        render(volume16, thread);
+    }
 
   }
 

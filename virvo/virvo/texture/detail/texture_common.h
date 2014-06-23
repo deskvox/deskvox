@@ -1,6 +1,9 @@
 #ifndef VV_TEXTURE_COMMON_H
 #define VV_TEXTURE_COMMON_H
 
+#include <algorithm>
+#include <vector>
+
 
 namespace virvo
 {
@@ -31,36 +34,92 @@ enum tex_read_mode
 };
 
 
-template
-<
-    typename VoxelT,
-    tex_read_mode ReadMode
->
-class texture_base
+namespace detail
+{
+
+template < typename T >
+struct cast_to_float
+{
+    float operator()(T val) { return static_cast< float >(val); }
+};
+
+}
+
+
+template < typename T, typename Derived >
+class texture_storage
 {
 public:
 
-    typedef VoxelT value_type;
+    typedef T value_type;
+    typedef float float_type;
 
 
     value_type* data;
 
-    texture_base()
-        : address_mode_(Wrap)
-        , filter_mode_(Nearest)
-    {
-    }
+    texture_storage() : address_mode_(Wrap) {}
 
     void set_address_mode(tex_address_mode mode) { address_mode_ = mode; }
-    void set_filter_mode(tex_filter_mode mode) { filter_mode_ = mode; }
-
     tex_address_mode get_address_mode() const { return address_mode_; }
-    tex_filter_mode get_filter_mode() const { return filter_mode_; }
 
 protected:
 
     tex_address_mode address_mode_;
+
+};
+
+
+template < typename T, typename Derived >
+class basic_filterable
+{
+public:
+
+    basic_filterable() : filter_mode_(Nearest) {}
+
+    void set_filter_mode(tex_filter_mode mode) { filter_mode_ = mode; }
+    tex_filter_mode get_filter_mode() const { return filter_mode_; }
+
+protected:
+
     tex_filter_mode filter_mode_;
+
+};
+
+
+template < typename T, typename Derived >
+class prefilterable
+{
+public:
+
+    typedef T value_type;
+    typedef float float_type;
+
+    float_type* prefiltered_data;
+
+
+    prefilterable() : filter_mode_(Nearest) {}
+
+    void set_filter_mode(tex_filter_mode mode)
+    {
+        if (mode == BSplineInterpol)
+        {
+            Derived* d = static_cast< Derived* >(this);
+
+            prefiltered_.resize( d->size() );
+            prefiltered_data = &prefiltered_[0];
+            std::transform( &(d->data)[0], &(d->data)[d->size()], prefiltered_.begin(), detail::cast_to_float< value_type >() );
+            convert_for_bspline_interpol( d );
+        }
+
+        filter_mode_ = mode;
+    }
+
+    tex_filter_mode get_filter_mode() const { return filter_mode_; }
+
+protected:
+
+    tex_filter_mode filter_mode_;
+    std::vector< float_type > prefiltered_;
 
 };
 

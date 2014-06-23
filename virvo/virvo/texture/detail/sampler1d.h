@@ -121,25 +121,24 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex1D(VoxelT const* tex, FloatT coord, FloatT texsize,
-    virvo::tex_filter_mode filter_mode = virvo::Nearest)
+VV_FORCE_INLINE ReturnT tex1D(texture< VoxelT, virvo::NormalizedFloat, 1 > const& tex, FloatT coord)
 {
 
-    switch (filter_mode)
+    FloatT texsize = tex.width();
+
+    switch (tex.get_filter_mode())
     {
 
     default:
         // fall-through
     case virvo::Nearest:
-        return nearest< ReturnT >( tex, coord, texsize );
+        return nearest< ReturnT >( tex.data, coord, texsize );
 
     case virvo::Linear:
-        return linear< ReturnT >( tex, coord, texsize );
+        return linear< ReturnT >( tex.data, coord, texsize );
 
     case virvo::BSpline:
-        // fall-through
-    case virvo::BSplineInterpol:
-        return cubic< ReturnT >( tex, coord, texsize );
+        return cubic< ReturnT >( tex.data, coord, texsize );
 
     }
 
