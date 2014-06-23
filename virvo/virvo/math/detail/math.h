@@ -33,12 +33,21 @@ VV_FORCE_INLINE T max(T const& x, T const& y)
 }
 
 
+//--------------------------------------------------------------------------------------------------
+// Implement some (useful) functions not defined in <cmath>
+//
+
 template < typename T >
 VV_FORCE_INLINE T clamp(T const& x, T const& a, T const& b)
 {
     return max( a, min(x, b) );
 }
 
+template < typename T >
+VV_FORCE_INLINE T lerp(T a, T b, T x)
+{
+    return a + x * (b - a);
+}
 
 template < typename T >
 VV_FORCE_INLINE T rsqrt(T const& x)
