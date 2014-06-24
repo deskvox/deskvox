@@ -37,10 +37,10 @@ enum tex_read_mode
 namespace detail
 {
 
-template < typename T >
-struct cast_to_float
+template < typename S, typename T >
+struct cast
 {
-    float operator()(T val) { return static_cast< float >(val); }
+    float operator()(T val) { return static_cast< S >(val); }
 };
 
 }
@@ -92,9 +92,9 @@ class prefilterable
 public:
 
     typedef T value_type;
-    typedef float float_type;
+    typedef short element_type;
 
-    float_type* prefiltered_data;
+    element_type* prefiltered_data;
 
 
     prefilterable() : filter_mode_(Nearest) {}
@@ -107,7 +107,7 @@ public:
 
             prefiltered_.resize( d->size() );
             prefiltered_data = &prefiltered_[0];
-            std::transform( &(d->data)[0], &(d->data)[d->size()], prefiltered_.begin(), detail::cast_to_float< value_type >() );
+            std::transform( &(d->data)[0], &(d->data)[d->size()], prefiltered_.begin(), detail::cast< element_type, value_type >() );
             convert_for_bspline_interpol( d );
         }
 
@@ -119,7 +119,7 @@ public:
 protected:
 
     tex_filter_mode filter_mode_;
-    std::vector< float_type > prefiltered_;
+    std::vector< element_type > prefiltered_;
 
 };
 

@@ -23,11 +23,11 @@ namespace detail
 
 static float const Pole = sqrt(3.0f) - 2.0f;
 
-inline float init_causal_coeff(float* c, size_t len, size_t stride)
+inline float init_causal_coeff(short* c, size_t len, size_t stride)
 {
 
     typedef float float_type;
-    typedef float voxel_type;
+    typedef short voxel_type;
 
     size_t const Horizon = std::min< size_t >(12, len);
 
@@ -43,11 +43,11 @@ inline float init_causal_coeff(float* c, size_t len, size_t stride)
     return sum;
 }
 
-inline float init_anticausal_coeff(float* c)
+inline float init_anticausal_coeff(short* c)
 {
 
     typedef float float_type;
-    typedef float voxel_type;
+    typedef short voxel_type;
 
     return (Pole / (Pole - float_type(1.0))) * float_type(*c);
 
@@ -59,11 +59,11 @@ void convert_to_bspline_coeffs(T*, size_t, size_t)
     throw std::runtime_error("not implemented yet");
 }
 
-void convert_to_bspline_coeffs(float* c, size_t len, size_t stride)
+void convert_to_bspline_coeffs(short* c, size_t len, size_t stride)
 {
 
     typedef float float_type;
-    typedef float voxel_type;
+    typedef short voxel_type;
 
     static float_type const Lambda = 6.0;
 
@@ -126,13 +126,13 @@ void convert_for_bspline_interpol(texture< T, ReadMode, 3 >* tex)
 {
     using namespace detail;
 
-    float* tmp = tex->prefiltered_data;
+    short* tmp = tex->prefiltered_data;
 
     for (size_t z = 0; z < tex->depth(); ++z)
     {
         for (size_t y = 0; y < tex->height(); ++y)
         {
-            float* ptr = &tmp[z * tex->width() * tex->height() + y * tex->width()];
+            short* ptr = &tmp[z * tex->width() * tex->height() + y * tex->width()];
             convert_to_bspline_coeffs(ptr, tex->width(), 1);
         }
     }
@@ -141,7 +141,7 @@ void convert_for_bspline_interpol(texture< T, ReadMode, 3 >* tex)
     {
         for (size_t z = 0; z < tex->depth(); ++z)
         {
-            float* ptr = &tmp[z * tex->width() * tex->height() + x];
+            short* ptr = &tmp[z * tex->width() * tex->height() + x];
             convert_to_bspline_coeffs(ptr, tex->height(), tex->width());
         }
     }
@@ -150,7 +150,7 @@ void convert_for_bspline_interpol(texture< T, ReadMode, 3 >* tex)
     {
         for (size_t x = 0; x < tex->width(); ++x)
         {
-            float* ptr = &tmp[y * tex->width() + x];
+            short* ptr = &tmp[y * tex->width() + x];
             convert_to_bspline_coeffs(ptr, tex->depth(), tex->width() * tex->height());
         }
     }
