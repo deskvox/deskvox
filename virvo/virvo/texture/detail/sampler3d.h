@@ -181,22 +181,22 @@ ReturnT cubic8(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector<
 
 
     float_type tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) );
-    float_type h_000  = ( floorx - float_type(0.5) + tmp000 ) / texsize[0];
+    float_type h_000  = ( floorx - float_type(0.5) + tmp000 ) / texsize.x;
 
     float_type tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) );
-    float_type h_100  = ( floorx + float_type(1.5) + tmp100 ) / texsize[0];
+    float_type h_100  = ( floorx + float_type(1.5) + tmp100 ) / texsize.x;
 
     float_type tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) );
-    float_type h_010  = ( floory - float_type(0.5) + tmp010 ) / texsize[1] ;
+    float_type h_010  = ( floory - float_type(0.5) + tmp010 ) / texsize.y;
 
     float_type tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) );
-    float_type h_110  = ( floory + float_type(1.5) + tmp110 ) / texsize[1];
+    float_type h_110  = ( floory + float_type(1.5) + tmp110 ) / texsize.y;
 
     float_type tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) );
-    float_type h_001  = ( floorz - float_type(0.5) + tmp001 ) / texsize[2];
+    float_type h_001  = ( floorz - float_type(0.5) + tmp001 ) / texsize.z;
 
     float_type tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) );
-    float_type h_101  = ( floorz + float_type(1.5) + tmp101 ) / texsize[2];
+    float_type h_101  = ( floorz + float_type(1.5) + tmp101 ) / texsize.z;
 
 
     // Implicit cast from return type to float type.

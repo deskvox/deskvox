@@ -91,7 +91,7 @@ vvRenderState::vvRenderState()
   , _visibleRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
   , _paddingRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
-  , _interpolation(Linear)
+  , _interpolation(virvo::Linear)
   , _earlyRayTermination(true)
   , _preIntegration(false)
   , _depthPrecision(8)
@@ -249,7 +249,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _opacityCorrection = value;
     break;
   case VV_SLICEINT:
-    _interpolation = static_cast< InterpolType >(value.asInt());
+    _interpolation = static_cast< virvo::tex_filter_mode >(value.asInt());
     break;
   case VV_PREINT:
     _preIntegration = value;

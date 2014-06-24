@@ -39,6 +39,8 @@
 
 #include "math/math.h"
 
+#include "texture/texture.h"
+
 #include "vvcudaimg.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
@@ -53,6 +55,7 @@ namespace math = virvo::math;
 // in vvrayrend.cu
 extern cu::Texture cVolTexture8;
 extern cu::Texture cVolTexture16;
+extern cu::Texture cPrefilterTexture;
 extern cu::Texture cTFTexture;
 
 // in vvrayrend.cu
@@ -66,7 +69,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
                                   float3 texsize,
-                                  int ipol_type,
+                                  virvo::tex_filter_mode filter_mode,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
@@ -353,7 +356,11 @@ void vvRayRend::renderVolumeGL()
   GLfloat bgcolor[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
 
-  if (vd->bpc == 1)
+  if (_interpolation == virvo::BSplineInterpol)
+  {
+    cPrefilterTexture.bind(impl->getVolumeArray(vd->getCurrentFrame()), impl->channelDesc);
+  }
+  else if (vd->bpc == 1)
   {
     cVolTexture8.bind(impl->getVolumeArray(vd->getCurrentFrame()), impl->channelDesc);
   }
@@ -394,7 +401,7 @@ void vvRayRend::renderVolumeGL()
                     probePos,
                     probeSize * 0.5f,
                     texsize,
-                    static_cast< int >(_interpolation),
+                    _interpolation,
                     Lpos,
                     V,
                     constAtt,
@@ -423,10 +430,10 @@ bool vvRayRend::checkParameter(ParameterType param, vvParam const& value) const
   case VV_SLICEINT:
 
     {
-      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+      virvo::tex_filter_mode mode = static_cast< virvo::tex_filter_mode >(value.asInt());
 
-      if (type == vvRenderState::Nearest || type == vvRenderState::Linear
-       || type == vvRenderState::BSpline)
+      if (mode == virvo::Nearest || mode == virvo::Linear
+       || mode == virvo::BSpline)
       {
         return true;
       }
@@ -452,9 +459,9 @@ void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
   {
   case vvRenderer::VV_SLICEINT:
     {
-      if (_interpolation != static_cast< vvRenderState::InterpolType >(newValue.asInt()))
+      if (_interpolation != static_cast< virvo::tex_filter_mode >(newValue.asInt()))
       {
-        _interpolation = static_cast< vvRenderState::InterpolType >(newValue.asInt());
+        _interpolation = static_cast< virvo::tex_filter_mode >(newValue.asInt());
         initVolumeTexture();
         updateTransferFunction();
       }
@@ -488,7 +495,11 @@ void vvRayRend::initVolumeTexture()
   bool ok;
 
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
-  if (vd->bpc == 1)
+  if (_interpolation == virvo::BSplineInterpol)
+  {
+    impl->channelDesc = cudaCreateChannelDesc<short>();
+  }
+  else if (vd->bpc == 1)
   {
     impl->channelDesc = cudaCreateChannelDesc<uchar>();
   }
@@ -522,7 +533,14 @@ void vvRayRend::initVolumeTexture()
 
     cudaMemcpy3DParms copyParams = { 0 };
 
-    if (vd->bpc == 1 || vd->bpc == 2)
+    if (_interpolation == virvo::BSplineInterpol)
+    {
+      virvo::texture< uint8_t, virvo::NormalizedFloat, 3 > tex( vd->vox[0], vd->vox[1], vd->vox[2] );
+      tex.data = vd->getRaw(f);
+      tex.set_filter_mode(virvo::BSplineInterpol);
+      copyParams.srcPtr = make_cudaPitchedPtr(tex.prefiltered_data, volumeSize.width * sizeof(short), volumeSize.width, volumeSize.height);
+    }
+    else if (vd->bpc == 1 || vd->bpc == 2)
     {
       copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(f), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
     }
@@ -561,27 +579,27 @@ void vvRayRend::initVolumeTexture()
 
     switch (_interpolation)
     {
-    case Nearest:
+    case virvo::Nearest:
 
       filter_mode = cudaFilterModePoint;
       break;
 
-    case Linear:
+    case virvo::Linear:
 
       filter_mode = cudaFilterModeLinear;
       break;
 
-    case BSpline:
+    case virvo::BSpline:
 
       filter_mode = cudaFilterModeLinear;
       break;
 
-    case BSplineInterpol:
+    case virvo::BSplineInterpol:
 
       filter_mode = cudaFilterModeLinear;
       break;
 
-    case CardinalSpline:
+    case virvo::CardinalSpline:
 
       filter_mode = cudaFilterModePoint;
       break;
@@ -589,7 +607,15 @@ void vvRayRend::initVolumeTexture()
     }
 
 
-    if (vd->bpc == 1)
+    if (_interpolation == virvo::BSplineInterpol)
+    {
+        cPrefilterTexture.setNormalized(true);
+        cPrefilterTexture.setFilterMode(filter_mode);
+        cPrefilterTexture.setAddressMode(cudaAddressModeClamp);
+
+        ok = cPrefilterTexture.bind(impl->getVolumeArray(0), impl->channelDesc);
+    }
+    else if (vd->bpc == 1)
     {
         cVolTexture8.setNormalized(true);
         cVolTexture8.setFilterMode(filter_mode);

@@ -72,36 +72,6 @@ namespace math = virvo::math;
 #endif
 
 
-
-virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_type)
-{
-
-    switch (ipol_type)
-    {
-
-    case vvRenderState::Nearest:
-        return virvo::Nearest;
-
-    case vvRenderState::Linear:
-        return virvo::Linear;
-
-    case vvRenderState::BSpline:
-        return virvo::BSpline;
-
-    case vvRenderState::BSplineInterpol:
-        return virvo::BSplineInterpol;
-
-    case vvRenderState::CardinalSpline:
-        return virvo::CardinalSpline;
-
-    default:
-        return virvo::Nearest;
-
-    }
-
-}
-
-
 #if VV_USE_SSE
 
 #define PACK_SIZE_X 2
@@ -454,7 +424,7 @@ void vvSoftRayRend::renderVolumeGL()
   impl_->render_params.bpc                   = vd->bpc;
   impl_->render_params.lutsize               = getLUTSize(vd);
   impl_->render_params.quality               = getParameter(vvRenderer::VV_QUALITY);
-  impl_->render_params.filter_mode           = map_to_tex_filter_mode( static_cast< vvRenderState::InterpolType >(getParameter(vvRenderer::VV_SLICEINT).asInt()) );
+  impl_->render_params.filter_mode           = static_cast< virvo::tex_filter_mode >(getParameter(vvRenderer::VV_SLICEINT).asInt());
   impl_->render_params.opacity_correction    = getParameter(vvRenderer::VV_OPCORR);
   impl_->render_params.early_ray_termination = getParameter(vvRenderer::VV_TERMINATEEARLY);
   impl_->render_params.mip_mode              = getParameter(vvRenderer::VV_MIP_MODE);
@@ -480,11 +450,11 @@ bool vvSoftRayRend::checkParameter(ParameterType param, vvParam const& value) co
   case VV_SLICEINT:
 
     {
-      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+      virvo::tex_filter_mode mode = static_cast< virvo::tex_filter_mode >(value.asInt());
 
-      if (type == vvRenderState::Nearest || type == vvRenderState::Linear
-       || type == vvRenderState::BSpline || type == vvRenderState::BSplineInterpol
-       || type == vvRenderState::CardinalSpline)
+      if (mode == virvo::Nearest || mode == virvo::Linear
+       || mode == virvo::BSpline || mode == virvo::BSplineInterpol
+       || mode == virvo::CardinalSpline)
       {
         return true;
       }

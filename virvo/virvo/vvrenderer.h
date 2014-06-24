@@ -22,6 +22,7 @@
 #define VV_RENDERER_H
 
 #include "math/math.h"
+#include "texture/detail/texture_common.h"
 
 #include "vvmacros.h"
 #include "vvparam.h"
@@ -54,16 +55,6 @@ public:
     VV_REL_THRESHOLD,                           ///< some threshold, weighted by max opacity
     VV_EN_EX_MEAN,                              ///< Mean of entrance and exit
     VV_NONE
-  };
-
-
-  enum InterpolType
-  {
-    Nearest = 0,
-    Linear,
-    BSpline,
-    BSplineInterpol,
-    CardinalSpline
   };
 
 
@@ -185,7 +176,7 @@ protected:
   virvo::AABBss _visibleRegion;                 ///< part of the vd that is visible and thus rendered
   virvo::AABBss _paddingRegion;                 ///< padding region for interpolation
   bool _opacityCorrection;                      ///< true = opacity correction on
-  InterpolType _interpolation;                  ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  virvo::tex_filter_mode _interpolation;
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
   bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
   int _depthPrecision;                          ///< number of bits in depth buffer for image based rendering

@@ -27,6 +27,8 @@
 #include "cuda/texture.h"
 #include "cuda/utils.h"
 
+#include "texture/detail/texture_common.h" // virvo::tex_filter_mode
+
 //#define REALLY_LONG_COMPILE_TIME
 //#define WEIRD_RAY_ENTRY_POINTS
 
@@ -42,6 +44,7 @@ struct Ray
 
 static texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 static texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
+static texture<short, 3, cudaReadModeNormalizedFloat> prefilterTexture;
 static texture<float4, 1, cudaReadModeElementType> tfTexture;
 
 static __constant__ matrix4x4 c_invViewMatrix;
@@ -51,6 +54,7 @@ static __constant__ matrix4x4 c_MvPrMatrix;
 // referenced in vvrayrend.cpp
 cu::Texture cVolTexture8 = &volTexture8;
 cu::Texture cVolTexture16 = &volTexture16;
+cu::Texture cPrefilterTexture = &prefilterTexture;
 cu::Texture cTFTexture = &tfTexture;
 
 // referenced in vvrayrend.cpp
@@ -85,112 +89,114 @@ __device__ float h1( float x ) { return ((floor( x ) + 1.0f + w3(x)) / (w2(x) + 
 
 // cubic interpolation using 8 trilinear texture lookups
 // cf. http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter20.html
-__device__ float tricubic(texture< uchar, 3, cudaReadModeNormalizedFloat > tex_source,
-  const float coord_x, const float coord_y, const float coord_z, float3 texsize)
+template < typename T >
+__device__ float cubic8(T tex, float3 coord, float3 texsize)
 {
 
-  float x = (coord_x * texsize.x) - 0.5f;
-  float floorx = floor( x );
-  float fracx  = x - floor( x );
+    typedef float float_type;
 
-  float y = (coord_y * texsize.y) - 0.5f;
-  float floory = floor( y );
-  float fracy  = y - floor( y );
+    float_type x = coord.x * texsize.x - float_type(0.5);
+    float_type floorx = floor( x );
+    float_type fracx  = x - floor( x );
 
-  float z = (coord_z * texsize.z) - 0.5f;
-  float floorz = floor( z );
-  float fracz  = z - floor( z );
+    float_type y = coord.y * texsize.y - float_type(0.5);
+    float_type floory = floor( y );
+    float_type fracy  = y - floor( y );
 
-
-  float tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) ) ;
-  float h_000 = ( floorx - 0.5f + tmp000 ) / (float)( texsize.x);
-
-  float tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) ) ;
-  float h_100 = ( floorx + 1.5f + tmp100 ) / (float)( texsize.x);
-
-  float tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) ) ;
-  float h_010 = ( floory - 0.5f + tmp010 ) / (float)( texsize.y);
-
-  float tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) ) ;
-  float h_110 = ( floory + 1.5f + tmp110 ) / (float)( texsize.y);
-
-  float tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) ) ;
-  float h_001 = ( floorz - 0.5f + tmp001 ) / (float)( texsize.z);
-
-  float tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) ) ;
-  float h_101 = ( floorz + 1.5f + tmp101 ) / (float)( texsize.z );
+    float_type z = coord.z * texsize.z - float_type(0.5);
+    float_type floorz = floor( z );
+    float_type fracz  = z - floor( z );
 
 
-  float f_000 = tex3D( tex_source, h_000, h_010, h_001 );
-  float f_100 = tex3D( tex_source, h_100, h_010, h_001 );
-  float f_010 = tex3D( tex_source, h_000, h_110, h_001 );
-  float f_110 = tex3D( tex_source, h_100, h_110, h_001 );
+    float_type tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) ) ;
+    float_type h_000 = ( floorx - float_type(0.5) + tmp000 ) / texsize.x;
 
-  float f_001 = tex3D( tex_source, h_000, h_010, h_101 );
-  float f_101 = tex3D( tex_source, h_100, h_010, h_101 );
-  float f_011 = tex3D( tex_source, h_000, h_110 ,h_101 );
-  float f_111 = tex3D( tex_source, h_100, h_110, h_101 );
+    float_type tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) ) ;
+    float_type h_100 = ( floorx + float_type(1.5) + tmp100 ) / texsize.x;
 
-  float f_00 = g0(fracx) * f_000 + g1(fracx) * f_100;
-  float f_10 = g0(fracx) * f_010 + g1(fracx) * f_110;
-  float f_01 = g0(fracx) * f_001 + g1(fracx) * f_101;
-  float f_11 = g0(fracx) * f_011 + g1(fracx) * f_111;
+    float_type tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) ) ;
+    float_type h_010 = ( floory - float_type(0.5) + tmp010 ) / texsize.y;
 
-  float f_0 = g0( fracy ) * f_00 + g1( fracy ) * f_10;
-  float f_1 = g0(fracy) * f_01 + g1(fracy) * f_11;
+    float_type tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) ) ;
+    float_type h_110 = ( floory + float_type(1.5) + tmp110 ) / texsize.y;
 
-  return g0(fracz) * f_0 + g1(fracz) * f_1;
+    float_type tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) ) ;
+    float_type h_001 = ( floorz - float_type(0.5) + tmp001 ) / texsize.z;
+
+    float_type tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) ) ;
+    float_type h_101 = ( floorz + float_type(1.5) + tmp101 ) / texsize.z;
+
+
+    float_type f_000 = tex3D( tex, h_000, h_010, h_001 );
+    float_type f_100 = tex3D( tex, h_100, h_010, h_001 );
+    float_type f_010 = tex3D( tex, h_000, h_110, h_001 );
+    float_type f_110 = tex3D( tex, h_100, h_110, h_001 );
+
+    float_type f_001 = tex3D( tex, h_000, h_010, h_101 );
+    float_type f_101 = tex3D( tex, h_100, h_010, h_101 );
+    float_type f_011 = tex3D( tex, h_000, h_110 ,h_101 );
+    float_type f_111 = tex3D( tex, h_100, h_110, h_101 );
+
+    float_type f_00 = g0(fracx) * f_000 + g1(fracx) * f_100;
+    float_type f_10 = g0(fracx) * f_010 + g1(fracx) * f_110;
+    float_type f_01 = g0(fracx) * f_001 + g1(fracx) * f_101;
+    float_type f_11 = g0(fracx) * f_011 + g1(fracx) * f_111;
+
+    float_type f_0 = g0(fracy) * f_00 + g1(fracy) * f_10;
+    float_type f_1 = g0(fracy) * f_01 + g1(fracy) * f_11;
+
+    return g0(fracz) * f_0 + g1(fracz) * f_1;
 
 }
 
 
 template<int t_bpc>
-__device__ float volume(const float x, const float y, const float z,
-  float3 const& texsize, int ipol_type);
+__device__ float volume(float3 const& coord, float3 const& texsize, virvo::tex_filter_mode filter_mode);
+
 template<>
-__device__ float volume<1>(const float x, const float y, const float z,
-  float3 const& texsize, int ipol_type)
+__device__ float volume<1>(float3 const& coord, float3 const& texsize, virvo::tex_filter_mode filter_mode)
 {
-  if (ipol_type > 1)
-  {
-    return tricubic(volTexture8, x, y, z, texsize);
-  }
-  else
-  {
-    return tex3D(volTexture8, x, y, z);
-  }
-}
-template<>
-__device__ float volume<2>(const float x, const float y, const float z,
-  float3 const& texsize, int ipol_type)
-{
-  return tex3D(volTexture16, x, y, z);
+
+    switch (filter_mode)
+    {
+
+    default:
+        // fall-through
+    case virvo::Nearest:
+        // fall-through
+    case virvo::Linear:
+        return tex3D(volTexture8, coord.x, coord.y, coord.z);
+
+    case virvo::BSpline:
+        return cubic8(volTexture8, coord, texsize);
+
+    case virvo::BSplineInterpol:
+        // convert from prefiltered range [SHRT_MIN,SHRT_MAX] to
+        // reconstructed (8-bit) data range [0,256).
+        return cubic8(prefilterTexture, coord, texsize) * float(128);
+
+    }
+
 }
 
-template<int t_bpc>
-__device__ float volume(const float3& pos, float3 const& texsize, int ipol_type);
 template<>
-__device__ float volume<1>(const float3& pos, float3 const& texsize, int ipol_type)
+__device__ float volume<2>(const float3& coord, float3 const& texsize, virvo::tex_filter_mode filter_mode)
 {
-  if (ipol_type > 1)
-  {
-    return tricubic(volTexture8, pos.x, pos.y, pos.z, texsize);
-  }
-  else
-  {
-    return tex3D(volTexture8, pos.x, pos.y, pos.z);
-  }
-}
-template<>
-__device__ float volume<2>(const float3& pos, float3 const& texsize, int ipol_type)
-{
-  return tex3D(volTexture16, pos.x, pos.y, pos.z);
-}
 
-__device__ bool skipSpace(const float3& pos)
-{
-  //return (tex3D(spaceSkippingTexture, pos.x, pos.y, pos.z) == 0.0f);
-  return false;
+    switch (filter_mode)
+    {
+
+    default:
+        // fall-through
+    case virvo::Nearest:
+        // fall-through
+    case virvo::Linear:
+        return tex3D(volTexture16, coord.x, coord.y, coord.z);
+
+    case virvo::BSpline:
+        return cubic8(volTexture16, coord, texsize);
+
+    }
 }
 
 __device__ float3 calcTexCoord(const float3& pos, const float3& volPos, const float3& volSizeHalf)
@@ -364,19 +370,19 @@ __device__ uchar4 rgbaFloatToInt(float4 rgba)
 }
 
 template<int t_bpc>
-__device__ float3 gradient(const float3& texcoord, float3 const& texsize, int ipol_type)
+__device__ float3 gradient(const float3& texcoord, float3 const& texsize, virvo::tex_filter_mode filter_mode)
 {
   const float DELTA = 0.01f;
 
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), texsize, ipol_type);
-  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), texsize, ipol_type);
-  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), texsize, ipol_type);
-  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), texsize, ipol_type);
-  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), texsize, ipol_type);
-  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), texsize, ipol_type);
+  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), texsize, filter_mode);
+  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), texsize, filter_mode);
+  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), texsize, filter_mode);
+  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), texsize, filter_mode);
+  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), texsize, filter_mode);
+  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), texsize, filter_mode);
 
   return sample2 - sample1;
 }
@@ -386,12 +392,12 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
                              const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             float3 const& texsize, int ipol_type,
+                             float3 const& texsize, virvo::tex_filter_mode filter_mode,
                              const float constAtt = 1.f, const float linearAtt = 0.f, const float quadAtt = 0.f,
                              const float3* normal = NULL)
 {
   // Normal transformed from texture to volume coordinates
-  float3 N = normalize(gradient<t_bpc>(texcoord, texsize, ipol_type));
+  float3 N = normalize(gradient<t_bpc>(texcoord, texsize, filter_mode));
   N = tex2vol(N);
 
   // Light direction
@@ -445,7 +451,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
                        float3 texsize,
-                       int ipol_type,
+                       virvo::tex_filter_mode filter_mode,
                        const float3 Lpos, const float3 V,
                        float constAtt, float linearAtt, float quadAtt,
                        const bool clipPlane,
@@ -621,7 +627,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
 
-    const float sample = volume<t_bpc>(texCoord, texsize, ipol_type);
+    const float sample = volume<t_bpc>(texCoord, texsize, filter_mode);
 
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
@@ -650,25 +656,25 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, filter_mode,
           constAtt, linearAtt, quadAtt, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(sphereCenter - pos);
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, filter_mode,
           constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
       else if(justClippedBox)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, filter_mode,
           constAtt, linearAtt, quadAtt, &boxNormal);
       }
       else
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, filter_mode,
           constAtt, linearAtt, quadAtt);
       }
     }
@@ -859,7 +865,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
                             float3 texsize,
-                            int ipol_type,
+                            virvo::tex_filter_mode filter_mode,
                             const float3 Lpos, const float3 V,
                             float constAtt, float linearAtt, float quadAtt,
                             const bool clipPlane,
@@ -1120,7 +1126,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
                                   float3 texsize,
-                                  int ipol_type,
+                                  virvo::tex_filter_mode filter_mode,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
@@ -1157,7 +1163,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                       texwidth, dist,
                                       volPos, volSizeHalf,
-                                      probePos, probeSizeHalf, texsize, ipol_type,
+                                      probePos, probeSizeHalf, texsize, filter_mode,
                                       Lpos, V,
                                       constAtt, linearAtt, quadAtt,
                                       clipPlane,
@@ -1176,7 +1182,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                     texwidth, dist,
                                     volPos, volSizeHalf,
-                                    probePos, probeSizeHalf, texsize, ipol_type,
+                                    probePos, probeSizeHalf, texsize, filter_mode,
                                     Lpos, V,
                                     constAtt, linearAtt, quadAtt,
                                     clipPlane,

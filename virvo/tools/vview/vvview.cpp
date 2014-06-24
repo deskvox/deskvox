@@ -124,7 +124,7 @@ vvView::vvView()
   fpsMode               = false;
   stereoMode            = 0;
   fullscreenMode        = false;
-  interpolMode          = vvRenderer::Linear;
+  filter_mode          =  virvo::Linear;
   warpInterpolMode      = true;
   preintMode            = false;
   paletteMode           = false;
@@ -548,7 +548,7 @@ void vvView::applyRendererParameters()
 {
   renderer->setParameter(vvRenderState::VV_BOUNDARIES, boundariesMode);
   renderer->setPosition(pos);
-  renderer->setParameter(vvRenderState::VV_SLICEINT, interpolMode);
+  renderer->setParameter(vvRenderState::VV_SLICEINT, filter_mode);
   renderer->setParameter(vvRenderer::VV_WARPINT, warpInterpolMode);
   renderer->setParameter(vvRenderer::VV_PREINT, preintMode);
   renderer->setParameter(vvRenderState::VV_MIP_MODE, mipMode);
@@ -1248,10 +1248,10 @@ void vvView::optionsMenuCallback(int item)
   switch(item)
   {
   case 0:                                     // slice interpolation mode
-    ds->interpolMode = ds->interpolMode == vvRenderer::Nearest
-      ? vvRenderer::Linear : vvRenderer::Nearest;
-    ds->renderer->setParameter(vvRenderer::VV_SLICEINT, ds->interpolMode);
-    cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
+    ds->filter_mode = ds->filter_mode == virvo::Nearest
+      ? virvo::Linear : virvo::Nearest;
+    ds->renderer->setParameter(vvRenderer::VV_SLICEINT, ds->filter_mode);
+    cerr << "Interpolation mode set to " << int(ds->filter_mode) << endl;
     break;
   case 1:
     ds->preintMode = !ds->preintMode;
@@ -2016,7 +2016,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
 {
   GLint viewport[4];                             // OpenGL viewport information (position and size)
   char  projectMode[2][16] = {"parallel","perspective"};
-  char  interpolMode[2][32] = {"nearest neighbor","linear"};
+  char  filter_mode[2][32] = {"nearest neighbor","linear"};
   char  onOffMode[2][8] = {"off","on"};
   char  pgMode[4][32] = { "vert shader", "geom shader", "vert and geom shader", "CPU" };
   const int HOST_NAME_LEN = 80;
@@ -2041,7 +2041,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
   cerr << "Image quality....................................." << ds->renderer->getParameter(vvRenderState::VV_QUALITY).asFloat() << endl;
   cerr << "Projection........................................" << projectMode[ds->perspectiveMode] << endl;
-  cerr << "Interpolation mode................................" << interpolMode[ds->interpolMode] << endl;
+  cerr << "Interpolation mode................................" << filter_mode[ds->filter_mode] << endl;
   cerr << "Empty space leaping for bricks...................." << onOffMode[ds->emptySpaceLeapingMode] << endl;
   cerr << "Early ray termination............................." << onOffMode[ds->earlyRayTermination] << endl;
   cerr << "Pre-integration..................................." << onOffMode[ds->preintMode] << endl;

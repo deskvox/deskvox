@@ -3676,9 +3676,9 @@ bool vvTexRend::checkParameter(ParameterType param, vvParam const& value) const
   case VV_SLICEINT:
 
     {
-      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+      virvo::tex_filter_mode mode = static_cast< virvo::tex_filter_mode >(value.asInt());
 
-      if (type == vvRenderState::Nearest || type == vvRenderState::Linear)
+      if (mode == virvo::Nearest || mode == virvo::Linear)
       {
         return true;
       }
@@ -3708,9 +3708,9 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       updateTransferFunction();
       break;
     case vvRenderer::VV_SLICEINT:
-      if (_interpolation != static_cast< vvRenderState::InterpolType >(newValue.asInt()))
+      if (_interpolation != static_cast< virvo::tex_filter_mode >(newValue.asInt()))
       {
-        _interpolation = static_cast< vvRenderState::InterpolType >(newValue.asInt());
+        _interpolation = static_cast< virvo::tex_filter_mode >(newValue.asInt());
         for (size_t f = 0; f < vd->frames; ++f)
         {
           glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);

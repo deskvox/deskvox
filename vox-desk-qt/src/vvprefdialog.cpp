@@ -400,11 +400,11 @@ void vvPrefDialog::applySettings()
 
 void vvPrefDialog::toggleInterpolation()
 {
-  int interpolation = ui->interpolationBox->currentIndex();
-  ++interpolation;
-  interpolation %= impl->num_interpol_algs;
-  ui->interpolationBox->setCurrentIndex(interpolation);
-  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< vvRenderState::InterpolType >(interpolation));
+  int filter_mode = ui->interpolationBox->currentIndex();
+  ++filter_mode;
+  filter_mode %= impl->num_interpol_algs;
+  ui->interpolationBox->setCurrentIndex(filter_mode);
+  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< virvo::tex_filter_mode >(filter_mode));
 }
 
 void vvPrefDialog::scaleStillQuality(const float s)
@@ -592,31 +592,31 @@ void vvPrefDialog::updateUi()
 
   int ipol = renderer->getParameter(vvRenderState::VV_SLICEINT).asInt();
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::Nearest))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::Nearest))
   {
     ui->interpolationBox->addItem("Nearest Neighbor");
     ++impl->num_interpol_algs;
   }
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::Linear))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::Linear))
   {
     ui->interpolationBox->addItem("Linear");
     ++impl->num_interpol_algs;
   }
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::BSpline))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::BSpline))
   {
     ui->interpolationBox->addItem("Cubic B-Spline");
     ++impl->num_interpol_algs;
   }
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::BSpline))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::BSpline))
   {
     ui->interpolationBox->addItem("Cubic B-Spline Interpolation");
     ++impl->num_interpol_algs;
   }
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::CardinalSpline))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::CardinalSpline))
   {
     ui->interpolationBox->addItem("Cubic Cardinal Spline");
     ++impl->num_interpol_algs;
@@ -926,7 +926,7 @@ void vvPrefDialog::onInterpolationChanged(int index)
 {
   QSettings settings;
   settings.setValue("appearance/interpolation", index);
-  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< vvRenderState::InterpolType >(index));
+  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< virvo::tex_filter_mode >(index));
 }
 
 void vvPrefDialog::onMipToggled(bool checked)
