@@ -18,7 +18,7 @@ namespace virvo
 //
 
 template < typename VoxelT, typename FloatT >
-VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, FloatT coord)
+VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, ElementType, 1 > const& tex, FloatT coord)
 {
 
     // general case: return type equals voxel type
@@ -30,7 +30,7 @@ VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, F
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::vector< 4, math::simd::float4 > tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, math::simd::float4 coord)
+VV_FORCE_INLINE math::vector< 4, math::simd::float4 > tex1D(texture< VoxelT, ElementType, 1 > const& tex, math::simd::float4 coord)
 {
 
     // special case for AoS rgba colors
@@ -46,7 +46,7 @@ VV_FORCE_INLINE math::vector< 4, math::simd::float4 > tex1D(texture< VoxelT, Nor
 //
 
 template < typename VoxelT, typename FloatT >
-VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, FloatT > coord)
+VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, ElementType, 3 > const& tex, math::vector< 3, FloatT > coord)
 {
 
     // general case: return type equals voxel type
@@ -58,7 +58,7 @@ VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, m
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::simd::float4 tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, math::simd::float4 > coord)
+VV_FORCE_INLINE math::simd::float4 tex3D(texture< VoxelT, ElementType, 3 > const& tex, math::vector< 3, math::simd::float4 > coord)
 {
 
     // special case: lookup four voxels at once and return as 32-bit float vector

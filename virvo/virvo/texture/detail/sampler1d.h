@@ -121,7 +121,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex1D(texture< VoxelT, virvo::NormalizedFloat, 1 > const& tex, FloatT coord)
+VV_FORCE_INLINE ReturnT tex1D(texture< VoxelT, virvo::ElementType, 1 > const& tex, FloatT coord)
 {
 
     FloatT texsize = tex.width();

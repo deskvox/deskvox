@@ -310,7 +310,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, FloatT > coord)
+VV_FORCE_INLINE ReturnT tex3D(texture< VoxelT, ElementType, 3 > const& tex, math::vector< 3, FloatT > coord)
 {
 
     math::vector< 3, FloatT > texsize( tex.width(), tex.height(), tex.depth() );

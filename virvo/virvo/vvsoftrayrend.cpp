@@ -283,7 +283,7 @@ struct Thread
 
 void  wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
 template < typename T >
-void  render(virvo::texture< T, virvo::NormalizedFloat, 3 > const& volume, Thread* thread);
+void  render(virvo::texture< T, virvo::ElementType, 3 > const& volume, Thread* thread);
 void* renderFunc(void* args);
 
 
@@ -516,7 +516,7 @@ template < typename VoxelT >
 void renderTile
 (
     const virvo::Tile& tile,
-    virvo::texture< VoxelT, virvo::NormalizedFloat, 3 > const& volume,
+    virvo::texture< VoxelT, virvo::ElementType, 3 > const& volume,
     const Thread* thread)
 {
   static const float_type opacityThreshold = 0.95f;
@@ -553,7 +553,7 @@ void renderTile
 
 
   typedef virvo::math::vector< 4, float > float4;
-  virvo::texture< float4, virvo::NormalizedFloat, 1 > tf(lutsize);
+  virvo::texture< float4, virvo::ElementType, 1 > tf(lutsize);
   tf.data = reinterpret_cast< float4* >( &(*thread->rgbaTF)[0] );
   tf.set_address_mode(virvo::Clamp);
   tf.set_filter_mode( virvo::Linear );
@@ -699,7 +699,7 @@ void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* spara
 template < typename T >
 void render
 (
-    virvo::texture< T, virvo::NormalizedFloat, 3 > const& volume,
+    virvo::texture< T, virvo::ElementType, 3 > const& volume,
     Thread* thread
 )
 {
@@ -757,8 +757,8 @@ void* renderFunc(void* args)
   }
 #endif
 
-  virvo::texture< uint8_t,  virvo::NormalizedFloat, 3 > volume8;
-  virvo::texture< uint16_t, virvo::NormalizedFloat, 3 > volume16;
+  virvo::texture< uint8_t,  virvo::ElementType, 3 > volume8;
+  virvo::texture< uint16_t, virvo::ElementType, 3 > volume16;
 
   while (true)
   {
