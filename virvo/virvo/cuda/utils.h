@@ -288,16 +288,19 @@ inline __device__ __host__ void operator*=(float3& v, const float m[16])
   v = v * m;
 }
 
-inline __device__ __host__ void clamp(float& f, const float a = 0.0f, const float b = 1.0f)
+inline __device__ __host__ float clamp(float f, float a = 0.0f, float b = 1.0f)
 {
-  f = fmaxf(a, fminf(f, b));
+    return fmaxf(a, fminf(f, b));
 }
 
-inline __device__ __host__ void clamp(float3& v, const float a = 0.0f, const float b = 1.0f)
+inline __device__ __host__ float3 clamp(float3 v, float a = 0.0f, float b = 1.0f)
 {
-  clamp(v.x, a, b);
-  clamp(v.y, a, b);
-  clamp(v.z, a, b);
+    return make_float3
+    (
+        clamp(v.x, a, b),
+        clamp(v.y, a, b),
+        clamp(v.z, a, b)
+    );
 }
 
 inline __device__ __host__ float3 cross(const float3& v1, const float3& v2)

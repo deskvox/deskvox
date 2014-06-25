@@ -52,7 +52,6 @@ class texture_storage
 public:
 
     typedef T value_type;
-    typedef float float_type;
 
 
     value_type* data;

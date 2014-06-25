@@ -433,13 +433,14 @@ bool vvRayRend::checkParameter(ParameterType param, vvParam const& value) const
       virvo::tex_filter_mode mode = static_cast< virvo::tex_filter_mode >(value.asInt());
 
       if (mode == virvo::Nearest || mode == virvo::Linear
-       || mode == virvo::BSpline)
+       || mode == virvo::BSpline || mode == virvo::BSplineInterpol
+       || mode == virvo::CardinalSpline)
       {
         return true;
       }
     }
 
-    return false;;
+    return false;
 
   default:
 
@@ -533,9 +534,9 @@ void vvRayRend::initVolumeTexture()
 
     cudaMemcpy3DParms copyParams = { 0 };
 
+    virvo::texture< uint8_t, virvo::ElementType, 3 > tex( vd->vox[0], vd->vox[1], vd->vox[2] );
     if (_interpolation == virvo::BSplineInterpol)
     {
-      virvo::texture< uint8_t, virvo::NormalizedFloat, 3 > tex( vd->vox[0], vd->vox[1], vd->vox[2] );
       tex.data = vd->getRaw(f);
       tex.set_filter_mode(virvo::BSplineInterpol);
       copyParams.srcPtr = make_cudaPitchedPtr(tex.prefiltered_data, volumeSize.width * sizeof(short), volumeSize.width, volumeSize.height);
@@ -553,7 +554,7 @@ void vvRayRend::initVolumeTexture()
 
   if (outOfMem)
   {
-    std::cerr << "Couldn't accomodate the volume" << std::endl;
+    std::cerr << "Could not accommodate the volume" << std::endl;
     for (size_t f=0; f<=outOfMemFrame; ++f)
     {
       impl->getVolumeArray(f).reset();
@@ -617,7 +618,7 @@ void vvRayRend::initVolumeTexture()
     }
     else if (vd->bpc == 1)
     {
-        cVolTexture8.setNormalized(true);
+        cVolTexture8.setNormalized( _interpolation != virvo::CardinalSpline );
         cVolTexture8.setFilterMode(filter_mode);
         cVolTexture8.setAddressMode(cudaAddressModeClamp);
 
@@ -625,7 +626,7 @@ void vvRayRend::initVolumeTexture()
     }
     else if (vd->bpc == 2)
     {
-        cVolTexture16.setNormalized(true);
+        cVolTexture16.setNormalized( _interpolation != virvo::CardinalSpline );
         cVolTexture16.setFilterMode(filter_mode);
         cVolTexture16.setAddressMode(cudaAddressModeClamp);
 

@@ -243,15 +243,15 @@ ReturnT cubic(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 
     typedef FloatT float_type;
     typedef math::vector< 3, float_type > float3;
 
-    float_type x = coord[0] * texsize[0] - float_type(0.5);
+    float_type x = coord.x * texsize.x - float_type(0.5);
     float_type floorx = floor( x );
     float_type fracx  = x - floor( x );
 
-    float_type y = coord[1] * texsize[1] - float_type(0.5);
+    float_type y = coord.y * texsize.y - float_type(0.5);
     float_type floory = floor( y );
     float_type fracy  = y - floor( y );
 
-    float_type z = coord[2] * texsize[2] - float_type(0.5);
+    float_type z = coord.z * texsize.z - float_type(0.5);
     float_type floorz = floor( z );
     float_type fracz  = z - floor( z );
 

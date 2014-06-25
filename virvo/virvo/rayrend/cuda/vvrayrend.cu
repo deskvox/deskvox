@@ -72,19 +72,36 @@ __device__ float lerp(float a, float b, float x)
   return a + x * (b - a);
 }
 
+namespace bspline
+{
 
-// weight functions for Mitchell - Netravalli B-Spline
+// weight functions for Mitchell - Netravalli B-Spline with B = 1 and C = 0
+
 __device__ float w0( float a ) { return (1.0f / 6.0f) * (-(a * a * a) + 3.0f * a * a - 3.0f * a + 1.0f); }
 __device__ float w1( float a ) { return (1.0f / 6.0f) * (3.0f * a * a * a - 6.0f * a * a + 4.0f); }
 __device__ float w2( float a ) { return (1.0f / 6.0f) * (-3.0f * a * a * a + 3.0f * a * a + 3.0f * a + 1.0f); }
 __device__ float w3( float a ) { return (1.0f / 6.0f) * (a * a * a); }
 
+} // bspline
+
+namespace cspline
+{
+
+// weight functions for Catmull - Rom Cardinal Spline
+
+__device__ float w0( float a ) { return float( -0.5 * a * a * a + a * a - 0.5 * a ); }
+__device__ float w1( float a ) { return float( 1.5 * a * a * a - 2.5 * a * a + 1.0 ); }
+__device__ float w2( float a ) { return float( -1.5 * a * a * a + 2.0 * a * a + 0.5 * a ); }
+__device__ float w3( float a ) { return float( 0.5 * a * a * a - 0.5 * a * a ); }
+
+} // cspline
+
 
 // helper functions for cubic interpolation
-__device__ float g0( float x ) { return w0(x) + w1(x); }
-__device__ float g1( float x ) { return w2(x) + w3(x); }
-__device__ float h0( float x ) { return ((floor( x ) - 1.0f + w1(x)) / (w0(x) + w1(x))) + x; }
-__device__ float h1( float x ) { return ((floor( x ) + 1.0f + w3(x)) / (w2(x) + w3(x))) - x; }
+__device__ float g0( float x ) { return bspline::w0(x) + bspline::w1(x); }
+__device__ float g1( float x ) { return bspline::w2(x) + bspline::w3(x); }
+__device__ float h0( float x ) { return ((floor( x ) - 1.0f + bspline::w1(x)) / (bspline::w0(x) + bspline::w1(x))) + x; }
+__device__ float h1( float x ) { return ((floor( x ) + 1.0f + bspline::w3(x)) / (bspline::w2(x) + bspline::w3(x))) - x; }
 
 
 // cubic interpolation using 8 trilinear texture lookups
@@ -94,6 +111,11 @@ __device__ float cubic8(T tex, float3 coord, float3 texsize)
 {
 
     typedef float float_type;
+
+    using bspline::w0;
+    using bspline::w1;
+    using bspline::w2;
+    using bspline::w3;
 
     float_type x = coord.x * texsize.x - float_type(0.5);
     float_type floorx = floor( x );
@@ -149,6 +171,75 @@ __device__ float cubic8(T tex, float3 coord, float3 texsize)
 
 }
 
+template < typename T >
+__device__ float cubic(T tex, float3 coord, float3 texsize)
+{
+
+    typedef float float_type;
+
+    using cspline::w0;
+    using cspline::w1;
+    using cspline::w2;
+    using cspline::w3;
+
+    float_type x = coord.x * texsize.x - float_type(0.5);
+    float_type floorx = floor( x );
+    float_type fracx  = x - floor( x );
+
+    float_type y = coord.y * texsize.y - float_type(0.5);
+    float_type floory = floor( y );
+    float_type fracy  = y - floor( y );
+
+    float_type z = coord.z * texsize.z - float_type(0.5);
+    float_type floorz = floor( z );
+    float_type fracz  = z - floor( z );
+
+    float3 pos[4] =
+    {
+        make_float3( floorx - 1, floory - 1, floorz - 1 ),
+        make_float3( floorx,     floory,     floorz ),
+        make_float3( floorx + 1, floory + 1, floorz + 1 ),
+        make_float3( floorx + 2, floory + 2, floorz + 2 )
+    };
+
+    for (size_t i = 0; i < 4; ++i)
+    {
+        pos[i].x = clamp(pos[i].x, float_type(0.0f), texsize.x - 1);
+        pos[i].y = clamp(pos[i].y, float_type(0.0f), texsize.y - 1);
+        pos[i].z = clamp(pos[i].z, float_type(0.0f), texsize.z - 1);
+    }
+
+#define TEX(x,y,z) (tex3D(tex,x,y,z))
+    float_type f00 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[0].z);
+    float_type f01 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[0].z);
+    float_type f02 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[0].z);
+    float_type f03 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[0].z);
+
+    float_type f04 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[1].z);
+    float_type f05 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[1].z);
+    float_type f06 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[1].z);
+    float_type f07 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[1].z);
+
+    float_type f08 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[2].z);
+    float_type f09 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[2].z);
+    float_type f10 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[2].z);
+    float_type f11 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[2].z);
+
+    float_type f12 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[3].z);
+    float_type f13 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[3].z);
+    float_type f14 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[3].z);
+    float_type f15 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[3].z);
+#undef TEX
+
+    float_type f0 = w0(fracy) * f00 + w1(fracy) * f01 + w2(fracy) * f02 + w3(fracy) * f03;
+    float_type f1 = w0(fracy) * f04 + w1(fracy) * f05 + w2(fracy) * f06 + w3(fracy) * f07;
+    float_type f2 = w0(fracy) * f08 + w1(fracy) * f09 + w2(fracy) * f10 + w3(fracy) * f11;
+    float_type f3 = w0(fracy) * f12 + w1(fracy) * f13 + w2(fracy) * f14 + w3(fracy) * f15;
+
+    return w0(fracz) * f0 + w1(fracz) * f1 + w2(fracz) * f2 + w3(fracz) * f3;
+
+}
+
 
 template<int t_bpc>
 __device__ float volume(float3 const& coord, float3 const& texsize, virvo::tex_filter_mode filter_mode);
@@ -174,6 +265,9 @@ __device__ float volume<1>(float3 const& coord, float3 const& texsize, virvo::te
         // convert from prefiltered range [SHRT_MIN,SHRT_MAX] to
         // reconstructed (8-bit) data range [0,256).
         return cubic8(prefilterTexture, coord, texsize) * float(128);
+
+    case virvo::CardinalSpline:
+        return cubic(volTexture8, coord, texsize);
 
     }
 
@@ -362,10 +456,10 @@ __device__ float3 perspectiveDivide(const float4& v)
 
 __device__ uchar4 rgbaFloatToInt(float4 rgba)
 {
-  clamp(rgba.x);
-  clamp(rgba.y);
-  clamp(rgba.z);
-  clamp(rgba.w);
+  rgba.x = clamp(rgba.x);
+  rgba.y = clamp(rgba.y);
+  rgba.z = clamp(rgba.z);
+  rgba.w = clamp(rgba.w);
   return make_uchar4(rgba.x * 255, rgba.y * 255,rgba.z * 255, rgba.w * 255);
 }
 
@@ -833,7 +927,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     depth.z *= 0.5f;
 
     depth.z = (depth.z - ibrPlanes.x) / (ibrPlanes.y - ibrPlanes.x);
-    clamp(depth.z);
+    depth.z = clamp(depth.z);
 
     switch(dp)
     {
