@@ -124,6 +124,7 @@ set(VIRVO_HEADERS
   texture/detail/texture1d.h
   texture/detail/texture3d.h
   texture/detail/texture_common.h
+  texture/forward.h
   texture/texture.h
 
   vvbonjour/vvbonjour.h

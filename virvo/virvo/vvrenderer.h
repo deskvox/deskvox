@@ -22,7 +22,7 @@
 #define VV_RENDERER_H
 
 #include "math/math.h"
-#include "texture/detail/texture_common.h"
+#include "texture/forward.h"
 
 #include "vvmacros.h"
 #include "vvparam.h"

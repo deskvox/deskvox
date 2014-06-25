@@ -27,7 +27,7 @@
 #include "cuda/texture.h"
 #include "cuda/utils.h"
 
-#include "texture/detail/texture_common.h" // virvo::tex_filter_mode
+#include "texture/forward.h" // virvo::tex_filter_mode
 
 //#define REALLY_LONG_COMPILE_TIME
 //#define WEIRD_RAY_ENTRY_POINTS

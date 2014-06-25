@@ -1,38 +1,14 @@
 #ifndef VV_TEXTURE_COMMON_H
 #define VV_TEXTURE_COMMON_H
 
+#include "../forward.h"
+
 #include <algorithm>
 #include <vector>
 
 
 namespace virvo
 {
-
-
-enum tex_address_mode
-{
-    Wrap = 0,
-    Mirror,
-    Clamp,
-    Border
-};
-
-
-enum tex_filter_mode
-{
-    Nearest = 0,
-    Linear,
-    BSpline,
-    BSplineInterpol,
-    CardinalSpline
-};
-
-enum tex_read_mode
-{
-    ElementType,
-    NormalizedFloat
-};
-
 
 namespace detail
 {
@@ -43,7 +19,7 @@ struct cast
     float operator()(T val) { return static_cast< S >(val); }
 };
 
-}
+} // detail
 
 
 template < typename T, typename Derived >
@@ -123,17 +99,9 @@ protected:
 };
 
 
-template
-<
-    typename VoxelT,
-    tex_read_mode ReadMode,
-    int Dim
->
-class texture;
-
-}
+} // virvo
 
 
-#endif
+#endif // VV_TEXTURE_COMMON_H
 
 
