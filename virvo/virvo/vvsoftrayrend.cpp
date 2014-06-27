@@ -742,6 +742,9 @@ void* renderFunc(void* args)
     // TODO: volume at class scope, not one copy per thread.
     // This probably necessitates to make the whole renderer a template. Arghh.
 
+    // TODO: currently, each set_filter_mode(BSplineInterpol) will invoke
+    // the b-spline prefilter.
+
     if (thread->render_params->bpc == 1)
     {
         volume8.resize
