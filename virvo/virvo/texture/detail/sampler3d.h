@@ -121,14 +121,14 @@ ReturnT linear(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector<
     // TODO: what if return type is e.g. a float4?
     float_type samples[8] =
     {
-        point(tex, index( lo[0], lo[1], lo[2], texsize )),
-        point(tex, index( hi[0], lo[1], lo[2], texsize )),
-        point(tex, index( lo[0], hi[1], lo[2], texsize )),
-        point(tex, index( hi[0], hi[1], lo[2], texsize )),
-        point(tex, index( lo[0], lo[1], hi[2], texsize )),
-        point(tex, index( hi[0], lo[1], hi[2], texsize )),
-        point(tex, index( lo[0], hi[1], hi[2], texsize )),
-        point(tex, index( hi[0], hi[1], hi[2], texsize ))
+        float_type( point(tex, index( lo.x, lo.y, lo.z, texsize )) ),
+        float_type( point(tex, index( hi.x, lo.y, lo.z, texsize )) ),
+        float_type( point(tex, index( lo.x, hi.y, lo.z, texsize )) ),
+        float_type( point(tex, index( hi.x, hi.y, lo.z, texsize )) ),
+        float_type( point(tex, index( lo.x, lo.y, hi.z, texsize )) ),
+        float_type( point(tex, index( hi.x, lo.y, hi.z, texsize )) ),
+        float_type( point(tex, index( lo.x, hi.y, hi.z, texsize )) ),
+        float_type( point(tex, index( hi.x, hi.y, hi.z, texsize )) )
     };
 
 
