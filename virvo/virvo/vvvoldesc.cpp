@@ -42,7 +42,6 @@
 #include "vvplatform.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
-#include "vvvecmath.h"
 #include "vvclock.h"
 #include "vvvoldesc.h"
 #include "mem/swap.h"
@@ -2042,7 +2041,6 @@ bool vvVolDesc::isChannelUsed(size_t m)
 */
 void vvVolDesc::crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s)
 {
-  ssize_t j, i;
   uint8_t* newRaw;
   uint8_t* rd;
   ssize_t xmin, xmax, ymin, ymax, zmin, zmax;

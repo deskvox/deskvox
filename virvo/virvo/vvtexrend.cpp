@@ -57,6 +57,8 @@
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
+#include "gl/util.h"
+
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
 
@@ -2181,10 +2183,8 @@ void vvTexRend::disableLUTMode()
 /** Render a volume entirely if probeSize=0 or a cubic sub-volume of size probeSize.
   @param mv        model-view matrix
 */
-void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
+void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
 {
-  vvMatrix invMV;                                 // inverse of model-view matrix
-  vvMatrix pm;                                    // OpenGL projection matrix
   math::vec3f vissize, vissize2;                  // full and half object visible sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
   math::vec3f texcoord[12];                       // intersection points in texture coordinate space [0..1]
@@ -2282,14 +2282,13 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Calculate inverted modelview matrix:
-  invMV = vvMatrix(mv);
-  invMV.invert();
+  math::mat4 invMV = inverse(mv);
 
   // Find eye position (object space):
   math::vec3f eye = getEyePosition();
 
   // Get projection matrix:
-  vvGLTools::getProjectionMatrix(&pm);
+  vvMatrix pm = gl::getProjectionMatrix();
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
@@ -2386,16 +2385,12 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     }
   }
 
-  vvVector3 texPoint;                             // arbitrary point on current texture
+  math::vec3 texPoint;                            // arbitrary point on current texture
   int drawn = 0;                                  // counter for drawn textures
-  vvVector3 deltahalf;
-  deltahalf = delta;
-  deltahalf.scale(0.5f);
+  math::vec3 deltahalf = delta * 0.5f;
 
   // Relative viewing position
-  vvVector3 releye;
-  releye = eye;
-  releye.sub(pos);
+  math::vec3 releye = eye - pos;
 
   // Volume render a 3D texture:
   if(voxelType == VV_PIX_SHD && _shader)
@@ -2414,7 +2409,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     // normal) and texture object (0..1):
     size_t isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
 
-    texPoint.add(delta);
+    texPoint += delta;
 
     if (isectCnt<3) continue;                     // at least 3 intersections needed for drawing
 
@@ -2512,12 +2507,12 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   vvGLTools::printGLError("Enter vvTexRend::renderTexBricks(const vvMatrix* mv)");
   vvMatrix pm;                                    // OpenGL projection matrix
   vvVector3 farthest;                             // volume vertex farthest from the viewer
-  vvVector3 delta;                                // distance vector between textures [object space]
-  math::vec3f normal;                             // normal vector of textures
-  math::vec3f origin;                             // origin (0|0|0) transformed to object space
-  math::vec3f probePosObj;                        // probe midpoint [object space]
-  math::vec3f probeSizeObj;                       // probe size [object space]
-  math::vec3f probeMin, probeMax;                 // probe min and max coordinates [object space]
+  math::vec3 delta;                               // distance vector between textures [object space]
+  math::vec3 normal;                              // normal vector of textures
+  math::vec3 origin;                              // origin (0|0|0) transformed to object space
+  math::vec3 probePosObj;                         // probe midpoint [object space]
+  math::vec3 probeSizeObj;                        // probe size [object space]
+  math::vec3 probeMin, probeMax;                  // probe min and max coordinates [object space]
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
@@ -2579,7 +2574,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   }
 
   delta = normal;
-  delta.scale(diagonal / ((float)numSlices));
+  delta *= math::vec3(diagonal / ((float)numSlices));
 
   // Compute farthest point to draw texture at:
   farthest = delta;
@@ -2602,7 +2597,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     vvVector3 normClipPoint;
     normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
     const float maxDist = farthest.distance(normClipPoint);
-    numSlices = size_t(maxDist / delta.length()) + 1;
+    numSlices = size_t(maxDist / length( delta )) + 1;
     temp = delta;
     temp.scale((float)(1 - static_cast<ptrdiff_t>(numSlices)));
     farthest = normClipPoint;
@@ -2610,7 +2605,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     if (_clipSingleSlice)
     {
       // Compute slice position:
-      delta.scale((float)(numSlices-1));
+      delta *= math::vec3((float)(numSlices-1));
       farthest.add(delta);
       numSlices = 1;
 
@@ -2649,7 +2644,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   {
     if (_isectType != CPU)
     {
-      _shader->setParameter1f("delta", delta.length());
+      _shader->setParameter1f("delta", length( delta ));
       _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
 
       glEnableClientState(GL_VERTEX_ARRAY);
@@ -2895,14 +2890,13 @@ void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, math::vec3f const& ey
   Spherical slices are surrounding the observer.
   @param mv       model-view matrix
 */
-void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
+void vvTexRend::renderTex3DSpherical(math::mat4 const& mv)
 {
   float  maxDist = 0.0;
   float  minDist = 0.0;
-  vvVector3 texSize;                              // size of 3D texture [object space]
-  vvVector3 texSize2;                             // half size of 3D texture [object space]
-  vvVector3 volumeVertices[8];
-  vvMatrix invView;
+  math::vec3 texSize;                             // size of 3D texture [object space]
+  math::vec3 texSize2;                            // half size of 3D texture [object space]
+  math::vec3 volumeVertices[8];
 
   vvDebugMsg::msg(3, "vvTexRend::renderTex3DSpherical()");
 
@@ -2919,8 +2913,7 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
     texSize2[i] = 0.5f * texSize[i];
   }
 
-  invView = vvMatrix(mv);
-  invView.invert();
+  math::mat4 invView = inverse(mv);
 
   // generates the vertices of the cube (volume) in world coordinates
   size_t vertexIdx = 0;
@@ -2935,15 +2928,17 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
         for (size_t k=0; k<3; ++k)
           volumeVertices[vertexIdx][k] =
             (volumeVertices[vertexIdx][k] * 2.0f - 1.0f) * texSize2[k];
-        volumeVertices[vertexIdx].multiply(mv);
+        math::vec4 tmp( volumeVertices[vertexIdx], 1.0f );
+        tmp = mv * tmp;
+        volumeVertices[vertexIdx] = tmp.xyz() / tmp.w;
         vertexIdx++;
   }
 
   // Determine maximal and minimal distance of the volume from the eyepoint:
-  maxDist = minDist = volumeVertices[0].length();
+  maxDist = minDist = length( volumeVertices[0] );
   for (size_t i = 1; i<7; i++)
   {
-    const float dist = volumeVertices[i].length();
+    float dist = length( volumeVertices[i] );
     if (dist > maxDist)  maxDist = dist;
     if (dist < minDist)  minDist = dist;
   }
@@ -2953,8 +2948,9 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
 
   // transfer the eyepoint to the object coordinates of the volume
   // to check whether the camera is inside the volume:
-  vvVector3 eye(0.0, 0.0, 0.0);
-  eye.multiply(invView);
+  math::vec4 eye4(0.0, 0.0, 0.0, 1.0);
+  eye4 = invView * eye4;
+  math::vec3 eye = eye4.xyz() / eye4.w;
   bool inside = true;
   for (size_t k=0; k<3; ++k)
   {
@@ -3028,9 +3024,6 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
 */
 void vvTexRend::renderTex2DSlices(float zz)
 {
-  vvVector3 normal;                               // normal vector for slices
-  vvVector3 size, size2;                          // full and half texture sizes
-  vvVector3 pos;                                  // object location
   float     texSpacing;                           // spacing for texture coordinates
   float     zPos;                                 // texture z position
   float     texStep;                              // step between texture indices
@@ -3043,15 +3036,13 @@ void vvTexRend::renderTex2DSlices(float zz)
   if (_clipMode == 1) activateClippingPlane();
 
   // Generate half object size as shortcut:
-  size = vd->getSize();
-  size2[0] = 0.5f * size[0];
-  size2[1] = 0.5f * size[1];
-  size2[2] = 0.5f * size[2];
+  math::vec3 size = vd->getSize();
+  math::vec3 size2 = size * 0.5f;
 
   numTextures = size_t(_quality * 100.0f);
   if (numTextures < 1) numTextures = 1;
 
-  normal.set(0.0f, 0.0f, 1.0f);
+  math::vec3 normal(0.0f, 0.0f, 1.0f);
   zPos = -size2[2];
   if (numTextures>1)                              // prevent division by zero
   {
@@ -3077,7 +3068,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   {
     zPos        = -zPos;
     texSpacing  = -texSpacing;
-    normal[2]   = -normal[2];
+    normal.z    = -normal.z;
   }
 
   if (instantClassification())
@@ -3116,11 +3107,11 @@ void vvTexRend::renderTex2DSlices(float zz)
 
     glBegin(GL_QUADS);
       glColor4f(1.0, 1.0, 1.0, 1.0);
-      glNormal3f(normal[0], normal[1], normal[2]);
-      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2[0],  size2[1], zPos);
-      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2[0], -size2[1], zPos);
-      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2[0], -size2[1], zPos);
-      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2[0],  size2[1], zPos);
+      glNormal3f(normal.x, normal.y, normal.z);
+      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2.x,  size2.y, zPos);
+      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2.x, -size2.y, zPos);
+      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2.x, -size2.y, zPos);
+      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2.x,  size2.y, zPos);
     glEnd();
 
     zPos += texSpacing;
@@ -3143,12 +3134,10 @@ void vvTexRend::renderTex2DSlices(float zz)
 */
 void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float zy, float zz)
 {
-  vvVector3 normal;                               // normal vector for slices
-  vvVector3 texTL, texTR, texBL, texBR;           // texture coordinates (T=top etc.)
-  vvVector3 objTL, objTR, objBL, objBR;           // object coordinates in world space
-  vvVector3 texSpacing;                           // distance between textures
-  vvVector3 pos;                                  // object location
-  vvVector3 size, size2;                          // full and half object sizes
+  math::vec3 normal;                              // normal vector for slices
+  math::vec3 texTL, texTR, texBL, texBR;          // texture coordinates (T=top etc.)
+  math::vec3 objTL, objTR, objBL, objBR;          // object coordinates in world space
+  math::vec3 texSpacing;                          // distance between textures
   float  texStep;                                 // step size for texture names
   float  texIndex;                                // textures index
   size_t numTextures;                             // number of textures drawn
@@ -3165,9 +3154,8 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
   if (numTextures < 2)  numTextures = 2;          // make sure that at least one slice is drawn to prevent division by zero
 
   // Generate half object size as a shortcut:
-  size = vd->getSize();
-  size2 = size;
-  size2.scale(0.5f);
+  math::vec3 size = vd->getSize();
+  math::vec3 size2 = size * 0.5f;
 
   // Initialize parameters upon principal viewing direction:
   switch (principal)
@@ -3177,25 +3165,25 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     z
       //     |__y
       //   x/
-      objTL.set(-size2[0],-size2[1], size2[2]);
-      objTR.set(-size2[0], size2[1], size2[2]);
-      objBL.set(-size2[0],-size2[1],-size2[2]);
-      objBR.set(-size2[0], size2[1],-size2[2]);
+      objTL = math::vec3(-size2.x,-size2.y, size2.z);
+      objTR = math::vec3(-size2.x, size2.y, size2.z);
+      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
+      objBR = math::vec3(-size2.x, size2.y,-size2.z);
 
-      texTL.set(texMin[1], texMax[2], 0.0f);
-      texTR.set(texMax[1], texMax[2], 0.0f);
-      texBL.set(texMin[1], texMin[2], 0.0f);
-      texBR.set(texMax[1], texMin[2], 0.0f);
+      texTL = math::vec3(texMin[1], texMax[2], 0.0f);
+      texTR = math::vec3(texMax[1], texMax[2], 0.0f);
+      texBL = math::vec3(texMin[1], texMin[2], 0.0f);
+      texBR = math::vec3(texMax[1], texMin[2], 0.0f);
 
-      texSpacing.set(size[0] / float(numTextures - 1), 0.0f, 0.0f);
+      texSpacing = math::vec3(size[0] / float(numTextures - 1), 0.0f, 0.0f);
       texStep = -1.0f * float(vd->vox[0] - 1) / float(numTextures - 1);
-      normal.set(1.0f, 0.0f, 0.0f);
+      normal = math::vec3(1.0f, 0.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures);
       if (zx<0)                                   // reverse order? draw right to left
       {
-        normal[0]       = -normal[0];
-        objTL[0]        = objTR[0] = objBL[0] = objBR[0] = size2[0];
-        texSpacing[0]   = -texSpacing[0];
+        normal.x        = -normal.x;
+        objTL.x         = objTR.x = objBL.x = objBR.x = size2.x;
+        texSpacing.x    = -texSpacing.x;
         texStep         = -texStep;
       }
       else
@@ -3209,25 +3197,25 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     x
       //     |__z
       //   y/
-      objTL.set( size2[0],-size2[1],-size2[2]);
-      objTR.set( size2[0],-size2[1], size2[2]);
-      objBL.set(-size2[0],-size2[1],-size2[2]);
-      objBR.set(-size2[0],-size2[1], size2[2]);
+      objTL = math::vec3( size2.x,-size2.y,-size2.z);
+      objTR = math::vec3( size2.x,-size2.y, size2.z);
+      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
+      objBR = math::vec3(-size2.x,-size2.y, size2.z);
 
-      texTL.set(texMin[2], texMax[0], 0.0f);
-      texTR.set(texMax[2], texMax[0], 0.0f);
-      texBL.set(texMin[2], texMin[0], 0.0f);
-      texBR.set(texMax[2], texMin[0], 0.0f);
+      texTL = math::vec3(texMin[2], texMax[0], 0.0f);
+      texTR = math::vec3(texMax[2], texMax[0], 0.0f);
+      texBL = math::vec3(texMin[2], texMin[0], 0.0f);
+      texBR = math::vec3(texMax[2], texMin[0], 0.0f);
 
-      texSpacing.set(0.0f, size[1] / float(numTextures - 1), 0.0f);
+      texSpacing = math::vec3(0.0f, size.y / float(numTextures - 1), 0.0f);
       texStep = -1.0f * float(vd->vox[1] - 1) / float(numTextures - 1);
-      normal.set(0.0f, 1.0f, 0.0f);
+      normal = math::vec3(0.0f, 1.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0]);
       if (zy<0)                                   // reverse order? draw top to bottom
       {
-        normal[1]       = -normal[1];
-        objTL[1]        = objTR[1] = objBL[1] = objBR[1] = size2[1];
-        texSpacing[1]   = -texSpacing[1];
+        normal.y        = -normal.y;
+        objTL.y         = objTR.y = objBL.y = objBR.y = size2.y;
+        texSpacing.y    = -texSpacing.y;
         texStep         = -texStep;
       }
       else
@@ -3242,25 +3230,25 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     y
       //     |__x
       //   z/
-      objTL.set(-size2[0], size2[1],-size2[2]);
-      objTR.set( size2[0], size2[1],-size2[2]);
-      objBL.set(-size2[0],-size2[1],-size2[2]);
-      objBR.set( size2[0],-size2[1],-size2[2]);
+      objTL = math::vec3(-size2.x, size2.y,-size2.z);
+      objTR = math::vec3( size2.x, size2.y,-size2.z);
+      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
+      objBR = math::vec3( size2.x,-size2.y,-size2.z);
 
-      texTL.set(texMin[0], texMax[1], 0.0f);
-      texTR.set(texMax[0], texMax[1], 0.0f);
-      texBL.set(texMin[0], texMin[1], 0.0f);
-      texBR.set(texMax[0], texMin[1], 0.0f);
+      texTL = math::vec3(texMin[0], texMax[1], 0.0f);
+      texTR = math::vec3(texMax[0], texMax[1], 0.0f);
+      texBL = math::vec3(texMin[0], texMin[1], 0.0f);
+      texBR = math::vec3(texMax[0], texMin[1], 0.0f);
 
-      texSpacing.set(0.0f, 0.0f, size[2] / float(numTextures - 1));
-      normal.set(0.0f, 0.0f, 1.0f);
+      texSpacing = math::vec3(0.0f, 0.0f, size.z / float(numTextures - 1));
+      normal = math::vec3(0.0f, 0.0f, 1.0f);
       texStep = -1.0f * float(vd->vox[2] - 1) / float(numTextures - 1);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0] + vd->vox[1]);
       if (zz<0)                                   // reverse order? draw front to back
       {
-        normal[2]       = -normal[2];
-        objTL[2]        = objTR[2] = objBL[2] = objBR[2] = size2[2];
-        texSpacing[2]   = -texSpacing[2];
+        normal.z        = -normal.z;
+        objTL.z         = objTR.z = objBL.z = objBR.z = size2.z;
+        texSpacing.z    = -texSpacing.z;
         texStep         = -texStep;
       }
       else                                        // draw back to front
@@ -3304,16 +3292,16 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 
     glBegin(GL_QUADS);
     glColor4f(1.0, 1.0, 1.0, 1.0);
-    glNormal3f(normal[0], normal[1], normal[2]);
-    glTexCoord2f(texTL[0], texTL[1]); glVertex3f(objTL[0], objTL[1], objTL[2]);
-    glTexCoord2f(texBL[0], texBL[1]); glVertex3f(objBL[0], objBL[1], objBL[2]);
-    glTexCoord2f(texBR[0], texBR[1]); glVertex3f(objBR[0], objBR[1], objBR[2]);
-    glTexCoord2f(texTR[0], texTR[1]); glVertex3f(objTR[0], objTR[1], objTR[2]);
+    glNormal3f(normal.x, normal.y, normal.z);
+    glTexCoord2f(texTL.x, texTL.y); glVertex3f(objTL.x, objTL.y, objTL.z);
+    glTexCoord2f(texBL.x, texBL.y); glVertex3f(objBL.x, objBL.y, objBL.z);
+    glTexCoord2f(texBR.x, texBR.y); glVertex3f(objBR.x, objBR.y, objBR.z);
+    glTexCoord2f(texTR.x, texTR.y); glVertex3f(objTR.x, objTR.y, objTR.z);
     glEnd();
-    objTL.add(texSpacing);
-    objBL.add(texSpacing);
-    objBR.add(texSpacing);
-    objTR.add(texSpacing);
+    objTL += texSpacing;
+    objBL += texSpacing;
+    objBR += texSpacing;
+    objTR += texSpacing;
 
     texIndex += texStep;
   }
@@ -3329,7 +3317,6 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 */
 void vvTexRend::renderVolumeGL()
 {
-  vvMatrix mv;                                    // current modelview matrix
   float zx, zy, zz;                               // base vector z coordinates
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
@@ -3397,7 +3384,7 @@ void vvTexRend::renderVolumeGL()
   }
 
   // Get OpenGL modelview matrix:
-  vvGLTools::getModelviewMatrix(&mv);
+  math::mat4 mv = gl::getModelviewMatrix();
 
   if (geomType != VV_BRICKS || !_showBricks)
   {

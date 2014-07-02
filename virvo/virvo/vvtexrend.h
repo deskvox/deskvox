@@ -197,8 +197,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType updateTextureBricks(ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t);
     void setGLenvironment() const;
     void unsetGLenvironment() const;
-    void renderTex3DSpherical(const vvMatrix& view);
-    void renderTex3DPlanar(const vvMatrix& mv);
+    void renderTex3DSpherical(virvo::math::mat4 const& mv);
+    void renderTex3DPlanar(virvo::math::mat4 const& mv);
     void renderTexBricks(const vvMatrix& mv);
     void renderTex2DSlices(float);
     void renderTex2DCubic(vvVecmath::AxisType, float, float, float);

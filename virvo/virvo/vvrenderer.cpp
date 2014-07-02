@@ -40,9 +40,12 @@
 #include "vvdebugmsg.h"
 #include "vvprintgl.h"
 
+#include "gl/util.h"
+
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
 
+namespace gl = virvo::gl;
 namespace math = virvo::math;
 
 
@@ -410,22 +413,20 @@ vvVolDesc* vvRenderer::getVolDesc()
   return vd;
 }
 
-vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
+vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(math::mat4 const& mv,
                                                         float& zx, float& zy, float& zz) const
 {
-  vvMatrix invMV;
-  invMV = mv;
-  invMV.invert();
+  math::mat4 invMV = inverse(mv);
 
-  math::vec3f eye = getEyePosition();
+  math::vec3 eye = getEyePosition();
 
-  math::vec3f normal;
-  math::vec3f origin;
+  math::vec3 normal;
+  math::vec3 origin;
   getObjNormal(normal, origin, eye, invMV);
 
-  zx = normal[0];
-  zy = normal[1];
-  zz = normal[2];
+  zx = normal.x;
+  zy = normal.y;
+  zz = normal.z;
 
   if (fabs(zx) > fabs(zy))
   {
@@ -1243,20 +1244,11 @@ math::vec3f vvRenderer::getProbeSize() const
 */
 math::vec3f vvRenderer::getEyePosition() const
 {
-  vvMatrix invPM;                                 // inverted projection matrix
-  vvMatrix invMV;                                 // inverted modelview matrix
-  vvVector4 projEye;                              // eye x invPM x invMV
+    math::mat4 invPM = inverse( gl::getProjectionMatrix() );
+    math::mat4 invMV = inverse( gl::getModelviewMatrix() );
 
-  vvDebugMsg::msg(3, "vvRenderer::getEyePosition()");
-
-  vvGLTools::getProjectionMatrix(&invPM);
-  vvGLTools::getModelviewMatrix(&invMV);
-  invPM.invert();
-  invMV.invert();
-  projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
-  projEye.multiply(invPM);
-  projEye.multiply(invMV);
-  return math::vec3f( math::vec4f(projEye)/projEye[3] );
+    math::vec4 projEye = invMV * ( invPM * math::vec4(0.0f, 0.0f, -1.0f, 0.0f) );
+    return projEye.xyz() / projEye.w;
 }
 
 //----------------------------------------------------------------------------

@@ -310,7 +310,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual vvVecmath::AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz) const;
+    virtual vvVecmath::AxisType getPrincipalViewingAxis(virvo::math::mat4 const& mv, float& zx, float& zy, float& zz) const;
 
     // Returns the current render target
     virvo::RenderTarget const* getRenderTarget() const {
