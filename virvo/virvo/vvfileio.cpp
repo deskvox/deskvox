@@ -51,6 +51,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <cstring>
+#include <algorithm>
 
 #include "vvfileio.h"
 #include "vvtoolshed.h"
@@ -4764,6 +4765,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   _sections = sec;
 
   std::string suffix = vvToolshed::extractExtension(vd->getFilename());
+  std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
 
   // Load files according to extension:
   if (suffix == "wl")
