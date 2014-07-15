@@ -1337,17 +1337,19 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
                     break;
                 }
                 break;
-              case 2:                             // 16 bit source
+              case 2: {                           // 16 bit source 
+                uint16_t s = *(uint16_t *)src;
                 switch (newBPC)                   // switch by destination voxel type
                 {
                   case 1:
-                    *dst = src[0];
+                    *dst = s >> 8;
                     break;
                   case 4:
-                    *((float*)dst) = (src[0] * 256.0f + src[1]) / 65535.0f;
+                    *((float*)dst) = s / 65535.0f;
                     break;
                 }
                 break;
+              }
               case 4:                             // float source
                 val = ts_clamp(*((float*)src), real[0], real[1]);
                 switch (newBPC)                   // switch by destination voxel type
@@ -1899,7 +1901,6 @@ void vvVolDesc::toggleEndianness(int frame)
   vvDebugMsg::msg(2, "vvVolDesc::toggleEndianness()");
   if (bpc==1) return;                             // done
 
-  raw.first();
   size_t startFrame=0;
   size_t endFrame=frames;
 
@@ -3631,7 +3632,7 @@ void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax)
         fMin = float(mi);
         fMax = float(ma);
         break;
-      case 2: vvToolshed::getMinMax16bitBE(getRaw(f), getFrameVoxels(), &mi, &ma);
+      case 2: vvToolshed::getMinMax16bitHost(getRaw(f), getFrameVoxels(), &mi, &ma);
         fMin = float(mi);
         fMax = float(ma);
         break;
@@ -3953,6 +3954,7 @@ void vvVolDesc::expandDataRange(bool verbose)
   vvDebugMsg::msg(2, "vvVolDesc::expandDataRange()");
 
   findMinMax(0, smin, smax);
+  //std::cerr << "expandDataRange: min: " << smin << ", max: " << smax << std::endl;
   zoomDataRange(-1, int(smin), int(smax), verbose);
 }
 
@@ -3995,9 +3997,9 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
     raw = getRaw(f);
     for (size_t i=0; i<frameSize; ++i)
     {
-      for (size_t c=0; c<chan; ++c)
+      for (int c=0; c<chan; ++c)
       {
-        if (c==static_cast<size_t>(channel) || channel<0)
+        if (channel<0 || c==channel)
         {
           switch (bpc)
           {
@@ -4008,12 +4010,11 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
               *raw = uint8_t(ival);
               break;
             case 2:
-              ival = (int(*raw) << 8) | int(*(raw+1));
+              ival = *(uint16_t *)raw;
               fval = float(ival);
               ival = int(65535.0f * (fval - fmin) / frange);
               ival = ts_clamp(ival, 0, 65535);
-              *raw = uint8_t(ival >> 8);
-              *(raw+1) = uint8_t(ival & 0xFF);
+              *(uint16_t *)raw = ival;
               break;
             default: assert(0); break;
           }

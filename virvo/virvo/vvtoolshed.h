@@ -194,7 +194,7 @@ class VIRVOEXPORT vvToolshed
     static long    getFileSize(const char*);
     static void    getMinMax(const float*, int, float*, float*);
     static void    getMinMax(const uchar*, int, int*, int*);
-    static void    getMinMax16bitBE(const uchar*, int, int*, int*);
+    static void    getMinMax16bitHost(const uchar*, int, int*, int*);
     static void    getMinMaxAlpha(const uchar*, int, int*, int*);
     static void    getMinMaxIgnore(const float*, int, float, float*, float*);
     static void    convertUChar2Float(const uchar*, float*, int);

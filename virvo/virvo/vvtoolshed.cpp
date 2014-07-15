@@ -1041,7 +1041,7 @@ void vvToolshed::getMinMax(const uchar* data, int elements, int* min, int* max)
     @param elements    number of 16 bit elements in source array
     @return minimum and maximum in min and max
 */
-void vvToolshed::getMinMax16bitBE(const uchar* data, int elements, int* min, int* max)
+void vvToolshed::getMinMax16bitHost(const uchar* data, int elements, int* min, int* max)
 {
   int i;
   int value;
@@ -1053,7 +1053,7 @@ void vvToolshed::getMinMax16bitBE(const uchar* data, int elements, int* min, int
 
   for (i=0; i<bytes; i+=2)
   {
-    value = (int(data[i]) << 8) | int(data[i+1]);
+    value = *(uint16_t *)(&data[i]);
     if (value > *max) *max = value;
     if (value < *min) *min = value;
   }
