@@ -1239,7 +1239,7 @@ math::vec3f vvRenderer::getEyePosition() const
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
   projEye.multiply(invPM);
   projEye.multiply(invMV);
-  return math::vec3f( math::vec4f(projEye) );
+  return math::vec3f( math::vec4f(projEye)/projEye[3] );
 }
 
 //----------------------------------------------------------------------------
