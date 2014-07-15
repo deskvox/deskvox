@@ -662,30 +662,6 @@ bool vvConv::readVolumeData()
 */
 void vvConv::modifyInputFile(vvVolDesc* v)
 {
-  if (setRange)
-  {
-    cerr << "Setting physical data value range." << endl;
-    v->real[0] = newRange[0];
-    v->real[1] = newRange[1];
-  }
-  if (autoRealRange)
-  {
-    float scalarMin, scalarMax;
-    cerr << "Automatically setting physical data value range." << endl;
-    v->findMinMax(0, scalarMin, scalarMax);
-    v->real[0] = scalarMin;
-    v->real[1] = scalarMax;
-  }
-  if (swap)
-  {
-    cerr << "Swapping bytes." << endl;
-    v->toggleEndianness();
-  }
-  if (sign)
-  {
-    cerr << "Toggle sign." << endl;
-    v->toggleSign();
-  }
   if (crop)
   {
     cerr << "Cropping data." << endl;
@@ -703,12 +679,6 @@ void vvConv::modifyInputFile(vvVolDesc* v)
     v->resize(newSize[0], newSize[1], newSize[2], ipt, true);
     cerr << endl;
   }
-  if (bpchan>-1)
-  {
-    cerr << "Converting bytes per channel: ";
-    v->convertBPC(bpchan, true);
-    cerr << endl;
-  }
   if (channels>-1)
   {
     cerr << "Changing number of channels: ";
@@ -717,7 +687,7 @@ void vvConv::modifyInputFile(vvVolDesc* v)
   }
   if (extractChannel)
   {
-    cerr << "Extracting 4th channel: ";
+    cerr << "Extracting channel no. " << extract << ": ";
     v->extractChannel(extract, true);
     cerr << endl;
   }
@@ -730,6 +700,28 @@ void vvConv::modifyInputFile(vvVolDesc* v)
 */
 void vvConv::modifyOutputFile(vvVolDesc* v)
 {
+  if (croptime)
+  {
+    v->cropTimesteps(cropSteps[0], cropSteps[1]);
+  }
+  if (swap)
+  {
+    cerr << "Swapping bytes." << endl;
+    v->toggleEndianness();
+  }
+  if (sign)
+  {
+    cerr << "Toggle sign." << endl;
+    v->toggleSign();
+  }
+  if (autoRealRange)
+  {
+    float scalarMin, scalarMax;
+    cerr << "Automatically setting physical data value range." << endl;
+    v->findMinMax(0, scalarMin, scalarMax);
+    v->real[0] = scalarMin;
+    v->real[1] = scalarMax;
+  }
   if (invertVoxelOrder)
   {
     cerr << "Inverting voxel order" << endl;
@@ -808,10 +800,6 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     }
     else cerr << "Can draw lines only in 1 byte per voxel datasets." << endl;
   }
-  if (croptime)
-  {
-    v->cropTimesteps(cropSteps[0], cropSteps[1]);
-  }
   if (removeTF)
   {
     for (std::vector<vvTFWidget*>::const_iterator it = v->tf._widgets.begin();
@@ -824,6 +812,12 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (fillRange)
   {
     v->expandDataRange(true);
+  }
+  if (setRange)
+  {
+    cerr << "Setting physical data value range." << endl;
+    v->real[0] = newRange[0];
+    v->real[1] = newRange[1];
   }
   if (zoomData)
   {
@@ -853,10 +847,16 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     delete fio;
     delete blendVD;
   }
+  if (bpchan>-1)
+  {
+    cerr << "Converting bytes per channel: ";
+    v->convertBPC(bpchan, true);
+    cerr << endl;
+  }
   if (makeIcon) // make icon from data set
   {
     cerr << "Making icon from slices" << endl;
-    vd->makeIcon(makeIconSize);
+    v->makeIcon(makeIconSize);
   }
   if (setIcon)  // load icon from file
   {
@@ -869,12 +869,12 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     }
     else
     {  
-      vd->iconSize = ts_min(iconVD->vox[0], iconVD->vox[1]);
+      v->iconSize = ts_min(iconVD->vox[0], iconVD->vox[1]);
       uint8_t* raw = iconVD->getRaw();
-      delete[] vd->iconData;
-      vd->iconData = new uint8_t[vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP];
+      delete[] v->iconData;
+      v->iconData = new uint8_t[v->iconSize * v->iconSize * vvVolDesc::ICON_BPP];
       vvToolshed::resample(raw, iconVD->vox[0], iconVD->vox[1], iconVD->bpc * iconVD->chan, 
-        vd->iconData, vd->iconSize, vd->iconSize, vvVolDesc::ICON_BPP);
+        v->iconData, v->iconSize, v->iconSize, vvVolDesc::ICON_BPP);
     }
     delete fio;
     delete iconVD;
@@ -890,7 +890,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     }
     else
     {  
-      vd->merge(addVD, vvVolDesc::VV_MERGE_CHAN2VOL);
+      v->merge(addVD, vvVolDesc::VV_MERGE_CHAN2VOL);
     }
     delete fio;
     delete addVD;
