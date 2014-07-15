@@ -2246,6 +2246,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   int    rowsPerStrip=0;                          // rows per strip
   int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
   ErrorType err = OK;                             // error
+  bool fileBigEndian = endian == virvo::serialization::VV_BIG_END; // is file big endian?
 
   // process IFD
   int numEntries = virvo::serialization::read16(fp, endian);
@@ -2390,7 +2391,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
-    if (!machineBigEndian) vd->toggleEndianness(vd->frames-1);
+    if (machineBigEndian != fileBigEndian) vd->toggleEndianness(vd->frames-1);
     if (planarConfiguration==2) vd->convertRGBPlanarToRGBInterleaved();
     if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
     {
@@ -2437,7 +2438,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     delete[] tilePos;
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
-    if (!machineBigEndian) vd->toggleEndianness(vd->frames-1);
+    if (machineBigEndian != fileBigEndian) vd->toggleEndianness(vd->frames-1);
   }
   delete[] stripOffsets;
   delete[] stripByteCounts;
