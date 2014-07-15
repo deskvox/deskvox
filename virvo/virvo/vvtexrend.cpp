@@ -3339,7 +3339,7 @@ void vvTexRend::renderVolumeGL()
   if (_isROIUsed)
   {
     math::vec3f probeSizeObj = size * roi_size_;
-    drawBoundingBox(probeSizeObj, roi_size_, _probeColor);
+    drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
   }
   if (_clipMode == 1 && _clipPlanePerimeter)
   {
