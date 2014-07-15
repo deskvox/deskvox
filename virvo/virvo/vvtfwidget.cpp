@@ -154,7 +154,7 @@ vvVector3 vvTFWidget::pos() const
 
 void vvTFWidget::readName(std::ifstream& file)
 {
-  char tmpName[128];
+  char tmpName[128] = "";
   if (file >> tmpName)
   {
     setName(tmpName);
