@@ -210,6 +210,10 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_CLIP_PLANE_NORMAL:
     clip_plane_normal_ = value;
+    if ( math::length(clip_plane_normal_) < 1e-20 )
+    {
+        clip_plane_normal_ = math::vec3f(0.0f, 0.0f, 1.0f);
+    }
     clip_plane_normal_ = math::normalize( clip_plane_normal_ );
     if ( math::length(clip_plane_normal_) < 0.5f )
     {
