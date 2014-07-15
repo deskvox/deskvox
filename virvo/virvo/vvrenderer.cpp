@@ -493,6 +493,19 @@ void vvRenderer::getObjNormal(math::vec3f& normal, math::vec3f& origin,
     normal = -objDir;
   }
 
+  if (normal == math::vec3f(0.f))
+  {
+    normal = -viewDir;
+  }
+  if (normal == math::vec3f(0.f))
+  {
+    normal = -objDir;
+  }
+  if (normal == math::vec3f(0.f))
+  {
+    normal = math::vec3f(0.f, 0.f, 1.f);
+  }
+
   normal = normalize(normal);
 }
 
