@@ -2073,8 +2073,8 @@ void vvVolDesc::crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssiz
   {
     rd = raw.getData();
     newRaw = new uint8_t[newSliceSize * newSlices];
-    for (j=0; j<newSlices; ++j)
-      for (i=0; i<newHeight; ++i)
+    for (ssize_t j=0; j<newSlices; ++j)
+      for (ssize_t i=0; i<newHeight; ++i)
     {
       src = rd + (j + zmin) * oldSliceSize +
         (i + ymin) * vox[0] * getBPV() + xmin * getBPV();
@@ -2086,6 +2086,11 @@ void vvVolDesc::crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssiz
     else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
     raw.next();
   }
+
+  // set new center
+  pos[0] += 0.5f*dist[0]*(xmin+xmax-vox[0]);
+  pos[1] += 0.5f*dist[1]*(ymin+ymax-vox[1]);
+  pos[2] += 0.5f*dist[2]*(zmin+zmax-vox[2]);
 
   // Set new sizes:
   vox[0] = newWidth;
