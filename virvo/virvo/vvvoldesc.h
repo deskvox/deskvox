@@ -342,7 +342,7 @@ class VIRVOEXPORT vvVolDesc
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
     size_t currentFrame;                          ///< current animation frame
     mutable vvSLList<uint8_t*> raw;               ///< pointer list to raw volume data - mutable because of Java style iterators
-    std::vector<size_t> rawFrameNumber;           ///< frame numbers (if frames do not come in sequence)
+    std::vector<int> rawFrameNumber;           ///< frame numbers (if frames do not come in sequence)
     std::vector< std::string > channelNames;      ///< names of data channels
 
     void initialize();

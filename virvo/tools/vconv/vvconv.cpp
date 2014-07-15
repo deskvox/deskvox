@@ -40,9 +40,7 @@ using namespace std;
 /// Constructor
 vvConv::vvConv()
 {
-  int i;
-
-  vd = new vvVolDesc();
+  vd = NULL;
   srcFile       = NULL;
   dstFile       = NULL;
   files         = 1;
@@ -135,7 +133,7 @@ vvConv::vvConv()
   endtime = 0;
   mergeType     = 0;
 
-  for (i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     chan[i] = -1;
     cropPos[i]   = 0;
@@ -151,7 +149,7 @@ vvConv::vvConv()
     zoomRange[i] = 0;
     extract[i]   = 0.0f;
   }
-  for (i=0; i<2; ++i)
+  for (int i=0; i<2; ++i)
   {
     cropSteps[i]  = 0;
 		swapChan[i]   = 0;
@@ -178,7 +176,6 @@ bool vvConv::readVolumeData()
   int   file  = 0;            // index of current file
   bool  done = false;
   vvFileIO::ErrorType error;
-  int i;
 
   vvDebugMsg::msg(1, "vvConv::readVolumeData()");
 
@@ -583,28 +580,25 @@ bool vvConv::readVolumeData()
     // Make data modifications for each input file:
     modifyInputFile(newVD);
 
-    // Merge new data to previous data:
-    if (newVD->vox[2] == 1)
+    if (vd)
     {
-      if (mergeType==2)
-      {
-        vd->merge(newVD, vvVolDesc::VV_MERGE_VOL2ANIM);
-      }
-      else vd->merge(newVD, vvVolDesc::VV_MERGE_SLABS2VOL);
+      size_t sz = newVD->getFrameBytes();
+      uint8_t *frame = new uint8_t[sz];
+      memcpy(frame, newVD->getRaw(), sz);
+      vd->addFrame(frame, vvVolDesc::ARRAY_DELETE);
+      ++vd->frames;
+      delete newVD;
     }
     else
     {
-      if (mergeType==1) cerr << "Cannot merge volumes to another volume." << endl;
-      else vd->merge(newVD, vvVolDesc::VV_MERGE_VOL2ANIM);
+      vd = newVD;
     }
-
-    delete newVD;       // now the new VD can be released
 
     // Find the next file:
     ++file;
     if (file < files || files==0) 
     {
-      for (i=0; i<increment && !done; ++i)
+      for (int i=0; i<increment && !done; ++i)
       {
         if (!vvToolshed::increaseFilename(filename))
         {
@@ -623,6 +617,12 @@ bool vvConv::readVolumeData()
   }
   delete[] filename;
   delete fio;
+
+  if (done && vd->frames>0) {
+    if (vd->vox[2] == 1 && mergeType != 2) {
+      vd->mergeFrames();
+    }
+  }
 
   // Import transfer functions:
   if (importTF)
@@ -730,8 +730,6 @@ void vvConv::modifyInputFile(vvVolDesc* v)
 */
 void vvConv::modifyOutputFile(vvVolDesc* v)
 {
-  int i;
-
   if (invertVoxelOrder)
   {
     cerr << "Inverting voxel order" << endl;
@@ -767,13 +765,13 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (setDist)
   {
     cerr << "Setting distance values." << endl;
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
       v->dist[i] = newDist[i];
   }
   if (setPos)
   {
     cerr << "Setting position values." << endl;
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
       v->pos[i] = posObj[i];
   }
   if (shift)
@@ -789,9 +787,8 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (drawBox)
   {
-    uint8_t* col;
-    col = new uint8_t[v->bpc];
-    for (size_t i=0; i<v->bpc; ++i)
+    uint8_t* col = new uint8_t[v->bpc];
+    for (unsigned i=0; i<v->bpc; ++i)
     {
       col[i] = uint8_t(boxColor);
     }
@@ -1091,7 +1088,6 @@ bool vvConv::writeVolumeData()
 bool vvConv::parseCommandLine(int argc, char** argv)
 {
   int arg;    // index of currently processed command line argument
-  int i;
 
   // Parse command line options:
   arg = 0;
@@ -1306,7 +1302,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-resize")==0)
     {
       resize = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1325,7 +1321,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-extractchannel")==0)
     {
       extractChannel = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1423,7 +1419,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-dist")==0)
     {
       setDist = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1442,7 +1438,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-realrange")==0)
     {
       setRange = true;
-      for (i=0; i<2; ++i)
+      for (int i=0; i<2; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1461,7 +1457,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-crop")==0)
     {
       crop = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1475,7 +1471,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           return false;
         }
       }
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1494,7 +1490,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-croptime")==0)
     {
       croptime = true;
-      for (i=0; i<2; ++i)
+      for (int i=0; i<2; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1513,7 +1509,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-drawline")==0)
     {
       drawLine = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1527,7 +1523,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           return false;
         }
       }
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1557,7 +1553,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-drawbox")==0)
     {
       drawBox = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1571,7 +1567,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           return false;
         }
       }
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1601,7 +1597,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-shift")==0)
     {
       shift = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1756,7 +1752,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-zoomdata")==0)
     {
       zoomData = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1879,7 +1875,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-pos")==0)
     {
       setPos = true;
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
@@ -1909,7 +1905,7 @@ bool vvConv::parseCommandLine(int argc, char** argv)
         return false;
       }
       makeVolume = atoi(argv[arg]);
-      for (i=0; i<3; ++i)
+      for (int i=0; i<3; ++i)
       {
         if ((++arg)>=argc) 
         {
