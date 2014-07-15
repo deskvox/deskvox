@@ -782,16 +782,14 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
   uint8_t* encoded = NULL;                        // encoded volume data
-  size_t frames;                                  // volume animation frames
-  size_t frameSize;                               // frame size
   size_t encodedSize;                             // number of bytes in encoded array
 
   vvDebugMsg::msg(1, "vvFileIO::saveXVFFile()");
 
   // Prepare variables:
-  frames = vd->frames;
+  size_t frames = vd->frames; // volume animation frames
   if (frames==0) return VD_ERROR;
-  frameSize = vd->getFrameBytes();
+  size_t frameSize = vd->getFrameBytes(); // frame size
 
   // Open file:
                                                   // now open file to write
@@ -806,7 +804,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
 
   // Write header:
   fprintf(fp, "XVF\n");
-  fprintf(fp, "VERSION %2.1f\n", 2.0f);
+  fprintf(fp, "VERSION %2.1f\n", 3.0f);
   fprintf(fp, "VOXELS %d %d %d\n", static_cast<int32_t>(vd->vox[0]), static_cast<int32_t>(vd->vox[1]), static_cast<int32_t>(vd->vox[2]));
   fprintf(fp, "TIMESTEPS %d\n", static_cast<int32_t>(vd->frames));
   fprintf(fp, "BPC %d\n", static_cast<int32_t>(vd->bpc));
@@ -833,7 +831,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   }
 
   // Write icon:
-  fprintf(fp, "ICON %d %d\n", static_cast<int32_t>(vd->iconSize), static_cast<int32_t>(vd->iconSize));
+  fprintf(fp, "ICON %lu %lu\n", static_cast<unsigned long>(vd->iconSize), static_cast<unsigned long>(vd->iconSize));
   if (vd->iconSize>0)
   {
     size_t iconBytes = vd->iconSize * vd->iconSize * static_cast<size_t>(vvVolDesc::ICON_BPP);
@@ -841,7 +839,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     vvToolshed::ErrorType err = vvToolshed::encodeRLE(encodedIcon, vd->iconData, iconBytes, vvVolDesc::ICON_BPP, iconBytes, &encodedSize);
     if (err == vvToolshed::VV_OK)                           // compression possible?
     {
-      virvo::serialization::write32(fp, static_cast<uint32_t>(encodedSize));       // write length of encoded icon
+      virvo::serialization::write64(fp, encodedSize);       // write length of encoded icon
       if (fwrite(encodedIcon, 1, encodedSize, fp) != encodedSize)
       {
         cerr << "Error: Cannot write compressed icon data to file." << endl;
@@ -852,7 +850,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     else
     {
-      virvo::serialization::write32(fp, 0);                 // write zero to indicate unencoded icon
+      virvo::serialization::write64(fp, 0);                 // write zero to indicate unencoded icon
       if (fwrite(vd->iconData, 1, iconBytes, fp) != iconBytes)
       {
         cerr << "Error: Cannot write uncompressed icon data to file." << endl;
@@ -883,7 +881,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
       vvToolshed::ErrorType err = vvToolshed::encodeRLE(encoded, raw, frameSize, vd->bpc * vd->chan, frameSize, &encodedSize);
       if (err == vvToolshed::VV_OK)                         // compression possible?
       {
-        virvo::serialization::write32(fp, static_cast<uint32_t>(encodedSize));     // write length of encoded frame
+        virvo::serialization::write64(fp, encodedSize);     // write length of encoded frame
         if (fwrite(encoded, 1, encodedSize, fp) != encodedSize)
         {
           cerr << "Error: Cannot write compressed voxel data to file." << endl;
@@ -894,7 +892,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
       }
       else                                        // no compression possible -> store unencoded
       {
-        virvo::serialization::write32(fp, 0);     // write zero to mark as unencoded
+        virvo::serialization::write64(fp, 0);     // write zero to mark as unencoded
         if (fwrite(raw, 1, frameSize, fp) != frameSize)
         {
           cerr << "Error: Cannot write uncompressed voxel data to file." << endl;
@@ -906,7 +904,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     else                                          // no compression
     {
-      virvo::serialization::write32(fp, 0);       // write zero to mark as unencoded
+      virvo::serialization::write64(fp, 0);       // write zero to mark as unencoded
       if (fwrite(raw, 1, frameSize, fp) != frameSize)
       {
         cerr << "Error: Cannot write voxel data to file." << endl;
@@ -937,6 +935,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   bool done;
   size_t encodedSize;                             // size of encoded data array
   bool bigEnd = true;
+  float xvfVersion = 3.0;
+  bool io32bit = false;
 
   vvDebugMsg::msg(1, "vvFileIO::loadXVFFile()");
 
@@ -990,6 +990,12 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
         cerr << "Reading XVF file version " << tok.nval << endl;
+        xvfVersion = tok.nval;
+        assert(xvfVersion >= 2.0);
+        assert(xvfVersion <= 3.0);
+        if (xvfVersion == 2.0) {
+          io32bit = true;
+        }
       }
       else if (strcmp(tok.sval, "VOXELS")==0)
       {
@@ -1110,7 +1116,11 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
           vd->iconData = new uint8_t[iconBytes];
           file.seekg(tok.getFilePos(), file.beg);
-          size_t encodedSize = virvo::serialization::read32(file);
+          size_t encodedSize = 0;
+          if (io32bit)
+            encodedSize = virvo::serialization::read32(file);
+          else
+            encodedSize = virvo::serialization::read64(file);
           if (encodedSize>0)                      // compressed icon?
           {
             uint8_t* encoded = new uint8_t[encodedSize];
@@ -1177,7 +1187,10 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
     for (size_t f=0; f<vd->frames; ++f)
     {
       raw = new uint8_t[frameSize];                 // create new data space for volume data
-      encodedSize = virvo::serialization::read32(file);
+      if (io32bit)
+        encodedSize = virvo::serialization::read32(file);
+      else
+        encodedSize = virvo::serialization::read64(file);
       if (encodedSize>0)
       {
         file.read(reinterpret_cast< char* >(encoded), encodedSize);
@@ -2216,9 +2229,6 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
   }
   fclose(fp);
-  if (vd->vox[2] == 1 && vd->frames > 1) {
-    vd->mergeFrames();
-  }
   return err;
 }
 

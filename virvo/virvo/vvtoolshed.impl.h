@@ -100,6 +100,13 @@ inline uint32_t virvo::serialization::read32(std::ifstream& src, virvo::serializ
   return val;
 }
 
+inline uint64_t virvo::serialization::read64(std::ifstream& src, virvo::serialization::EndianType end)
+{
+  uint64_t val = 0;
+  read(src, &val, end);
+  return val;
+}
+
 inline size_t virvo::serialization::write8(uint8_t* dst, uint8_t val)
 {
   return write(dst, val);
