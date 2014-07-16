@@ -2090,8 +2090,8 @@ void vvVolDesc::crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssiz
 
   // set new center
   pos[0] += 0.5f*dist[0]*(xmin+xmax-vox[0]);
-  pos[1] += 0.5f*dist[1]*(ymin+ymax-vox[1]);
-  pos[2] += 0.5f*dist[2]*(zmin+zmax-vox[2]);
+  pos[1] -= 0.5f*dist[1]*(ymin+ymax-vox[1]);
+  pos[2] -= 0.5f*dist[2]*(zmin+zmax-vox[2]);
 
   // Set new sizes:
   vox[0] = newWidth;
