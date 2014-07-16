@@ -243,6 +243,14 @@ vvTFWidget::WidgetType vvTFWidget::getWidgetType(const char* str)
   }
 }
 
+void vvTFWidget::mapFrom01(float min, float max)
+{
+  for (int i=0; i<3; ++i)
+  {
+    _pos[i] = min + _pos[i] * (max - min);
+  }
+}
+
 //============================================================================
 
 vvTFBell::vvTFBell() : vvTFWidget()
@@ -757,6 +765,14 @@ void vvTFPyramid::setOwnColor(bool own)
   _ownColor = own;
 }
 
+void vvTFPyramid::mapFrom01(float min, float max)
+{
+  vvTFWidget::mapFrom01(min, max);
+
+  _top *= max - min;
+  _bottom *= max - min;
+}
+
 //============================================================================
 
 vvTFColor::vvTFColor() : vvTFWidget()
@@ -939,6 +955,13 @@ float vvTFSkip::getOpacity(float x, float y, float z)
       (dim<2 || (y>=_min[1] && y<=_max[1])) &&
       (dim<3 || (z>=_min[2] && z<=_max[2]))) return 0.0f;
   else return -1.0f;
+}
+
+void vvTFSkip::mapFrom01(float min, float max)
+{
+  vvTFWidget::mapFrom01(min, max);
+
+  _size *= max - min;
 }
 
 //============================================================================
