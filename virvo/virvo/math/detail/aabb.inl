@@ -5,6 +5,23 @@ namespace virvo
 namespace math
 {
 
+//--------------------------------------------------------------------------------------------------
+// aabb members
+//
+
+template < typename T >
+bool base_aabb< T >::contains(typename base_aabb< T >::vec_type const& v) const
+{
+    return v.x >= min.x && v.x <= max.x
+        && v.y >= min.y && v.y <= max.y
+        && v.z >= min.z && v.z <= max.z;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Geometric functions
+//
+
 template < typename T >
 base_aabb< T > combine(base_aabb< T > const& a, base_aabb< T > const& b)
 {

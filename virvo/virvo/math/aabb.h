@@ -50,6 +50,8 @@ public:
         return max;
     }
 
+    bool contains(vec_type const& v) const;
+
 };
 
 } // math
