@@ -1,6 +1,15 @@
-#pragma once
+#ifndef VV_MATH_AABB_H
+#define VV_MATH_AABB_H
 
 #include "vector.h"
+
+#include <virvo/vvmacros.h>
+
+#if VV_CXXLIB_HAS_HDR_ARRAY
+#include <array>
+#else
+#include <boost/array.hpp>
+#endif
 
 namespace virvo
 {
@@ -15,26 +24,31 @@ class base_aabb
 {
 public:
 
-  inline base_aabb(vector< 3, T > const& min, vector< 3, T > const& max)
-    : m_min(min)
-    , m_max(max)
-  {
-  }
+    typedef vector< 3, T > vec_type;
+#if VV_CXXLIB_HAS_HDR_ARRAY
+    typedef std::array< vec_type, 8 > vertex_list;
+#else
+    typedef boost::array< vec_type, 8 > vertex_list;
+#endif
 
-  inline vector< 3, T > getMin() const
-  {
-    return m_min;
-  }
+    vec_type min;
+    vec_type max;
 
-  inline vector< 3, T > getMax() const
-  {
-    return m_max;
-  }
+    inline base_aabb(vec_type const& min, vec_type const& max)
+        : min(min)
+        , max(max)
+    {
+    }
 
-private:
+    inline vec_type getMin() const
+    {
+        return min;
+    }
 
-  vector< 3, T > m_min;
-  vector< 3, T > m_max;
+    inline vec_type getMax() const
+    {
+        return max;
+    }
 
 };
 
@@ -43,5 +57,8 @@ private:
 
 } // virvo
 
+#include "detail/aabb.inl"
+
+#endif
 
 

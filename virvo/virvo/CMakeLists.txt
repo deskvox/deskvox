@@ -93,6 +93,7 @@ set(VIRVO_HEADERS
   gl/util.h
 
   math/detail/simd/matrix4.inl
+  math/detail/aabb.inl
   math/detail/math.h
   math/detail/matrix4.inl
   math/detail/rectangle.inl

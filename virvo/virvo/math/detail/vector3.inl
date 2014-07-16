@@ -285,6 +285,23 @@ VV_FORCE_INLINE vector< 3, T > normalize(vector< 3, T > const& v)
 }
 
 
+//--------------------------------------------------------------------------------------------------
+// Misc.
+//
+
+template < typename T >
+VV_FORCE_INLINE vector< 3, T > min(vector< 3, T > const& u, vector< 3, T > const& v)
+{
+    return vector< 3, T >( min(u.x, v.x), min(u.y, v.y), min(u.z, v.z) );
+}
+
+template < typename T >
+VV_FORCE_INLINE vector< 3, T > max(vector< 3, T > const& u, vector< 3, T > const& v)
+{
+    return vector< 3, T >( max(u.x, v.x), max(u.y, v.y), max(u.z, v.z) );
+}
+
+
 } // math
 
 
