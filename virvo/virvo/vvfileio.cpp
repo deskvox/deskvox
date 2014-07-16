@@ -2186,7 +2186,7 @@ struct vvTifData
    bool parseDescription()
    {
       if (boost::starts_with(description, "ImageJ")) {
-         std::cerr << "description: " << description << std::endl;
+         //std::cerr << "description: " << description << std::endl;
          const std::string spacing("spacing=");
          std::string::size_type pos = description.find(spacing);
          if (pos != std::string::npos) {
@@ -2366,10 +2366,10 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       else
       {
         if (dataType==4) {
-          std::vector<long> data = tifGetData<long>(fp, value, numValues, endian);
+          std::vector<uint32_t> data = tifGetData<uint32_t>(fp, value, numValues, endian);
           vd->bpc = data[0]/8;
         } else if (dataType==3) {
-          std::vector<ushort> data = tifGetData<ushort>(fp, value, numValues, endian);
+          std::vector<uint16_t> data = tifGetData<uint16_t>(fp, value, numValues, endian);
           vd->bpc = data[0]/8;
         }
       }
@@ -2455,6 +2455,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
             << value << dec << endl;
       }
       break;
+    }
   }
 
   size_t strips = size_t(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
