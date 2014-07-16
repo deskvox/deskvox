@@ -192,11 +192,11 @@ class VIRVOEXPORT vvToolshed
     static bool    isFile(const char*);
     static bool    isDirectory(const char*);
     static long    getFileSize(const char*);
-    static void    getMinMax(const float*, int, float*, float*);
-    static void    getMinMax(const uchar*, int, int*, int*);
-    static void    getMinMax16bitHost(const uchar*, int, int*, int*);
-    static void    getMinMaxAlpha(const uchar*, int, int*, int*);
-    static void    getMinMaxIgnore(const float*, int, float, float*, float*);
+    static void    getMinMax(const float*, size_t, float*, float*);
+    static void    getMinMax(const uchar*, size_t, int*, int*);
+    static void    getMinMax16bitHost(const uchar*, size_t, int*, int*);
+    static void    getMinMaxAlpha(const uchar*, size_t, int*, int*);
+    static void    getMinMaxIgnore(const float*, size_t, float, float*, float*);
     static void    convertUChar2Float(const uchar*, float*, int);
     static void    convertFloat2UChar(const float*, uchar*, int);
     static void    convertFloat2UCharClamp(const float*, uchar*, int, float, float);

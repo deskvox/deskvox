@@ -1021,14 +1021,12 @@ long vvToolshed::getFileSize(const char* filename)
     @param elements    number of bytes in source array
     @return minimum and maximum in min and max
 */
-void vvToolshed::getMinMax(const uchar* data, int elements, int* min, int* max)
+void vvToolshed::getMinMax(const uchar* data, size_t elements, int* min, int* max)
 {
-  int i;
-
   *min = 255;
   *max = 0;
 
-  for (i=0; i<elements; ++i)
+  for (size_t i=0; i<elements; ++i)
   {
     if (data[i] > *max) *max = data[i];
     if (data[i] < *min) *min = data[i];
@@ -1041,17 +1039,15 @@ void vvToolshed::getMinMax(const uchar* data, int elements, int* min, int* max)
     @param elements    number of 16 bit elements in source array
     @return minimum and maximum in min and max
 */
-void vvToolshed::getMinMax16bitHost(const uchar* data, int elements, int* min, int* max)
+void vvToolshed::getMinMax16bitHost(const uchar* data, size_t elements, int* min, int* max)
 {
-  int i;
   int value;
-  int bytes;
 
   *min = 65535;
   *max = 0;
-  bytes = 2 * elements;
+  size_t bytes = 2 * elements;
 
-  for (i=0; i<bytes; i+=2)
+  for (size_t i=0; i<bytes; i+=2)
   {
     value = *(uint16_t *)(&data[i]);
     if (value > *max) *max = value;
@@ -1066,16 +1062,13 @@ void vvToolshed::getMinMax16bitHost(const uchar* data, int elements, int* min, i
     @param elements    number of RGBA elements in source array
     @return minimum and maximum of the alpha component in min and max
 */
-void vvToolshed::getMinMaxAlpha(const uchar* data, int elements, int* min, int* max)
+void vvToolshed::getMinMaxAlpha(const uchar* data, size_t elements, int* min, int* max)
 {
-  int i;
-  int bytes;
-
   *min = 255;
   *max = 0;
-  bytes = 4 * elements;
+  size_t bytes = 4 * elements;
 
-  for (i=3; i<bytes; i+=4)
+  for (size_t i=3; i<bytes; i+=4)
   {
     if (data[i] > *max) *max = data[i];
     if (data[i] < *min) *min = data[i];
@@ -1088,14 +1081,12 @@ void vvToolshed::getMinMaxAlpha(const uchar* data, int elements, int* min, int* 
     @param elements    number of elements in source array
     @return minimum and maximum in min and max
 */
-void vvToolshed::getMinMax(const float* data, int elements, float* min, float* max)
+void vvToolshed::getMinMax(const float* data, size_t elements, float* min, float* max)
 {
-  int i;
-
   *min = FLT_MAX;
   *max = -(*min);
 
-  for (i=0; i<elements; ++i)
+  for (size_t i=0; i<elements; ++i)
   {
     if (data[i] > *max) *max = data[i];
     if (data[i] < *min) *min = data[i];
@@ -1111,15 +1102,13 @@ void vvToolshed::getMinMax(const float* data, int elements, float* min, float* m
     @param ignore      value which is to be ignored (e.g, FLT_MAX)
     @return minimum and maximum in min and max
 */
-void vvToolshed::getMinMaxIgnore(const float* data, int elements, float ignore,
+void vvToolshed::getMinMaxIgnore(const float* data, size_t elements, float ignore,
 float* min, float* max)
 {
-  int i;
-
   *min = FLT_MAX;
   *max = -(*min);
 
-  for (i=0; i<elements; ++i)
+  for (size_t i=0; i<elements; ++i)
   {
     if (data[i] != ignore)
     {
