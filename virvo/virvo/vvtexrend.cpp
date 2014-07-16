@@ -2206,10 +2206,6 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
   if (!extTex3d) return;                          // needs 3D texturing extension
 
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
-
   // determine visible size and half object size as shortcut
   vvssize3 minVox = _visibleRegion.getMin();
   vvssize3 maxVox = _visibleRegion.getMax();
@@ -2229,13 +2225,6 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     vissize2[i]   = 0.5f * vissize[i];
   }
   math::vec3f pos = vd->pos + center;
-
-  // Calculate inverted modelview matrix:
-  invMV = vvMatrix(mv);
-  invMV.invert();
-
-  // Find eye position (object space):
-  math::vec3f eye = getEyePosition();
 
   if (_isROIUsed)
   {
@@ -2287,6 +2276,17 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   {
     probeTexels = math::vec3f( (float)vd->vox[0], (float)vd->vox[1], (float)vd->vox[2] );
   }
+
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
+
+  // Calculate inverted modelview matrix:
+  invMV = vvMatrix(mv);
+  invMV.invert();
+
+  // Find eye position (object space):
+  math::vec3f eye = getEyePosition();
 
   // Get projection matrix:
   vvGLTools::getProjectionMatrix(&pm);
@@ -4086,7 +4086,7 @@ void vvTexRend::disableFragProg() const
 //----------------------------------------------------------------------------
 void vvTexRend::enableShader(vvShaderProgram* shader, GLuint lutName)
 {
-  vvGLTools::printGLError("Enter vvTexRend::enablePixelShaders()");
+  vvGLTools::printGLError("Enter vvTexRend::enableShader()");
 
   if(!shader)
     return;
@@ -4113,10 +4113,14 @@ void vvTexRend::enableShader(vvShaderProgram* shader, GLuint lutName)
 //----------------------------------------------------------------------------
 void vvTexRend::disableShader(vvShaderProgram* shader) const
 {
+  vvGLTools::printGLError("Enter vvTexRend::disableShader()");
+
   if (shader)
   {
     shader->disable();
   }
+
+  vvGLTools::printGLError("Leaving vvTexRend::disableShader()");
 }
 
 void vvTexRend::initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const
