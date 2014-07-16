@@ -65,6 +65,7 @@
 #endif
 
 #include <boost/detail/endian.hpp>
+#include <boost/algorithm/string.hpp>
 
 #ifdef __sun
 #define powf pow
@@ -2171,6 +2172,38 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   return OK;
 }
 
+struct vvTifData
+{
+   int dim;
+   float resolutionUnit;
+   float resolutionX;
+   float resolutionY;
+   float resolutionZ;
+   std::string description;
+
+   vvTifData(): dim(2), resolutionUnit(0.0254f), resolutionX(1.f), resolutionY(1.f), resolutionZ(1.f) {}
+
+   bool parseDescription()
+   {
+      if (boost::starts_with(description, "ImageJ")) {
+         std::cerr << "description: " << description << std::endl;
+         const std::string spacing("spacing=");
+         std::string::size_type pos = description.find(spacing);
+         if (pos != std::string::npos) {
+            dim = 3;
+            std::stringstream str(std::string(description.begin() + pos + spacing.length(), description.end()));
+            double depth = 1.;
+            str >> depth;
+            if (depth < 0.)
+               depth = -depth;
+            if (depth > 0.)
+               resolutionZ = 1./depth;
+         }
+      }
+      return true;
+   }
+};
+
 //----------------------------------------------------------------------------
 /// Loader for voxel file in tif (Tagged Image File) format.
 vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
@@ -2219,23 +2252,73 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     vd->chan = 1;
   }
 
+  struct vvTifData tifData;
+
   // Find and process first IFD:
   long ifdpos = virvo::serialization::read32(fp, endian); // position of first IFD
   while (ifdpos != 0) {
     fseek(fp, ifdpos, SEEK_SET);
-    ErrorType err2 = loadTIFSubFile(vd, fp, endian, ifdpos);
+    ErrorType err2 = loadTIFSubFile(vd, fp, endian, ifdpos, &tifData);
     if (err2 != OK) {
       err = err2;
       break;
     }
   }
   fclose(fp);
+
+  tifData.parseDescription();
+  vd->dist[0] = tifData.resolutionUnit / tifData.resolutionX;
+  vd->dist[1] = tifData.resolutionUnit / tifData.resolutionY;
+  vd->dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
+
+  //std::cerr << "TIF spacing (" << tifData.dim << "D): " << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << std::endl;
+
+  vd->mergeFrames();
+
   return err;
+}
+
+template<typename T>
+static std::vector<T> tifGetData(FILE *fp, long offset, size_t n, virvo::serialization::EndianType endian)
+{
+  std::vector<T> result;
+  long where = ftell(fp);
+  fseek(fp, offset, SEEK_SET);
+  for (size_t i=0; i<n; ++i)
+  {
+    switch(sizeof(T)) {
+    case 1:
+      result.push_back((T)virvo::serialization::read8(fp));
+      break;
+    case 2:
+      result.push_back((T)virvo::serialization::read16(fp, endian));
+      break;
+    case 4:
+      result.push_back((T)virvo::serialization::read32(fp, endian));
+      break;
+    case 8:
+      result.push_back((T)virvo::serialization::read64(fp, endian));
+      break;
+    default:
+      assert("data type not handled" == NULL);
+    }
+  }
+  fseek(fp, where, SEEK_SET);
+  return result;
+}
+
+static float tifGetRational(FILE *fp, long offset, virvo::serialization::EndianType endian)
+{
+  std::vector<uint32_t> result = tifGetData<uint32_t>(fp, offset, 2, endian);
+  float value = 0.f;
+  if (result[1] != 0)
+    value = (double)result[0]/result[1];
+  return value;
 }
 
 //----------------------------------------------------------------------------
 /// Loader for voxel file in tif (Tagged Image File) format.
-vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos)
+vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos, vvTifData *tifData)
 {
   ushort tileWidth=0;                             // tile width in voxels
   ushort tileHeight=0;                            // tile height in voxels
@@ -2262,7 +2345,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
                                                   // 16 bit values are left aligned
 	if (endian==virvo::serialization::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
 
-    if (vvDebugMsg::isActive(2))
+    if (vvDebugMsg::isActive(3))
     {
       cerr << "Tag: " << hex << setw(4) << tag << ", Data Type: " << dataType <<
         ", Data Entries: " << setw(3) << numValues << ", Value: " << setw(8)
@@ -2282,24 +2365,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       }
       else
       {
-        long where = ftell(fp);
-        fseek(fp, value, SEEK_SET);
-        size_t bitsPerSample = 0;
-        for (size_t i=0; i<numValues; ++i)
-        {
-          if (dataType==4) bitsPerSample = virvo::serialization::read32(fp, endian);
-          else if (dataType==3) bitsPerSample = virvo::serialization::read16(fp, endian);
-          else assert(0);
-          if (i==0) vd->bpc = bitsPerSample / 8;
-          else if (vd->bpc != bitsPerSample / 8)
-          {
-            cerr << "Error: TIFF reader needs same number of bits for each sample." << endl;
-            delete[] stripOffsets;
-            delete[] stripByteCounts;
-            return DATA_ERROR;
-          }
+        if (dataType==4) {
+          std::vector<long> data = tifGetData<long>(fp, value, numValues, endian);
+          vd->bpc = data[0]/8;
+        } else if (dataType==3) {
+          std::vector<ushort> data = tifGetData<ushort>(fp, value, numValues, endian);
+          vd->bpc = data[0]/8;
         }
-        fseek(fp, where, SEEK_SET);
       }
       break;
       case 0x103: if (value != 1)
@@ -2309,6 +2381,14 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       }
       break;                                      // Compression; must be uncompressed
       case 0x106: break;                          // PhotometricInterpretation; ignore
+      case 0x10e:
+      if (dataType == 2) { // Description
+        std::vector<char> s = tifGetData<char>(fp, value, numValues, endian);
+        tifData->description = std::string(s.begin(), s.end());
+      } else {
+        return DATA_ERROR;
+      }
+      break;
       case 0x111: delete[] stripOffsets;          // StripOffsets
       stripOffsets = new size_t[numValues];
       if (numValues==1) stripOffsets[0] = value;
@@ -2344,14 +2424,37 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
         fseek(fp, where, SEEK_SET);
       }
       break;
+      case 0x11a: // XResolution
+      tifData->resolutionX = tifGetRational(fp, value, endian);
+      break;
+      case 0x11b: // YResolution
+      tifData->resolutionY = tifGetRational(fp, value, endian);
+      break;
                                                   // PlanarConfiguration
       case 0x11c: planarConfiguration = value; break;
+      case 0x128: // ResolutionUnit
+      if (value == 1) {
+        tifData->resolutionUnit = 0.01; // 1cm
+      } else if (value == 2) {
+        tifData->resolutionUnit = 0.0254; // inch
+      } else if (value == 0) {
+        tifData->resolutionUnit = 1; // unspecified
+      } else {
+        tifData->resolutionUnit = 0.0254; // default: inch
+      }
+      break;
       case 0x142: tileWidth  = (ushort)value; break;
       case 0x143: tileHeight = (ushort)value; break;
       case 0x144: numTiles = numValues; tileOffset = value; break;
       case 0x80e5: vd->vox[2] = value; break;
-      default: break;
-    }
+      default:
+      if (vvDebugMsg::isActive(2))
+      {
+         cerr << "Unhandled Tag: " << hex << setw(4) << tag << ", Data Type: " << dataType <<
+            ", Data Entries: " << setw(3) << numValues << ", Value: " << setw(8)
+            << value << dec << endl;
+      }
+      break;
   }
 
   size_t strips = size_t(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
@@ -2373,6 +2476,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
 
   if (stripOffsets[0]>0)                          // load 2D TIFF?
   {
+    tifData->dim = 2;
     size_t rawOffset = 0;
     for (size_t i=0; i<strips; ++i)
     {
@@ -2402,6 +2506,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   }
   else                                            // load 3D TIFF
   {
+    tifData->dim = 3;
     // Load tile offsets:
     ulong *tilePos = new ulong[numTiles];
     fseek(fp, tileOffset, SEEK_SET);

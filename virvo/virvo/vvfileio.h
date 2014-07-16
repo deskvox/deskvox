@@ -32,6 +32,9 @@
   automatically, for instance: file001.rvf, file002.rvf, ...
   @author Juergen Schulze (schulze@hlrs.de)
 */
+
+struct vvTifData;
+
 class VIRVOEXPORT vvFileIO
 {
   public:
@@ -112,7 +115,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType saveAVFFile(const vvVolDesc*);
     ErrorType loadAVFFile(vvVolDesc*);
     ErrorType loadTIFFile(vvVolDesc*, bool addFrame=false);
-    ErrorType loadTIFSubFile(vvVolDesc*, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos);
+    ErrorType loadTIFSubFile(vvVolDesc*, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos, vvTifData *tifData);
     ErrorType saveTIFSlices(const vvVolDesc*, bool);
     ErrorType loadRawFile(vvVolDesc*);
     ErrorType saveRawFile(const vvVolDesc*);
