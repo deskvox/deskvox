@@ -2174,34 +2174,37 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
 
 struct vvTifData
 {
-   int dim;
-   float resolutionUnit;
-   float resolutionX;
-   float resolutionY;
-   float resolutionZ;
-   std::string description;
+  int dim;
+  float resolutionUnit;
+  float resolutionX;
+  float resolutionY;
+  float resolutionZ;
+  bool haveResolutionZ;
+  std::string description;
 
-   vvTifData(): dim(2), resolutionUnit(0.0254f), resolutionX(1.f), resolutionY(1.f), resolutionZ(1.f) {}
+  vvTifData(): dim(2), resolutionUnit(0.0254f), resolutionX(1.f), resolutionY(1.f), resolutionZ(1.f), haveResolutionZ(false) {}
 
-   bool parseDescription()
-   {
-      if (boost::starts_with(description, "ImageJ")) {
-         //std::cerr << "description: " << description << std::endl;
-         const std::string spacing("spacing=");
-         std::string::size_type pos = description.find(spacing);
-         if (pos != std::string::npos) {
-            dim = 3;
-            std::stringstream str(std::string(description.begin() + pos + spacing.length(), description.end()));
-            double depth = 1.;
-            str >> depth;
-            if (depth < 0.)
-               depth = -depth;
-            if (depth > 0.)
-               resolutionZ = 1./depth;
-         }
+  bool parseDescription()
+  {
+    if (boost::starts_with(description, "ImageJ")) {
+      //std::cerr << "description: " << description << std::endl;
+      const std::string spacing("spacing=");
+      std::string::size_type pos = description.find(spacing);
+      if (pos != std::string::npos) {
+        dim = 3;
+        std::stringstream str(std::string(description.begin() + pos + spacing.length(), description.end()));
+        double depth = 1.;
+        str >> depth;
+        if (depth < 0.)
+          depth = -depth;
+        if (depth > 0.) {
+          haveResolutionZ = true;
+          resolutionZ = 1./depth;
+        }
       }
-      return true;
-   }
+    }
+    return true;
+  }
 };
 
 //----------------------------------------------------------------------------
@@ -2269,7 +2272,15 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   tifData.parseDescription();
   vd->dist[0] = tifData.resolutionUnit / tifData.resolutionX;
   vd->dist[1] = tifData.resolutionUnit / tifData.resolutionY;
-  vd->dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
+  if (tifData.haveResolutionZ)
+  {
+    vd->dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
+  }
+  else
+  {
+    vd->dist[2] = sqrtf(vd->dist[0] * vd->dist[1]);
+    VV_LOG(1) << "TIF: no slice spacing specified, assuming " << vd->dist[2] << std::endl;
+  }
 
   //std::cerr << "TIF spacing (" << tifData.dim << "D): " << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << std::endl;
 
@@ -2324,8 +2335,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   ushort tileHeight=0;                            // tile height in voxels
   ulong  tileOffset=0;                            // tile offset in file
   size_t    numTiles=0;                           // total number of tiles in file
-  size_t*   stripOffsets=NULL;                       // array of strip offsets
-  size_t*   stripByteCounts=NULL;                 // bytes per strip
+  std::vector<size_t> stripOffsets;               // array of strip offsets
+  std::vector<size_t> stripByteCounts;            // bytes per strip
   int    rowsPerStrip=0;                          // rows per strip
   int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
   ErrorType err = OK;                             // error
@@ -2389,17 +2400,17 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
         return DATA_ERROR;
       }
       break;
-      case 0x111: delete[] stripOffsets;          // StripOffsets
-      stripOffsets = new size_t[numValues];
-      if (numValues==1) stripOffsets[0] = value;
+      case 0x111:                               // StripOffsets
+      stripOffsets.clear();
+      if (numValues==1) stripOffsets.push_back(value);
       else
       {
         long where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
-          if (dataType==4) stripOffsets[i] = virvo::serialization::read32(fp, endian);
-          else if (dataType==3) stripOffsets[i] = virvo::serialization::read16(fp, endian);
+          if (dataType==4) stripOffsets.push_back(virvo::serialization::read32(fp, endian));
+          else if (dataType==3) stripOffsets.push_back(virvo::serialization::read16(fp, endian));
           else assert(0);
         }
         fseek(fp, where, SEEK_SET);
@@ -2408,17 +2419,17 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       case 0x115: vd->chan = value;               // SamplesPerPixel (=channels)
       break;
       case 0x116: rowsPerStrip = value; break;    // RowsPerStrip
-      case 0x117: delete[] stripByteCounts;       // StripByteCounts
-      stripByteCounts = new size_t[numValues];
-      if (numValues==1) stripByteCounts[0] = value;
+      case 0x117:                                 // StripByteCounts
+      stripByteCounts.clear();
+      if (numValues==1) stripByteCounts.push_back(value);
       else
       {
         long where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
-          if (dataType==4) stripByteCounts[i] = virvo::serialization::read32(fp, endian);
-          else if (dataType==3) stripByteCounts[i] = virvo::serialization::read16(fp, endian);
+          if (dataType==4) stripByteCounts.push_back(virvo::serialization::read32(fp, endian));
+          else if (dataType==3) stripByteCounts.push_back(virvo::serialization::read16(fp, endian));
           else assert(0);
         }
         fseek(fp, where, SEEK_SET);
@@ -2467,15 +2478,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   if (vd->getFrameBytes()==0 || err!=OK)          // check for plausibility
   {
     cerr << "Error: Invalid volume dimensions or file error." << endl;
-    delete[] stripOffsets;
-    delete[] stripByteCounts;
     return DATA_ERROR;
   }
 
   // Allocate memory for volume data:
   uint8_t *raw = new uint8_t[vd->getFrameBytes()];
 
-  if (stripOffsets[0]>0)                          // load 2D TIFF?
+  if (!stripOffsets.empty() && stripOffsets[0]>0)                          // load 2D TIFF?
   {
     tifData->dim = 2;
     size_t rawOffset = 0;
@@ -2488,8 +2497,6 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       {
         cerr << "Error: reached end of TIFF file while reading." << endl;
         delete[] raw;
-        delete[] stripOffsets;
-        delete[] stripByteCounts;
         return DATA_ERROR;
       }
       else rawOffset += bytesToRead;
@@ -2509,21 +2516,22 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   {
     tifData->dim = 3;
     // Load tile offsets:
-    ulong *tilePos = new ulong[numTiles];
+    std::vector<long> tilePos;
     fseek(fp, tileOffset, SEEK_SET);
     for (size_t i=0; i<numTiles; ++i)
     {
-      tilePos[i] = virvo::serialization::read32(fp, endian);
+      tilePos.push_back(virvo::serialization::read32(fp, endian));
     }
 
     // Compute tiles distribution (in z direction there are as many tiles as slices):
     size_t numTilesX = size_t((double)vd->vox[0] / (double)tileWidth) + 1;
     size_t numTilesY = size_t((double)vd->vox[1] / (double)tileHeight) + 1;
+    vd->vox[2] = numTiles / numTilesX / numTilesY;
 
     // Load volume data:
     for (size_t i=0; i<numTiles; ++i)
     {
-      fseek(fp, static_cast<long>(tilePos[i]), SEEK_SET);
+      fseek(fp, tilePos[i], SEEK_SET);
       size_t tpx = i % numTilesX;
       size_t tpy = (i / numTilesX) % numTilesY;
       size_t tpz = i / (numTilesX * numTilesY);
@@ -2533,21 +2541,15 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
         if (fread(raw + offset + y * vd->vox[0], 1, tileWidth, fp) != tileWidth)
         {
           cerr << "Error: TIFF file too short for volume size." << endl;
-          delete[] tilePos;
           delete[] raw;
-          delete[] stripOffsets;
-          delete[] stripByteCounts;
           return DATA_ERROR;
         }
       }
     }
-    delete[] tilePos;
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
     if (machineBigEndian != fileBigEndian) vd->toggleEndianness(vd->frames-1);
   }
-  delete[] stripOffsets;
-  delete[] stripByteCounts;
   return OK;
 }
 
