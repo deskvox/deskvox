@@ -199,6 +199,7 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
       _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
       _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max));
       break;
+
     case 7:                                       // cool to warm map
       // see http://www.cs.unm.edu/~kmorel/documents/ColorMaps/ColorMapsExpanded.pdf
       _widgets.push_back(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), min));
@@ -207,6 +208,28 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
       _widgets.push_back(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), (max-min) * 0.75f + min));
       _widgets.push_back(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), max));
       break;
+
+    case 8: {                                     // 'Fire' color table from ImageJ
+#if 0
+      const int r[] = {0, 0, 1, 25, 49, 73, 98,122,146,162,173,184,195,207,217,229,240,252,255,255,255,255,255,255,255,255,255,255,255,255,255,255};
+      const int g[] = {0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 14, 35, 57, 79,101,117,133,147,161,175,190,205,219,234,248,255,255,255,255};
+      const int b[] = {0,61,96,130,165,192,220,227,210,181,151,122, 93, 64, 35,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 35, 98,160,223,255};
+      const int n = sizeof(r)/sizeof(r[0]);
+      const float d = (max-min)/(n-1);
+#else
+      const int r[] = {0, 0,122,195,255,255,255};
+      const int g[] = {0, 0,  0,  0,117,234,255};
+      const int b[] = {0,61,227, 93,  0,  0,255};
+      const int k[] = {0, 1,  7, 12, 18, 26, 31}; 
+      const int n = sizeof(r)/sizeof(r[0]);
+      const float d = (max-min)/(k[n-1]);
+#endif
+      float x = min;
+      for (int i=0; i<n; ++i) {
+        _widgets.push_back(new vvTFColor(vvColor(r[i]/255.f, g[i]/255.f, b[i]/255.f), d*k[i]));
+      }
+      break;
+    }
   }
 }
 
@@ -214,7 +237,7 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
 /// Returns the number of default color schemes.
 int vvTransFunc::getNumDefaultColors()
 {
-  return 8;
+  return 9;
 }
 
 //----------------------------------------------------------------------------
