@@ -2314,6 +2314,18 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
   if (numSlices < 1)                              // make sure that at least one slice is drawn
     numSlices = 1;
+  // don't render an insane amount of slices
+  {
+    vvssize3 sz = maxVox - minVox;
+    ssize_t maxV = ts_max(sz[0], sz[1]);
+    maxV = ts_max(maxV, sz[2]);
+    ssize_t lim = maxV * 10. * ts_max(_quality, 1.f);
+    if (numSlices > lim)
+    {
+      numSlices = lim;
+      VV_LOG(1) << "Limiting number of slices to " << numSlices << std::endl;
+    }
+  }
 
   VV_LOG(3) << "Number of textures to render: " << numSlices << std::endl;
 
