@@ -72,7 +72,7 @@ public:
     element_type* prefiltered_data;
 
 
-    prefilterable() : filter_mode_(Nearest) {}
+    prefilterable() : prefiltered_data(0), filter_mode_(Nearest) {}
 
     void set_filter_mode(tex_filter_mode mode)
     {
