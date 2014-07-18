@@ -31,7 +31,6 @@
 
 #include "math/math.h"
 #include "vvdebugmsg.h"
-#include "vvvecmath.h"
 #include "vvtransfunc.h"
 #include "vvcudatransfunc.h"
 #include "vvvoldesc.h"

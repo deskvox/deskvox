@@ -40,10 +40,11 @@
 #include <string>
 
 // Virvo:
+#include "math/math.h"
+#include "math/serialization.h"
 #include "vvcolor.h"
 #include "vvexport.h"
 #include "vvinttypes.h"
-#include "vvvecmath.h"
 
 /** Specifies a 3D point with an opacity.
   @see vvTFCustom
@@ -51,7 +52,7 @@
 class VIRVOEXPORT vvTFPoint
 {
   public:
-    vvVector3 _pos;
+    virvo::math::vec3 _pos;
     float _opacity;   ///< opacity at this point in the TF [0..1]
 
     template<class A>
@@ -64,9 +65,9 @@ class VIRVOEXPORT vvTFPoint
     vvTFPoint();
     vvTFPoint(float, float, float=-1.0f, float=-1.0f);
 
-    void setPos(const vvVector3& pos);
+    void setPos(virvo::math::vec3 const& pos);
     void setOpacity(float opacity);
-    vvVector3 pos() const;
+    virvo::math::vec3 pos() const;
     float opacity() const;
 };
 
@@ -96,7 +97,7 @@ class VIRVOEXPORT vvTFWidget
     };
     static const int MAX_STR_LEN = 65535;
 
-    vvVector3 _pos;                               ///< position of widget's center [volume data space]
+    virvo::math::vec3 _pos;                       ///< position of widget's center [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
 
     template<class A>
@@ -117,9 +118,9 @@ class VIRVOEXPORT vvTFWidget
 
     virtual void setName(std::string const& name);
     virtual std::string getName() const;
-    void setPos(const vvVector3& pos);
+    void setPos(virvo::math::vec3 const& pos);
     void setPos(float x, float y, float z);
-    vvVector3 pos() const;
+    virvo::math::vec3 pos() const;
     virtual void readName(std::ifstream& file);
     void write(FILE*);
     virtual std::string toString() const { throw std::runtime_error("not implemented"); }
@@ -141,7 +142,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    vvVector3 _size;                              ///< width, height, depth of bell's bounding box [volume data space]
+    virvo::math::vec3 _size;                      ///< width, height, depth of bell's bounding box [volume data space]
 
     template<class A>
     void serialize(A& a, unsigned /*version*/)
@@ -159,9 +160,9 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvTFBell(std::ifstream& file);
 
     void setColor(const vvColor& col);
-    void setSize(const vvVector3& size);
+    void setSize(virvo::math::vec3 const& size);
     vvColor color() const;
-    vvVector3 size() const;
+    virvo::math::vec3 size() const;
 
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
@@ -181,8 +182,8 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    vvVector3 _top;                               ///< width at top [volume data space]
-    vvVector3 _bottom;                            ///< width at bottom of pyramid [volume data space]
+    virvo::math::vec3 _top;                       ///< width at top [volume data space]
+    virvo::math::vec3 _bottom;                    ///< width at bottom of pyramid [volume data space]
 
     template<class A>
     void serialize(A& a, unsigned /*version*/)
@@ -201,11 +202,11 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvTFPyramid(std::ifstream& file);
 
     void setColor(const vvColor& col);
-    void setTop(const vvVector3& top);
-    void setBottom(const vvVector3& bottom);
+    void setTop(virvo::math::vec3 const& top);
+    void setBottom(virvo::math::vec3 const& bottom);
     vvColor color() const;
-    vvVector3 top() const;
-    vvVector3 bottom() const;
+    virvo::math::vec3 top() const;
+    virvo::math::vec3 bottom() const;
 
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
@@ -247,10 +248,10 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
 class VIRVOEXPORT vvTFSkip : public vvTFWidget
 {
   public:
-    void setSize(const vvVector3& size);
-    vvVector3 size() const;
+    void setSize(virvo::math::vec3 const& size);
+    virvo::math::vec3 size() const;
 
-    vvVector3 _size;         ///< width, height, depth of skipped area [volume data space]
+    virvo::math::vec3 _size;         ///< width, height, depth of skipped area [volume data space]
 
     template<class A>
     void serialize(A& a, unsigned /*version*/)
@@ -277,7 +278,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
 class VIRVOEXPORT vvTFCustom : public vvTFWidget
 {
   public:
-    vvVector3 _size;               ///< width, height, depth of TF area [volume data space]
+    virvo::math::vec3 _size;       ///< width, height, depth of TF area [volume data space]
     std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
     vvTFPoint* _currentPoint;      ///< currently selected point
 
@@ -346,7 +347,7 @@ public:
     virtual void setOwnColor(bool);
 
 private:
-   vvVector3 _size;               // width, height, depth of TF area [volume data space]
+   virvo::math::vec3 _size;       // width, height, depth of TF area [volume data space]
    float* _map;
    int _dim;                      // dimension of the map
 
@@ -369,9 +370,9 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
 
   public:
     vvColor _col;                  // RGB color
-    vvVector3 _size;               // width, height, depth of TF area [volume data space]
+    virvo::math::vec3 _size;       // width, height, depth of TF area [volume data space]
     float* _map;
-    vvVector3i _dim;                 // dimensions of the map [widget data space]
+    virvo::math::vec3i _dim;       // dimensions of the map [widget data space]
 
     vvTFCustomMap();
     vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);

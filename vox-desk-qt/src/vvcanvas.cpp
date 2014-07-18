@@ -45,6 +45,7 @@ namespace math = virvo::math;
 struct vvCanvas::Impl
 {
   vvRenderState renderState;
+  math::mat4 last_rotation;
 };
 
 vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
@@ -320,7 +321,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
   {
   case Qt::LeftButton:
   {
-    _lastRotation = _ov._camera.trackballRotation(width(), height(),
+    impl->last_rotation = _ov._camera.trackballRotation(width(), height(),
       _lastMousePos.x(), _lastMousePos.y(),
       event->pos().x(), event->pos().y());
     if (_spinAnimation)
@@ -372,7 +373,7 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
   _renderer->setParameter(vvRenderer::VV_QUALITY, _movingQuality);
   _mouseButton = event->button();
   _lastMousePos = event->pos();
-  _lastRotation.identity();
+  impl->last_rotation = math::mat4::identity();
   if (_spinAnimation)
   {
     _spinTimer->stop();
@@ -975,7 +976,7 @@ void vvCanvas::repeatLastRotation()
 {
   vvDebugMsg::msg(3, "vvCanvas::repeatLastRotation()");
 
-  _ov._camera.multiplyRight(_lastRotation);
+  _ov._camera.multiplyRight(impl->last_rotation);
   updateGL();
 
   const float spindelay = 0.05f;

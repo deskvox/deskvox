@@ -28,7 +28,6 @@
 #include "math/math.h"
 
 #include "vvinttypes.h"
-#include "vvvecmath.h"
 #include "vvcolor.h"
 #include "vvaabb.h"
 

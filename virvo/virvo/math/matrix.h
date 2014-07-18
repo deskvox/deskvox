@@ -48,6 +48,8 @@ public:
     T& operator()(size_t row, size_t col);
     T const& operator()(size_t row, size_t col) const;
 
+    static matrix identity();
+
 };
 
 

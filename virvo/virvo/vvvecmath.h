@@ -178,6 +178,17 @@ class VIRVOEXPORT vvMatrix
             }
         }
     }
+    template < typename U >
+    operator virvo::math::matrix< 4, 4, U >() const
+    {
+        return virvo::math::matrix< 4, 4, U >
+        (
+            U(e[0][0]), U(e[0][1]), U(e[0][2]), U(e[0][3]),
+            U(e[1][0]), U(e[1][1]), U(e[1][2]), U(e[1][3]),
+            U(e[2][0]), U(e[2][1]), U(e[2][2]), U(e[2][3]),
+            U(e[3][0]), U(e[3][1]), U(e[3][2]), U(e[3][3])
+        );
+    }
     // Constructs a diagonal matrix
     vvMatrix(float d0, float d1, float d2, float d3);
     vvMatrix(float* glf);

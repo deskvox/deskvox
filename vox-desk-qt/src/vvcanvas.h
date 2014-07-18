@@ -26,10 +26,9 @@
 #include "vvplugin.h"
 #include "vvstereomode.h"
 
-#include <virvo/math/math.h>
+#include <virvo/math/forward.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvtfwidget.h>
-#include <virvo/vvvecmath.h>
 
 #include <QGLWidget>
 #include <QList>
@@ -97,8 +96,6 @@ private:
   bool _lightVisible;
   vox::StereoMode _stereoMode;
   bool _swapEyes;
-
-  vvMatrix _lastRotation;
 
   Qt::MouseButton _mouseButton;
   QPoint _lastMousePos;

@@ -23,7 +23,6 @@
 #include "ui_vvsliceviewer.h"
 
 #include <virvo/vvmacros.h>
-#include <virvo/vvvecmath.h>
 #include <virvo/vvvoldesc.h>
 
 #include <QImage>

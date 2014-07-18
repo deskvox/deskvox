@@ -95,6 +95,18 @@ VV_FORCE_INLINE T const& matrix< 4, 4, T >::operator()(size_t row, size_t col) c
     return (operator()(col))[row];
 }
     
+template < typename T >
+VV_FORCE_INLINE matrix< 4, 4, T > matrix< 4, 4, T >::identity()
+{
+    return matrix< 4, 4, T >
+    (
+        T(1.0), T(0.0), T(0.0), T(0.0),
+        T(0.0), T(1.0), T(0.0), T(0.0),
+        T(0.0), T(0.0), T(1.0), T(0.0),
+        T(0.0), T(0.0), T(0.0), T(1.0)
+    );
+}
+
 
 //--------------------------------------------------------------------------------------------------
 // Basic arithmetic
@@ -144,6 +156,7 @@ VV_FORCE_INLINE vector< 4, T > operator*(matrix< 4, 4, T > const& m, vector< 4, 
 //--------------------------------------------------------------------------------------------------
 // Geometric functions
 //
+
 template < typename T >
 VV_FORCE_INLINE matrix< 4, 4, T > inverse(matrix< 4, 4, T > const& m)
 {

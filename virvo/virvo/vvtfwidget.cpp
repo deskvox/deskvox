@@ -35,6 +35,8 @@ using std::cerr;
 using std::endl;
 using std::list;
 
+namespace math = virvo::math;
+
 //============================================================================
 // Class vvTFWidget and related classes
 //============================================================================
@@ -56,7 +58,7 @@ vvTFPoint::vvTFPoint(float op, float x, float y, float z)
   _opacity = op;
 }
 
-void vvTFPoint::setPos(const vvVector3& pos)
+void vvTFPoint::setPos(math::vec3 const& pos)
 {
   _pos = pos;
 }
@@ -66,7 +68,7 @@ void vvTFPoint::setOpacity(float opacity)
   _opacity = opacity;
 }
 
-vvVector3 vvTFPoint::pos() const
+math::vec3 vvTFPoint::pos() const
 {
   return _pos;
 }
@@ -137,17 +139,17 @@ std::string vvTFWidget::getName() const
   return _name == "" ? NO_NAME : _name;
 }
 
-void vvTFWidget::setPos(const vvVector3& pos)
+void vvTFWidget::setPos(math::vec3 const& pos)
 {
   _pos = pos;
 }
 
 void vvTFWidget::setPos(float x, float y, float z)
 {
-  _pos = vvVector3(x, y, z);
+  _pos = math::vec3(x, y, z);
 }
 
-vvVector3 vvTFWidget::pos() const
+math::vec3 vvTFWidget::pos() const
 {
   return _pos;
 }
@@ -312,7 +314,7 @@ void vvTFBell::setColor(const vvColor& col)
   _col = col;
 }
 
-void vvTFBell::setSize(const vvVector3& size)
+void vvTFBell::setSize(math::vec3 const& size)
 {
   _size = size;
 }
@@ -322,7 +324,7 @@ vvColor vvTFBell::color() const
   return _col;
 }
 
-vvVector3 vvTFBell::size() const
+math::vec3 vvTFBell::size() const
 {
   return _size;
 }
@@ -528,12 +530,12 @@ void vvTFPyramid::setColor(const vvColor& col)
   _col = col;
 }
 
-void vvTFPyramid::setTop(const vvVector3& top)
+void vvTFPyramid::setTop(math::vec3 const& top)
 {
   _top = top;
 }
 
-void vvTFPyramid::setBottom(const vvVector3& bottom)
+void vvTFPyramid::setBottom(math::vec3 const& bottom)
 {
   _bottom = bottom;
 }
@@ -543,12 +545,12 @@ vvColor vvTFPyramid::color() const
   return _col;
 }
 
-vvVector3 vvTFPyramid::top() const
+math::vec3 vvTFPyramid::top() const
 {
   return _top;
 }
 
-vvVector3 vvTFPyramid::bottom() const
+math::vec3 vvTFPyramid::bottom() const
 {
   return _bottom;
 }
@@ -769,8 +771,8 @@ void vvTFPyramid::mapFrom01(float min, float max)
 {
   vvTFWidget::mapFrom01(min, max);
 
-  _top *= max - min;
-  _bottom *= max - min;
+  _top *= math::vec3(max - min);
+  _bottom *= math::vec3(max - min);
 }
 
 //============================================================================
@@ -895,12 +897,12 @@ vvTFSkip::vvTFSkip(std::ifstream& file) : vvTFWidget()
   }
 }
 
-void vvTFSkip::setSize(const vvVector3& size)
+void vvTFSkip::setSize(math::vec3 const& size)
 {
   _size = size;
 }
 
-vvVector3 vvTFSkip::size() const
+math::vec3 vvTFSkip::size() const
 {
   return _size;
 }
@@ -961,7 +963,7 @@ void vvTFSkip::mapFrom01(float min, float max)
 {
   vvTFWidget::mapFrom01(min, max);
 
-  _size *= max - min;
+  _size *= math::vec3(max - min);
 }
 
 //============================================================================
