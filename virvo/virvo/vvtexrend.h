@@ -176,7 +176,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void sortBrickList(std::vector<vvBrick*>& list, virvo::math::vec3f const& eye,
         virvo::math::vec3f const& normal, bool isOrtho);
 
-    ErrorType makeTextures();
+    ErrorType makeTextures(bool newTex);
     ErrorType makeEmptyBricks();
     ErrorType makeTextureBricks(std::vector<BrickList>& bricks, bool& areBricksCreated);
 

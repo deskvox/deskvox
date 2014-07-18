@@ -302,7 +302,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (voxelType != VV_RGBA)
   {
-    makeTextures();      // we only have to do this once for non-RGBA textures
+    makeTextures(true);      // we only have to do this once for non-RGBA textures
   }
   updateTransferFunction();
 }
@@ -336,7 +336,7 @@ vvTexRend::~vvTexRend()
 void vvTexRend::setVolDesc(vvVolDesc* vd)
 {
   vvRenderer::setVolDesc(vd);
-  makeTextures();
+  makeTextures(true);
 }
 
 
@@ -479,7 +479,7 @@ void vvTexRend::removeTextures()
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures()
+vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
 {
   ErrorType err = OK;
 
@@ -538,7 +538,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
         err = makeTextureBricks(_brickList, _areBricksCreated);
       }
       break;
-    default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
+    default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex); break;
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
 
@@ -1109,7 +1109,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
 
   if (!accommodated)
   {
-    cerr << "Insufficient texture memory for 3D textures." << endl;
+    cerr << "Insufficient texture memory for 3D brick textures." << endl;
     err = TRAM_ERROR;
   }
 
@@ -1160,7 +1160,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
     computeBrickSize();
     if(!_areBricksCreated)
     {
-      makeTextures();
+      makeTextures(true);
     }
   }
 }
@@ -1171,7 +1171,7 @@ void vvTexRend::setBrickSize(size_t newSize)
   _brickSize[0] = _brickSize[1] = _brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
 
-  makeTextures();
+  makeTextures(true);
 }
 
 size_t vvTexRend::getBrickSize() const
@@ -1192,7 +1192,7 @@ void vvTexRend::setTexMemorySize(size_t newSize)
 
     if(!_areBricksCreated)
     {
-      makeTextures();
+      makeTextures(true);
     }
   }
 }
@@ -1300,7 +1300,7 @@ void vvTexRend::updateVolumeData()
     computeBrickSize();
   }
 
-  makeTextures();
+  makeTextures(true);
 }
 
 //----------------------------------------------------------------------------
@@ -1402,6 +1402,9 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   VV_LOG(1) << "3D Texture size (KB) = " << texSize / 1024 << std::endl;
 
   size_t sliceSize = vd->getSliceBytes();
+
+  if (vd->frames != textures)
+    newTex = true;
 
   if (newTex)
   {
@@ -1598,13 +1601,20 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
         texels[0], texels[1], texels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
       glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
-      if (glWidth!=0)
+
+      if (glWidth==texels[0])
       {
         glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
           texFormat, GL_UNSIGNED_BYTE, texData);
       }
       else
+      {
         accommodated = false;
+        vvGLTools::printGLError("Tried to accomodate 3D textures");
+
+        cerr << "Insufficient texture memory for 3D texture(s)." << endl;
+        err = TRAM_ERROR;
+      }
     }
     else
     {
@@ -1612,12 +1622,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       glTexSubImage3D(GL_TEXTURE_3D_EXT, 0, offsetX, offsetY, offsetZ,
         sizeX, sizeY, sizeZ, texFormat, GL_UNSIGNED_BYTE, texData);
     }
-  }
-
-  if (newTex && (accommodated == false))
-  {
-    cerr << "Insufficient texture memory for 3D texture(s)." << endl;
-    err = TRAM_ERROR;
   }
 
   if (!useRaw)
@@ -2402,6 +2406,7 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
     enableTexture(GL_TEXTURE_3D_EXT);
     glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   }
+
   texPoint = farthest;
   for (size_t i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
@@ -3611,7 +3616,7 @@ void vvTexRend::updateLUT(const float dist)
   switch (voxelType)
   {
     case VV_RGBA:
-      makeTextures();// this mode doesn't use a hardware LUT, so every voxel has to be updated
+      makeTextures(false);// this mode doesn't use a hardware LUT, so every voxel has to be updated
       break;
     case VV_PAL_TEX:
       // Load color LUT for pre-classification:
@@ -3811,7 +3816,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_PADDING_REGION:
       vvRenderer::setParameter(param, newValue);
-      makeTextures();
+      makeTextures(true);
       break;
     default:
       vvRenderer::setParameter(param, newValue);
