@@ -23,10 +23,6 @@
 
 #include <vvplatform.h>
 
-// FX Toolkit:
-#include <fx.h>
-#include <fx3d.h>
-
 // OS:
 #include <iostream>
 #include <string.h>
@@ -39,6 +35,11 @@
 #include "vvcanvas.h"
 #include "vvprefwindow.h"
 #include "vvmovie.h"
+
+/* workaround: include last - introduces a weird powf macro into global namespace */
+#include <fx.h>
+#include <fx3d.h>
+
 
 class VVVolumeDialog;
 class VVTransferWindow;

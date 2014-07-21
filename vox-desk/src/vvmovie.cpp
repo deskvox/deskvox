@@ -23,11 +23,11 @@
 #include <fstream>
 
 // Virvo:
+#include <virvo/math/math.h>
 #include <vvdebugmsg.h>
 #include <vvtokenizer.h>
 #include <vvtoolshed.h>
 #include <vvrenderer.h>
-#include <vvvecmath.h>
 #include <vvtoolshed.h>
 #include <vvfileio.h>
 
@@ -35,6 +35,7 @@
 #include "vvcanvas.h"
 #include "vvmovie.h"
 
+namespace math = virvo::math;
 using namespace vox;
 using namespace std;
 
@@ -402,24 +403,21 @@ bool vvMovie::setStep(size_t step)
           else
           {
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, true);
-            vvVector3 normal(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
-            normal.normalize();
-            vvVector3 point = normal;
-            point.scale(steps->getData()->param[3]);
+            math::vec3 normal(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
+            normal = normalize(normal);
+            math::vec3 point = normal * steps->getData()->param[3];
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
           }
           break;
         case MOVECLIP:
         {
-          vvVector3 point, normal;
-          normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
-          point = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
-          normal.add(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
-          normal.normalize();
-          vvVector3 diff(normal);
-          diff.scale(steps->getData()->param[3]);
-          point.add(diff);
+          math::vec3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+          math::vec3 point = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
+          normal += math::vec3(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
+          normal = normalize(normal);
+          math::vec3 diff = normal * steps->getData()->param[3];
+          point += diff;
           _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
           _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
           break;

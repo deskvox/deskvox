@@ -455,7 +455,6 @@ void vvCanvas::transformObject(const vvMatrix& m)
 void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
 {
   vvRenderState renderState;
-  vvVector3 size;
 
   vvDebugMsg::msg(1, "vvCanvas::setRenderer()");
 

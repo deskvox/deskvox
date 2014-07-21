@@ -25,6 +25,7 @@
 #endif
 
 // Virvo:
+#include <virvo/math/math.h>
 #include <vvopengl.h>
 #include <vvvirvo.h>
 #include <vvdebugmsg.h>
@@ -37,6 +38,7 @@
 #include "vvmovie.h"
 #include "vvtranswindow.h"
 
+namespace math = virvo::math;
 using namespace vox;
 using namespace std;
 
@@ -584,25 +586,21 @@ long VVClippingDialog::onSliderChange(FXObject*,FXSelector,void*)
 
 void VVClippingDialog::updateClipParameters()
 {
-  vvVector3 point;
-  vvVector3 normal;
   float x = (float)_xSlider->getValue();
   float y = (float)_ySlider->getValue();
   float z = (float)_zSlider->getValue();
   float d = (float)_originSlider->getValue();
 
-  normal.set(x, y, z);
-  normal.normalize();
-  point = normal;
-  point.scale(d);
+  math::vec3 normal = normalize( math::vec3(x, y, z) );
+  math::vec3 point = normal * d;
   _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
   _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
 }
 
 void VVClippingDialog::updateValues()
 {
-  vvVector3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
-  normal.normalize();
+  math::vec3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  normal = normalize(normal);
 
   _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE).asUint());
   _singleCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_SINGLE_SLICE).asBool());
@@ -727,12 +725,12 @@ VVROIDialog::~VVROIDialog()
 
 long VVROIDialog::onEnableChange(FXObject*,FXSelector,void* ptr)
 {
-  vvVector3 size;
+  math::vec3 size;
 
   if (ptr != 0)
     {
-      size.set(_sizeSliderX->getValue(), _sizeSliderY->getValue(), _sizeSliderZ->getValue());
-      _canvas->_renderer->setProbeSize(&size);
+      size = math::vec3(_sizeSliderX->getValue(), _sizeSliderY->getValue(), _sizeSliderZ->getValue());
+      _canvas->_renderer->setProbeSize(size);
       _canvas->_renderer->setROIEnable(true);
     }
   else
@@ -757,32 +755,29 @@ long VVROIDialog::onSliderChange(FXObject*,FXSelector,void*)
 
 void VVROIDialog::updateROIParameters()
 {
-  vvVector3 pos;
-  vvVector3 size;
+  math::vec3 pos;
+  math::vec3 size;
 
   pos[0] = _xSlider->getValue();
   pos[1] = _ySlider->getValue();
   pos[2] = _zSlider->getValue();
-  _canvas->_renderer->setProbePosition(&pos);
+  _canvas->_renderer->setProbePosition(pos);
 
-  size.set(_sizeSliderX->getValue(), _sizeSliderY->getValue(), _sizeSliderZ->getValue());
-  _canvas->_renderer->setProbeSize(&size);
+  size = math::vec3(_sizeSliderX->getValue(), _sizeSliderY->getValue(), _sizeSliderZ->getValue());
+  _canvas->_renderer->setProbeSize(size);
 }
 
 void VVROIDialog::updateValues()
 {
-  vvVector3 pos;
-  vvVector3 volSize2;
-  vvVector3 roiSize;
+  math::vec3 volSize2;
 
   _enableCheck->setCheck(_canvas->_renderer->isROIEnabled());
-  _canvas->_renderer->getProbePosition(&pos);
+  math::vec3 pos = _canvas->_renderer->getProbePosition();
   _xSlider->setValue(pos[0]);
   _ySlider->setValue(pos[1]);
   _zSlider->setValue(pos[2]);
 
-  volSize2 = _canvas->_vd->getSize();
-  volSize2.scale(0.5f);
+  volSize2 = _canvas->_vd->getSize() * 0.5f;
   _xSlider->setRange(-volSize2[0], volSize2[0]);
   _ySlider->setRange(-volSize2[1], volSize2[1]);
   _zSlider->setRange(-volSize2[2], volSize2[2]);
@@ -790,7 +785,7 @@ void VVROIDialog::updateValues()
   _ySlider->setTickDelta(volSize2[1] / 10.0f);
   _zSlider->setTickDelta(volSize2[2] / 10.0f);
 
-  _canvas->_renderer->getProbeSize(&roiSize);
+  math::vec3 roiSize = _canvas->_renderer->getProbeSize();
   _sizeSliderX->setValue(roiSize[0]);
   _sizeSliderY->setValue(roiSize[1]);
   _sizeSliderZ->setValue(roiSize[2]);  
@@ -2124,7 +2119,7 @@ long VVGammaDialog::onClose(FXObject*, FXSelector, void*)
 long VVGammaDialog::onSetDefaults(FXObject*, FXSelector, void*)
 {
   const float DEFAULT_VALUE = 1.0f;
-  const vvVector4 gamma(DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE);
+  math::vec4 gamma(DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE);
   _canvas->_renderer->setParameter(vvRenderer::VV_GAMMA, gamma);
   updateValues();
   return 1;
@@ -2152,7 +2147,7 @@ long VVGammaDialog::onUseGammaChange(FXObject*, FXSelector, void* ptr)
 
 long VVGammaDialog::onGammaChange(FXObject*,FXSelector,void*)
 {
-  const vvVector4 val(getDialValue(_gRedDial), getDialValue(_gGreenDial),
+  math::vec4 val(getDialValue(_gRedDial), getDialValue(_gGreenDial),
     getDialValue(_gBlueDial), getDialValue(_gFourDial));
   _gRedLabel->setText(FXStringFormat("%.2f", val[0]));
   _gGreenLabel->setText(FXStringFormat("%.2f", val[1]));
@@ -2174,7 +2169,7 @@ void VVGammaDialog::setDialValue(FXDial* dial, float val)
 
 void VVGammaDialog::updateValues()
 {
-  vvVector4 gamma(1.0f, 1.0f, 1.0f, 1.0f);
+  math::vec4 gamma(1.0f, 1.0f, 1.0f, 1.0f);
   if (_canvas->_renderer != NULL)
   {
     gamma = _canvas->_renderer->getParameter(vvRenderer::VV_GAMMA);

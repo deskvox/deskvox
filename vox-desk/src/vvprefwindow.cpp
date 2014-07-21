@@ -544,7 +544,7 @@ void VVPreferenceWindow::updateValues()
   _eyeSlider->setValue(int(_canvas->_ov.getIOD()));
   _eyeTField->setText(FXStringFormat("%d",(FXint)_canvas->_ov.getIOD()));
 
- _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==1);
+  _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==1);
   _artoolkitButton->setCheck(_canvas->getARToolkit());
 
   if (_shell->_glcanvas->makeCurrent())
@@ -578,7 +578,7 @@ void VVPreferenceWindow::updateValues()
       if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (viewport aligned)");
       if (texrend->isSupported(vvTexRend::VV_SPHERICAL)) _gtCombo->appendItem("3D textures (spherical)");
       if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (bricked)");
-      _linterpButton->setCheck(texrend->getParameter(vvRenderer::VV_SLICEINT).asBool());
+      _linterpButton->setCheck(texrend->getParameter(vvRenderer::VV_SLICEINT).asInt() > 0);
     }
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
     if (texrend)

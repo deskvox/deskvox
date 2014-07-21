@@ -23,15 +23,16 @@
 
 #include <vvplatform.h>
 
-// FOX:
-#include <fx.h>
-
 // C++:
 #include <iostream>
 
 // Local:
 #include "vvshell.h"
 #include "vvcanvas.h"
+
+/* workaround: include last - introduces a weird powf macro into global namespace */
+#include <fx.h>
+
 
 class VVSliceViewer : public FXDialogBox
 {

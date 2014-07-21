@@ -22,13 +22,14 @@
 #define VV_PREFWINDOW_H
 
 #include <vvplatform.h>
-#include <fx.h>
-
 #include <iostream>
 #include <string.h>
 
 // Local:
 #include "vvcanvas.h"
+
+/* workaround: include last - introduces a weird powf macro into global namespace */
+#include <fx.h>
 
 class VVShell;
 

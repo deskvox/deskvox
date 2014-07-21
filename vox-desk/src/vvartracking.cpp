@@ -29,9 +29,6 @@
 #include <AR/gsub.h>
 #include <AR/video.h>
 
-// Virvo:
-#include <vvvecmath.h>
-
 // Local:
 #include "vvartracking.h"
 
