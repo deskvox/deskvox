@@ -253,6 +253,14 @@ void vvTFWidget::mapFrom01(float min, float max)
   }
 }
 
+void vvTFWidget::mapTo01(float min, float max)
+{
+  for (int i=0; i<3; ++i)
+  {
+    _pos[i] = (_pos[i] - min) / (max - min);
+  }
+}
+
 //============================================================================
 
 vvTFBell::vvTFBell() : vvTFWidget()
@@ -775,6 +783,13 @@ void vvTFPyramid::mapFrom01(float min, float max)
   _bottom *= math::vec3(max - min);
 }
 
+void vvTFPyramid::mapTo01(float min, float max)
+{
+  vvTFWidget::mapTo01(min, max);
+
+  _top /= math::vec3(max - min);
+  _bottom /= math::vec3(max - min);
+}
 //============================================================================
 
 vvTFColor::vvTFColor() : vvTFWidget()
@@ -964,6 +979,13 @@ void vvTFSkip::mapFrom01(float min, float max)
   vvTFWidget::mapFrom01(min, max);
 
   _size *= math::vec3(max - min);
+}
+
+void vvTFSkip::mapTo01(float min, float max)
+{
+  vvTFWidget::mapTo01(min, max);
+
+  _size /= math::vec3(max - min);
 }
 
 //============================================================================

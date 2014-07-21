@@ -128,6 +128,7 @@ class VIRVOEXPORT vvTFWidget
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
     virtual void mapFrom01(float min, float max);
+    virtual void mapTo01(float min, float max);
 
     static vvTFWidget* produce(WidgetType type);
     static WidgetType getWidgetType(const char* str);
@@ -215,6 +216,7 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     virtual bool hasOwnColor();
     virtual void setOwnColor(bool);
     virtual void mapFrom01(float min, float max);
+    virtual void mapTo01(float min, float max);
 };
 
 /** Transfer function widget specifying a color point in TF space.
@@ -269,6 +271,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual void mapFrom01(float min, float max);
+    virtual void mapTo01(float min, float max);
 };
 
 /** Transfer function widget to specify a custom transfer function widget with control points.
