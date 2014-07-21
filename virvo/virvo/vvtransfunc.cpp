@@ -56,10 +56,10 @@ vvTransFunc::vvTransFunc()
 }
 
 // Copy Constructor
-vvTransFunc::vvTransFunc(vvTransFunc* tf)
+vvTransFunc::vvTransFunc(const vvTransFunc &tf)
 {
-  for (std::vector<vvTFWidget*>::const_iterator it = tf->_widgets.begin();
-       it != tf->_widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+       it != tf._widgets.end(); ++it)
   {
     vvTFWidget* oldW = *it;
 
@@ -89,10 +89,9 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
     else assert(0);
   }
 
-  _nextBufferEntry = tf->_nextBufferEntry;
-  _bufferUsed      = tf->_bufferUsed;
-  _discreteColors  = tf->_discreteColors;
-
+  _discreteColors  = tf._discreteColors;
+  _bufferUsed      = 0;
+  _nextBufferEntry = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -105,6 +104,22 @@ vvTransFunc::~vvTransFunc()
     delete *it;
   }
   _widgets.clear();
+}
+
+vvTransFunc &vvTransFunc::operator=(const vvTransFunc &rhs)
+{
+  vvTransFunc tmp(rhs);
+  swap(tmp);
+  return *this;
+}
+
+void vvTransFunc::swap(vvTransFunc &other)
+{
+  std::swap(_buffer, other._buffer);
+  std::swap(_nextBufferEntry, other._nextBufferEntry);
+  std::swap(_bufferUsed, other._bufferUsed);
+  std::swap(_discreteColors, other._discreteColors);
+  std::swap(_widgets, other._widgets);
 }
 
 //----------------------------------------------------------------------------
@@ -215,6 +230,7 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
       const int b[] = {0,61,96,130,165,192,220,227,210,181,151,122, 93, 64, 35,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 35, 98,160,223,255};
       const int n = sizeof(r)/sizeof(r[0]);
       const float d = (max-min)/(n-1);
+      float x = min;
 #else
       const int r[] = {0, 0,122,195,255,255,255};
       const int g[] = {0, 0,  0,  0,117,234,255};
@@ -223,7 +239,6 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
       const int n = sizeof(r)/sizeof(r[0]);
       const float d = (max-min)/(k[n-1]);
 #endif
-      float x = min;
       for (int i=0; i<n; ++i) {
         _widgets.push_back(new vvTFColor(vvColor(r[i]/255.f, g[i]/255.f, b[i]/255.f), d*k[i]));
       }
@@ -431,6 +446,11 @@ void vvTransFunc::computeTFTexture(size_t w, size_t h, size_t d, float* array,
   {
     mask = math::vec4i(2, 1, 0, 3);
   }
+  else
+  {
+    assert("unhandled case for format" == 0);
+    mask = math::vec4i(0, 1, 2, 3);
+  }
 
   math::vec3f norm;    // normalized 3D position
   int index = 0;
@@ -607,6 +627,11 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
   {
     mask = math::vec4i(2, 1, 0, 3);
   }
+  else
+  {
+    assert("unhandled case for format" == 0);
+    mask = math::vec4i(0, 1, 2, 3);
+  }
   
 
   for (x=0; x<width; ++x)
@@ -779,7 +804,7 @@ void vvTransFunc::getUndoBuffer()
   if (_bufferUsed==0) return;                     // ring buffer is empty
   if (_nextBufferEntry > 0) bufferEntry = _nextBufferEntry - 1;
   else bufferEntry = BUFFER_SIZE - 1;
-  copy(&_widgets, &_buffer[bufferEntry]);
+  _widgets = _buffer[bufferEntry];
   _nextBufferEntry = bufferEntry;
   --_bufferUsed;
 }
@@ -788,6 +813,18 @@ void vvTransFunc::getUndoBuffer()
 /// Clear the undo ring buffer.
 void vvTransFunc::clearUndoBuffer()
 {
+  while (_bufferUsed > 0) {
+    --_bufferUsed;
+    int bufferEntry = BUFFER_SIZE - 1;
+    if (_nextBufferEntry > 0)
+      bufferEntry = _nextBufferEntry - 1;
+    for (size_t i=0; i<_buffer[bufferEntry].size(); ++i) {
+      vvTFWidget *w = _buffer[bufferEntry][i];
+      delete w;
+    }
+    _buffer[bufferEntry].clear();
+  }
+
   _bufferUsed      = 0;
   _nextBufferEntry = 0;
 }
