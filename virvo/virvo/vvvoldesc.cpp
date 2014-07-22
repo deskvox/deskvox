@@ -618,29 +618,56 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
  This will typically be used for generating a volume from a sequence of files
  @return OK if successful
 */
-vvVolDesc::ErrorType vvVolDesc::mergeFrames()
+vvVolDesc::ErrorType vvVolDesc::mergeFrames(ssize_t slicesPerFrame)
 {
-  uint8_t *newRaw = new uint8_t[getFrameBytes() * frames];
-  for (size_t f=0; f<frames; f++)
-  {
-    int fni = rawFrameNumber[f]-1;
-    size_t fn;
-    if(fni<0)
-      fn = f;
-    else
-      fn = size_t(fni);
+  std::vector<uint8_t *> rawFrames;
+  if (slicesPerFrame < 0)
+    slicesPerFrame = frames;
 
-    if(fn >= frames)
+  if (slicesPerFrame == frames)
+  {
+    // special DICOM case
+    uint8_t *newRaw = new uint8_t[getFrameBytes() * slicesPerFrame];
+    for (size_t f=0; f<slicesPerFrame; f++)
     {
-       fn = frames-1;
-       fprintf(stderr," please read all frames, not enough space for all frames\n");
+      int fni = rawFrameNumber[f]-1;
+      size_t fn;
+      if(fni<0)
+        fn = f;
+      else
+        fn = size_t(fni);
+
+      if(fn >= frames)
+      {
+        fn = frames-1;
+        fprintf(stderr," please read all frames, not enough space for all frames\n");
+      }
+      memcpy(newRaw + getFrameBytes()*fn, getRaw(f), getFrameBytes());
     }
-    memcpy(newRaw + getFrameBytes()*fn, getRaw(f), getFrameBytes());
+    rawFrames.push_back(newRaw);
   }
+  else
+  {
+    uint8_t *newRaw = NULL;
+    for (size_t f=0; f<frames; ++f)
+    {
+      ssize_t fn = f % slicesPerFrame;
+      if (fn == 0)
+      {
+        newRaw = new uint8_t[getFrameBytes() * slicesPerFrame];
+        rawFrames.push_back(newRaw);
+      }
+      memcpy(newRaw + getFrameBytes()*fn, getRaw(f), getFrameBytes());
+    }
+  }
+
   removeSequence();
-  addFrame(newRaw, ARRAY_DELETE);
-  vox[2] = frames;
-  frames = 1;
+  for (ssize_t i=0; i<rawFrames.size(); ++i)
+  {
+    addFrame(rawFrames[i], ARRAY_DELETE);
+  }
+  vox[2] = slicesPerFrame;
+  frames = rawFrames.size();
 
   return OK;
 }

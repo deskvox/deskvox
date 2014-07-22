@@ -278,7 +278,7 @@ class VIRVOEXPORT vvVolDesc
 
     // Other routines:
     ErrorType merge(vvVolDesc*, vvVolDesc::MergeType);
-    ErrorType mergeFrames();
+    ErrorType mergeFrames(ssize_t slicesPerFrame=-1);
     void   addFrame(uint8_t*, DeleteType, int fd=-1);
     void   copyFrame(uint8_t*);
     void   removeSequence();

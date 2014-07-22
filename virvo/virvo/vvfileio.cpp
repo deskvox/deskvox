@@ -2180,19 +2180,33 @@ struct vvTifData
   float resolutionY;
   float resolutionZ;
   bool haveResolutionZ;
+  bool isHyperstack;
+  size_t slicesPerFrame;
   std::string description;
 
-  vvTifData(): dim(2), resolutionUnit(0.0254f), resolutionX(1.f), resolutionY(1.f), resolutionZ(1.f), haveResolutionZ(false) {}
+  vvTifData(): dim(2), resolutionUnit(0.0254f), resolutionX(1.f), resolutionY(1.f), resolutionZ(1.f), haveResolutionZ(false), isHyperstack(false), slicesPerFrame(0) {}
+
+  std::string getTagValue(const std::string &tag)
+  {
+    std::string search = tag + "=";
+    std::string::size_type pos = description.find(search);
+    std::string ent;
+    if (pos != std::string::npos) {
+      std::stringstream str(std::string(description.begin() + pos + search.length(), description.end()));
+      std::getline(str, ent);
+    }
+    return ent;
+  }
 
   bool parseDescription()
   {
+    VV_LOG(2) << "TIFF description: " << description << std::endl;
     if (boost::starts_with(description, "ImageJ")) {
-      //std::cerr << "description: " << description << std::endl;
-      const std::string spacing("spacing=");
-      std::string::size_type pos = description.find(spacing);
-      if (pos != std::string::npos) {
+
+      std::string spacing = getTagValue("spacing");
+      if (!spacing.empty()) {
         dim = 3;
-        std::stringstream str(std::string(description.begin() + pos + spacing.length(), description.end()));
+        std::stringstream str(spacing);
         double depth = 1.;
         str >> depth;
         if (depth < 0.)
@@ -2200,6 +2214,20 @@ struct vvTifData
         if (depth > 0.) {
           haveResolutionZ = true;
           resolutionZ = 1./depth;
+        }
+      }
+
+      std::string hyperstack = getTagValue("hyperstack");
+      if (hyperstack == "true") {
+        std::string images = getTagValue("images");
+        std::string slices = getTagValue("slices");
+        std::string frames = getTagValue("frames");
+        ssize_t nimages = atol(images.c_str());
+        ssize_t nslices = atol(slices.c_str());
+        ssize_t nframes = atol(frames.c_str());
+        if (nimages == nslices*nframes) {
+          isHyperstack = true;
+          slicesPerFrame = nslices;
         }
       }
     }
@@ -2282,9 +2310,16 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     VV_LOG(1) << "TIF: no slice spacing specified, assuming " << vd->dist[2] << std::endl;
   }
 
+  ssize_t slicesPerFrame = -1;
+  if (tifData.isHyperstack)
+  {
+    slicesPerFrame = tifData.slicesPerFrame;
+    VV_LOG(2) << "TIF: hyperstack" << std::endl;
+  }
+
   //std::cerr << "TIF spacing (" << tifData.dim << "D): " << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << std::endl;
 
-  vd->mergeFrames();
+  vd->mergeFrames(slicesPerFrame);
 
   return err;
 }
@@ -2472,8 +2507,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
   size_t strips = size_t(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
 
   nextIfdPos = virvo::serialization::read32(fp, endian);       // check for further IFDs
-  if (nextIfdPos==0) vvDebugMsg::msg(3, "No more IFDs in file.");
-  else vvDebugMsg::msg(1, "There are more IFDs in the file.");
+  if (nextIfdPos==0) vvDebugMsg::msg(2, "No more IFDs in file.");
+  else vvDebugMsg::msg(3, "There are more IFDs in the file.");
 
   if (vd->getFrameBytes()==0 || err!=OK)          // check for plausibility
   {
