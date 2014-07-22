@@ -2126,8 +2126,6 @@ void vvView::createMenus()
   voxelMenu = glutCreateMenu(voxelMenuCallback);
   glutAddMenuEntry("Auto select", 0);
   glutAddMenuEntry("RGBA", 1);
-  if (vvTexRend::isSupported(vvTexRend::VV_PAL_TEX)) glutAddMenuEntry("Paletted textures", 3);
-  if (vvTexRend::isSupported(vvTexRend::VV_TEX_SHD)) glutAddMenuEntry("Texture shader", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Fragment shader", 5);
   if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)) glutAddMenuEntry("ARB fragment program", 6);
 

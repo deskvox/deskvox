@@ -192,7 +192,6 @@ set(VIRVO_HEADERS
   vvsoftper.h
   vvsoftsw.h
   vvsoftvr.h
-  vvsphere.h
   vvstingray.h
   vvswitchrenderer.h
   vvswitchrenderer.impl.h
@@ -290,7 +289,6 @@ set(VIRVO_SOURCES
   vvsoftper.cpp
   vvsoftsw.cpp
   vvsoftvr.cpp
-  vvsphere.cpp
   vvstingray.cpp
   vvtcpserver.cpp
   vvtcpsocket.cpp

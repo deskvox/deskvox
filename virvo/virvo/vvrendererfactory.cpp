@@ -209,9 +209,7 @@ void init()
   voxelTypeMap["default"] = vvTexRend::VV_BEST;
   voxelTypeMap["rgba"] = vvTexRend::VV_RGBA;
   voxelTypeMap["arb"] = vvTexRend::VV_FRG_PRG;
-  voxelTypeMap["paltex"] = vvTexRend::VV_PAL_TEX;
   voxelTypeMap["shader"] = vvTexRend::VV_PIX_SHD;
-  voxelTypeMap["regcomb"] = vvTexRend::VV_TEX_SHD;
 
   // TexRend
   rendererTypeMap["default"] = vvRenderer::TEXREND;
@@ -695,7 +693,7 @@ bool vvRendererFactory::hasRenderer(const std::string& name, std::string const& 
     return hasRayRenderer(arch);
   }
 #ifdef HAVE_OPENGL
-  else if (str == "planar")
+  else if (str == "planar" || str == "texture" || str == "texrend")
   {
     return hasRenderer(vvRenderer::TEXREND);
   }

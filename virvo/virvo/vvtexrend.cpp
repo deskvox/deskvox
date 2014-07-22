@@ -35,11 +35,6 @@
 #include "vvopengl.h"
 #include "vvdynlib.h"
 
-#ifdef HAVE_X11
-#include <GL/glx.h>
-#include <X11/Xlib.h>
-#endif
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -216,8 +211,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
-  extPalTex  = isSupported(VV_PAL_TEX);
-  extTexShd  = isSupported(VV_TEX_SHD);
   extPixShd  = isSupported(VV_PIX_SHD);
   arbFrgPrg  = isSupported(VV_FRG_PRG);
 
@@ -236,8 +229,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   switch(voxelType)
   {
     case VV_RGBA:    cerr << "VV_RGBA";    break;
-    case VV_PAL_TEX: cerr << "VV_PAL_TEX"; break;
-    case VV_TEX_SHD: cerr << "VV_TEX_SHD"; break;
     case VV_PIX_SHD: cerr << "VV_PIX_SHD"; break;
     case VV_FRG_PRG: cerr << "VV_FRG_PRG"; break;
     default: assert(0); break;
@@ -287,11 +278,6 @@ void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
   voxelType = vt;
   switch(voxelType)
   {
-    case VV_PAL_TEX:
-      texelsize=1;
-      internalTexFormat = GL_COLOR_INDEX8_EXT;
-      texFormat = GL_COLOR_INDEX;
-      break;
     case VV_FRG_PRG:
       texelsize=1;
       internalTexFormat = GL_LUMINANCE;
@@ -323,11 +309,6 @@ void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
         texFormat = GL_RGBA;
       }
       break;
-    case VV_TEX_SHD:
-      texelsize=4;
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      break;
     case VV_RGBA:
       internalTexFormat = GL_RGBA;
       texFormat = GL_RGBA;
@@ -352,8 +333,6 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
     {
       if (arbFrgPrg) return VV_FRG_PRG;
       else if (extPixShd) return VV_PIX_SHD;
-      else if (extTexShd) return VV_TEX_SHD;
-      else if (extPalTex) return VV_PAL_TEX;
     }
     else
     {
@@ -367,8 +346,6 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
     {
       case VV_PIX_SHD: if (extPixShd) return VV_PIX_SHD;
       case VV_FRG_PRG: if (arbFrgPrg && vd->chan==1) return VV_FRG_PRG;
-      case VV_TEX_SHD: if (extTexShd && vd->chan==1) return VV_TEX_SHD;
-      case VV_PAL_TEX: if (extPalTex && vd->chan==1) return VV_PAL_TEX;
       default: return VV_RGBA;
     }
   }
@@ -414,7 +391,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
   updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex);
   vvGLTools::printGLError("vvTexRend::makeTextures");
 
-  if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD)
+  if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
   {
     makeLUTTexture();
   }
@@ -622,16 +599,9 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
                 switch(voxelType)
                 {
-                case VV_PAL_TEX:
                 case VV_FRG_PRG:
                 case VV_PIX_SHD:
                   texData[texelsize * texOffset] = (uint8_t) rawVal[0];
-                  break;
-                case VV_TEX_SHD:
-                  for (size_t c = 0; c < 4; c++)
-                  {
-                    texData[4 * texOffset + c] = (uint8_t) rawVal[0];
-                  }
                   break;
                 case VV_RGBA:
                   for (size_t c = 0; c < 4; c++)
@@ -775,13 +745,6 @@ void vvTexRend::setGLenvironment() const
   glMatrixMode(GL_MODELVIEW);
   glDepthMask(GL_FALSE);
 
-  switch (voxelType)
-  {
-    case VV_PAL_TEX:
-      glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
-      break;
-    default: break;
-  }
   switch (_mipMode)
   {
     // alpha compositing
@@ -812,12 +775,6 @@ void vvTexRend::enableLUTMode(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]
     case VV_FRG_PRG:
       enableFragProg(lutName, progName);
       break;
-    case VV_TEX_SHD:
-      enableNVShaders();
-      break;
-    case VV_PAL_TEX:
-      glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
-      break;
     default:
       // nothing to do
       break;
@@ -831,13 +788,6 @@ void vvTexRend::disableLUTMode()
   {
     case VV_FRG_PRG:
       disableFragProg();
-      break;
-    case VV_TEX_SHD:
-      disableNVShaders();
-      break;
-    case VV_PAL_TEX:
-      if (glsSharedTexPal==(uint8_t)true) glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
-      else glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
       break;
     default:
       // nothing to do
@@ -1449,14 +1399,7 @@ void vvTexRend::updateLUT(const float dist)
     case VV_RGBA:
       makeTextures(false);// this mode doesn't use a hardware LUT, so every voxel has to be updated
       break;
-    case VV_PAL_TEX:
-      // Load color LUT for pre-classification:
-      assert(total==256);
-      glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGBA8,
-          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-      break;
     case VV_PIX_SHD:
-    case VV_TEX_SHD:
     case VV_FRG_PRG:
       if(voxelType!=VV_PIX_SHD)
         glActiveTextureARB(GL_TEXTURE1_ARB);
@@ -1666,15 +1609,6 @@ bool vvTexRend::isSupported(const VoxelType voxel)
     case VV_BEST:
     case VV_RGBA:
       return true;
-    case VV_PAL_TEX:
-      return vvGLTools::isGLextensionSupported("GL_EXT_paletted_texture");
-    case VV_TEX_SHD:
-      return (vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,3,0)) &&
-        vvGLTools::isGLextensionSupported("GL_NV_texture_shader") &&
-        vvGLTools::isGLextensionSupported("GL_NV_texture_shader2") &&
-        vvGLTools::isGLextensionSupported("GL_ARB_texture_env_combine") &&
-        vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
-        vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
     case VV_PIX_SHD:
       {
         return (vvShaderFactory::isSupported("cg")
@@ -1750,68 +1684,13 @@ void vvTexRend::renderQualityDisplay() const
 //----------------------------------------------------------------------------
 void vvTexRend::enableTexture(const GLenum target) const
 {
-  if (voxelType==VV_TEX_SHD)
-  {
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, target);
-  }
-  else
-  {
-    glEnable(target);
-  }
+  glEnable(target);
 }
 
 //----------------------------------------------------------------------------
 void vvTexRend::disableTexture(const GLenum target) const
 {
-  if (voxelType==VV_TEX_SHD)
-  {
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-  }
-  else
-  {
-    glDisable(target);
-  }
-}
-
-//----------------------------------------------------------------------------
-void vvTexRend::enableNVShaders() const
-{
-  glEnable(GL_TEXTURE_SHADER_NV);
-
-  glActiveTextureARB(GL_TEXTURE0_ARB);          // the volume data
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  vvGLTools::printGLError("Texture unit 0");
-
-  glActiveTextureARB(GL_TEXTURE1_ARB);
-  glBindTexture(GL_TEXTURE_2D, pixLUTName);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_DEPENDENT_AR_TEXTURE_2D_NV);
-  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_PREVIOUS_TEXTURE_INPUT_NV, GL_TEXTURE0_ARB);
-  vvGLTools::printGLError("Texture unit 1");
-
-  glActiveTextureARB(GL_TEXTURE2_ARB);
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_TEXTURE_3D);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
-  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-
-  glActiveTextureARB(GL_TEXTURE3_ARB);
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_TEXTURE_3D);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
-  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-
-  glActiveTextureARB(GL_TEXTURE0_ARB);
-}
-
-//----------------------------------------------------------------------------
-void vvTexRend::disableNVShaders() const
-{
-  glDisable(GL_TEXTURE_SHADER_NV);
-  glActiveTextureARB(GL_TEXTURE1_ARB);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_2D);
-  glActiveTextureARB(GL_TEXTURE0_ARB);
+  glDisable(target);
 }
 
 //----------------------------------------------------------------------------
@@ -1881,7 +1760,7 @@ void vvTexRend::disableShader(vvShaderProgram* shader) const
 
 void vvTexRend::initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const
 {
-  if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
+  if(voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
   {
     glGenTextures(1, pixLUTName);
   }
@@ -1921,7 +1800,7 @@ void vvTexRend::freeClassificationStage(GLuint pixLUTName, GLuint progname[VV_FR
   {
     glDeleteProgramsARB(VV_FRAG_PROG_MAX, progname);
   }
-  if (voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD)
+  if (voxelType==VV_FRG_PRG || voxelType==VV_PIX_SHD)
   {
     glDeleteTextures(1, &pixLUTName);
   }
@@ -2060,9 +1939,7 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
       index = y * width + x;
       switch (voxelType)
       {
-        case VV_PAL_TEX:
         case VV_FRG_PRG:
-        case VV_TEX_SHD:
         case VV_PIX_SHD:
           result[index] = data[texelsize*index];
           break;
