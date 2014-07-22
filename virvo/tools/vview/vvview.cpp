@@ -1883,7 +1883,7 @@ double vvView::performanceTest()
       int framesRendered = 0;
       vvRendererFactory::Options opt;
       opt["voxeltype"] = test->getVoxelType();
-      ds->createRenderer(test->getGeomType(), opt,
+      ds->createRenderer("", opt,
                       (size_t) test->getBrickDims()[0],
                       (size_t) test->getBrickDims()[1],
                       (size_t) test->getBrickDims()[2]);
@@ -2110,10 +2110,7 @@ void vvView::createMenus()
   // Rendering geometry menu:
   rendererMenu = glutCreateMenu(rendererMenuCallback);
   glutAddMenuEntry("Auto select [0]", 0);
-  if (vvTexRend::isSupported(vvTexRend::VV_SLICES))    glutAddMenuEntry("2D textures - slices [1]", 1);
-  if (vvTexRend::isSupported(vvTexRend::VV_CUBIC2D))   glutAddMenuEntry("2D textures - cubic [2]", 2);
-  if (vvTexRend::isSupported(vvTexRend::VV_VIEWPORT))  glutAddMenuEntry("3D textures - viewport aligned [3]", 3);
-  if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
+  if (vvRendererFactory::hasRenderer("texrend"))  glutAddMenuEntry("3D textures - viewport aligned [3]", 3);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
   glutAddMenuEntry("VolPack [8]", 8);
@@ -2139,7 +2136,6 @@ void vvView::createMenus()
   glutAddMenuEntry("Toggle slice interpolation [i]", 0);
   glutAddMenuEntry("Toggle warp interpolation [W]", 16);
   if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)
-      && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT)
       && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
   {
     glutAddMenuEntry("Toggle pre-integration [P]", 1);

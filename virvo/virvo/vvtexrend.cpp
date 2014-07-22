@@ -48,7 +48,6 @@
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
-#include "vvsphere.h"
 #include "vvtexrend.h"
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
@@ -120,7 +119,7 @@ static PixelFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
   @param numDisplays             # displays for multi-gpu rendering
   @param multiGpuBufferPrecision precision of the offscreen buffer used for multi-gpu rendering
 */
-vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox)
+vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
@@ -226,31 +225,14 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   // Determine best rendering algorithm for current hardware:
   setVoxelType(findBestVoxelType(vox));
-  geomType  = findBestGeometry(geom, voxelType);
-
-  _proxyGeometryOnGpuSupported = vvGLTools::isGLVersionSupported(2,0,0);
-  if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
-  {
-    _currentShader = 9;
-  }
 
   pixLUTName = 0;
   _shader = initShader();
-  if(_shader) _proxyGeometryOnGpuSupported = true;
   if(voxelType == VV_PIX_SHD && !_shader)
     setVoxelType(VV_RGBA);
   initClassificationStage(&pixLUTName, fragProgName);
 
   cerr << "Rendering algorithm: ";
-  switch(geomType)
-  {
-    case VV_SLICES:    cerr << "VV_SLICES";  break;
-    case VV_CUBIC2D:   cerr << "VV_CUBIC2D";   break;
-    case VV_VIEWPORT:  cerr << "VV_VIEWPORT";  break;
-    case VV_SPHERICAL: cerr << "VV_SPHERICAL"; break;
-    default: assert(0); break;
-  }
-  cerr << ", ";
   switch(voxelType)
   {
     case VV_RGBA:    cerr << "VV_RGBA";    break;
@@ -358,32 +340,6 @@ void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
 }
 
 //----------------------------------------------------------------------------
-/** Chooses the best rendering geometry depending on the graphics hardware's
-  capabilities.
-  @param geom desired geometry
-*/
-vvTexRend::GeometryType vvTexRend::findBestGeometry(const vvTexRend::GeometryType geom,
-                                                    const vvTexRend::VoxelType vox) const
-{
-  (void)vox;
-  vvDebugMsg::msg(1, "vvTexRend::findBestGeometry()");
-
-  if (geom==VV_AUTO)
-  {
-    if (extTex3d) return VV_VIEWPORT;
-    else return VV_SLICES;
-  }
-  else
-  {
-    if (!extTex3d && (geom==VV_VIEWPORT || geom==VV_SPHERICAL))
-    {
-      return VV_SLICES;
-    }
-    else return geom;
-  }
-}
-
-//----------------------------------------------------------------------------
 /// Chooses the best voxel type depending on the graphics hardware's
 /// capabilities.
 vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox) const
@@ -455,12 +411,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
   texels[1] = getTextureSize(vox[1]);
   texels[2] = getTextureSize(vox[2]);
 
-  switch (geomType)
-  {
-    case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
-    case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
-    default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex); break;
-  }
+  updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex);
   vvGLTools::printGLError("vvTexRend::makeTextures");
 
   if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD)
@@ -494,223 +445,6 @@ void vvTexRend::makeLUTTexture() const
   vvGLTools::printGLError("leave makeLUTTexture");
 }
 
-//----------------------------------------------------------------------------
-/// Generate 2D textures for cubic 2D mode.
-vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
-{
-  GLint glWidth;                                  // return value from OpenGL call
-  uint8_t* rgbaSlice[3];                          // RGBA slice data for texture memory for each principal axis
-  vec4i rawVal;                                   // raw values for R,G,B,A
-  size_t rawSliceSize;                            // number of bytes in a slice of the raw data array
-  size_t rawLineSize;                             // number of bytes in a row of the raw data array
-  vvsize3 texSize;                                // size of a 2D texture in bytes for each principal axis
-  uint8_t* raw;                                   // raw volume data
-  size_t texIndex=0;                              // index of current texture
-  size_t texSliceIndex;                           // index of current voxel in texture
-  vvsize3 tw, th;                                 // current texture width and height for each principal axis
-  vvsize3 rw, rh, rs;                             // raw data width, height, slices for each principal axis
-  vvsize3 rawStart;                               // starting offset into raw data, for each principal axis
-  vvVector3i rawStepW;                            // raw data step size for texture row, for each principal axis
-  vvVector3i rawStepH;                            // raw data step size for texture column, for each principal axis
-  vvVector3i rawStepS;                            // raw data step size for texture slices, for each principal axis
-  uint8_t* rawVoxel;                              // current raw data voxel
-  bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
-  ErrorType err = OK;
-
-  vvDebugMsg::msg(1, "vvTexRend::makeTextures2D()");
-
-  assert(axes==1 || axes==3);
-
-  removeTextures();                                // first remove previously generated textures from TRAM
-
-  size_t frames = vd->frames;
-  
-  // Determine total number of textures:
-  if (axes==1)
-  {
-    textures = vd->vox[2] * frames;
-  }
-  else
-  {
-    textures = (vd->vox[0] + vd->vox[1] + vd->vox[2]) * frames;
-  }
-
-  VV_LOG(1) << "Total number of 2D textures:    " << textures << std::endl;
-  VV_LOG(1) << "Total size of 2D textures [KB]: " << frames * axes * texels[0] * texels[1] * texels[2] * texelsize / 1024;
-
-  // Generate texture names:
-  assert(texNames==NULL);
-  texNames = new GLuint[textures];
-  glGenTextures(textures, texNames);
-
-  // Initialize texture sizes:
-  th[1] = tw[2] = texels[0];
-  tw[0] = th[2] = texels[1];
-  tw[1] = th[0] = texels[2];
-  for (size_t i=3-axes; i<3; ++i)
-  {
-    texSize[i] = tw[i] * th[i] * texelsize;
-  }
-
-  // Initialize raw data sizes:
-  rs[0] = rh[1] = rw[2] = vd->vox[0];
-  rw[0] = rs[1] = rh[2] = vd->vox[1];
-  rh[0] = rw[1] = rs[2] = vd->vox[2];
-  rawLineSize  = vd->vox[0] * vd->getBPV();
-  rawSliceSize = vd->getSliceBytes();
-
-  // Initialize raw data access info:
-  rawStart[0] = (vd->vox[2]) * rawSliceSize - vd->getBPV();
-  rawStepW[0] = -rawLineSize;
-  rawStepH[0] = -rawSliceSize;
-  rawStepS[0] = -vd->getBPV();
-  rawStart[1] = (vd->vox[2] - 1) * rawSliceSize;
-  rawStepW[1] = -rawSliceSize;
-  rawStepH[1] = vd->getBPV();
-  rawStepS[1] = rawLineSize;
-  rawStart[2] = (vd->vox[1] - 1) * rawLineSize;;
-  rawStepW[2] = vd->getBPV();
-  rawStepH[2] = -rawLineSize;
-  rawStepS[2] = rawSliceSize;
-
-  // Generate texture data arrays:
-  for (size_t i=3-axes; i<3; ++i)
-  {
-    rgbaSlice[i] = new uint8_t[texSize[i]];
-  }
-
-  // Generate texture data:
-  for (size_t f=0; f<frames; ++f)
-  {
-    raw = vd->getRaw(f);                          // points to beginning of frame in raw data
-    for (size_t i=3-axes; i<3; ++i)                      // generate textures for each principal axis
-    {
-      memset(rgbaSlice[i], 0, texSize[i]);        // initialize with 0's for invisible empty regions
-
-      // Generate texture contents:
-      for (size_t s=0; s<rs[i]; ++s)                 // loop thru texture and raw data slices
-      {
-        for (size_t h=0; h<rh[i]; ++h)               // loop thru raw data rows
-        {
-          // Set voxel to starting position in raw data array:
-          rawVoxel = raw + rawStart[i] + s * rawStepS[i] + h * rawStepH[i];
-
-          for (size_t w=0; w<rw[i]; ++w)             // loop thru raw data columns
-          {
-            texSliceIndex = texelsize * (w + h * tw[i]);
-            if (vd->chan==1 && (vd->bpc==1 || vd->bpc==2 || vd->bpc==4))
-            {
-              if (vd->bpc == 1)                   // 8 bit voxels
-              {
-                rawVal[0] = int(*rawVoxel);
-              }
-              else if (vd->bpc == 2)              // 16 bit voxels
-              {
-                rawVal[0] = *((uint16_t*)(rawVoxel));
-                rawVal[0] >>= 8;
-              }
-              else                                // float voxels
-              {
-                const float fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-              switch(voxelType)
-              {
-                case VV_PAL_TEX:
-                case VV_FRG_PRG:
-                  rgbaSlice[i][texSliceIndex] = (uint8_t)rawVal[0];
-                  break;
-                case VV_PIX_SHD:
-                  for (size_t c=0; c<ts_min(size_t(4), vd->chan); ++c)
-                  {
-                    rgbaSlice[i][texSliceIndex + c]   = (uint8_t)rawVal[0];
-                  }
-                  break;
-                case VV_TEX_SHD:
-                  for (size_t c=0; c<4; ++c)
-                  {
-                    rgbaSlice[i][texSliceIndex + c]   = (uint8_t)rawVal[0];
-                  }
-                  break;
-                case VV_RGBA:
-                  for (size_t c=0; c<4; ++c)
-                  {
-                    rgbaSlice[i][texSliceIndex + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
-                  }
-                  break;
-                default: assert(0); break;
-              }
-            }
-            else if (vd->bpc==1)                  // for up to 4 channels
-            {
-              //XXX: das in Ordnung bringen fuer 2D-Texturen mit LUT
-              // Fetch component values from memory:
-              for (size_t c=0; c<ts_min(vd->chan, size_t(4)); ++c)
-              {
-                rawVal[c] = *(rawVoxel + c);
-              }
-
-              // Copy color components:
-              for (size_t c=0; c<ts_min(vd->chan, size_t(3)); ++c)
-              {
-                rgbaSlice[i][texSliceIndex + c] = (uint8_t)rawVal[c];
-              }
-
-              // Alpha channel:
-              if (vd->chan>=4)                    // RGBA?
-              {
-                rgbaSlice[i][texSliceIndex + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-              }
-              else                                // compute alpha from color components
-              {
-                size_t alpha = 0;
-                for (size_t c=0; c<vd->chan; ++c)
-                {
-                  // Alpha: mean of sum of RGB conversion table results:
-                  alpha += (size_t)rgbaLUT[size_t(rawVal[c]) * 4 + c];
-                }
-                rgbaSlice[i][texSliceIndex + 3] = (uint8_t)(alpha / vd->chan);
-              }
-            }
-            rawVoxel += rawStepW[i];
-          }
-        }
-        glBindTexture(GL_TEXTURE_2D, texNames[texIndex]);
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-        // Only load texture if it can be accommodated:
-        glTexImage2D(GL_PROXY_TEXTURE_2D, 0, internalTexFormat,
-          tw[i], th[i], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
-        glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &glWidth);
-        if (glWidth!=0)
-        {
-          glTexImage2D(GL_TEXTURE_2D, 0, internalTexFormat,
-            tw[i], th[i], 0, texFormat, GL_UNSIGNED_BYTE, rgbaSlice[i]);
-        }
-        else
-        {
-          accommodated = false;
-        }
-        ++texIndex;
-      }
-    }
-  }
-
-  if (accommodated==false)
-    cerr << "Insufficient texture memory for" << (axes==3?" cubic ":" ") << "2D textures." << endl;
-  err = TRAM_ERROR;
-
-  assert(texIndex == textures);
-  for (int i=3-axes; i<3; ++i)
-    delete[] rgbaSlice[i];
-  return err;
-}
-
 void vvTexRend::setTexMemorySize(size_t newSize)
 {
   if (_texMemorySize == newSize)
@@ -733,7 +467,6 @@ void vvTexRend::updateTransferFunction()
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
   if (_preIntegration &&
       arbMltTex && 
-      geomType==VV_VIEWPORT && 
       !(_clipMode == 1 && (_clipSingleSlice || _clipOpaque)) &&
       (voxelType==VV_FRG_PRG || (voxelType==VV_PIX_SHD && (_currentShader==0 || _currentShader==11))))
   {
@@ -771,21 +504,7 @@ void vvTexRend::updateVolumeData()
 void vvTexRend::updateVolumeData(size_t offsetX, size_t offsetY, size_t offsetZ,
                                  size_t sizeX, size_t sizeY, size_t sizeZ)
 {
-  switch (geomType)
-  {
-    case VV_VIEWPORT:
-      updateTextures3D(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, false);
-      break;
-    case VV_SLICES:
-      updateTextures2D(1, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
-      break;
-    case VV_CUBIC2D:
-      updateTextures2D(3, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
-      break;
-    default:
-      // nothing to do
-      break;
-  }
+  updateTextures3D(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, false);
 }
 
 //----------------------------------------------------------------------------
@@ -838,7 +557,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   vvssize3 offsets(offsetX, offsetY, offsetZ);
   offsets += _paddingRegion.getMin();
 
-  bool useRaw = geomType!=VV_SPHERICAL && vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
+  bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
   if (sizeX != vd->vox[0])
     useRaw = false;
   if (sizeY != vd->vox[1])
@@ -978,29 +697,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
           else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
         }
       }
-
-      if (geomType == VV_SPHERICAL)
-      {
-        // Set edge values and values beyond edges to 0 for spheric textures,
-        // because textures may exceed texel volume:
-        for (ssize_t s = offsetZ; s < (offsetZ + sizeZ); ++s)
-        {
-          for (ssize_t y = offsetY; y < (offsetY + sizeY); ++y)
-          {
-            for (ssize_t x = offsetX; x < (offsetX + sizeX); ++x)
-            {
-              if ((s == 0) || (s>=vd->vox[2]-1) ||
-                  (y == 0) || (y>=vd->vox[1]-1) ||
-                  (x == 0) || (x>=vd->vox[0]-1))
-              {
-                texOffset = x + y * texels[0] + s * texels[0] * texels[1];
-                for(size_t i=0; i<texelsize; i++)
-                  texData[texelsize*texOffset+i] = 0;
-              }
-            }
-          }
-        }
-      }
     }
 
     if (newTex)
@@ -1045,194 +741,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     delete[] texData;
   }
   return err;
-}
-
-vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
-  ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ)
-{
-  vec4i rawVal;
-  size_t rawSliceSize;
-  size_t rawLineSize;
-  vvsize3 texSize;
-  size_t texIndex = 0;
-  size_t texSliceIndex;
-  vvsize3 texW, texH;
-  vvsize3 tw, th;
-  vvsize3 rw, rh, rs;
-  vvsize3 sw, sh, ss;
-  vvsize3 rawStart;
-  vvVector3i rawStepW;
-  vvVector3i rawStepH;
-  vvVector3i rawStepS;
-  uint8_t* rgbaSlice[3];
-  uint8_t* raw;
-  uint8_t* rawVoxel;
-
-  assert(axes == 1 || axes == 3);
-
-  ss[0] = vd->vox[0] - offsetX - sizeX;
-  sw[0] = offsetY;
-  sh[0] = offsetZ;
-
-  texW[0] = offsetY;
-  texH[0] = offsetZ;
-
-  ss[1] = vd->vox[1] - offsetY - sizeY;
-  sh[1] = offsetZ;
-  sw[1] = offsetX;
-
-  texW[1] = offsetZ;
-  texH[1] = offsetX;
-
-  ss[2] = vd->vox[2] - offsetZ - sizeZ;
-  sw[2] = offsetX;
-  sh[2] = offsetY;
-
-  texW[2] = offsetX;
-  texH[2] = offsetY;
-
-  rs[0] = ts_clamp(vd->vox[0] - offsetX, ssize_t(0), vd->vox[0]);
-  rw[0] = ts_clamp(offsetY + sizeY, ssize_t(0), vd->vox[1]);
-  rh[0] = ts_clamp(offsetZ + sizeZ, ssize_t(0), vd->vox[2]);
-
-  rs[1] = ts_clamp(vd->vox[1] - offsetY, ssize_t(0), vd->vox[1]);
-  rh[1] = ts_clamp(offsetZ + sizeZ, ssize_t(0), vd->vox[2]);
-  rw[1] = ts_clamp(offsetX + sizeX, ssize_t(0), vd->vox[0]);
-
-  rs[2] = ts_clamp(vd->vox[2] - offsetZ, ssize_t(0), vd->vox[2]);
-  rw[2] = ts_clamp(offsetX + sizeX, ssize_t(0), vd->vox[0]);
-  rh[2] = ts_clamp(offsetY + sizeY, ssize_t(0), vd->vox[1]);
-
-  rawLineSize  = vd->vox[0] * vd->getBPV();
-  rawSliceSize = vd->getSliceBytes();
-
-  // initialize raw data access info
-  rawStart[0] = (vd->vox[2]) * rawSliceSize - vd->getBPV();
-  rawStepW[0] = -rawLineSize;
-  rawStepH[0] = -rawSliceSize;
-  rawStepS[0] = -vd->getBPV();
-  rawStart[1] = (vd->vox[2] - 1) * rawSliceSize;
-  rawStepW[1] = -rawSliceSize;
-  rawStepH[1] = vd->getBPV();
-  rawStepS[1] = rawLineSize;
-  rawStart[2] = (vd->vox[1] - 1) * rawLineSize;;
-  rawStepW[2] = vd->getBPV();
-  rawStepH[2] = -rawLineSize;
-  rawStepS[2] = rawSliceSize;
-
-  // initialize size of sub region
-  th[1] = tw[2] = sizeX;
-  tw[0] = th[2] = sizeY;
-  tw[1] = th[0] = sizeZ;
-
-  for (size_t i = 3-axes; i < 3; i++)
-  {
-    texSize[i] = tw[i] * th[i] * texelsize;
-  }
-
-  // generate texture data arrays
-  for (size_t i=3-axes; i<3; ++i)
-  {
-    rgbaSlice[i] = new uint8_t[texSize[i]];
-  }
-
-  // generate texture data
-  for (size_t f = 0; f < vd->frames; f++)
-  {
-    raw = vd->getRaw(f);
-
-    for (size_t i = 3-axes; i < 3; i++)
-    {
-      memset(rgbaSlice[i], 0, texSize[i]);
-
-      if (axes == 1)
-      {
-        texIndex = f * vd->vox[i] + ss[i];
-      }
-      else
-      {
-        texIndex = f * (vd->vox[0] + vd->vox[1] + vd->vox[2]);
-        if (i == 0)
-          texIndex += ss[0];
-        else if (i == 1)
-          texIndex += vd->vox[0] + ss[1];
-        else
-          texIndex += vd->vox[0] + vd->vox[1] + ss[2];
-      }
-
-      // generate texture contents
-      for (size_t s = ss[i]; s < rs[i]; s++)
-      {
-        for (size_t h = sh[i]; h < rh[i]; h++)
-        {
-          // set voxel to starting position in raw data array
-          rawVoxel = raw + rawStart[i] + s * rawStepS[i] + h * rawStepH[i] + sw[i];
-
-          for (size_t w = sw[i]; w < rw[i]; w++)
-          {
-            texSliceIndex = texelsize * ((w - sw[i]) + (h - sh[i]) * tw[i]);
-
-            if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
-            {
-              if (vd->bpc == 1)
-                rawVal[0] = int(*rawVoxel);
-              else if (vd->bpc == 2)
-              {
-                rawVal[0] = (int(*rawVoxel) << 8) | int(*(rawVoxel+1));
-                rawVal[0] >>= 4;
-              }
-              else
-              {
-                const float fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-
-              for (size_t c = 0; c < texelsize; c++)
-                rgbaSlice[i][texSliceIndex + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
-            }
-            else if (vd->bpc == 1)
-            {
-              // fetch component values from memory
-              for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
-                rawVal[c] = *(rawVoxel + c);
-
-              // copy color components
-              for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
-                rgbaSlice[i][texSliceIndex + c] = (uint8_t) rawVal[c];
-
-              // alpha channel
-              if (vd->chan >= 4)
-                rgbaSlice[i][texSliceIndex + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-              else
-              {
-                size_t alpha = 0;
-                for (size_t c = 0; c < vd->chan; c++)
-                  // alpha: mean of sum of RGB conversion table results
-                  alpha += (size_t)rgbaLUT[size_t(rawVal[c]) * 4 + c];
-
-                rgbaSlice[i][texSliceIndex + 3] = (uint8_t)(alpha / vd->chan);
-              }
-            }
-
-            rawVoxel += rawStepW[i];
-          }
-        }
-
-        glBindTexture(GL_TEXTURE_2D, texNames[texIndex]);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, texW[i], texH[i], tw[i], th[i],
-          texFormat, GL_UNSIGNED_BYTE, rgbaSlice[i]);
-
-        ++texIndex;
-      }
-    }
-  }
-
-  for (int i = 3-axes; i < 3; i++)
-  {
-    delete[] rgbaSlice[i];
-  }
-
-  return OK;
 }
 
 //----------------------------------------------------------------------------
@@ -1662,432 +1170,6 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 }
 
 //----------------------------------------------------------------------------
-/** Render the volume using a 3D texture (needs 3D texturing extension).
-  Spherical slices are surrounding the observer.
-  @param mv       model-view matrix
-*/
-void vvTexRend::renderTex3DSpherical(mat4 const& mv)
-{
-  float  maxDist = 0.0;
-  float  minDist = 0.0;
-  vec3 texSize;                                   // size of 3D texture [object space]
-  vec3 texSize2;                                  // half size of 3D texture [object space]
-  vec3 volumeVertices[8];
-
-  vvDebugMsg::msg(3, "vvTexRend::renderTex3DSpherical()");
-
-  if (!extTex3d) return;
-
-  // make sure that at least one shell is drawn
-  const int numShells = max(1, static_cast<int>(_quality * 100.0f));
-
-  // Determine texture object dimensions:
-  const vvVector3 size(vd->getSize());
-  for (size_t i=0; i<3; ++i)
-  {
-    texSize[i]  = size[i] * (float)texels[i] / (float)vd->vox[i];
-    texSize2[i] = 0.5f * texSize[i];
-  }
-
-  mat4 invView = inverse(mv);
-
-  // generates the vertices of the cube (volume) in world coordinates
-  size_t vertexIdx = 0;
-  for (size_t ix=0; ix<2; ++ix)
-    for (size_t iy=0; iy<2; ++iy)
-      for (size_t iz=0; iz<2; ++iz)
-      {
-        volumeVertices[vertexIdx][0] = (float)ix;
-        volumeVertices[vertexIdx][1] = (float)iy;
-        volumeVertices[vertexIdx][2] = (float)iz;
-        // transfers vertices to world coordinates:
-        for (size_t k=0; k<3; ++k)
-          volumeVertices[vertexIdx][k] =
-            (volumeVertices[vertexIdx][k] * 2.0f - 1.0f) * texSize2[k];
-        vec4 tmp( volumeVertices[vertexIdx], 1.0f );
-        tmp = mv * tmp;
-        volumeVertices[vertexIdx] = tmp.xyz() / tmp.w;
-        vertexIdx++;
-  }
-
-  // Determine maximal and minimal distance of the volume from the eyepoint:
-  maxDist = minDist = length( volumeVertices[0] );
-  for (size_t i = 1; i<7; i++)
-  {
-    float dist = length( volumeVertices[i] );
-    if (dist > maxDist)  maxDist = dist;
-    if (dist < minDist)  minDist = dist;
-  }
-
-  maxDist *= 1.4f;
-  minDist *= 0.5f;
-
-  // transfer the eyepoint to the object coordinates of the volume
-  // to check whether the camera is inside the volume:
-  vec4 eye4(0.0, 0.0, 0.0, 1.0);
-  eye4 = invView * eye4;
-  vec3 eye = eye4.xyz() / eye4.w;
-  bool inside = true;
-  for (size_t k=0; k<3; ++k)
-  {
-    if (eye[k] < -texSize2[k] || eye[k] > texSize2[k])
-      inside = false;
-  }
-  if (inside)
-    minDist = 0.0f;
-
-  // Determine texture spacing:
-  const float spacing = (maxDist-minDist) / (float)(numShells-1);
-
-  if (instantClassification())
-  {
-    float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
-      vd->vox[1] * vd->vox[1] +
-      vd->vox[2] * vd->vox[2]));
-    updateLUT(diagonalVoxels / numShells);
-  }
-
-  vvSphere shell;
-  shell.subdivide();
-  shell.subdivide();
-  shell.setVolumeDim(texSize);
-  shell.setViewMatrix(mv);
-  float offset[3];
-  for (int k=0; k<3; ++k)
-  {
-    offset[k] = -(0.5f - (texMin[k] + texMax[k]) * 0.5f);
-  }
-  shell.setTextureOffset(offset);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
-
-  // Volume render a 3D texture:
-  if(voxelType == VV_PIX_SHD && _shader)
-  {
-    _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
-  }
-  else
-  {
-    enableTexture(GL_TEXTURE_3D_EXT);
-    glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
-  }
-
-  // Enable clipping plane if appropriate:
-  if (_clipMode == 1) activateClippingPlane();
-
-  float radius = maxDist;
-  for (int i=0; i<numShells; ++i)                     // loop thru all drawn textures
-  {
-    shell.setRadius(radius);
-    shell.calculateTexCoords();
-    shell.performCulling();
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    shell.render();
-    radius -= spacing;
-  }
-  deactivateClippingPlane();
-  disableTexture(GL_TEXTURE_3D_EXT);
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-}
-
-//----------------------------------------------------------------------------
-/** Render the volume using 2D textures (OpenGL 1.1 compatible).
-  @param zz  z coordinate of transformed z base vector
-*/
-void vvTexRend::renderTex2DSlices(float zz)
-{
-  float     texSpacing;                           // spacing for texture coordinates
-  float     zPos;                                 // texture z position
-  float     texStep;                              // step between texture indices
-  float     texIndex;                             // current texture index
-  size_t    numTextures;                          // number of textures drawn
-
-  vvDebugMsg::msg(3, "vvTexRend::renderTex2DSlices()");
-
-  // Enable clipping plane if appropriate:
-  if (_clipMode == 1) activateClippingPlane();
-
-  // Generate half object size as shortcut:
-  vec3 size = vd->getSize();
-  vec3 size2 = size * 0.5f;
-
-  numTextures = size_t(_quality * 100.0f);
-  if (numTextures < 1) numTextures = 1;
-
-  vec3 normal(0.0f, 0.0f, 1.0f);
-  zPos = -size2[2];
-  if (numTextures>1)                              // prevent division by zero
-  {
-    texSpacing = size[2] / (float)(numTextures - 1);
-    texStep = (float)(vd->vox[2] - 1) / (float)(numTextures - 1);
-  }
-  else
-  {
-    texSpacing = 0.0f;
-    texStep = 0.0f;
-    zPos = 0.0f;
-  }
-
-  // Offset for current time step:
-  texIndex = float(vd->getCurrentFrame()) * float(vd->vox[2]);
-  
-  if (zz>0.0f)                                    // draw textures back to front?
-  {
-    texIndex += float(vd->vox[2] - 1);
-    texStep  = -texStep;
-  }
-  else                                            // draw textures front to back
-  {
-    zPos        = -zPos;
-    texSpacing  = -texSpacing;
-    normal.z    = -normal.z;
-  }
-
-  if (instantClassification())
-  {
-    float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
-      + vd->vox[1]*vd->vox[1]
-      + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures);
-  }
-
-  // Volume rendering with multiple 2D textures:
-  enableTexture(GL_TEXTURE_2D);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
-  for (size_t i=0; i<numTextures; ++i)
-  {
-    if(voxelType == VV_PIX_SHD && _shader)
-    {
-      _shader->setParameterTex2D("pix2dtex", texNames[vvToolshed::round(texIndex)]);
-    }
-    else
-    {
-      glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
-    }
-
-
-    if(voxelType==VV_PAL_TEX)
-    {
-      vvsize3 size;
-      getLUTSize(size);
-      glColorTableEXT(GL_TEXTURE_2D, GL_RGBA,
-        size[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-    }
-
-    glBegin(GL_QUADS);
-      glColor4f(1.0, 1.0, 1.0, 1.0);
-      glNormal3f(normal.x, normal.y, normal.z);
-      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2.x,  size2.y, zPos);
-      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2.x, -size2.y, zPos);
-      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2.x, -size2.y, zPos);
-      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2.x,  size2.y, zPos);
-    glEnd();
-
-    zPos += texSpacing;
-    texIndex += texStep;
-  }
-
-  disableTexture(GL_TEXTURE_2D);
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-  deactivateClippingPlane();
-  VV_LOG(3) << "Number of textures stored: " << vd->vox[2] << std::endl;
-  VV_LOG(3) << "Number of textures drawn: " << numTextures << std::endl;
-}
-
-//----------------------------------------------------------------------------
-/** Render the volume using 2D textures, switching to the optimum
-    texture set to prevent holes.
-  @param principal  principal viewing axis
-  @param zx,zy,zz   z coordinates of transformed base vectors
-*/
-void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float zy, float zz)
-{
-  vec3 normal;                                    // normal vector for slices
-  vec3 texTL, texTR, texBL, texBR;                // texture coordinates (T=top etc.)
-  vec3 objTL, objTR, objBL, objBR;                // object coordinates in world space
-  vec3 texSpacing;                                // distance between textures
-  float  texStep;                                 // step size for texture names
-  float  texIndex;                                // textures index
-  size_t numTextures;                             // number of textures drawn
-  size_t frameTextures;                           // number of textures per frame
-
-  vvDebugMsg::msg(3, "vvTexRend::renderTex2DCubic()");
-
-  // Enable clipping plane if appropriate:
-  if (_clipMode == 1) activateClippingPlane();
-
-  // Initialize texture parameters:
-  numTextures = size_t(_quality * 100.0f);
-  frameTextures = vd->vox[0] + vd->vox[1] + vd->vox[2];
-  if (numTextures < 2)  numTextures = 2;          // make sure that at least one slice is drawn to prevent division by zero
-
-  // Generate half object size as a shortcut:
-  vec3 size = vd->getSize();
-  vec3 size2 = size * 0.5f;
-
-  // Initialize parameters upon principal viewing direction:
-  switch (principal)
-  {
-    case vvVecmath::X_AXIS:                                  // zx>0 -> draw left to right
-      // Coordinate system:
-      //     z
-      //     |__y
-      //   x/
-      objTL = vec3(-size2.x,-size2.y, size2.z);
-      objTR = vec3(-size2.x, size2.y, size2.z);
-      objBL = vec3(-size2.x,-size2.y,-size2.z);
-      objBR = vec3(-size2.x, size2.y,-size2.z);
-
-      texTL = vec3(texMin[1], texMax[2], 0.0f);
-      texTR = vec3(texMax[1], texMax[2], 0.0f);
-      texBL = vec3(texMin[1], texMin[2], 0.0f);
-      texBR = vec3(texMax[1], texMin[2], 0.0f);
-
-      texSpacing = vec3(size[0] / float(numTextures - 1), 0.0f, 0.0f);
-      texStep = -1.0f * float(vd->vox[0] - 1) / float(numTextures - 1);
-      normal = vec3(1.0f, 0.0f, 0.0f);
-      texIndex = float(vd->getCurrentFrame() * frameTextures);
-      if (zx<0)                                   // reverse order? draw right to left
-      {
-        normal.x        = -normal.x;
-        objTL.x         = objTR.x = objBL.x = objBR.x = size2.x;
-        texSpacing.x    = -texSpacing.x;
-        texStep         = -texStep;
-      }
-      else
-      {
-        texIndex += float(vd->vox[0] - 1);
-      }
-      break;
-
-    case vvVecmath::Y_AXIS:                                  // zy>0 -> draw bottom to top
-      // Coordinate system:
-      //     x
-      //     |__z
-      //   y/
-      objTL = vec3( size2.x,-size2.y,-size2.z);
-      objTR = vec3( size2.x,-size2.y, size2.z);
-      objBL = vec3(-size2.x,-size2.y,-size2.z);
-      objBR = vec3(-size2.x,-size2.y, size2.z);
-
-      texTL = vec3(texMin[2], texMax[0], 0.0f);
-      texTR = vec3(texMax[2], texMax[0], 0.0f);
-      texBL = vec3(texMin[2], texMin[0], 0.0f);
-      texBR = vec3(texMax[2], texMin[0], 0.0f);
-
-      texSpacing = vec3(0.0f, size.y / float(numTextures - 1), 0.0f);
-      texStep = -1.0f * float(vd->vox[1] - 1) / float(numTextures - 1);
-      normal = vec3(0.0f, 1.0f, 0.0f);
-      texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0]);
-      if (zy<0)                                   // reverse order? draw top to bottom
-      {
-        normal.y        = -normal.y;
-        objTL.y         = objTR.y = objBL.y = objBR.y = size2.y;
-        texSpacing.y    = -texSpacing.y;
-        texStep         = -texStep;
-      }
-      else
-      {
-        texIndex += float(vd->vox[1] - 1);
-      }
-      break;
-
-    case vvVecmath::Z_AXIS:                                  // zz>0 -> draw back to front
-    default:
-      // Coordinate system:
-      //     y
-      //     |__x
-      //   z/
-      objTL = vec3(-size2.x, size2.y,-size2.z);
-      objTR = vec3( size2.x, size2.y,-size2.z);
-      objBL = vec3(-size2.x,-size2.y,-size2.z);
-      objBR = vec3( size2.x,-size2.y,-size2.z);
-
-      texTL = vec3(texMin[0], texMax[1], 0.0f);
-      texTR = vec3(texMax[0], texMax[1], 0.0f);
-      texBL = vec3(texMin[0], texMin[1], 0.0f);
-      texBR = vec3(texMax[0], texMin[1], 0.0f);
-
-      texSpacing = vec3(0.0f, 0.0f, size.z / float(numTextures - 1));
-      normal = vec3(0.0f, 0.0f, 1.0f);
-      texStep = -1.0f * float(vd->vox[2] - 1) / float(numTextures - 1);
-      texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0] + vd->vox[1]);
-      if (zz<0)                                   // reverse order? draw front to back
-      {
-        normal.z        = -normal.z;
-        objTL.z         = objTR.z = objBL.z = objBR.z = size2.z;
-        texSpacing.z    = -texSpacing.z;
-        texStep         = -texStep;
-      }
-      else                                        // draw back to front
-      {
-        texIndex += float(vd->vox[2] - 1);
-      }
-      break;
-  }
-
-  if (instantClassification())
-  {
-    float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
-      + vd->vox[1]*vd->vox[1]
-      + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures);
-  }
-
-  // Volume render a 2D texture:
-  enableTexture(GL_TEXTURE_2D);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
-  for (size_t i=0; i<numTextures; ++i)
-  {
-    if(voxelType == VV_PIX_SHD && _shader)
-    {
-      _shader->setParameterTex2D("pix2dtex", texNames[vvToolshed::round(texIndex)]);
-    }
-    else
-    {
-      glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
-    }
-
-    if(voxelType==VV_PAL_TEX)
-    {
-      vvsize3 size;
-      getLUTSize(size);
-      glColorTableEXT(GL_TEXTURE_2D, GL_RGBA,
-        size[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-    }
-
-    glBegin(GL_QUADS);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    glNormal3f(normal.x, normal.y, normal.z);
-    glTexCoord2f(texTL.x, texTL.y); glVertex3f(objTL.x, objTL.y, objTL.z);
-    glTexCoord2f(texBL.x, texBL.y); glVertex3f(objBL.x, objBL.y, objBL.z);
-    glTexCoord2f(texBR.x, texBR.y); glVertex3f(objBR.x, objBR.y, objBR.z);
-    glTexCoord2f(texTR.x, texTR.y); glVertex3f(objTR.x, objTR.y, objTR.z);
-    glEnd();
-    objTL += texSpacing;
-    objBL += texSpacing;
-    objBR += texSpacing;
-    objTR += texSpacing;
-
-    texIndex += texStep;
-  }
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-  disableTexture(GL_TEXTURE_2D);
-  deactivateClippingPlane();
-}
-
-//----------------------------------------------------------------------------
 /** Render the volume onto currently selected drawBuffer.
  Viewport size in world coordinates is -1.0 .. +1.0 in both x and y direction
 */
@@ -2153,11 +1235,9 @@ void vvTexRend::renderVolumeGL()
     }
   }
 
-  if (geomType==VV_SPHERICAL || geomType==VV_VIEWPORT) {
-    // allow for using raw volume data from vvVolDesc for textures without re-shuffeling
-    std::swap(texMin[2], texMax[2]);
-    std::swap(texMin[1], texMax[1]);
-  }
+  // allow for using raw volume data from vvVolDesc for textures without re-shuffeling
+  std::swap(texMin[2], texMax[2]);
+  std::swap(texMin[1], texMax[1]);
 
   // Get OpenGL modelview matrix:
   mat4 mv = gl::getModelviewMatrix();
@@ -2165,21 +1245,7 @@ void vvTexRend::renderVolumeGL()
   enableShader(_shader, pixLUTName);
   enableLUTMode(pixLUTName, fragProgName);
 
-  switch (geomType)
-  {
-    default:
-    case VV_SLICES:
-      getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
-      break;
-    case VV_CUBIC2D:
-      {
-        const vvVecmath::AxisType at = getPrincipalViewingAxis(mv, zx, zy, zz);
-        renderTex2DCubic(at, zx, zy, zz);
-      }
-      break;
-    case VV_SPHERICAL: renderTex3DSpherical(mv); break;
-    case VV_VIEWPORT:  renderTex3DPlanar(mv); break;
-  }
+  renderTex3DPlanar(mv);
 
   disableLUTMode();
   unsetGLenvironment();
@@ -2536,21 +1602,18 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       }
       break;
     case vvRenderer::VV_LIGHTING:
-      if(geomType != VV_SLICES && geomType != VV_CUBIC2D)
+      if (newValue.asBool())
       {
-        if (newValue.asBool())
-        {
-          _previousShader = _currentShader;
+        _previousShader = _currentShader;
           _currentShader = 12;
-        }
-        else
-        {
-          _currentShader = _previousShader;
-        }
-        disableShader(_shader);
-        delete _shader;
-        _shader = initShader();
       }
+      else
+      {
+        _currentShader = _previousShader;
+      }
+      disableShader(_shader);
+      delete _shader;
+      _shader = initShader();
       break;
     case vvRenderer::VV_PIX_SHADER:
       setCurrentShader(newValue);
@@ -2585,34 +1648,6 @@ vvParam vvTexRend::getParameter(ParameterType param) const
       return getCurrentShader();
     default:
       return vvRenderer::getParameter(param);
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Get information on hardware support for rendering modes.
-  This routine cannot guarantee that a requested method works on any
-  dataset, but it will at least work for datasets which fit into
-  texture memory.
-  @param geom geometry type to get information about
-  @return true if the requested rendering type is supported by
-    the system's graphics hardware.
-*/
-bool vvTexRend::isSupported(const GeometryType geom)
-{
-  vvDebugMsg::msg(3, "vvTexRend::isSupported(0)");
-
-  switch (geom)
-  {
-    case VV_AUTO:
-    case VV_SLICES:
-    case VV_CUBIC2D:
-      return true;
-
-    case VV_VIEWPORT:
-    case VV_SPHERICAL:
-      return vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,0);
-    default:
-      return false;
   }
 }
 
@@ -2663,16 +1698,6 @@ bool vvTexRend::isSupported(const FeatureType feature) const
     default: assert(0); break;
   }
   return false;
-}
-
-//----------------------------------------------------------------------------
-/** Return the currently used rendering geometry.
-  This is expecially useful if VV_AUTO was passed in the constructor.
-*/
-vvTexRend::GeometryType vvTexRend::getGeomType() const
-{
-  vvDebugMsg::msg(3, "vvTexRend::getGeomType()");
-  return geomType;
 }
 
 //----------------------------------------------------------------------------
@@ -2797,26 +1822,14 @@ void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX
   glActiveTextureARB(GL_TEXTURE0_ARB);
 
   glEnable(GL_FRAGMENT_PROGRAM_ARB);
-  switch(geomType)
+
+  if(usePreIntegration)
   {
-    case VV_CUBIC2D:
-    case VV_SLICES:
-      glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
-      break;
-    case VV_VIEWPORT:
-    case VV_SPHERICAL:
-      if(usePreIntegration)
-      {
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
-      }
-      else
-      {
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
-      }
-      break;
-    default:
-      vvDebugMsg::msg(1, "vvTexRend::enableFragProg(): unknown method used\n");
-      break;
+    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
+  }
+  else
+  {
+    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
   }
 }
 
@@ -2876,17 +1889,6 @@ void vvTexRend::initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_F
   if (voxelType == VV_FRG_PRG)
   {
     glGenProgramsARB(VV_FRAG_PROG_MAX, progName);
-
-    const char fragProgString2D[] = "!!ARBfp1.0\n"
-      "TEMP temp;\n"
-      "TEX  temp, fragment.texcoord[0], texture[0], 2D;\n"
-      "TEX  result.color, temp, texture[1], 2D;\n"
-      "END\n";
-    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
-    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-      GL_PROGRAM_FORMAT_ASCII_ARB,
-      (GLsizei)strlen(fragProgString2D),
-      fragProgString2D);
 
     const char fragProgString3D[] = "!!ARBfp1.0\n"
       "TEMP temp;\n"

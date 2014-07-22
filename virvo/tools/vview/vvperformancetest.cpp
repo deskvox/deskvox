@@ -137,7 +137,6 @@ vvPerformanceTest::vvPerformanceTest()
   _iterations = 1;
   _frames = 90;
   _quality = 1.0f;
-  _geomType = vvTexRend::VV_AUTO;
   _voxelType = vvTexRend::VV_BEST;
   _testAnimation = VV_ROT_Y;
   _projectionType = vvObjView::PERSPECTIVE;
@@ -306,11 +305,6 @@ void vvPerformanceTest::setBrickDimZ(const float brickDimZ)
   _brickDims[2] = brickDimZ;
 }
 
-void vvPerformanceTest::setGeomType(const std::string &geomType)
-{
-  _geomType = geomType;
-}
-
 void vvPerformanceTest::setVoxelType(const std::string &voxelType)
 {
   _voxelType = voxelType;
@@ -364,11 +358,6 @@ float vvPerformanceTest::getQuality() const
 vvVector3 vvPerformanceTest::getBrickDims() const
 {
   return _brickDims;
-}
-
-std::string vvPerformanceTest::getGeomType() const
-{
-  return _geomType;
 }
 
 std::string vvPerformanceTest::getVoxelType() const
@@ -548,30 +537,7 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
   }
   else if (strcmp(headerName, "GEOMTYPE") == 0)
   {
-    if (strcmp(str, "VV_AUTO") == 0)
-    {
-      test->setGeomType("default");
-    }
-    else if (strcmp(str, "VV_SLICES") == 0)
-    {
-      test->setGeomType("slices");
-    }
-    else if (strcmp(str, "VV_CUBIC2D") == 0)
-    {
-      test->setGeomType("cubic2d");
-    }
-    else if (strcmp(str, "VV_VIEWPORT") == 0)
-    {
-      test->setGeomType("planar");
-    }
-    else if (strcmp(str, "VV_BRICKS") == 0)
-    {
-      test->setGeomType("bricks");
-    }
-    else if (strcmp(str, "VV_SPHERICAL") == 0)
-    {
-      test->setGeomType("spherical");
-    }
+    std::cerr << "only planar 3D textures are supported" << std::endl;
   }
   else if (strcmp(headerName, "VOXELTYPE") == 0)
   {
@@ -704,21 +670,7 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
   }
   else if (strcmp(headerName, "GEOMTYPE") == 0)
   {
-    std::string g = previousTest->getGeomType();
-    if(g == "default")
-      sprintf(str, "%s", "VV_AUTO");
-    else if(g == "slices")
-      sprintf(str, "%s", "VV_SLICES");
-    else if(g == "cubic2d")
-      sprintf(str, "%s", "VV_CUBIC2D");
-    else if(g == "planar")
-      sprintf(str, "%s", "VV_VIEWPORT");
-    else if(g == "bricks")
-      sprintf(str, "%s", "VV_BRICKS");
-    else if(g == "spherical")
-      sprintf(str, "%s", "VV_SPHERICAL");
-    else
-      sprintf(str, "%s", "VV_AUTO");
+    std::cerr << "only planar 3D textures are supported" << std::endl;
   }
   else if (strcmp(headerName, "VOXELTYPE") == 0)
   {

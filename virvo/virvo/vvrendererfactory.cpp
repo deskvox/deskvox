@@ -165,13 +165,11 @@ static void get_cpuid(int reg[4], int type)
 namespace {
 
 typedef std::map<std::string, vvRenderer::RendererType> RendererTypeMap;
-typedef std::map<std::string, vvTexRend::GeometryType> GeometryTypeMap;
 typedef std::map<std::string, vvTexRend::VoxelType> VoxelTypeMap;
 typedef std::map<std::string, std::string> RendererAliasMap;
 
 RendererAliasMap rendererAliasMap;
 RendererTypeMap rendererTypeMap;
-GeometryTypeMap geometryTypeMap;
 VoxelTypeMap voxelTypeMap;
 std::vector<std::string> rayRendArchs;
 
@@ -217,19 +215,10 @@ void init()
 
   // TexRend
   rendererTypeMap["default"] = vvRenderer::TEXREND;
-  geometryTypeMap["default"] = vvTexRend::VV_AUTO;
-
   rendererTypeMap["slices"] = vvRenderer::TEXREND;
-  geometryTypeMap["slices"] = vvTexRend::VV_SLICES;
-
   rendererTypeMap["cubic2d"] = vvRenderer::TEXREND;
-  geometryTypeMap["cubic2d"] = vvTexRend::VV_CUBIC2D;
-
   rendererTypeMap["planar"] = vvRenderer::TEXREND;
-  geometryTypeMap["planar"] = vvTexRend::VV_VIEWPORT;
-
   rendererTypeMap["spherical"] = vvRenderer::TEXREND;
-  geometryTypeMap["spherical"] = vvTexRend::VV_SPHERICAL;
 
   // other renderers
   rendererTypeMap["generic"] = vvRenderer::GENERIC;
@@ -655,11 +644,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
         if(vit != voxelTypeMap.end())
           vox = vit->second;
       }
-      vvTexRend::GeometryType geo = vvTexRend::VV_AUTO;
-      GeometryTypeMap::iterator git = geometryTypeMap.find(type);
-      if(git != geometryTypeMap.end())
-        geo = git->second;
-      return new vvTexRend(vd, rs, geo, vox);
+      return new vvTexRend(vd, rs, vox);
     }
     break;
   }
@@ -710,21 +695,9 @@ bool vvRendererFactory::hasRenderer(const std::string& name, std::string const& 
     return hasRayRenderer(arch);
   }
 #ifdef HAVE_OPENGL
-  else if (str == "slices")
-  {
-    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_SLICES);
-  }
-  else if (str == "cubic2d")
-  {
-    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_CUBIC2D);
-  }
   else if (str == "planar")
   {
-    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT);
-  }
-  else if (str == "spherical")
-  {
-    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_SPHERICAL);
+    return hasRenderer(vvRenderer::TEXREND);
   }
 #endif
   else if (str == "serbrick")

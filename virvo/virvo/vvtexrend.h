@@ -61,14 +61,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
       UNSUPPORTED                                 ///< general error code
     };
-    enum GeometryType                             /// Geometry textures are projected on
-    {
-      VV_AUTO = 0,                                ///< automatically choose best
-      VV_SLICES,                                  ///< render slices parallel to xy axis plane using 2D textures
-      VV_CUBIC2D,                                 ///< render slices parallel to all axis planes using 2D textures
-      VV_VIEWPORT,                                ///< render planar slices using a 3D texture
-      VV_SPHERICAL,                               ///< render spheres originating at viewer using a 3D texture
-    };
     enum VoxelType                                /// Internal data type used in textures
     {
       VV_BEST = 0,                                ///< choose best
@@ -96,8 +88,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
   private:
     enum FragmentProgram
     {
-      VV_FRAG_PROG_2D = 0,
-      VV_FRAG_PROG_3D,
+      VV_FRAG_PROG_3D = 0,
       VV_FRAG_PROG_PREINT,
       VV_FRAG_PROG_MAX                            // has always to be last in list
     };
@@ -115,7 +106,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
     GLuint pixLUTName;                            ///< name for transfer function texture
     GLuint fragProgName[VV_FRAG_PROG_MAX];        ///< names for fragment programs (for applying transfer function)
-    GeometryType geomType;                        ///< rendering geometry actually used
     VoxelType voxelType;                          ///< voxel type actually used
     bool extTex3d;                                ///< true = 3D texturing supported
     bool extNonPower2;                            ///< true = NonPowerOf2 textures supported
@@ -129,7 +119,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
-    bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     size_t _lastFrame;                            ///< last frame rendered
 
     vvShaderFactory* _shaderFactory;              ///< Factory for shader-creation
@@ -146,8 +135,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     void setVoxelType(VoxelType vt);
     void makeLUTTexture() const;
-    ErrorType makeTextures2D(size_t axes);
-
     ErrorType makeTextures(bool newTex);
 
     void initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const;
@@ -162,15 +149,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     void removeTextures();
     ErrorType updateTextures3D(ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, bool);
-    ErrorType updateTextures2D(size_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t);
     void setGLenvironment() const;
     void unsetGLenvironment() const;
-    void renderTex3DSpherical(virvo::mat4 const& mv);
     void renderTex3DPlanar(virvo::mat4 const& mv);
-    void renderTex2DSlices(float);
-    void renderTex2DCubic(vvVecmath::AxisType, float, float, float);
     VoxelType findBestVoxelType(VoxelType) const;
-    GeometryType findBestGeometry(GeometryType, VoxelType) const;
     void updateLUT(float dist);
     size_t getLUTSize(vvsize3& size) const;
     size_t getPreintTableSize() const;
@@ -186,7 +168,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setCurrentShader(int);
     size_t getTextureSize(size_t sz) const;
   public:
-    vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
+    vvTexRend(vvVolDesc*, vvRenderState, VoxelType=VV_BEST);
     virtual ~vvTexRend();
     void  setVolDesc(vvVolDesc* vd);
     void  renderVolumeGL();
@@ -202,10 +184,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool checkParameter(ParameterType param, vvParam const& value) const;
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
-    static bool isSupported(GeometryType);
     static bool isSupported(VoxelType);
     bool isSupported(FeatureType) const;
-    GeometryType getGeomType() const;
     VoxelType getVoxelType() const;
     void renderQualityDisplay() const;
     void printLUT() const;
