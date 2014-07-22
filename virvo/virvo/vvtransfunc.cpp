@@ -107,10 +107,9 @@ vvTransFunc::~vvTransFunc()
   _widgets.clear();
 }
 
-vvTransFunc &vvTransFunc::operator=(const vvTransFunc &rhs)
+vvTransFunc &vvTransFunc::operator=(vvTransFunc rhs)
 {
-  vvTransFunc tmp(rhs);
-  swap(tmp);
+  swap(rhs);
   return *this;
 }
 

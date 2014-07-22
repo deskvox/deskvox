@@ -62,7 +62,7 @@ class VIRVOEXPORT vvTransFunc
     vvTransFunc();
     vvTransFunc(const vvTransFunc &other);
     virtual ~vvTransFunc();
-    vvTransFunc &operator=(const vvTransFunc &rhs);
+    vvTransFunc &operator=(vvTransFunc rhs);
     void swap(vvTransFunc &other);
     bool isEmpty();
     void deleteColorWidgets();
