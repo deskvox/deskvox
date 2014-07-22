@@ -80,16 +80,6 @@ void vvDimensionDialog::setDist(vec3f const& dist)
   vvDebugMsg::msg(3, "vvDimensionDialog::setDist()");
 
   _canvas->getVolDesc()->setDist(dist);
-
-  // TODO: hide this implementation detail
-  if (vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->getRenderer()))
-  {
-    if (texrend->getGeomType() == vvTexRend::VV_BRICKS)
-    {
-      texrend->updateBrickGeom();
-    }
-  }
-
   _canvas->updateGL();
   updateGui(dist);
 }

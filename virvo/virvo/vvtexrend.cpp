@@ -45,7 +45,6 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include "vvbrick.h"
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
@@ -206,9 +205,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _currentShader = vd->chan - 1;
   _previousShader = _currentShader;
 
-  _useOnlyOneBrick = false;
-  _areEmptyBricksCreated = false;
-  _areBricksCreated = false;
   _lastFrame = std::numeric_limits<size_t>::max();
   lutDistance = -1.0;
   _isROIChanged = true;
@@ -233,19 +229,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   geomType  = findBestGeometry(geom, voxelType);
 
   _proxyGeometryOnGpuSupported = vvGLTools::isGLVersionSupported(2,0,0);
-  if (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS)
-  {
-    _isectType = CPU;
-  }
-
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
   {
     _currentShader = 9;
-  }
-
-  if (geomType == VV_BRICKS)
-  {
-    validateEmptySpaceLeaping();
   }
 
   pixLUTName = 0;
@@ -261,7 +247,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     case VV_SLICES:    cerr << "VV_SLICES";  break;
     case VV_CUBIC2D:   cerr << "VV_CUBIC2D";   break;
     case VV_VIEWPORT:  cerr << "VV_VIEWPORT";  break;
-    case VV_BRICKS:    cerr << "VV_BRICKS";  break;
     case VV_SPHERICAL: cerr << "VV_SPHERICAL"; break;
     default: assert(0); break;
   }
@@ -275,36 +260,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     case VV_FRG_PRG: cerr << "VV_FRG_PRG"; break;
     default: assert(0); break;
   }
-  if (geomType == VV_BRICKS)
-  {
-    cerr << ", proxy geometry generation: ";
-    switch (_isectType)
-    {
-    case VERT_SHADER_ONLY:
-      cerr << "on the GPU, vertex shader";
-      break;
-    case GEOM_SHADER_ONLY:
-      cerr << "on the GPU, geometry shader";
-      break;
-    case VERT_GEOM_COMBINED:
-      cerr << "on the GPU, vertex shader and geometry shader";
-      break;
-    case CPU:
-      // fall-through
-    default:
-      cerr << "on the CPU";
-      break;
-    }
-  }
   cerr << endl;
 
   textures = 0;
-
-  if ((geomType == VV_BRICKS) && _computeBrickSize)
-  {
-    _areBricksCreated = false;
-    computeBrickSize();
-  }
 
   if (voxelType != VV_RGBA)
   {
@@ -328,14 +286,6 @@ vvTexRend::~vvTexRend()
   _shader = NULL;
 
   delete[] preintTable;
-
-  for(std::vector<BrickList>::iterator frame = _brickList.begin();
-      frame != _brickList.end();
-      ++frame)
-  {
-    for(BrickList::iterator brick = frame->begin(); brick != frame->end(); ++brick)
-      delete *brick;
-  }
 }
 
 
@@ -425,7 +375,7 @@ vvTexRend::GeometryType vvTexRend::findBestGeometry(const vvTexRend::GeometryTyp
   }
   else
   {
-    if (!extTex3d && (geom==VV_VIEWPORT || geom==VV_SPHERICAL || geom==VV_BRICKS))
+    if (!extTex3d && (geom==VV_VIEWPORT || geom==VV_SPHERICAL))
     {
       return VV_SLICES;
     }
@@ -500,50 +450,15 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
   if (vox[0] == 0 || vox[1] == 0 || vox[2] == 0)
     return err;
 
-  // Compute texture dimensions (must be power of 2):
-  if (geomType != VV_BRICKS)
-  {
-    texels[0] = getTextureSize(vox[0]);
-    texels[1] = getTextureSize(vox[1]);
-    texels[2] = getTextureSize(vox[2]);
-  }
-  else
-  {
-    texels[0] = getTextureSize(_brickSize[0]);
-    texels[1] = getTextureSize(_brickSize[1]);
-    texels[2] = getTextureSize(_brickSize[2]);
-  }
-
-  if (geomType == VV_BRICKS)
-  {
-    // compute number of bricks
-    if ((_useOnlyOneBrick) ||
-      ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
-      _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
-
-    else
-    {
-      _numBricks[0] = (size_t) ceil((float) (vd->vox[0]) / (float) (_brickSize[0]));
-      _numBricks[1] = (size_t) ceil((float) (vd->vox[1]) / (float) (_brickSize[1]));
-      _numBricks[2] = (size_t) ceil((float) (vd->vox[2]) / (float) (_brickSize[2]));
-    }
-  }
+  // Compute texture dimensions (perhaps must be power of 2):
+  texels[0] = getTextureSize(vox[0]);
+  texels[1] = getTextureSize(vox[1]);
+  texels[2] = getTextureSize(vox[2]);
 
   switch (geomType)
   {
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
-    case VV_BRICKS:
-      if (!_areEmptyBricksCreated)
-      {
-        err = makeEmptyBricks();
-      }
-
-      if (err == OK)
-      {
-        err = makeTextureBricks(_brickList, _areBricksCreated);
-      }
-      break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex); break;
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
@@ -796,464 +711,17 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
-{
-  ErrorType err = OK;
-  vvsize3 tmpTexels;                           // number of texels in each dimension for current brick
-
-  vvDebugMsg::msg(2, "vvTexRend::makeEmptyBricks()");
-
-  if (!extTex3d) return NO3DTEX;
-
-  for(std::vector<BrickList>::iterator frame = _brickList.begin();
-      frame != _brickList.end();
-      ++frame)
-  {
-    for(BrickList::iterator brick = frame->begin(); brick != frame->end(); ++brick)
-      delete *brick;
-    frame->clear();
-  }
-  _brickList.clear();
-
-  size_t texSize = texels[0] * texels[1] * texels[2] * texelsize;
-
-  VV_LOG(1) << "3D Texture (bricking) width     = " << texels[0] << std::endl;
-  VV_LOG(1) << "3D Texture (bricking) height    = " << texels[1] << std::endl;
-  VV_LOG(1) << "3D Texture (bricking) depth     = " << texels[2] << std::endl;
-  VV_LOG(1) << "3D Texture (bricking) size (KB) = " << texSize / 1024 << std::endl;
-
-  // helper variables
-  const vvVector3 voxSize(vd->getSize()[0] / (vd->vox[0] - 1),
-                          vd->getSize()[1] / (vd->vox[1] - 1),
-                          vd->getSize()[2] / (vd->vox[2] - 1));
-
-  const vvVector3 halfBrick(float(texels[0]-_brickTexelOverlap) * 0.5f,
-                            float(texels[1]-_brickTexelOverlap) * 0.5f,
-                            float(texels[2]-_brickTexelOverlap) * 0.5f);
-
-  const vvVector3 halfVolume(float(vd->vox[0] - 1) * 0.5f,
-                             float(vd->vox[1] - 1) * 0.5f,
-                             float(vd->vox[2] - 1) * 0.5f);
-
-  _brickList.resize(vd->frames);
-  for (size_t f = 0; f < vd->frames; f++)
-  {
-    for (size_t bx = 0; bx < _numBricks[0]; bx++)
-      for (size_t by = 0; by < _numBricks[1]; by++)
-        for (size_t bz = 0; bz < _numBricks[2]; bz++)
-        {
-          // offset to first voxel of current brick
-          size_t startOffset[3] = { bx * _brickSize[0], by * _brickSize[1], bz * _brickSize[2] };
-
-          // Guarantee that startOffset[i] + brickSize[i] won't exceed actual size of the volume.
-          if ((startOffset[0] + _brickSize[0]) >= vd->vox[0])
-            tmpTexels[0] = getTextureSize(vd->vox[0] - startOffset[0]);
-          else
-            tmpTexels[0] = texels[0];
-          if ((startOffset[1] + _brickSize[1]) >= vd->vox[1])
-            tmpTexels[1] = getTextureSize(vd->vox[1] - startOffset[1]);
-          else
-            tmpTexels[1] = texels[1];
-          if ((startOffset[2] + _brickSize[2]) >= vd->vox[2])
-            tmpTexels[2] = getTextureSize(vd->vox[2] - startOffset[2]);
-          else
-            tmpTexels[2] = texels[2];
-
-          vvBrick* currBrick = new vvBrick();
-          vvsize3 bs;
-          bs[0] = _brickSize[0];
-          bs[1] = _brickSize[1];
-          bs[2] = _brickSize[2];
-          if (_useOnlyOneBrick)
-          {
-            bs[0] += _brickTexelOverlap;
-            bs[1] += _brickTexelOverlap;
-            bs[2] += _brickTexelOverlap;
-          }
-
-          size_t brickTexelOverlap[3];
-          for (size_t d = 0; d < 3; ++d)
-          {
-            brickTexelOverlap[d] = _brickTexelOverlap;
-            const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
-            if (maxObj > vd->getSize()[d])
-            {
-              brickTexelOverlap[d] = 0;
-            }
-          }
-
-          currBrick->pos = vec3f(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
-            voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
-            voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
-          currBrick->min = vec3f(voxSize[0] * (startOffset[0] - halfVolume[0]),
-            voxSize[1] * (startOffset[1] - halfVolume[1]),
-            voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max = vec3f(voxSize[0] * (startOffset[0] + (tmpTexels[0] - brickTexelOverlap[0]) - halfVolume[0]),
-            voxSize[1] * (startOffset[1] + (tmpTexels[1] - brickTexelOverlap[1]) - halfVolume[1]),
-            voxSize[2] * (startOffset[2] + (tmpTexels[2] - brickTexelOverlap[2]) - halfVolume[2]));
-
-          for (size_t d = 0; d < 3; ++d)
-          {
-            if (currBrick->max[d] > vd->getSize()[d])
-            {
-              currBrick->max[d] = vd->getSize()[d];
-            }
-
-            currBrick->texels[d] = tmpTexels[d];
-            currBrick->startOffset[d] = startOffset[d];
-            const float overlapNorm = (float)(brickTexelOverlap[d]) / (float)tmpTexels[d];
-            currBrick->texRange[d] = (1.0f - overlapNorm);
-            currBrick->texMin[d] = (1.0f / (2.0f * (float)(_brickTexelOverlap) * (float)tmpTexels[d]));
-          }
-
-          size_t texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
-            + (by * _numBricks[2]) + bz;
-          currBrick->index = texIndex;
-
-          _brickList[f].push_back(currBrick);
-        } // # foreach (numBricks[i])
-  } // # frames
-
-  _areEmptyBricksCreated = true;
-
-  return err;
-}
-
-vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickList, bool& areBricksCreated)
-{
-  ErrorType err = OK;
-  vec4i rawVal;                                   // raw values for R,G,B,A
-  bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
-
-  removeTextures();
-
-  size_t frames = vd->frames;
-
-  size_t texSize = texels[0] * texels[1] * texels[2] * texelsize;
-  uint8_t* texData = new uint8_t[texSize];
-
-  // number of textures needed
-  textures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
-
-  texNames = new GLuint[textures];
-  glGenTextures(textures, texNames);
-
-  // generate textures contents:
-  VV_LOG(2) << "Transferring textures to TRAM. Total size [KB]: " << textures * texSize / 1024 << std::endl;
-
-  const bool bpcValid = (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4);
-  const bool oneChannel = ((vd->chan == 1) && bpcValid);
-  size_t rawSliceSize = vd->getSliceBytes();
-
-  size_t f = 0;
-  for(std::vector<BrickList>::iterator frame = brickList.begin();
-      frame != brickList.end();
-      ++frame)
-  {
-    const uint8_t* raw = vd->getRaw(f);
-    ++f;
-
-    for(BrickList::iterator b = frame->begin(); b != frame->end(); ++b)
-    {
-      vvBrick* currBrick = *b;
-      // offset to first voxel of current brick
-      size_t startOffset[3] = { currBrick->startOffset[0],
-                                currBrick->startOffset[1],
-                                currBrick->startOffset[2] };
-
-      size_t tmpTexels[3] = { currBrick->texels[0],
-                              currBrick->texels[1],
-                              currBrick->texels[2] };
-
-      // Memorize the max and min scalar values in the volume. These are stored
-      // to perform empty space leaping later on.
-      size_t minValue = std::numeric_limits<size_t>::max();
-      size_t maxValue = 0;
-
-      memset(texData, 0, texSize);
-
-      // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
-      for (ssize_t s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
-      {
-        size_t rawSliceOffset = (vd->vox[2] - s - 1) * rawSliceSize;
-        // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
-        for (ssize_t y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
-        {
-          size_t heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-          size_t texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
-          if (oneChannel)
-          {
-            // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
-            for (ssize_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
-            {
-              size_t srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-              if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
-              else if (vd->bpc == 2)
-              {
-                rawVal[0] = *((uint16_t *)(raw + srcIndex));
-                rawVal[0] >>= 8;
-              }
-              else  // vd->bpc == 4
-              {
-                const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-
-              // Store min and max for empty space leaping.
-              if (rawVal[0] >= 0 && size_t(rawVal[0]) > maxValue)
-              {
-                maxValue = size_t(rawVal[0]);
-              }
-              if (rawVal[0] >= 0 && size_t(rawVal[0]) < minValue)
-              {
-                minValue = size_t(rawVal[0]);
-              }
-
-              size_t texOffset = (x - startOffset[0]) + texLineOffset;
-              switch (voxelType)
-              {
-                case VV_PAL_TEX:
-                case VV_FRG_PRG:
-                case VV_PIX_SHD:
-                  texData[texelsize * texOffset] = (uint8_t) rawVal[0];
-                  break;
-                case VV_TEX_SHD:
-                  for (size_t c = 0; c < 4; c++)
-                  {
-                    texData[4 * texOffset + c] = (uint8_t) rawVal[0];
-                  }
-                  break;
-                case VV_RGBA:
-                  for (size_t c = 0; c < 4; c++)
-                  {
-                    texData[4 * texOffset + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
-                  }
-                  break;
-                default:
-                  assert(0);
-                  break;
-              }
-            }
-          }
-          else if (bpcValid)
-          {
-            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
-            {
-              for (ssize_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
-              {
-                size_t texOffset = (x - startOffset[0]) + texLineOffset;
-
-                // fetch component values from memory:
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
-                {
-                  size_t srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
-                  if (vd->bpc == 1)
-                    rawVal[c] = (int) raw[srcIndex];
-                  else if (vd->bpc == 2)
-                  {
-                    rawVal[c] = *((uint16_t*) (raw + srcIndex));
-                    rawVal[c] >>= 8;
-                  }
-                 else  // vd->bpc==4
-                  {
-                    const float fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval);
-                  }
-                }
-
-                // TODO: init empty-space leaping minValue and maxValue for multiple channels as well.
-
-
-                // copy color components:
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
-                {
-                  texData[4 * texOffset + c] = (uint8_t) rawVal[c];
-                }
-
-                // alpha channel
-                if (vd->chan >= 4)  // RGBA
-                {
-                  if (voxelType == VV_RGBA)
-                    texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-                  else
-                    texData[4 * texOffset + 3] = (uint8_t) rawVal[3];
-                }
-                else if(vd->chan > 0) // compute alpha from color components
-                {
-                  size_t alpha = 0;
-                  for (size_t c = 0; c < vd->chan; c++)
-                  {
-                    // alpha: mean of sum of RGB conversion table results:
-                    alpha += (size_t) rgbaLUT[size_t(rawVal[c]) * 4 + c];
-                  }
-                  texData[4 * texOffset + 3] = (uint8_t) (alpha / vd->chan);
-                }
-                else
-                {
-                  texData[4 * texOffset + 3] = 0;
-                }
-              }
-            }
-          }
-          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
-        } // startoffset[1] to startoffset[1]+tmpTexels[1]
-      } // startoffset[2] to startoffset[2]+tmpTexels[2]
-
-      currBrick->minValue = minValue;
-      currBrick->maxValue = maxValue;
-      currBrick->visible = true;
-
-      accommodated = currBrick->upload3DTexture(texNames[currBrick->index], texData,
-                                                texFormat, internalTexFormat,
-                                                _interpolation);
-      if(!accommodated)
-         break;
-    } // # foreach (numBricks[i])
-    if(!accommodated)
-       break;
-  } // # frames
-
-  if (!accommodated)
-  {
-    cerr << "Insufficient texture memory for 3D brick textures." << endl;
-    err = TRAM_ERROR;
-  }
-
-  delete[] texData;
-  areBricksCreated = true;
-
-  return err;
-}
-
-void vvTexRend::updateBrickGeom()
-{
-  vvBrick* tmp;
-  vec3f voxSize;
-  vec3f halfBrick;
-  vec3f halfVolume;
-
-  for (size_t f = 0; f < _brickList.size(); ++f)
-  {
-    // help variables
-    voxSize = vd->getSize();
-    voxSize[0] /= (vd->vox[0]-1);
-    voxSize[1] /= (vd->vox[1]-1);
-    voxSize[2] /= (vd->vox[2]-1);
-
-    halfBrick = vec3f(float(texels[0]-1), float(texels[1]-1), float(texels[2]-1)) * 0.5f;
-
-    halfVolume = vec3f(float(vd->vox[0]), float(vd->vox[1]), float(vd->vox[2]));
-    halfVolume -= vec3f(1.0f);
-    halfVolume *= vec3f(0.5f);
-
-    for (size_t c = 0; c < _brickList[f].size(); ++c)
-    {
-        tmp = _brickList[f][c];
-        vec3f off( tmp->startOffset[0], tmp->startOffset[1], tmp->startOffset[2] );
-        vec3f txl( tmp->texels[0] - 1, tmp->texels[1] - 1, tmp->texels[2] - 1 );
-        tmp->pos = vd->pos + voxSize * (off + halfBrick - halfVolume);
-        tmp->min = vd->pos + voxSize * (off - halfVolume);
-        tmp->max = vd->pos + voxSize * (off + txl - halfVolume);
-    }
-  }
-}
-
-void vvTexRend::setComputeBrickSize(const bool flag)
-{
-  _computeBrickSize = flag;
-  if (_computeBrickSize)
-  {
-    computeBrickSize();
-    if(!_areBricksCreated)
-    {
-      makeTextures(true);
-    }
-  }
-}
-
-void vvTexRend::setBrickSize(size_t newSize)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setBricksize()");
-  _brickSize[0] = _brickSize[1] = _brickSize[2] = newSize-1;
-  _useOnlyOneBrick = false;
-
-  makeTextures(true);
-}
-
-size_t vvTexRend::getBrickSize() const
-{
-  vvDebugMsg::msg(3, "vvRenderer::getBricksize()");
-  return _brickSize[0]+1;
-}
-
 void vvTexRend::setTexMemorySize(size_t newSize)
 {
   if (_texMemorySize == newSize)
     return;
 
   _texMemorySize = newSize;
-  if (_computeBrickSize)
-  {
-    computeBrickSize();
-
-    if(!_areBricksCreated)
-    {
-      makeTextures(true);
-    }
-  }
 }
 
 size_t vvTexRend::getTexMemorySize() const
 {
   return _texMemorySize;
-}
-
-void vvTexRend::computeBrickSize()
-{
-  vec3f probeSize;
-  vvsize3 newBrickSize;
-
-  size_t texMemorySize = _texMemorySize;
-  if (texMemorySize == 0)
-  {
-     vvDebugMsg::msg(1, "vvTexRend::computeBrickSize(): unknown texture memory size, assuming 32 M");
-     texMemorySize = 32;
-  }
-
-  _useOnlyOneBrick = true;
-  for(size_t i=0; i<3; ++i)
-  {
-    newBrickSize[i] = getTextureSize(vd->vox[i]);
-    if(newBrickSize[i] > _maxBrickSize[i])
-    {
-      newBrickSize[i] = _maxBrickSize[i];
-      _useOnlyOneBrick = false;
-    }
-  }
-
-  if(_useOnlyOneBrick)
-  {
-    setROIEnable(false);
-  }
-  else
-  {
-    probeSize[0] = 2 * (newBrickSize[0] - _brickTexelOverlap) / (float) vd->vox[0];
-    probeSize[1] = 2 * (newBrickSize[1] - _brickTexelOverlap) / (float) vd->vox[1];
-    probeSize[2] = 2 * (newBrickSize[2] - _brickTexelOverlap) / (float) vd->vox[2];
-
-    setProbeSize(probeSize);
-    //setROIEnable(true);
-  }
-  if (newBrickSize[0]-_brickTexelOverlap != _brickSize[0]
-      || newBrickSize[1]-_brickTexelOverlap != _brickSize[1]
-      || newBrickSize[2]-_brickTexelOverlap != _brickSize[2]
-      || !_areBricksCreated)
-  {
-    _brickSize[0] = newBrickSize[0]-_brickTexelOverlap;
-    _brickSize[1] = newBrickSize[1]-_brickTexelOverlap;
-    _brickSize[2] = newBrickSize[2]-_brickTexelOverlap;
-    _areBricksCreated = false;
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -1288,10 +756,6 @@ void vvTexRend::updateTransferFunction()
     updateLUT(1.0f);                                // generate color/alpha lookup table
   else
     lutDistance = -1.;                              // invalidate LUT
-
-  fillNonemptyList(_nonemptyList, _brickList);
-
-  _isROIChanged = true; // have to update list of visible bricks
 }
 
 //----------------------------------------------------------------------------
@@ -1299,12 +763,6 @@ void vvTexRend::updateTransferFunction()
 void vvTexRend::updateVolumeData()
 {
   vvRenderer::updateVolumeData();
-  if (_computeBrickSize)
-  {
-    _areEmptyBricksCreated = false;
-    _areBricksCreated = false;
-    computeBrickSize();
-  }
 
   makeTextures(true);
 }
@@ -1318,9 +776,6 @@ void vvTexRend::updateVolumeData(size_t offsetX, size_t offsetY, size_t offsetZ,
     case VV_VIEWPORT:
       updateTextures3D(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, false);
       break;
-    case VV_BRICKS:
-      updateTextureBricks(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
-      break;
     case VV_SLICES:
       updateTextures2D(1, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
       break;
@@ -1330,51 +785,6 @@ void vvTexRend::updateVolumeData(size_t offsetX, size_t offsetY, size_t offsetZ,
     default:
       // nothing to do
       break;
-  }
-}
-
-void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const
-{
-  // Each bricks visible flag was initially set to true.
-  // If empty-space leaping isn't active, all bricks are
-  // visible by default.
-  if (_emptySpaceLeaping)
-  {
-    size_t nbricks = 0, nvis=0;
-    nonemptyList.clear();
-    nonemptyList.resize(_brickList.size());
-    // Determine visibility of each single brick in all frames
-    for (size_t frame = 0; frame < brickList.size(); ++frame)
-    {
-      for (BrickList::iterator it = brickList[frame].begin(); it != brickList[frame].end(); ++it)
-      {
-        vvBrick *tmp = *it;
-        nbricks++;
-
-        // If max intensity projection, make all bricks visible.
-        if (_mipMode > 0)
-        {
-          nonemptyList[frame].push_back(tmp);
-          nvis++;
-        }
-        else
-        {
-          for (size_t i = tmp->minValue; i <= tmp->maxValue; ++i)
-          {
-            if(rgbaTF[i * 4 + 3] > 0.)
-            {
-              nonemptyList[frame].push_back(tmp);
-              nvis++;
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  else
-  {
-    nonemptyList = brickList;
   }
 }
 
@@ -1825,268 +1235,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, ssize_t offsetX, s
   return OK;
 }
 
-vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
-                                                    ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ)
-{
-  size_t frames;
-  size_t texSize;
-  size_t rawSliceOffset;
-  size_t heightOffset;
-  size_t texLineOffset;
-  size_t srcIndex;
-  size_t texOffset;
-  size_t sliceSize;
-  vec4i rawVal;
-  size_t alpha;
-  vvssize3 startOffset, endOffset;
-  vvsize3 start, end, size;
-  float fval;
-  uint8_t* raw;
-  uint8_t* texData = 0;
-
-  if (!extTex3d) return NO3DTEX;
-
-  frames = vd->frames;
-  texSize = texels[0] * texels[1] * texels[2] * texelsize;
-  texData = new uint8_t[texSize];
-  sliceSize = vd->getSliceBytes();
-
-  for (size_t f = 0; f < frames; f++)
-  {
-    raw = vd->getRaw(f);
-
-    for(BrickList::iterator brick = _brickList[f].begin(); brick != _brickList[f].end(); ++brick)
-    {
-      startOffset[0] = (*brick)->startOffset[0];
-      startOffset[1] = (*brick)->startOffset[1];
-      startOffset[2] = (*brick)->startOffset[2];
-
-      endOffset[0] = startOffset[0] + _brickSize[0];
-      endOffset[1] = startOffset[1] + _brickSize[1];
-      endOffset[2] = startOffset[2] + _brickSize[2];
-
-      endOffset[0] = ts_clamp(endOffset[0], ssize_t(0), vd->vox[0] - 1);
-      endOffset[1] = ts_clamp(endOffset[1], ssize_t(0), vd->vox[1] - 1);
-      endOffset[2] = ts_clamp(endOffset[2], ssize_t(0), vd->vox[2] - 1);
-
-      if ((offsetX > endOffset[0]) || ((offsetX + sizeX - 1) < startOffset[0]))
-      {
-        continue;
-      }
-      else if (offsetX >= startOffset[0])
-      {
-        start[0] = offsetX;
-
-        if ((offsetX + sizeX - 1) <= endOffset[0])
-        {
-          end[0] = offsetX + sizeX - 1;
-          size[0]= sizeX;
-        }
-        else
-        {
-          end[0] = endOffset[0];
-          size[0] = end[0] - start[0] + 1;
-        }
-      }
-      else
-      {
-        start[0] = startOffset[0];
-
-        if ((offsetX + sizeX - 1) <= endOffset[0]) end[0] = offsetX + sizeX - 1;
-        else end[0] = endOffset[0];
-
-        size[0] = end[0] - start[0] + 1;
-      }
-
-      if ((offsetY > endOffset[1]) || ((offsetY + sizeY - 1) < startOffset[1]))
-      {
-        continue;
-      }
-      else if (offsetY >= startOffset[1])
-      {
-        start[1] = offsetY;
-
-        if ((offsetY + sizeY - 1) <= endOffset[1])
-        {
-          end[1] = offsetY + sizeY - 1;
-          size[1]= sizeY;
-        }
-        else
-        {
-          end[1] = endOffset[1];
-          size[1] = end[1] - start[1] + 1;
-        }
-      }
-      else
-      {
-        start[1] = startOffset[1];
-
-        if ((offsetY + sizeY - 1) <= endOffset[1])
-          end[1] = offsetY + sizeY - 1;
-        else
-          end[1] = endOffset[1];
-
-        size[1] = end[1] - start[1] + 1;
-      }
-
-      if ((offsetZ > endOffset[2]) ||
-        ((offsetZ + sizeZ - 1) < startOffset[2]))
-      {
-        continue;
-      }
-      else if (offsetZ >= startOffset[2])
-      {
-        start[2] = offsetZ;
-
-        if ((offsetZ + sizeZ - 1) <= endOffset[2])
-        {
-          end[2] = offsetZ + sizeZ - 1;
-          size[2]= sizeZ;
-        }
-        else
-        {
-          end[2] = endOffset[2];
-          size[2] = end[2] - start[2] + 1;
-        }
-      }
-      else
-      {
-        start[2] = startOffset[2];
-
-        if ((offsetZ + sizeZ - 1) <= endOffset[2])
-          end[2] = offsetZ + sizeZ - 1;
-        else
-          end[2] = endOffset[2];
-
-        size[2] = end[2] - start[2] + 1;
-      }
-
-      texSize = size[0] * size[1] * size[2] * texelsize;
-      if (texData != 0)
-        delete[] texData;
-      texData = new uint8_t[texSize];
-
-      memset(texData, 0, texSize);
-
-      for (size_t s = start[2]; s <= end[2]; s++)
-      {
-        rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
-
-        for (size_t y = start[1]; y <= end[1]; y++)
-        {
-          heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-
-          texLineOffset = (y - start[1]) * size[0] + (s - start[2]) * size[0] * size[1];
-
-          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
-          {
-            for (size_t x = start[0]; x <= end[0]; x++)
-            {
-              srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-              if (vd->bpc == 1)
-                rawVal[0] = (int) raw[srcIndex];
-              else if (vd->bpc == 2)
-              {
-                rawVal[0] = *((uint16_t *)(raw + srcIndex));
-                rawVal[0] >>= 8;
-              }
-              else
-              {
-                fval = *((float*) (raw + srcIndex));
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-
-              texOffset = (x - start[0]) + texLineOffset;
-
-              switch (voxelType)
-              {
-                case VV_PAL_TEX:
-                case VV_FRG_PRG:
-                  texData[texelsize * texOffset] = (uint8_t) rawVal[0];
-                  break;
-                case VV_TEX_SHD:
-                  for (size_t c = 0; c < 4; c++)
-                    texData[4 * texOffset + c] = (uint8_t) rawVal[0];
-                  break;
-                case VV_RGBA:
-                  for (size_t c = 0; c < 4; c++)
-                    texData[4 * texOffset + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
-                  break;
-                default:
-                  assert(0);
-                  break;
-              }
-            }
-          }
-          else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
-          {
-            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
-            {
-              for (size_t x = start[0]; x <= end[0]; x++)
-              {
-                texOffset = (x - start[0]) + texLineOffset;
-
-                // fetch component values from memory:
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
-                {
-                  srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
-                  if (vd->bpc == 1)
-                    rawVal[c] = (int) raw[srcIndex];
-                  else if (vd->bpc == 2)
-                  {
-                    rawVal[c] = *((uint16_t *)(raw + srcIndex));
-                    rawVal[c] >>= 8;
-                  }
-                  else
-                  {
-                    fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval);
-                  }
-                }
-
-                // copy color components:
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
-                  texData[4 * texOffset + c] = (uint8_t) rawVal[c];
-
-                // alpha channel
-                if (vd->chan >= 4)
-                  // RGBA
-                {
-                  if (voxelType == VV_RGBA)
-                    texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-                  else
-                    texData[4 * texOffset + 3] = (uint8_t) rawVal[3];
-                }
-                else
-                  // compute alpha from color components
-                {
-                  alpha = 0;
-                  for (size_t c = 0; c < vd->chan; c++)
-                    // alpha: mean of sum of RGB conversion table results:
-                    alpha += (size_t) rgbaLUT[size_t(rawVal[c]) * 4 + c];
-
-                  texData[4 * texOffset + 3] = (uint8_t) (alpha / vd->chan);
-                }
-              }
-            }
-          }
-          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
-        }
-      }
-
-      //memset(texData, 255, texSize);
-
-      glBindTexture(GL_TEXTURE_3D_EXT, texNames[(*brick)->index]);
-
-      glTexSubImage3DEXT(GL_TEXTURE_3D_EXT, 0, start[0] - startOffset[0], start[1] - startOffset[1], start[2] - startOffset[2],
-        size[0], size[1], size[2], texFormat, GL_UNSIGNED_BYTE, texData);
-    }
-  }
-
-  delete[] texData;
-  return OK;
-}
-
 //----------------------------------------------------------------------------
 /// Set GL environment for texture rendering.
 void vvTexRend::setGLenvironment() const
@@ -2511,389 +1659,6 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   disableTexture(GL_TEXTURE_3D_EXT);
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
-}
-
-void vvTexRend::renderTexBricks(const vvMatrix& mv)
-{
-  vvGLTools::printGLError("Enter vvTexRend::renderTexBricks(const vvMatrix* mv)");
-  vvMatrix pm;                                    // OpenGL projection matrix
-  vvVector3 farthest;                             // volume vertex farthest from the viewer
-  vec3 delta;                                     // distance vector between textures [object space]
-  vec3 normal;                                    // normal vector of textures
-  vec3 origin;                                    // origin (0|0|0) transformed to object space
-  vec3 probePosObj;                               // probe midpoint [object space]
-  vec3 probeSizeObj;                              // probe size [object space]
-  vec3 probeMin, probeMax;                        // probe min and max coordinates [object space]
-
-  vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
-
-  vvGLTools::printGLError("enter vvTexRend::renderTexBricks()");
-
-  // needs 3D texturing extension
-  if (!extTex3d) return;
-
-  if (_brickList.empty()) return;
-
-  // Calculate inverted modelview matrix:
-  vvMatrix invMV(mv);
-  invMV.invert();
-
-  // Find eye position (object space):
-  vec3f eye = getEyePosition();
-
-  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-
-  vvVector3 clippedProbeSizeObj = probeSizeObj;
-  for (size_t i=0; i<3; ++i)
-  {
-    if (clippedProbeSizeObj[i] < vd->getSize()[i])
-    {
-      clippedProbeSizeObj[i] = vd->getSize()[i];
-    }
-  }
-
-  // Compute length of probe diagonal [object space]:
-  const float diagonal = sqrtf(clippedProbeSizeObj[0] * clippedProbeSizeObj[0] +
-                               clippedProbeSizeObj[1] * clippedProbeSizeObj[1] +
-                               clippedProbeSizeObj[2] * clippedProbeSizeObj[2]);
-
-  const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
-                                           vd->vox[1] * vd->vox[1] +
-                                           vd->vox[2] * vd->vox[2]));
-
-  // make sure that at least one slice is drawn.
-  // <> deceives msvc so that it won't use the windows.h max macro.
-  size_t numSlices = ::max<>(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
-
-  VV_LOG(3) << "Number of texture slices rendered: " << numSlices << std::endl;
-
-  // Get projection matrix:
-  vvGLTools::getProjectionMatrix(&pm);
-  const bool isOrtho = pm.isProjOrtho();
-
-  getObjNormal(normal, origin, eye, invMV, isOrtho);
-  evaluateLocalIllumination(_shader, normal);
-
-  // Use alpha correction in indexed mode: adapt alpha values to number of textures:
-  if (instantClassification())
-  {
-    const float thickness = diagonalVoxels / float(numSlices);
-    if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
-    {
-      updateLUT(thickness);
-    }
-  }
-
-  delta = normal;
-  delta *= vec3(diagonal / ((float)numSlices));
-
-  // Compute farthest point to draw texture at:
-  farthest = delta;
-  farthest.scale((float)(numSlices - 1) * -0.5f);
-
-  if (_clipMode == 1)                     // clipping plane present?
-  {
-    // Adjust numSlices and set farthest point so that textures are only
-    // drawn up to the clipPoint. (Delta may not be changed
-    // due to the automatic opacity correction.)
-    // First find point on clipping plane which is on a line perpendicular
-    // to clipping plane and which traverses the origin:
-    vvVector3 temp(delta);
-    temp.scale(-0.5f);
-    farthest.add(temp);                          // add a half delta to farthest
-    vec3f clipPosObj = clip_plane_point_;
-    clipPosObj -= vd->pos;
-    temp = probePosObj;
-    temp.add(normal);
-    vvVector3 normClipPoint;
-    normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
-    const float maxDist = farthest.distance(normClipPoint);
-    numSlices = size_t(maxDist / length( delta )) + 1;
-    temp = delta;
-    temp.scale((float)(1 - static_cast<ptrdiff_t>(numSlices)));
-    farthest = normClipPoint;
-    farthest.add(temp);
-    if (_clipSingleSlice)
-    {
-      // Compute slice position:
-      delta *= vec3((float)(numSlices-1));
-      farthest.add(delta);
-      numSlices = 1;
-
-      // Make slice opaque if possible:
-      if (instantClassification())
-      {
-        updateLUT(1.0f);
-      }
-    }
-  }
-
-  initVertArray(numSlices);
-
-  getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
-
-  markBricksInFrustum(probeMin, probeMax);
-
-  // Volume render a 3D texture:
-  enableTexture(GL_TEXTURE_3D_EXT);
-  sortBrickList(_sortedList, eye, normal, isOrtho);
-
-  if (_showBricks)
-  {
-    // Debugging mode: render the brick outlines and deactivate shaders,
-    // lighting and texturing.
-    glDisable(GL_TEXTURE_3D_EXT);
-    glDisable(GL_LIGHTING);
-    disableShader(_shader);
-    disableFragProg();
-    for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    {
-      (*it)->renderOutlines(probeMin, probeMax);
-    }
-  }
-  else
-  {
-    if (_isectType != CPU)
-    {
-      _shader->setParameter1f("delta", length( delta ));
-      _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
-
-      glEnableClientState(GL_VERTEX_ARRAY);
-    }
-    for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    {
-      (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
-                   texNames,
-                   _shader);
-    }
-    if (_isectType != CPU)
-    {
-      glDisableClientState(GL_VERTEX_ARRAY);
-    }
-  }
-
-  vvDebugMsg::msg(3, "Bricks discarded: ",
-                  static_cast<int>(_brickList[vd->getCurrentFrame()].size() - _sortedList.size()));
-
-  disableTexture(GL_TEXTURE_3D_EXT);
-}
-void vvTexRend::updateFrustum()
-{
-  float pm[16];
-  float mvm[16];
-  vvMatrix proj, modelview, clip;
-
-  // Get the current projection matrix from OpenGL
-  glGetFloatv(GL_PROJECTION_MATRIX, pm);
-  proj.setGL(pm);
-
-  // Get the current modelview matrix from OpenGL
-  glGetFloatv(GL_MODELVIEW_MATRIX, mvm);
-  modelview.setGL(mvm);
-
-  clip = proj;
-  clip.multiplyRight(modelview);
-
-  // extract the planes of the viewing frustum
-
-  // left plane
-  frustum_[0] = vec4f(clip(3, 0)+clip(0, 0), clip(3, 1)+clip(0, 1),
-    clip(3, 2)+clip(0, 2), clip(3, 3)+clip(0, 3));
-  // right plane
-  frustum_[1] = vec4f(clip(3, 0)-clip(0, 0), clip(3, 1)-clip(0, 1),
-    clip(3, 2)-clip(0, 2), clip(3, 3)-clip(0, 3));
-  // top plane
-  frustum_[2] = vec4f(clip(3, 0)-clip(1, 0), clip(3, 1)-clip(1, 1),
-    clip(3, 2)-clip(1, 2), clip(3, 3)-clip(1, 3));
-  // bottom plane
-  frustum_[3] = vec4f(clip(3, 0)+clip(1, 0), clip(3, 1)+clip(1, 1),
-    clip(3, 2)+clip(1, 2), clip(3, 3)+clip(1, 3));
-  // near plane
-  frustum_[4] = vec4f(clip(3, 0)+clip(2, 0), clip(3, 1)+clip(2, 1),
-    clip(3, 2)+clip(2, 2), clip(3, 3)+clip(2, 3));
-  // far plane
-  frustum_[5] = vec4f(clip(3, 0)-clip(2, 0), clip(3, 1)-clip(2, 1),
-    clip(3, 2)-clip(2, 2), clip(3, 3)-clip(2, 3));
-}
-
-bool vvTexRend::insideFrustum(vec3f const& min, vec3f const& max) const
-{
-  vec3f pv;
-
-  // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (size_t i = 0; i < 6; i++)
-  {
-    vec3f normal(frustum_[i]);
-
-    for(size_t j = 0; j < 8; ++j)
-    {
-      for(size_t c = 0; c < 3; ++c)
-        pv[c] = (j & (1<<c)) ? min[c] : max[c];
-
-      if ( (dot(pv, normal) + frustum_[i][3]) < 0 )
-      {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-bool vvTexRend::intersectsFrustum(vec3f const& min, vec3f const& max) const
-{
-  vec3f pv;
-
-  // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (size_t i = 0; i < 6; ++i)
-  {
-    if (frustum_[i][0] > 0.0)
-      pv[0] = max[0];
-    else
-      pv[0] = min[0];
-    if (frustum_[i][1] > 0.0)
-      pv[1] = max[1];
-    else
-      pv[1] = min[1];
-    if (frustum_[i][2] > 0.0)
-      pv[2] = max[2];
-    else
-      pv[2] = min[2];
-
-    vec3f normal(frustum_[i]);
-
-    if ( (dot(pv, normal) + frustum_[i][3]) < 0 )
-    {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool vvTexRend::testBrickVisibility(const vvBrick* brick) const
-{
-  return intersectsFrustum(brick->min, brick->max);
-}
-
-bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const
-{
-  //sample the brick at many point and test them all for visibility
-  const float numSteps = 3;
-  const float divisorInv = 1.0f / (numSteps - 1.0f);
-  const float xStep = (brick->max[0] - brick->min[0]) * divisorInv;
-  const float yStep = (brick->max[1] - brick->min[1]) * divisorInv;
-  const float zStep = (brick->max[2] - brick->min[2]) * divisorInv;
-  for(int i = 0; i < numSteps; i++)
-  {
-    const float x = brick->min[0] + xStep * i;
-    for(int j = 0; j < numSteps; j++)
-    {
-      const float y = brick->min[1] + yStep * j;
-      for(int k = 0; k < numSteps; k++)
-      {
-        const float z = brick->min[2] + zStep * k;
-        vvVector3 clipPnt(x, y, z);
-        clipPnt.multiply(mvpMat);
-
-        //test if this point falls within screen space
-        if(clipPnt[0] >= -1.0 && clipPnt[0] <= 1.0 &&
-          clipPnt[1] >= -1.0 && clipPnt[1] <= 1.0)
-        {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-void vvTexRend::markBricksInFrustum(vec3f const& probeMin, vec3f const& probeMax)
-{
-  updateFrustum();
-
-  const bool inside = insideFrustum(probeMin, probeMax);
-  const bool outside = !intersectsFrustum(probeMin, probeMax);
-
-  if (inside || outside)
-  {
-    for (BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    {
-      (*it)->visible = inside;
-    }
-  }
-  else
-  {
-    for (BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    {
-      (*it)->visible = testBrickVisibility( *it );
-    }
-  }
-}
-
-void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                                 vec3f const& pos, vec3f const& size, bool& roiChanged)
-{
-  // Single gpu mode.
-  if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
-    return;
-  _lastFrame = vd->getCurrentFrame();
-  roiChanged = false;
-
-  insideList.clear();
-
-  vec3f tmpVec = size * 0.5f;
-  vec3f min = pos - tmpVec;
-  vec3f max = pos + tmpVec;
-
-  int countVisible = 0, countInvisible = 0;
-
-  size_t frame = vd->getCurrentFrame();
-  for(BrickList::iterator it = nonemptyList[frame].begin(); it != nonemptyList[frame].end(); ++it)
-  {
-    vvBrick *tmp = *it;
-    if ((tmp->min[0] <= max[0]) && (tmp->max[0] >= min[0]) &&
-      (tmp->min[1] <= max[1]) && (tmp->max[1] >= min[1]) &&
-      (tmp->min[2] <= max[2]) && (tmp->max[2] >= min[2]))
-    {
-      insideList.push_back(tmp);
-      if ((tmp->min[0] >= min[0]) && (tmp->max[0] <= max[0]) &&
-        (tmp->min[1] >= min[1]) && (tmp->max[1] <= max[1]) &&
-        (tmp->min[2] >= min[2]) && (tmp->max[2] <= max[2]))
-        tmp->insideProbe = true;
-      else
-        tmp->insideProbe = false;
-      ++countVisible;
-    }
-    else
-    {
-      ++countInvisible;
-    }
-  }
-
-  sortedList.clear();
-  for(std::vector<vvBrick*>::iterator it = insideList.begin(); it != insideList.end(); ++it)
-     sortedList.push_back(static_cast<vvBrick *>(*it));
-}
-
-void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, vec3f const& eye, vec3f const& normal, bool isOrtho)
-{
-  if (isOrtho)
-  {
-    for(std::vector<vvBrick*>::iterator it = list.begin(); it != list.end(); ++it)
-    {
-      (*it)->dist = -dot( (*it)->pos, normal );
-    }
-  }
-  else
-  {
-    for(std::vector<vvBrick*>::iterator it = list.begin(); it != list.end(); ++it)
-    {
-      (*it)->dist = length( (*it)->pos + vd->pos - eye );
-    }
-  }
-  std::sort(list.begin(), list.end(), vvBrick::Compare());
 }
 
 //----------------------------------------------------------------------------
@@ -3397,11 +2162,8 @@ void vvTexRend::renderVolumeGL()
   // Get OpenGL modelview matrix:
   mat4 mv = gl::getModelviewMatrix();
 
-  if (geomType != VV_BRICKS || !_showBricks)
-  {
-	  enableShader(_shader, pixLUTName);
-    enableLUTMode(pixLUTName, fragProgName);
-  }
+  enableShader(_shader, pixLUTName);
+  enableLUTMode(pixLUTName, fragProgName);
 
   switch (geomType)
   {
@@ -3417,9 +2179,6 @@ void vvTexRend::renderVolumeGL()
       break;
     case VV_SPHERICAL: renderTex3DSpherical(mv); break;
     case VV_VIEWPORT:  renderTex3DPlanar(mv); break;
-    case VV_BRICKS:
-        renderTexBricks(mv);
-      break;
   }
 
   disableLUTMode();
@@ -3749,30 +2508,6 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
     case vvRenderer::VV_BINNING:
       vd->_binning = (vvVolDesc::BinningType)newValue.asInt();
       break;
-    case vvRenderer::VV_ISECT_TYPE:
-      _isectType = (IsectType)newValue.asInt();
-      if ((_isectType != CPU) && (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS))
-      {
-        cerr << "Cannot generate proxy geometry on GPU" << std::endl;
-        _isectType = CPU;
-      }
-
-      // need to set these up anew
-      _elemCounts.clear();
-      _vertIndices.clear();
-      _vertIndicesAll.clear();
-      _vertArray.clear();
-
-      disableShader(_shader);
-      delete _shader;
-      _shader = initShader();
-      break;
-    case vvRenderer::VV_LEAPEMPTY:
-      _emptySpaceLeaping = newValue;
-      // Maybe a tf type was chosen which is incompatible with empty space leaping.
-      validateEmptySpaceLeaping();
-      updateTransferFunction();
-      break;
     case vvRenderer::VV_OFFSCREENBUFFER:
     case vvRenderer::VV_USE_OFFSCREEN_BUFFER:
       {
@@ -3874,7 +2609,6 @@ bool vvTexRend::isSupported(const GeometryType geom)
       return true;
 
     case VV_VIEWPORT:
-    case VV_BRICKS:
     case VV_SPHERICAL:
       return vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,0);
     default:
@@ -4071,7 +2805,6 @@ void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX
       break;
     case VV_VIEWPORT:
     case VV_SPHERICAL:
-    case VV_BRICKS:
       if(usePreIntegration)
       {
         glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
@@ -4206,110 +2939,12 @@ vvShaderProgram* vvTexRend::initShader()
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
 
-  vvShaderProgram* shader = NULL;
-  std::string vertName;
-  std::string geoName;
-  if (_isectType == VERT_SHADER_ONLY)
-  {
-    vertName = "isect_vert_only";
-    geoName = "";
-    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
-  }
-  else if (_isectType == GEOM_SHADER_ONLY)
-  {
-    vertName = "isect_geom_only";
-    geoName = "isect_geom_only";
-    vvShaderProgram::GeoShaderArgs args;
-    args.inputType = vvShaderProgram::VV_POINTS;
-    args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
-    args.numOutputVertices = 6;
-    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
-  }
-  else if(_isectType == VERT_GEOM_COMBINED)
-  {
-    vertName = "isect_vert_geom_combined";
-    geoName = "isect_vert_geom_combined";
-    vvShaderProgram::GeoShaderArgs args;
-    args.inputType = vvShaderProgram::VV_TRIANGLES;
-    args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
-    args.numOutputVertices = 6;
-    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
-  }
-
-  if (!shader && _isectType != CPU)
-  {
-    vvDebugMsg::msg(0, "Cannot load shader, falling back to CPU proxy geometry");
-    _isectType = CPU;
-  }
-
-  if (_isectType != CPU)
-  {
-    setupIntersectionParameters(shader);
-  }
-  
-  if(!shader)
-  {
-    // intersection on CPU, try to create fragment program
-    shader = _shaderFactory->createProgram("", "", fragName.str());
-  }
+  // intersection on CPU, try to create fragment program
+  vvShaderProgram* shader = _shaderFactory->createProgram("", "", fragName.str());
 
   vvGLTools::printGLError("Leave vvTexRend::initShader()");
 
   return shader;
-}
-
-void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
-{
-  vvGLTools::printGLError("Enter vvTexRend::setupIntersectionParameters()");
-
-  if(shader)
-  {
-    shader->enable();
-  }
-  else
-  {
-    cerr << "invalid isectShader!!" << endl;
-    return;
-  }
-
-  // Global scope, values will never be changed.
-
-  if (_isectType == VERT_SHADER_ONLY)
-  {
-    int v1[24] = { 0, 1, 2, 7,
-                   0, 1, 4, 7,
-                   0, 5, 4, 7,
-                   0, 5, 6, 7,
-                   0, 3, 6, 7,
-                   0, 3, 2, 7 };
-    shader->setParameterArray1i("v1", v1, 24);
-  }
-  else if (_isectType == GEOM_SHADER_ONLY)
-  {
-    int v1[24] = { 0, 1, 4, 7,
-                   0, 1, 2, 7,
-                   0, 5, 4, 7,
-                   0, 3, 2, 7,
-                   0, 5, 6, 7,
-                   0, 3, 6, 7 };
-    shader->setParameterArray1i("v1", v1, 24);
-  }
-  else if (_isectType == VERT_GEOM_COMBINED)
-  {
-    int v1[9] = { 0, 1, 2,
-                  0, 5, 4,
-                  0, 3, 6 };
-
-    int v2[9] = { 1, 2, 7,
-                  5, 4, 7,
-                  3, 6, 7 };
-
-    shader->setParameterArray1i("v1", v1, 9);
-    shader->setParameterArray1i("v2", v2, 9);
-  }
-  shader->disable();
-
-  vvGLTools::printGLError("Leaving vvTexRend::setupIntersectionParameters()");
 }
 
 //----------------------------------------------------------------------------
@@ -4486,91 +3121,6 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   std::cerr << "Manhattan Distance: " << dist << endl;
 
   return dist;
-}
-
-void vvTexRend::initVertArray(size_t numSlices)
-{
-  if (_isectType == CPU)
-  {
-    return;
-  }
-
-  if(_elemCounts.size() >= numSlices)
-    return;
-
-  _elemCounts.resize(numSlices);
-  _vertIndices.resize(numSlices);
-
-  if (_isectType == VERT_SHADER_ONLY)
-  {
-    _vertIndicesAll.resize(numSlices*6);
-    _vertArray.resize(numSlices*12);
-  }
-  else if (_isectType == GEOM_SHADER_ONLY)
-  {
-    _vertIndicesAll.resize(numSlices);
-    _vertArray.resize(numSlices*2);
-  }
-  else if (_isectType == VERT_GEOM_COMBINED)
-  {
-    _vertIndicesAll.resize(numSlices*3);
-    _vertArray.resize(numSlices*6);
-  }
-
-  size_t idxIterator = 0;
-  size_t vertIterator = 0;
-
-  // Spare some instructions in shader:
-  int mul = 4; // ==> x-values: 0, 4, 8, 12, 16, 20 instead of 0, 1, 2, 3, 4, 5
-  if (_isectType == GEOM_SHADER_ONLY)
-  {
-    mul = 1;
-  }
-  else if (_isectType == VERT_GEOM_COMBINED)
-  {
-    mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
-  }
-
-  for (size_t i = 0; i < numSlices; ++i)
-  {
-    if (_isectType == VERT_SHADER_ONLY)
-    {
-      _elemCounts[i] = 6;
-    }
-    else if (_isectType == GEOM_SHADER_ONLY)
-    {
-      _elemCounts[i] = 1;
-    }
-    else if (_isectType == VERT_GEOM_COMBINED)
-    {
-      _elemCounts[i] = 3;
-    }
-    
-    _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
-    for (GLsizei j = 0; j < _elemCounts[i]; ++j)
-    {
-      _vertIndices[i][j] = idxIterator;
-      ++idxIterator;
-
-      _vertArray[vertIterator] = j * mul;
-      ++vertIterator;
-      _vertArray[vertIterator] = i;
-      ++vertIterator;
-    }
-  }
-}
-
-void vvTexRend::validateEmptySpaceLeaping()
-{
-  // Only do empty space leaping for ordinary transfer functions
-  if (_emptySpaceLeaping == true)
-  {
-    _emptySpaceLeaping &= (geomType == VV_BRICKS);
-    _emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
-    _emptySpaceLeaping &= (voxelType != VV_RGBA);
-    // TODO: only implemented for 8-bit 1-channel volumes. Support higher volume resolutions.
-    _emptySpaceLeaping &= ((vd->chan == 1) && (vd->bpc == 1));
-  }
 }
 
 void vvTexRend::evaluateLocalIllumination(vvShaderProgram* shader, const vvVector3& normal)

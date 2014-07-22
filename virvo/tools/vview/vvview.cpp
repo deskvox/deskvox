@@ -2114,7 +2114,6 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_CUBIC2D))   glutAddMenuEntry("2D textures - cubic [2]", 2);
   if (vvTexRend::isSupported(vvTexRend::VV_VIEWPORT))  glutAddMenuEntry("3D textures - viewport aligned [3]", 3);
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
-  if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
   glutAddMenuEntry("VolPack [8]", 8);
@@ -2160,8 +2159,6 @@ void vvView::createMenus()
   glutAddMenuEntry("Increase buffer precision", 10);
   glutAddMenuEntry("Decrease buffer precision", 11);
   glutAddMenuEntry("Show/hide bricks [B]", 12);
-  if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))
-    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [g]", 13);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
     glutAddMenuEntry("Cycle shader [A]", 14);
   glutAddMenuEntry("Inc ibr mode [#]", 17);

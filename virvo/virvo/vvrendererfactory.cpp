@@ -206,7 +206,7 @@ void init()
   rendererAliasMap["fragprog"] = "planar";
   rendererAliasMap["tex"] = "planar";
   rendererAliasMap["tex3d"] = "planar";
-  rendererAliasMap["brick"] = "bricks";
+  rendererAliasMap["brick"] = "serbrick";
 
   voxelTypeMap["default"] = vvTexRend::VV_BEST;
   voxelTypeMap["rgba"] = vvTexRend::VV_RGBA;
@@ -230,9 +230,6 @@ void init()
 
   rendererTypeMap["spherical"] = vvRenderer::TEXREND;
   geometryTypeMap["spherical"] = vvTexRend::VV_SPHERICAL;
-
-  rendererTypeMap["bricks"] = vvRenderer::TEXREND;
-  geometryTypeMap["bricks"] = vvTexRend::VV_BRICKS;
 
   // other renderers
   rendererTypeMap["generic"] = vvRenderer::GENERIC;
@@ -724,10 +721,6 @@ bool vvRendererFactory::hasRenderer(const std::string& name, std::string const& 
   else if (str == "planar")
   {
     return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT);
-  }
-  else if (str == "bricks")
-  {
-    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_BRICKS);
   }
   else if (str == "spherical")
   {

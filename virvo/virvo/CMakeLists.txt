@@ -137,7 +137,6 @@ set(VIRVO_HEADERS
 
   vvaabb.h
   vvaabb.impl.h
-  vvbrick.h
   vvbrickrend.h
   vvbsptree.h
   vvbsptreevisitors.h
@@ -244,7 +243,6 @@ set(VIRVO_SOURCES
   vvbonjour/vvbonjourregistrar.cpp
   vvbonjour/vvbonjourresolver.cpp
 
-  vvbrick.cpp
   vvbrickrend.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
