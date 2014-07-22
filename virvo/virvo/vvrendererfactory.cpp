@@ -650,7 +650,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::TEXREND:
   default:
     {
-      vvTexRend::VoxelType vox= vd->getBPV()<3 ? vvTexRend::VV_BEST : vvTexRend::VV_RGBA;
+      vvTexRend::VoxelType vox= vd->getBPV()<=4 ? vvTexRend::VV_BEST : vvTexRend::VV_RGBA;
 
       if(vox == vvTexRend::VV_BEST)
       {
