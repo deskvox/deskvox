@@ -15,10 +15,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 template < typename T >
 class base_aabb
 {
@@ -53,9 +49,6 @@ public:
     bool contains(vec_type const& v) const;
 
 };
-
-} // math
-
 
 } // virvo
 

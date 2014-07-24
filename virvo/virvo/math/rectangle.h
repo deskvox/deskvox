@@ -9,10 +9,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //-------------------------------------------------------------------------------------------------
 // Layout policies
 //
@@ -80,9 +76,6 @@ public:
     T const& operator[](size_t i) const;
 
 };
-
-
-} // math
 
 
 } // virvo

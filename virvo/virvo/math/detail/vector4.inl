@@ -2,10 +2,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //--------------------------------------------------------------------------------------------------
 // vector4 members
 //
@@ -279,9 +275,6 @@ VV_FORCE_INLINE vector< 4, T > normalize(vector< 4, T > const& v)
 {
     return v * rsqrt( dot(v, v) );
 }
-
-
-} // math
 
 
 } // virvo

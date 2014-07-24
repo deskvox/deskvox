@@ -31,7 +31,8 @@
 #include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 
-namespace math = virvo::math;
+using virvo::recti;
+using virvo::vec2f;
 
 
 vvIbrServer::vvIbrServer(vvSocket *socket)
@@ -70,9 +71,9 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   float drMin = 0.0f;
   float drMax = 0.0f;
 
-  vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
+  virvo::ibr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
-  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, math::vec2f(drMin, drMax));
+  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vec2f(drMin, drMax));
 
   virvo::RenderTarget* rt = renderer->getRenderTarget();
 
@@ -86,7 +87,7 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   image.setDepthMax(drMax);
   image.setViewMatrix(mv);
   image.setProjMatrix(pr);
-  image.setViewport(math::recti(0, 0, w, h));
+  image.setViewport(recti(0, 0, w, h));
 
   // Fetch rendered image
   if (!rt->downloadColorBuffer(image.colorBuffer().data().ptr(), image.colorBuffer().size()))

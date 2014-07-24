@@ -30,7 +30,7 @@
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 struct vvRemoteClient::Impl
@@ -181,7 +181,7 @@ void vvRemoteClient::setCurrentFrame(size_t index)
   }
 }
 
-void vvRemoteClient::setObjectDirection(math::vec3f const& od)
+void vvRemoteClient::setObjectDirection(vec3f const& od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
   _changes = true;
@@ -195,7 +195,7 @@ void vvRemoteClient::setObjectDirection(math::vec3f const& od)
   }
 }
 
-void vvRemoteClient::setViewingDirection(math::vec3f const& vd)
+void vvRemoteClient::setViewingDirection(vec3f const& vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
   _changes = true;
@@ -211,7 +211,7 @@ void vvRemoteClient::setViewingDirection(math::vec3f const& vd)
   }
 }
 
-void vvRemoteClient::setPosition(math::vec3f const& p)
+void vvRemoteClient::setPosition(vec3f const& p)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
   _changes = true;

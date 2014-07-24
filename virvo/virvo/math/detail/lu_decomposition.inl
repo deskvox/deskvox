@@ -5,9 +5,6 @@
 namespace virvo
 {
 
-namespace math
-{
-
 
 //-----------------------------------------------------------------------
 /** LU decomposition.
@@ -172,8 +169,6 @@ inline matrix< 4, 4, float > lu_inverse(matrix< 4, 4, float > const& m)
 
 }
 
-
-} // math
 
 } // virvo
 

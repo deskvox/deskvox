@@ -38,8 +38,8 @@ class vvClipDialog : public QDialog
 signals:
 
   void clipping(bool active);
-  void normal(virvo::math::vec3f const& n) const;
-  void origin(virvo::math::vec3f const& o) const;
+  void normal(virvo::vec3f const& n) const;
+  void origin(virvo::vec3f const& o) const;
   void singleSlice(bool active) const;
   void opaque(bool active) const;
   void perimeter(bool active) const;

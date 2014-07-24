@@ -24,8 +24,6 @@
 #include "vvserbrickrend.h"
 #include "vvvoldesc.h"
 
-namespace math = virvo::math;
-
 
 vvSerBrickRend::vvSerBrickRend(vvVolDesc *vd, vvRenderState renderState, size_t numBricks,
                                const std::string& type, const vvRendererFactory::Options& options)
@@ -59,7 +57,7 @@ void vvSerBrickRend::renderVolumeGL()
     _bspTree->setVisitor(_simpleRenderVisitor);
 
     // find eye position:
-    math::vec3f eye = getEyePosition();
+    virvo::vec3f eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
     vvssize3 veye = vd->voxelCoords(eye);

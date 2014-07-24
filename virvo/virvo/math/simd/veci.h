@@ -10,10 +10,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 namespace simd
 {
 
@@ -185,9 +181,6 @@ VV_FORCE_INLINE int4 max(int4 const& u, int4 const& v)
 
 
 } // simd
-
-
-} // math
 
 
 } // virvo

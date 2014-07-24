@@ -10,9 +10,6 @@
 namespace virvo
 {
 
-namespace math
-{
-
 //--------------------------------------------------------------------------------------------------
 // Import required math functions from the standard library.
 // Enable ADL!
@@ -54,9 +51,6 @@ VV_FORCE_INLINE T rsqrt(T const& x)
 {
     return T(1.0) / sqrt(x);
 }
-
-
-} // math
 
 
 } // virvo

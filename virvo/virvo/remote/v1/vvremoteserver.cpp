@@ -31,8 +31,8 @@
 
 using std::cerr;
 using std::endl;
-
-namespace math = virvo::math;
+using virvo::vec3f;
+using virvo::vec4f;
 
 
 vvRemoteServer::vvRemoteServer(vvSocket *socket)
@@ -63,9 +63,9 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
 {
   vvDebugMsg::msg(3, "vvRemoteServer::processEvents()");
 
-  math::vec3f position;
-  math::vec3f viewDir;
-  math::vec3f objDir;
+  vec3f position;
+  vec3f viewDir;
+  vec3f objDir;
   int currentFrame;
   vvTransFunc tf;
 
@@ -190,7 +190,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
   case virvo::ParameterVec3:
     {
       int32_t param;
-      math::vec3f value;
+      vec3f value;
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector3(value) == vvSocket::VV_OK)
       {
         renderer->setParameter((vvRenderState::ParameterType)param, value);
@@ -200,7 +200,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
   case virvo::ParameterVec4:
     {
       int32_t param;
-      math::vec4f value;
+      vec4f value;
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector4(value) == vvSocket::VV_OK)
       {
         renderer->setParameter((vvRenderState::ParameterType)param, value);

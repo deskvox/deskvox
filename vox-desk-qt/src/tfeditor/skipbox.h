@@ -38,7 +38,7 @@ public:
   SkipBox(QWidget* parent = 0);
   ~SkipBox();
 
-  void setSize(virvo::math::vec3f const& size);
+  void setSize(virvo::vec3f const& size);
 private:
 
   struct Impl;
@@ -47,7 +47,7 @@ private:
 private slots:
   void emitSize(int sliderval);
 signals:
-  void size(virvo::math::vec3f const& size);
+  void size(virvo::vec3f const& size);
 };
 }
 

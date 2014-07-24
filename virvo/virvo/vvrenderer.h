@@ -138,18 +138,18 @@ protected:
   bool  _palette;                               ///< true = display transfer function palette
   bool  _qualityDisplay;                        ///< true = display rendering quality level
   unsigned int _clipMode;                       ///< 0 = clipping disabled, 1 = clipping plane, 2 = clipping sphere
-  virvo::math::vec3f clip_plane_point_;         ///< point on clipping plane
-  virvo::math::vec3f clip_plane_normal_;        ///< clipping plane normal
+  virvo::vec3f clip_plane_point_;               ///< point on clipping plane
+  virvo::vec3f clip_plane_normal_;              ///< clipping plane normal
   bool      _clipPlanePerimeter;                ///< true = render line around clipping plane
   vvColor   _clipPlaneColor;                    ///< clipping plane boundary color (R,G,B in [0..1])
-  virvo::math::vec3f clip_sphere_center_;       ///< clipping sphere center
+  virvo::vec3f clip_sphere_center_;             ///< clipping sphere center
   float     _clipSphereRadius;                  ///< clipping sphere radius
   bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
   bool  _clipOpaque;                            ///< true = make single slice opaque
   bool  _isROIUsed;                             ///< true = use roi
   bool  _isROIChanged;                          ///< true = roi related values have been changed
-  virvo::math::vec3f roi_pos_;                  ///< object space coordinates of ROI midpoint [mm]
-  virvo::math::vec3f roi_size_;                 ///< size of roi in each dimension [0..1]
+  virvo::vec3f roi_pos_;                        ///< object space coordinates of ROI midpoint [mm]
+  virvo::vec3f roi_size_;                       ///< size of roi in each dimension [0..1]
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
 
   vvsize3 _brickSize;                           ///< last bricksize in x/y/z
@@ -161,7 +161,7 @@ protected:
   size_t   _texMemorySize;                      ///< size of texture memory
   bool  _fpsDisplay;                            ///< true = show frame rate, might be costly if e. g. glFinish is called
   bool  _gammaCorrection;                       ///< true = gamma correction on
-  virvo::math::vec4f gamma_;                    ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
+  virvo::vec4f gamma_;                          ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
   bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
   vvColor _boundColor;                          ///< boundary color (R,G,B in [0..1])
   vvColor _probeColor;                          ///< probe boundary color (R,G,B in [0..1])
@@ -180,7 +180,7 @@ protected:
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
   bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
   int _depthPrecision;                          ///< number of bits in depth buffer for image based rendering
-  virvo::math::vec2f depth_range_;
+  virvo::vec2f depth_range_;
 public:
   vvRenderState();
 };
@@ -234,24 +234,24 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     vvVolDesc* vd;                                ///< volume description
     float      _channel4Color[3];                 ///< weights for visualization of 4th channel in RGB mode
     float      _opacityWeights[4];                ///< opacity weights for alpha blending with 4 channels
-    virvo::math::vec3f viewDir;                   ///< user's current viewing direction [object coordinates]
-    virvo::math::vec3f objDir;                    ///< direction from viewer to object [object coordinates]
+    virvo::vec3f viewDir;                         ///< user's current viewing direction [object coordinates]
+    virvo::vec3f objDir;                          ///< direction from viewer to object [object coordinates]
 
     virtual void init();                   		  ///< initialization routine
 
-    void getObjNormal(virvo::math::vec3f& normal,
-                      virvo::math::vec3f& origin,
-                      virvo::math::vec3f const& eye,
+    void getObjNormal(virvo::vec3f& normal,
+                      virvo::vec3f& origin,
+                      virvo::vec3f const& eye,
                       const vvMatrix& invMV,
                       bool isOrtho = false) const;
 
-    void getShadingNormal(virvo::math::vec3f& normal,
-                          virvo::math::vec3f& origin,
-                          virvo::math::vec3f const& eye,
+    void getShadingNormal(virvo::vec3f& normal,
+                          virvo::vec3f& origin,
+                          virvo::vec3f const& eye,
                           const vvMatrix& invMV,
                           bool isOrtho = false) const;
-    void calcProbeDims(virvo::math::vec3f& probePosObj, virvo::math::vec3f& probeSizeObj,
-        virvo::math::vec3f& probeMin, virvo::math::vec3f& probeMax) const;
+    void calcProbeDims(virvo::vec3f& probePosObj, virvo::vec3f& probeSizeObj,
+        virvo::vec3f& probeMin, virvo::vec3f& probeMax) const;
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
@@ -272,27 +272,27 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual size_t getCurrentFrame();
     virtual void  setCurrentFrame(size_t);
     virtual float getLastRenderTime() const;
-    virtual void  setPosition( virvo::math::vec3f const& p );
-    virtual virvo::math::vec3f getPosition() const;
+    virtual void  setPosition( virvo::vec3f const& p );
+    virtual virvo::vec3f getPosition() const;
     virtual void  renderCoordinates() const;
     virtual void  renderPalette() const;
     virtual void  renderQualityDisplay() const;
     virtual void  renderFPSDisplay() const;
-    virtual void  drawBoundingBox( virvo::math::vec3f const& oSize, virvo::math::vec3f const& oPos, const vvColor& color ) const;
-    virtual void  drawPlanePerimeter( virvo::math::vec3f const& oSize, virvo::math::vec3f const& oPos,
-        virvo::math::vec3f const& oPlane, virvo::math::vec3f const& oNorm, const vvColor& ) const;
+    virtual void  drawBoundingBox( virvo::vec3f const& oSize, virvo::vec3f const& oPos, const vvColor& color ) const;
+    virtual void  drawPlanePerimeter( virvo::vec3f const& oSize, virvo::vec3f const& oPos,
+        virvo::vec3f const& oPlane, virvo::vec3f const& oNorm, const vvColor& ) const;
     virtual bool  instantClassification() const;
-    virtual void  setViewingDirection( virvo::math::vec3f const& vd );
-    virtual void  setObjectDirection( virvo::math::vec3f const& od );
+    virtual void  setViewingDirection( virvo::vec3f const& vd );
+    virtual void  setObjectDirection( virvo::vec3f const& od );
     virtual void  setROIEnable(bool);
     virtual void  setSphericalROI(bool sphericalROI);
     virtual bool  isROIEnabled() const;
-    virtual void  setProbePosition( virvo::math::vec3f const& pos );
-    virtual virvo::math::vec3f  getProbePosition() const;
-    virtual void  setProbeSize( virvo::math::vec3f const& newSize );
-    virtual virvo::math::vec3f  getProbeSize() const;
-    virtual virvo::math::vec3f  getEyePosition() const;
-    virtual bool  isInVolume( virvo::math::vec3f const& point ) const;
+    virtual void  setProbePosition( virvo::vec3f const& pos );
+    virtual virvo::vec3f  getProbePosition() const;
+    virtual void  setProbeSize( virvo::vec3f const& newSize );
+    virtual virvo::vec3f  getProbeSize() const;
+    virtual virvo::vec3f  getEyePosition() const;
+    virtual bool  isInVolume( virvo::vec3f const& point ) const;
     virtual float getAlphaValue(float, float, float);
     virtual void  setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
@@ -310,7 +310,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual vvVecmath::AxisType getPrincipalViewingAxis(virvo::math::mat4 const& mv, float& zx, float& zy, float& zz) const;
+    virtual vvVecmath::AxisType getPrincipalViewingAxis(virvo::mat4 const& mv, float& zx, float& zy, float& zz) const;
 
     // Returns the current render target
     virvo::RenderTarget const* getRenderTarget() const {

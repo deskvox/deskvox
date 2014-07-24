@@ -35,14 +35,14 @@
 class VIRVOEXPORT vvPrintGL
 {
   private:
-    virvo::math::vec4f font_color_;
+    virvo::vec4f font_color_;
 
   public:
     vvPrintGL();
     virtual ~vvPrintGL();
     void print(const float, const float, const char *, ...);
 
-    void setFontColor(virvo::math::vec4f const& fontColor);
+    void setFontColor(virvo::vec4f const& fontColor);
 };
 #endif
 

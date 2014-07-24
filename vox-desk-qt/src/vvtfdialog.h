@@ -72,10 +72,10 @@ private slots:
 
   void onColor(const QColor& color);
   void onHasOwnColor(bool hascolor);
-  void onSize(virvo::math::vec3f const& size);
+  void onSize(virvo::vec3f const& size);
   void onOpacity(float opacity);
-  void onTop(virvo::math::vec3f const& top);
-  void onBottom(virvo::math::vec3f const& bottom);
+  void onTop(virvo::vec3f const& top);
+  void onBottom(virvo::vec3f const& bottom);
 
   void onTFMouseMove(QPointF pos, Qt::MouseButton button);
   void onTFMousePress(QPointF pos, Qt::MouseButton button);

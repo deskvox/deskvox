@@ -90,7 +90,7 @@ const float vvView::OBJ_SIZE  = 1.0f;
 const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 //----------------------------------------------------------------------------
@@ -847,13 +847,13 @@ void vvView::specialCallback(int key, int, int)
 {
   vvDebugMsg::msg(3, "vvView::specialCallback()");
 
-  math::vec3f probePos = ds->renderer->getProbePosition();
+  vec3f probePos = ds->renderer->getProbePosition();
 
   const int modifiers = glutGetModifiers();
   const float delta = 0.1f / ds->mvScale;
 
-  math::vec3f clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
-  math::vec3f clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  vec3f clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
+  vec3f clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
 
   switch(key)
   {
@@ -1635,7 +1635,7 @@ void vvView::roiMenuCallback(const int item)
 {
   vvDebugMsg::msg(1, "vvView::roiMenuCallback()");
 
-  math::vec3f probeSize;
+  vec3f probeSize;
 
   switch (item)
   {
@@ -1666,7 +1666,7 @@ void vvView::roiMenuCallback(const int item)
     if (ds->roiEnabled)
     {
       probeSize = ds->renderer->getProbeSize();
-      probeSize -= math::vec3f(0.1f);
+      probeSize -= vec3f(0.1f);
       const float size = probeSize[0];
       if (size <= 0.0f)
       {
@@ -1683,7 +1683,7 @@ void vvView::roiMenuCallback(const int item)
     if (ds->roiEnabled)
     {
       probeSize = ds->renderer->getProbeSize();
-      probeSize += math::vec3f(0.1f);
+      probeSize += vec3f(0.1f);
       const float size = probeSize[0];
       if (size > 1.0f)
       {
@@ -2397,7 +2397,7 @@ void vvView::renderMotion() const
 
 void vvView::editClipPlane(const int command, const float val)
 {
-  math::vec3f tmp = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  vec3f tmp = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
   vvVector3 clipNormal(tmp);
   switch (command)
   {

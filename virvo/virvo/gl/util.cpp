@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
+#include "math/math.h"
 #include "util.h"
 
 
@@ -33,7 +34,8 @@
 
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
+using virvo::mat4;
+using virvo::recti;
 
 
 #ifndef APIENTRY
@@ -396,7 +398,7 @@ void gl::renderInterlacedStereoStencilBuffer(bool lines)
 }
 
 
-void gl::setModelviewMatrix(math::mat4 const& mv)
+void gl::setModelviewMatrix(mat4 const& mv)
 {
 
     GLint old;
@@ -410,15 +412,15 @@ void gl::setModelviewMatrix(math::mat4 const& mv)
 }
 
 
-math::mat4 gl::getModelviewMatrix()
+mat4 gl::getModelviewMatrix()
 {
     GLfloat m[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, m);
-    return math::mat4(m);
+    return mat4(m);
 }
 
 
-void gl::setProjectionMatrix(math::mat4 const& mv)
+void gl::setProjectionMatrix(mat4 const& mv)
 {
 
     GLint old;
@@ -431,24 +433,24 @@ void gl::setProjectionMatrix(math::mat4 const& mv)
 
 }
 
-math::mat4 gl::getProjectionMatrix()
+mat4 gl::getProjectionMatrix()
 {
     GLfloat m[16];
     glGetFloatv(GL_PROJECTION_MATRIX, m);
-    return math::mat4(m);
+    return mat4(m);
 }
 
-void gl::setViewport(math::recti const& vp)
+void gl::setViewport(recti const& vp)
 {
     glViewport(vp.x, vp.y, vp.w, vp.h);
 }
 
 
-math::recti gl::getViewport()
+recti gl::getViewport()
 {
     GLint v[4];
     glGetIntegerv(GL_VIEWPORT, v);
-    return math::recti(v);
+    return recti(v);
 }
 
 

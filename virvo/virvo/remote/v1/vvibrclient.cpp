@@ -40,7 +40,7 @@
 using std::cerr;
 using std::endl;
 
-namespace math = virvo::math;
+using namespace virvo;
 
 
 struct vvIbrClient::Impl
@@ -171,7 +171,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   // Draw boundary lines
   if (_boundaries)
   {
-    math::vec3f size(vd->getSize()); // volume size [world coordinates]
+    vec3f size(vd->getSize()); // volume size [world coordinates]
     drawBoundingBox(size, vd->pos, _boundColor);
   }
 
@@ -181,9 +181,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   float drMax = 0.0f;
   vvAABB aabb = vvAABB(vvVector3(), vvVector3());
   vd->getBoundingBox(aabb);
-  vvIbr::calcDepthRange(_currentPr, _currentMv, aabb, drMin, drMax);
-  math::recti vp = virvo::gl::getViewport();
-  vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
+  virvo::ibr::calcDepthRange(_currentPr, _currentMv, aabb, drMin, drMax);
+  recti vp = virvo::gl::getViewport();
+  vvMatrix currentImgMatrix = virvo::ibr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
   bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
 
   glEnable(GL_BLEND);
@@ -307,7 +307,7 @@ void vvIbrClient::initIbrFrame()
   _imgMv = _image->viewMatrix();
   _imgDepthRange[0] = _image->depthMin();
   _imgDepthRange[1] = _image->depthMax();
-  _imgMatrix = vvIbr::calcImgMatrix(_imgPr, _imgMv, _image->viewport(), _imgDepthRange[0], _imgDepthRange[1]);
+  _imgMatrix = virvo::ibr::calcImgMatrix(_imgPr, _imgMv, _image->viewport(), _imgDepthRange[0], _imgDepthRange[1]);
 
   // get pixel and depth-data
   virvo::PixelFormatInfo cf = mapPixelFormat(_image->colorBuffer().format());

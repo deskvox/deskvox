@@ -30,12 +30,12 @@ VV_FORCE_INLINE T point(T const* tex, ssize_t idx)
 
 
 template < typename T >
-VV_FORCE_INLINE math::simd::float4 point(T const* tex, math::simd::float4 idx)
+VV_FORCE_INLINE simd::float4 point(T const* tex, simd::float4 idx)
 {
 
     VV_ALIGN(16) int indices[4];
     store(&indices[0], idx);
-    return math::simd::float4
+    return simd::float4
     (
         tex[indices[0]],
         tex[indices[1]],
@@ -46,20 +46,20 @@ VV_FORCE_INLINE math::simd::float4 point(T const* tex, math::simd::float4 idx)
 }
 
 
-VV_FORCE_INLINE math::vector< 4, math::simd::float4 > point(math::vector< 4, float > const* tex, math::simd::float4 idx)
+VV_FORCE_INLINE vector< 4, simd::float4 > point(vector< 4, float > const* tex, simd::float4 idx)
 {
 
     // Special case: colors are AoS. Those can be obtained
     // without a context switch to GP registers by transposing
     // to SoA after memory lookup.
 
-    math::simd::float4 iidx( idx * 4 );
+    simd::float4 iidx( idx * 4 );
     VV_ALIGN(16) int indices[4];
     store(&indices[0], iidx);
 
     float const* tmp = reinterpret_cast< float const* >(tex);
 
-    math::vector< 4, math::simd::float4 > colors
+    vector< 4, simd::float4 > colors
     (
         &tmp[0] + indices[0],
         &tmp[0] + indices[1],

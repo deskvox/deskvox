@@ -42,7 +42,7 @@
 #include "vvprintgl.h"
 #include "vvdebugmsg.h"
 
-namespace math = virvo::math;
+using virvo::vec4f;
 
 #if defined(HAVE_X11) && !defined(__APPLE__)
 Display* dsp = NULL;
@@ -100,7 +100,7 @@ GLuint base;
   @param hDC Windows device context
 */
 vvPrintGL::vvPrintGL()
-  : font_color_(math::vec4f(1.0f, 1.0f, 1.0f, 1.0f))
+  : font_color_(vec4f(1.0f, 1.0f, 1.0f, 1.0f))
 {
   vvDebugMsg::msg(3, "vvPrintGL::vvPrintGL()");
 
@@ -234,7 +234,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 
 //----------------------------------------------------------------------------
 /// Set the font color.
-void vvPrintGL::setFontColor(math::vec4f const& fontColor)
+void vvPrintGL::setFontColor(vec4f const& fontColor)
 {
   font_color_ = fontColor;
 }

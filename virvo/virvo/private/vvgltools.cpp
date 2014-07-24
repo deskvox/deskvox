@@ -51,8 +51,7 @@
 
 
 using namespace std;
-
-namespace math = virvo::math;
+using namespace virvo;
 
 
 namespace
@@ -332,11 +331,11 @@ void vvGLTools::drawQuad(float x1, float y1, float x2, float y2)
 //----------------------------------------------------------------------------
 /** Query the color specificied using glClearColor (rgba)
 */
-math::vec4f vvGLTools::queryClearColor()
+vec4f vvGLTools::queryClearColor()
 {
   GLfloat tmp[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, tmp);
-  return math::vec4f(tmp[0], tmp[1], tmp[2], tmp[3]);
+  return vec4f(tmp[0], tmp[1], tmp[2], tmp[3]);
 }
 
 //----------------------------------------------------------------------------

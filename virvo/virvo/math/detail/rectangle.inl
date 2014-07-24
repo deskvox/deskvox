@@ -2,10 +2,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //--------------------------------------------------------------------------------------------------
 // rectangle : xywh_layout
 //
@@ -103,9 +99,6 @@ VV_FORCE_INLINE rectangle< xywh_layout, T > intersect(rectangle< xywh_layout, T 
         return rectangle< xywh_layout, T >( T(0), T(0), T(0), T(0) );
     }
 }
-
-
-} // math
 
 
 } // virvo

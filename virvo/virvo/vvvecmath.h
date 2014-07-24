@@ -168,7 +168,7 @@ class VIRVOEXPORT vvMatrix
   public:
     vvMatrix();
     template < typename U >
-    vvMatrix(virvo::math::matrix< 4, 4, U > const& rhs)
+    vvMatrix(virvo::matrix< 4, 4, U > const& rhs)
     {
         for (size_t i = 0; i < 4; ++i)
         {
@@ -179,9 +179,9 @@ class VIRVOEXPORT vvMatrix
         }
     }
     template < typename U >
-    operator virvo::math::matrix< 4, 4, U >() const
+    operator virvo::matrix< 4, 4, U >() const
     {
-        return virvo::math::matrix< 4, 4, U >
+        return virvo::matrix< 4, 4, U >
         (
             U(e[0][0]), U(e[0][1]), U(e[0][2]), U(e[0][3]),
             U(e[1][0]), U(e[1][1]), U(e[1][2]), U(e[1][3]),
@@ -294,7 +294,7 @@ class vvBaseVector4
     vvBaseVector4();
     explicit vvBaseVector4(T val);
     // for transition
-    /* implicit */ vvBaseVector4(virvo::math::vector< 4, T > const& v)
+    /* implicit */ vvBaseVector4(virvo::vector< 4, T > const& v)
     {
         e[0] = v.x;
         e[1] = v.y;
@@ -302,16 +302,16 @@ class vvBaseVector4
         e[3] = v.w;
     }
     template < typename U >
-    /* implicit */ vvBaseVector4(virvo::math::vector< 4, U > const& v)
+    /* implicit */ vvBaseVector4(virvo::vector< 4, U > const& v)
     {
         e[0] = T(v.x);
         e[1] = T(v.y);
         e[2] = T(v.z);
         e[3] = T(v.w);
     }
-    operator virvo::math::vector< 4, T >() const { return virvo::math::vector< 4, T >( e[0], e[1], e[2], e[3] ); }
+    operator virvo::vector< 4, T >() const { return virvo::vector< 4, T >( e[0], e[1], e[2], e[3] ); }
     template < typename U >
-    operator virvo::math::vector< 4, U >() const { return virvo::math::vector< 4, U >( U(e[0]), U(e[1]), U(e[2]), U(e[3]) ); }
+    operator virvo::vector< 4, U >() const { return virvo::vector< 4, U >( U(e[0]), U(e[1]), U(e[2]), U(e[3]) ); }
     vvBaseVector4(T x, T y, T z, T w);
     vvBaseVector4(T const v[4]);
     vvBaseVector4(const vvBaseVector3<T>& v, const T w);
@@ -350,22 +350,22 @@ class vvBaseVector3
     explicit vvBaseVector3(T);
 
     // for transition
-    /* implicit */ vvBaseVector3(virvo::math::vector< 3, T > const& v)
+    /* implicit */ vvBaseVector3(virvo::vector< 3, T > const& v)
     {
         e[0] = v.x;
         e[1] = v.y;
         e[2] = v.z;
     }
     template < typename U >
-    /* implicit */ vvBaseVector3(virvo::math::vector< 3, U > const& v)
+    /* implicit */ vvBaseVector3(virvo::vector< 3, U > const& v)
     {
         e[0] = T(v.x);
         e[1] = T(v.y);
         e[2] = T(v.z);
     }
-    operator virvo::math::vector< 3, T >() const { return virvo::math::vector< 3, T >( e[0], e[1], e[2] ); }
+    operator virvo::vector< 3, T >() const { return virvo::vector< 3, T >( e[0], e[1], e[2] ); }
     template < typename U >
-    operator virvo::math::vector< 3, U >() const { return virvo::math::vector< 3, U >( U(e[0]), U(e[1]), U(e[2]) ); }
+    operator virvo::vector< 3, U >() const { return virvo::vector< 3, U >( U(e[0]), U(e[1]), U(e[2]) ); }
     vvBaseVector3(T x, T y, T z);
     vvBaseVector3(const vvBaseVector4<T>& v);
 

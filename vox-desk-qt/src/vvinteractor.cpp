@@ -20,14 +20,14 @@
 
 #include "vvinteractor.h"
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 vvInteractor::vvInteractor()
   : enabled_(true)
   , has_focus_(false)
   , visible_(true)
-  , pos_(math::vec3f(0.0f, 0.0f, 0.0f))
+  , pos_(vec3f(0.0f, 0.0f, 0.0f))
 {
 
 }
@@ -57,7 +57,7 @@ void vvInteractor::setVisible(bool visible)
   visible_ = visible;
 }
 
-void vvInteractor::setPos(math::vec3f const& pos)
+void vvInteractor::setPos(vec3f const& pos)
 {
   pos_ = pos;
 }
@@ -77,7 +77,7 @@ bool vvInteractor::visible() const
   return visible_;
 }
 
-math::vec3f vvInteractor::pos() const
+vec3f vvInteractor::pos() const
 {
   return pos_;
 }

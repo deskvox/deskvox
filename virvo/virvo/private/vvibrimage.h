@@ -101,10 +101,10 @@ public:
   void setProjMatrix(vvMatrix const& value) { projMatrix_ = value; }
 
   // Returns the viewport
-  virvo::math::recti const& viewport() const { return viewport_; }
+  virvo::recti const& viewport() const { return viewport_; }
 
   // Sets the viewport
-  void setViewport(virvo::math::recti const& value) { viewport_ = value; }
+  void setViewport(virvo::recti const& value) { viewport_ = value; }
 
   // Compress the image
   VVAPI bool compress(CompressionType ctColor = Compress_Snappy, CompressionType ctDepth = Compress_Snappy);
@@ -125,7 +125,7 @@ private:
   // Projection matrix
   vvMatrix projMatrix_;
   // The viewport
-  virvo::math::recti viewport_;
+  virvo::recti viewport_;
 
 public:
   template<class A>

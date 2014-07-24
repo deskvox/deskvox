@@ -2,10 +2,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //--------------------------------------------------------------------------------------------------
 // vector3 members
 //
@@ -300,9 +296,6 @@ VV_FORCE_INLINE vector< 3, T > max(vector< 3, T > const& u, vector< 3, T > const
 {
     return vector< 3, T >( max(u.x, v.x), max(u.y, v.y), max(u.z, v.z) );
 }
-
-
-} // math
 
 
 } // virvo

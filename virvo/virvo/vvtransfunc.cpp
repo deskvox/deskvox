@@ -43,7 +43,8 @@ using std::cerr;
 using std::endl;
 using std::list;
 
-namespace math = virvo::math;
+using virvo::vec3f;
+using virvo::vec4i;
 
 
 //----------------------------------------------------------------------------
@@ -432,27 +433,27 @@ void vvTransFunc::computeTFTexture(size_t w, size_t h, size_t d, float* array,
 {
   assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
 
-  math::vec4i mask;
+  vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = math::vec4i(1, 2, 3, 0);
+    mask = vec4i(1, 2, 3, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = math::vec4i(0, 1, 2, 3);
+    mask = vec4i(0, 1, 2, 3);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = math::vec4i(2, 1, 0, 3);
+    mask = vec4i(2, 1, 0, 3);
   }
   else
   {
     assert("unhandled case for format" == 0);
-    mask = math::vec4i(0, 1, 2, 3);
+    mask = vec4i(0, 1, 2, 3);
   }
 
-  math::vec3f norm;    // normalized 3D position
+  vec3f norm;    // normalized 3D position
   int index = 0;
   for (size_t z=0; z<d; ++z)
   {
@@ -559,19 +560,19 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
   rgba.resize(width * 4);
   computeTFTexture(width, 1, 1, &rgba[0], min, max, 0.0f, 0.0f, 0.0f, 0.0f, format);
 
-  math::vec4i mask;
+  vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = math::vec4i(1, 0, 0, 0);
+    mask = vec4i(1, 0, 0, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = math::vec4i(0, 0, 0, 1);
+    mask = vec4i(0, 0, 0, 1);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = math::vec4i(0, 0, 0, 1);
+    mask = vec4i(0, 0, 0, 1);
   }
 
   // Convert to uchar:
@@ -613,24 +614,24 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
   computeTFTexture(width, 1, 1, &rgba[0], min, max);
   memset(texture, 0, width * height * RGBA); // make black and transparent
 
-  math::vec4i mask;
+  vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = math::vec4i(1, 2, 3, 0);
+    mask = vec4i(1, 2, 3, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = math::vec4i(0, 1, 2, 3);
+    mask = vec4i(0, 1, 2, 3);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = math::vec4i(2, 1, 0, 3);
+    mask = vec4i(2, 1, 0, 3);
   }
   else
   {
     assert("unhandled case for format" == 0);
-    mask = math::vec4i(0, 1, 2, 3);
+    mask = vec4i(0, 1, 2, 3);
   }
   
 

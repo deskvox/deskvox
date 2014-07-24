@@ -62,9 +62,9 @@ public:
   VVAPI virtual bool present() const VV_OVERRIDE;
 
   VVAPI virtual void setCurrentFrame(size_t index) VV_OVERRIDE;
-  VVAPI virtual void setObjectDirection(virvo::math::vec3f const& od) VV_OVERRIDE;
-  VVAPI virtual void setViewingDirection(virvo::math::vec3f const& vd) VV_OVERRIDE;
-  VVAPI virtual void setPosition(virvo::math::vec3f const& p) VV_OVERRIDE;
+  VVAPI virtual void setObjectDirection(virvo::vec3f const& od) VV_OVERRIDE;
+  VVAPI virtual void setViewingDirection(virvo::vec3f const& vd) VV_OVERRIDE;
+  VVAPI virtual void setPosition(virvo::vec3f const& p) VV_OVERRIDE;
 
   VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
 

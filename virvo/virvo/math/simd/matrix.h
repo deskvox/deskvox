@@ -9,9 +9,6 @@
 namespace virvo
 {
 
-namespace math
-{
-
 
 template < >
 class matrix< 4, 4, simd::float4 >
@@ -52,8 +49,6 @@ vector< 4, simd::float4 > operator*(matrix< 4, 4, simd::float4 > const& m,
 
 matrix< 4, 4, simd::float4 > transpose(matrix< 4, 4, simd::float4 > const& m);
 
-
-} // math
 
 } // virvo
 

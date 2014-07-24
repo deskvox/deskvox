@@ -40,17 +40,17 @@ public:
   void setFocus();
   void clearFocus();
   void setVisible(bool visible);
-  void setPos(virvo::math::vec3f const& pos);
+  void setPos(virvo::vec3f const& pos);
 
   bool enabled() const;
   bool hasFocus() const;
   bool visible() const;
-  virvo::math::vec3f pos() const;
+  virvo::vec3f pos() const;
 protected:
   bool enabled_;
   bool has_focus_;
   bool visible_;
-  virvo::math::vec3f pos_;
+  virvo::vec3f pos_;
 };
 
 #endif

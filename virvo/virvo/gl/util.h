@@ -23,7 +23,7 @@
 #define VV_GL_UTIL_H
 
 
-#include "math/math.h"
+#include "math/forward.h"
 #include "vvexport.h"
 #include "types.h"
 
@@ -69,22 +69,22 @@ namespace gl
     VVAPI void renderInterlacedStereoStencilBuffer(bool lines = true);
 
     // Sets the modelview matrix
-    VVAPI void setModelviewMatrix(math::mat4 const& mv);
+    VVAPI void setModelviewMatrix(mat4 const& mv);
 
     // Returns the current modelview matrix
-    VVAPI math::mat4 getModelviewMatrix();
+    VVAPI mat4 getModelviewMatrix();
 
     // Sets the projection matrix
-    VVAPI void setProjectionMatrix(math::mat4 const& pr);
+    VVAPI void setProjectionMatrix(mat4 const& pr);
 
     // Returns the current projection matrix
-    VVAPI math::mat4 getProjectionMatrix();
+    VVAPI mat4 getProjectionMatrix();
 
     // Sets the viewport
-    VVAPI void setViewport(math::recti const& vp);
+    VVAPI void setViewport(recti const& vp);
 
     // Returns the current viewport
-    VVAPI math::recti getViewport();
+    VVAPI recti getViewport();
 
 
 } // namespace gl

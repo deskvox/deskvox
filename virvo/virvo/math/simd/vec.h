@@ -12,10 +12,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 namespace simd
 {
 
@@ -327,9 +323,6 @@ VV_FORCE_INLINE vector< 4, float4 > transpose(vector< 4, float4 > const& v)
 
 
 } // simd
-
-
-} // math
 
 
 } // virvo

@@ -10,9 +10,6 @@
 namespace virvo
 {
 
-namespace math
-{
-
 
 template < typename T >
 class matrix< 4, 4, T >
@@ -52,8 +49,6 @@ public:
 
 };
 
-
-} // math
 
 } // virvo
 

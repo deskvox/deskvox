@@ -29,19 +29,19 @@
 #include <virvo/vvtexrend.h>
 #include <virvo/vvvoldesc.h>
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 struct vvDimensionDialog::Impl
 {
   Impl()
     : ui(new Ui::DimensionDialog)
-    , initialDist(math::vec3f(1.0f, 1.0f, 1.0f))
+    , initialDist(vec3f(1.0f, 1.0f, 1.0f))
   {
   }
 
   std::auto_ptr<Ui::DimensionDialog> ui;
-  math::vec3f initialDist; ///< should be assigned when a new file is loaded
+  vec3f initialDist; ///< should be assigned when a new file is loaded
 
 private:
 
@@ -67,7 +67,7 @@ vvDimensionDialog::~vvDimensionDialog()
   vvDebugMsg::msg(1, "vvDimensionDialog::~vvDimensionDialog()");
 }
 
-void vvDimensionDialog::setInitialDist(math::vec3f const& dist)
+void vvDimensionDialog::setInitialDist(vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::setInitialDist()");
 
@@ -75,7 +75,7 @@ void vvDimensionDialog::setInitialDist(math::vec3f const& dist)
   updateGui(dist);
 }
 
-void vvDimensionDialog::setDist(math::vec3f const& dist)
+void vvDimensionDialog::setDist(vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::setDist()");
 
@@ -94,7 +94,7 @@ void vvDimensionDialog::setDist(math::vec3f const& dist)
   updateGui(dist);
 }
 
-void vvDimensionDialog::updateGui(math::vec3f const& dist)
+void vvDimensionDialog::updateGui(vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::updateGui()");
 
@@ -107,8 +107,8 @@ void vvDimensionDialog::onApplyClicked()
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::onApplyClicked()");
 
-  setDist(math::vec3f(static_cast<float>(impl_->ui->distXBox->value()),
-                      static_cast<float>(impl_->ui->distYBox->value()),
+  setDist(vec3f(static_cast<float>(impl_->ui->distXBox->value()),
+                static_cast<float>(impl_->ui->distYBox->value()),
                       static_cast<float>(impl_->ui->distZBox->value())));
 }
 

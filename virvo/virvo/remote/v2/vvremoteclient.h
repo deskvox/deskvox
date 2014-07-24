@@ -52,10 +52,10 @@ public:
     }
 
     // Returns the current projection matrix
-    virvo::math::mat4 const& proj() const { return proj_; }
+    virvo::mat4 const& proj() const { return proj_; }
 
     // Returns the current model-view matrix
-    virvo::math::mat4 const& view() const { return view_; }
+    virvo::mat4 const& view() const { return view_; }
 
     // vvRenderer API ----------------------------------------------------------
 
@@ -66,10 +66,10 @@ public:
     VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
     VVAPI virtual bool resize(int w, int h) VV_OVERRIDE;
     VVAPI virtual void setCurrentFrame(size_t index) VV_OVERRIDE;
-    VVAPI virtual void setObjectDirection(virvo::math::vec3f const& od) VV_OVERRIDE;
+    VVAPI virtual void setObjectDirection(virvo::vec3f const& od) VV_OVERRIDE;
     VVAPI virtual void setParameter(ParameterType param, const vvParam& value) VV_OVERRIDE;
-    VVAPI virtual void setPosition(virvo::math::vec3f const& p) VV_OVERRIDE;
-    VVAPI virtual void setViewingDirection(virvo::math::vec3f const& vd) VV_OVERRIDE;
+    VVAPI virtual void setPosition(virvo::vec3f const& p) VV_OVERRIDE;
+    VVAPI virtual void setViewingDirection(virvo::vec3f const& vd) VV_OVERRIDE;
     VVAPI virtual void setVolDesc(vvVolDesc* voldesc) VV_OVERRIDE;
     VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
 
@@ -81,9 +81,9 @@ protected:
     // The connection to the server
     virvo::ConnectionPointer conn_;
     // Current projection matrix
-    virvo::math::mat4 proj_;
+    virvo::mat4 proj_;
     // Current modelview matrix
-    virvo::math::mat4 view_;
+    virvo::mat4 view_;
 };
 
 #endif

@@ -65,7 +65,13 @@
 using namespace std;
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
+
+using virvo::mat4;
+using virvo::vec3f;
+using virvo::vec3;
+using virvo::vec4f;
+using virvo::vec4i;
+using virvo::vec4;
 
 using virvo::PixelFormat;
 
@@ -579,7 +585,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
 {
   GLint glWidth;                                  // return value from OpenGL call
   uint8_t* rgbaSlice[3];                          // RGBA slice data for texture memory for each principal axis
-  math::vec4i rawVal;                             // raw values for R,G,B,A
+  vec4i rawVal;                                   // raw values for R,G,B,A
   size_t rawSliceSize;                            // number of bytes in a slice of the raw data array
   size_t rawLineSize;                             // number of bytes in a row of the raw data array
   vvsize3 texSize;                                // size of a 2D texture in bytes for each principal axis
@@ -876,13 +882,13 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
             }
           }
 
-          currBrick->pos = math::vec3f(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
+          currBrick->pos = vec3f(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
             voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
             voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
-          currBrick->min = math::vec3f(voxSize[0] * (startOffset[0] - halfVolume[0]),
+          currBrick->min = vec3f(voxSize[0] * (startOffset[0] - halfVolume[0]),
             voxSize[1] * (startOffset[1] - halfVolume[1]),
             voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max = math::vec3f(voxSize[0] * (startOffset[0] + (tmpTexels[0] - brickTexelOverlap[0]) - halfVolume[0]),
+          currBrick->max = vec3f(voxSize[0] * (startOffset[0] + (tmpTexels[0] - brickTexelOverlap[0]) - halfVolume[0]),
             voxSize[1] * (startOffset[1] + (tmpTexels[1] - brickTexelOverlap[1]) - halfVolume[1]),
             voxSize[2] * (startOffset[2] + (tmpTexels[2] - brickTexelOverlap[2]) - halfVolume[2]));
 
@@ -916,7 +922,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickList, bool& areBricksCreated)
 {
   ErrorType err = OK;
-  math::vec4i rawVal;                             // raw values for R,G,B,A
+  vec4i rawVal;                                   // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
   removeTextures();
@@ -1122,9 +1128,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
 void vvTexRend::updateBrickGeom()
 {
   vvBrick* tmp;
-  math::vec3f voxSize;
-  math::vec3f halfBrick;
-  math::vec3f halfVolume;
+  vec3f voxSize;
+  vec3f halfBrick;
+  vec3f halfVolume;
 
   for (size_t f = 0; f < _brickList.size(); ++f)
   {
@@ -1134,17 +1140,17 @@ void vvTexRend::updateBrickGeom()
     voxSize[1] /= (vd->vox[1]-1);
     voxSize[2] /= (vd->vox[2]-1);
 
-    halfBrick = math::vec3f(float(texels[0]-1), float(texels[1]-1), float(texels[2]-1)) * 0.5f;
+    halfBrick = vec3f(float(texels[0]-1), float(texels[1]-1), float(texels[2]-1)) * 0.5f;
 
-    halfVolume = math::vec3f(float(vd->vox[0]), float(vd->vox[1]), float(vd->vox[2]));
-    halfVolume -= math::vec3f(1.0f);
-    halfVolume *= math::vec3f(0.5f);
+    halfVolume = vec3f(float(vd->vox[0]), float(vd->vox[1]), float(vd->vox[2]));
+    halfVolume -= vec3f(1.0f);
+    halfVolume *= vec3f(0.5f);
 
     for (size_t c = 0; c < _brickList[f].size(); ++c)
     {
         tmp = _brickList[f][c];
-        math::vec3f off( tmp->startOffset[0], tmp->startOffset[1], tmp->startOffset[2] );
-        math::vec3f txl( tmp->texels[0] - 1, tmp->texels[1] - 1, tmp->texels[2] - 1 );
+        vec3f off( tmp->startOffset[0], tmp->startOffset[1], tmp->startOffset[2] );
+        vec3f txl( tmp->texels[0] - 1, tmp->texels[1] - 1, tmp->texels[2] - 1 );
         tmp->pos = vd->pos + voxSize * (off + halfBrick - halfVolume);
         tmp->min = vd->pos + voxSize * (off - halfVolume);
         tmp->max = vd->pos + voxSize * (off + txl - halfVolume);
@@ -1204,7 +1210,7 @@ size_t vvTexRend::getTexMemorySize() const
 
 void vvTexRend::computeBrickSize()
 {
-  math::vec3f probeSize;
+  vec3f probeSize;
   vvsize3 newBrickSize;
 
   size_t texMemorySize = _texMemorySize;
@@ -1386,7 +1392,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   ErrorType err = OK;
   size_t srcIndex;
   size_t texOffset=0;
-  math::vec4i rawVal;
+  vec4i rawVal;
   uint8_t* texData = NULL;
   bool accommodated = true;
   GLint glWidth;
@@ -1634,7 +1640,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
 vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
   ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ)
 {
-  math::vec4i rawVal;
+  vec4i rawVal;
   size_t rawSliceSize;
   size_t rawLineSize;
   vvsize3 texSize;
@@ -1830,7 +1836,7 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t off
   size_t srcIndex;
   size_t texOffset;
   size_t sliceSize;
-  math::vec4i rawVal;
+  vec4i rawVal;
   size_t alpha;
   vvssize3 startOffset, endOffset;
   vvsize3 start, end, size;
@@ -2187,22 +2193,22 @@ void vvTexRend::disableLUTMode()
 /** Render a volume entirely if probeSize=0 or a cubic sub-volume of size probeSize.
   @param mv        model-view matrix
 */
-void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
+void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 {
-  math::vec3f vissize, vissize2;                  // full and half object visible sizes
+  vec3f vissize, vissize2;                        // full and half object visible sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-  math::vec3f texcoord[12];                       // intersection points in texture coordinate space [0..1]
-  math::vec3f farthest;                           // volume vertex farthest from the viewer
-  math::vec3f delta;                              // distance vector between textures [object space]
-  math::vec3f normal;                             // normal vector of textures
-  math::vec3f origin;                             // origin (0|0|0) transformed to object space
+  vec3f texcoord[12];                             // intersection points in texture coordinate space [0..1]
+  vec3f farthest;                                 // volume vertex farthest from the viewer
+  vec3f delta;                                    // distance vector between textures [object space]
+  vec3f normal;                                   // normal vector of textures
+  vec3f origin;                                   // origin (0|0|0) transformed to object space
   vvVector3 normClipPoint;                        // normalized point on clipping plane
-  math::vec3f clipPosObj;                         // clipping plane position in object space w/o position
-  math::vec3f probePosObj;                        // probe midpoint [object space]
-  math::vec3f probeSizeObj;                       // probe size [object space]
-  math::vec3f probeTexels;                        // number of texels in each probe dimension
-  math::vec3f probeMin, probeMax;                 // probe min and max coordinates [object space]
-  math::vec3f texSize;                            // size of 3D texture [object space]
+  vec3f clipPosObj;                               // clipping plane position in object space w/o position
+  vec3f probePosObj;                              // probe midpoint [object space]
+  vec3f probeSizeObj;                             // probe size [object space]
+  vec3f probeTexels;                              // number of texels in each probe dimension
+  vec3f probeMin, probeMax;                       // probe min and max coordinates [object space]
+  vec3f texSize;                                  // size of 3D texture [object space]
   float     maxDist;                              // maximum length of texture drawing path
   size_t    numSlices;
 
@@ -2221,19 +2227,19 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
   const vvVector3 minCorner = vd->objectCoords(minVox);
   const vvVector3 maxCorner = vd->objectCoords(maxVox);
   vissize = maxCorner - minCorner;
-  math::vec3f center = vvAABB(minCorner, maxCorner).getCenter();
+  vec3f center = vvAABB(minCorner, maxCorner).getCenter();
 
   for (size_t i=0; i<3; ++i)
   {
     texSize[i] = vissize[i] * (float)texels[i] / (float)vd->vox[i];
     vissize2[i]   = 0.5f * vissize[i];
   }
-  math::vec3f pos = vd->pos + center;
+  vec3f pos = vd->pos + center;
 
   if (_isROIUsed)
   {
-    math::vec3f size = vd->getSize();
-    math::vec3f size2 = size * 0.5f;
+    vec3f size = vd->getSize();
+    vec3f size2 = size * 0.5f;
     // Convert probe midpoint coordinates to object space w/o position:
     probePosObj = roi_pos_;
     probePosObj -= pos;                        // eliminate object position from probe position
@@ -2270,7 +2276,7 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
   // Initialize texture counters
   if (_isROIUsed)
   {
-    probeTexels = math::vec3f(0.0f, 0.0f, 0.0f);
+    probeTexels = vec3f(0.0f, 0.0f, 0.0f);
     for (size_t i=0; i<3; ++i)
     {
       probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
@@ -2278,7 +2284,7 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
   }
   else                                            // probe mode off
   {
-    probeTexels = math::vec3f( (float)vd->vox[0], (float)vd->vox[1], (float)vd->vox[2] );
+    probeTexels = vec3f( (float)vd->vox[0], (float)vd->vox[1], (float)vd->vox[2] );
   }
 
   glMatrixMode(GL_MODELVIEW);
@@ -2286,10 +2292,10 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
   glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Calculate inverted modelview matrix:
-  math::mat4 invMV = inverse(mv);
+  mat4 invMV = inverse(mv);
 
   // Find eye position (object space):
-  math::vec3f eye = getEyePosition();
+  vec3f eye = getEyePosition();
 
   // Get projection matrix:
   vvMatrix pm = gl::getProjectionMatrix();
@@ -2346,11 +2352,11 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
   }
 
   delta = normal;
-  delta *= math::vec3f(sliceDistance);
+  delta *= vec3f(sliceDistance);
 
   // Compute farthest point to draw texture at:
   farthest = delta;
-  farthest *= math::vec3f((float)(numSlices - 1) * -0.5f);
+  farthest *= vec3f((float)(numSlices - 1) * -0.5f);
   farthest += probePosObj; // will be vd->pos if no probe present
 
   if (_clipMode == 1)                     // clipping plane present?
@@ -2360,24 +2366,24 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
     // due to the automatic opacity correction.)
     // First find point on clipping plane which is on a line perpendicular
     // to clipping plane and which traverses the origin:
-    math::vec3f temp = delta * math::vec3f(-0.5f);
+    vec3f temp = delta * vec3f(-0.5f);
     farthest += temp;                          // add a half delta to farthest
     clipPosObj = clip_plane_point_;
     clipPosObj -= pos;
     temp = probePosObj;
     temp += normal;
     normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
-    maxDist = length( farthest - math::vec3f(normClipPoint) );
+    maxDist = length( farthest - vec3f(normClipPoint) );
     numSlices = (size_t)( maxDist / length(delta) ) + 1;
     temp = delta;
-    temp *= math::vec3f( ((float)(1 - static_cast<ptrdiff_t>(numSlices))) );
+    temp *= vec3f( ((float)(1 - static_cast<ptrdiff_t>(numSlices))) );
     farthest = normClipPoint;
     farthest += temp;
     if (_clipSingleSlice)
     {
       // Compute slice position:
       temp = delta;
-      temp *= math::vec3f( ((float)(numSlices-1)) );
+      temp *= vec3f( ((float)(numSlices-1)) );
       farthest += temp;
       numSlices = 1;
 
@@ -2389,12 +2395,12 @@ void vvTexRend::renderTex3DPlanar(math::mat4 const& mv)
     }
   }
 
-  math::vec3 texPoint;                            // arbitrary point on current texture
+  vec3 texPoint;                                  // arbitrary point on current texture
   int drawn = 0;                                  // counter for drawn textures
-  math::vec3 deltahalf = delta * 0.5f;
+  vec3 deltahalf = delta * 0.5f;
 
   // Relative viewing position
-  math::vec3 releye = eye - pos;
+  vec3 releye = eye - pos;
 
   // Volume render a 3D texture:
   if(voxelType == VV_PIX_SHD && _shader)
@@ -2512,12 +2518,12 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   vvGLTools::printGLError("Enter vvTexRend::renderTexBricks(const vvMatrix* mv)");
   vvMatrix pm;                                    // OpenGL projection matrix
   vvVector3 farthest;                             // volume vertex farthest from the viewer
-  math::vec3 delta;                               // distance vector between textures [object space]
-  math::vec3 normal;                              // normal vector of textures
-  math::vec3 origin;                              // origin (0|0|0) transformed to object space
-  math::vec3 probePosObj;                         // probe midpoint [object space]
-  math::vec3 probeSizeObj;                        // probe size [object space]
-  math::vec3 probeMin, probeMax;                  // probe min and max coordinates [object space]
+  vec3 delta;                                     // distance vector between textures [object space]
+  vec3 normal;                                    // normal vector of textures
+  vec3 origin;                                    // origin (0|0|0) transformed to object space
+  vec3 probePosObj;                               // probe midpoint [object space]
+  vec3 probeSizeObj;                              // probe size [object space]
+  vec3 probeMin, probeMax;                        // probe min and max coordinates [object space]
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
@@ -2533,7 +2539,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   invMV.invert();
 
   // Find eye position (object space):
-  math::vec3f eye = getEyePosition();
+  vec3f eye = getEyePosition();
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
@@ -2579,7 +2585,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   }
 
   delta = normal;
-  delta *= math::vec3(diagonal / ((float)numSlices));
+  delta *= vec3(diagonal / ((float)numSlices));
 
   // Compute farthest point to draw texture at:
   farthest = delta;
@@ -2595,7 +2601,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     vvVector3 temp(delta);
     temp.scale(-0.5f);
     farthest.add(temp);                          // add a half delta to farthest
-    math::vec3f clipPosObj = clip_plane_point_;
+    vec3f clipPosObj = clip_plane_point_;
     clipPosObj -= vd->pos;
     temp = probePosObj;
     temp.add(normal);
@@ -2610,7 +2616,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     if (_clipSingleSlice)
     {
       // Compute slice position:
-      delta *= math::vec3((float)(numSlices-1));
+      delta *= vec3((float)(numSlices-1));
       farthest.add(delta);
       numSlices = 1;
 
@@ -2691,33 +2697,33 @@ void vvTexRend::updateFrustum()
   // extract the planes of the viewing frustum
 
   // left plane
-  frustum_[0] = math::vec4f(clip(3, 0)+clip(0, 0), clip(3, 1)+clip(0, 1),
+  frustum_[0] = vec4f(clip(3, 0)+clip(0, 0), clip(3, 1)+clip(0, 1),
     clip(3, 2)+clip(0, 2), clip(3, 3)+clip(0, 3));
   // right plane
-  frustum_[1] = math::vec4f(clip(3, 0)-clip(0, 0), clip(3, 1)-clip(0, 1),
+  frustum_[1] = vec4f(clip(3, 0)-clip(0, 0), clip(3, 1)-clip(0, 1),
     clip(3, 2)-clip(0, 2), clip(3, 3)-clip(0, 3));
   // top plane
-  frustum_[2] = math::vec4f(clip(3, 0)-clip(1, 0), clip(3, 1)-clip(1, 1),
+  frustum_[2] = vec4f(clip(3, 0)-clip(1, 0), clip(3, 1)-clip(1, 1),
     clip(3, 2)-clip(1, 2), clip(3, 3)-clip(1, 3));
   // bottom plane
-  frustum_[3] = math::vec4f(clip(3, 0)+clip(1, 0), clip(3, 1)+clip(1, 1),
+  frustum_[3] = vec4f(clip(3, 0)+clip(1, 0), clip(3, 1)+clip(1, 1),
     clip(3, 2)+clip(1, 2), clip(3, 3)+clip(1, 3));
   // near plane
-  frustum_[4] = math::vec4f(clip(3, 0)+clip(2, 0), clip(3, 1)+clip(2, 1),
+  frustum_[4] = vec4f(clip(3, 0)+clip(2, 0), clip(3, 1)+clip(2, 1),
     clip(3, 2)+clip(2, 2), clip(3, 3)+clip(2, 3));
   // far plane
-  frustum_[5] = math::vec4f(clip(3, 0)-clip(2, 0), clip(3, 1)-clip(2, 1),
+  frustum_[5] = vec4f(clip(3, 0)-clip(2, 0), clip(3, 1)-clip(2, 1),
     clip(3, 2)-clip(2, 2), clip(3, 3)-clip(2, 3));
 }
 
-bool vvTexRend::insideFrustum(math::vec3f const& min, math::vec3f const& max) const
+bool vvTexRend::insideFrustum(vec3f const& min, vec3f const& max) const
 {
-  math::vec3f pv;
+  vec3f pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
   for (size_t i = 0; i < 6; i++)
   {
-    math::vec3f normal(frustum_[i]);
+    vec3f normal(frustum_[i]);
 
     for(size_t j = 0; j < 8; ++j)
     {
@@ -2734,9 +2740,9 @@ bool vvTexRend::insideFrustum(math::vec3f const& min, math::vec3f const& max) co
   return true;
 }
 
-bool vvTexRend::intersectsFrustum(math::vec3f const& min, math::vec3f const& max) const
+bool vvTexRend::intersectsFrustum(vec3f const& min, vec3f const& max) const
 {
-  math::vec3f pv;
+  vec3f pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
   for (size_t i = 0; i < 6; ++i)
@@ -2754,7 +2760,7 @@ bool vvTexRend::intersectsFrustum(math::vec3f const& min, math::vec3f const& max
     else
       pv[2] = min[2];
 
-    math::vec3f normal(frustum_[i]);
+    vec3f normal(frustum_[i]);
 
     if ( (dot(pv, normal) + frustum_[i][3]) < 0 )
     {
@@ -2803,7 +2809,7 @@ bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat
   return false;
 }
 
-void vvTexRend::markBricksInFrustum(math::vec3f const& probeMin, math::vec3f const& probeMax)
+void vvTexRend::markBricksInFrustum(vec3f const& probeMin, vec3f const& probeMax)
 {
   updateFrustum();
 
@@ -2827,7 +2833,7 @@ void vvTexRend::markBricksInFrustum(math::vec3f const& probeMin, math::vec3f con
 }
 
 void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                                 math::vec3f const& pos, math::vec3f const& size, bool& roiChanged)
+                                 vec3f const& pos, vec3f const& size, bool& roiChanged)
 {
   // Single gpu mode.
   if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
@@ -2837,9 +2843,9 @@ void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList
 
   insideList.clear();
 
-  math::vec3f tmpVec = size * 0.5f;
-  math::vec3f min = pos - tmpVec;
-  math::vec3f max = pos + tmpVec;
+  vec3f tmpVec = size * 0.5f;
+  vec3f min = pos - tmpVec;
+  vec3f max = pos + tmpVec;
 
   int countVisible = 0, countInvisible = 0;
 
@@ -2871,7 +2877,7 @@ void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList
      sortedList.push_back(static_cast<vvBrick *>(*it));
 }
 
-void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, math::vec3f const& eye, math::vec3f const& normal, bool isOrtho)
+void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, vec3f const& eye, vec3f const& normal, bool isOrtho)
 {
   if (isOrtho)
   {
@@ -2895,13 +2901,13 @@ void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, math::vec3f const& ey
   Spherical slices are surrounding the observer.
   @param mv       model-view matrix
 */
-void vvTexRend::renderTex3DSpherical(math::mat4 const& mv)
+void vvTexRend::renderTex3DSpherical(mat4 const& mv)
 {
   float  maxDist = 0.0;
   float  minDist = 0.0;
-  math::vec3 texSize;                             // size of 3D texture [object space]
-  math::vec3 texSize2;                            // half size of 3D texture [object space]
-  math::vec3 volumeVertices[8];
+  vec3 texSize;                                   // size of 3D texture [object space]
+  vec3 texSize2;                                  // half size of 3D texture [object space]
+  vec3 volumeVertices[8];
 
   vvDebugMsg::msg(3, "vvTexRend::renderTex3DSpherical()");
 
@@ -2918,7 +2924,7 @@ void vvTexRend::renderTex3DSpherical(math::mat4 const& mv)
     texSize2[i] = 0.5f * texSize[i];
   }
 
-  math::mat4 invView = inverse(mv);
+  mat4 invView = inverse(mv);
 
   // generates the vertices of the cube (volume) in world coordinates
   size_t vertexIdx = 0;
@@ -2933,7 +2939,7 @@ void vvTexRend::renderTex3DSpherical(math::mat4 const& mv)
         for (size_t k=0; k<3; ++k)
           volumeVertices[vertexIdx][k] =
             (volumeVertices[vertexIdx][k] * 2.0f - 1.0f) * texSize2[k];
-        math::vec4 tmp( volumeVertices[vertexIdx], 1.0f );
+        vec4 tmp( volumeVertices[vertexIdx], 1.0f );
         tmp = mv * tmp;
         volumeVertices[vertexIdx] = tmp.xyz() / tmp.w;
         vertexIdx++;
@@ -2953,9 +2959,9 @@ void vvTexRend::renderTex3DSpherical(math::mat4 const& mv)
 
   // transfer the eyepoint to the object coordinates of the volume
   // to check whether the camera is inside the volume:
-  math::vec4 eye4(0.0, 0.0, 0.0, 1.0);
+  vec4 eye4(0.0, 0.0, 0.0, 1.0);
   eye4 = invView * eye4;
-  math::vec3 eye = eye4.xyz() / eye4.w;
+  vec3 eye = eye4.xyz() / eye4.w;
   bool inside = true;
   for (size_t k=0; k<3; ++k)
   {
@@ -3041,13 +3047,13 @@ void vvTexRend::renderTex2DSlices(float zz)
   if (_clipMode == 1) activateClippingPlane();
 
   // Generate half object size as shortcut:
-  math::vec3 size = vd->getSize();
-  math::vec3 size2 = size * 0.5f;
+  vec3 size = vd->getSize();
+  vec3 size2 = size * 0.5f;
 
   numTextures = size_t(_quality * 100.0f);
   if (numTextures < 1) numTextures = 1;
 
-  math::vec3 normal(0.0f, 0.0f, 1.0f);
+  vec3 normal(0.0f, 0.0f, 1.0f);
   zPos = -size2[2];
   if (numTextures>1)                              // prevent division by zero
   {
@@ -3139,10 +3145,10 @@ void vvTexRend::renderTex2DSlices(float zz)
 */
 void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float zy, float zz)
 {
-  math::vec3 normal;                              // normal vector for slices
-  math::vec3 texTL, texTR, texBL, texBR;          // texture coordinates (T=top etc.)
-  math::vec3 objTL, objTR, objBL, objBR;          // object coordinates in world space
-  math::vec3 texSpacing;                          // distance between textures
+  vec3 normal;                                    // normal vector for slices
+  vec3 texTL, texTR, texBL, texBR;                // texture coordinates (T=top etc.)
+  vec3 objTL, objTR, objBL, objBR;                // object coordinates in world space
+  vec3 texSpacing;                                // distance between textures
   float  texStep;                                 // step size for texture names
   float  texIndex;                                // textures index
   size_t numTextures;                             // number of textures drawn
@@ -3159,8 +3165,8 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
   if (numTextures < 2)  numTextures = 2;          // make sure that at least one slice is drawn to prevent division by zero
 
   // Generate half object size as a shortcut:
-  math::vec3 size = vd->getSize();
-  math::vec3 size2 = size * 0.5f;
+  vec3 size = vd->getSize();
+  vec3 size2 = size * 0.5f;
 
   // Initialize parameters upon principal viewing direction:
   switch (principal)
@@ -3170,19 +3176,19 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     z
       //     |__y
       //   x/
-      objTL = math::vec3(-size2.x,-size2.y, size2.z);
-      objTR = math::vec3(-size2.x, size2.y, size2.z);
-      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
-      objBR = math::vec3(-size2.x, size2.y,-size2.z);
+      objTL = vec3(-size2.x,-size2.y, size2.z);
+      objTR = vec3(-size2.x, size2.y, size2.z);
+      objBL = vec3(-size2.x,-size2.y,-size2.z);
+      objBR = vec3(-size2.x, size2.y,-size2.z);
 
-      texTL = math::vec3(texMin[1], texMax[2], 0.0f);
-      texTR = math::vec3(texMax[1], texMax[2], 0.0f);
-      texBL = math::vec3(texMin[1], texMin[2], 0.0f);
-      texBR = math::vec3(texMax[1], texMin[2], 0.0f);
+      texTL = vec3(texMin[1], texMax[2], 0.0f);
+      texTR = vec3(texMax[1], texMax[2], 0.0f);
+      texBL = vec3(texMin[1], texMin[2], 0.0f);
+      texBR = vec3(texMax[1], texMin[2], 0.0f);
 
-      texSpacing = math::vec3(size[0] / float(numTextures - 1), 0.0f, 0.0f);
+      texSpacing = vec3(size[0] / float(numTextures - 1), 0.0f, 0.0f);
       texStep = -1.0f * float(vd->vox[0] - 1) / float(numTextures - 1);
-      normal = math::vec3(1.0f, 0.0f, 0.0f);
+      normal = vec3(1.0f, 0.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures);
       if (zx<0)                                   // reverse order? draw right to left
       {
@@ -3202,19 +3208,19 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     x
       //     |__z
       //   y/
-      objTL = math::vec3( size2.x,-size2.y,-size2.z);
-      objTR = math::vec3( size2.x,-size2.y, size2.z);
-      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
-      objBR = math::vec3(-size2.x,-size2.y, size2.z);
+      objTL = vec3( size2.x,-size2.y,-size2.z);
+      objTR = vec3( size2.x,-size2.y, size2.z);
+      objBL = vec3(-size2.x,-size2.y,-size2.z);
+      objBR = vec3(-size2.x,-size2.y, size2.z);
 
-      texTL = math::vec3(texMin[2], texMax[0], 0.0f);
-      texTR = math::vec3(texMax[2], texMax[0], 0.0f);
-      texBL = math::vec3(texMin[2], texMin[0], 0.0f);
-      texBR = math::vec3(texMax[2], texMin[0], 0.0f);
+      texTL = vec3(texMin[2], texMax[0], 0.0f);
+      texTR = vec3(texMax[2], texMax[0], 0.0f);
+      texBL = vec3(texMin[2], texMin[0], 0.0f);
+      texBR = vec3(texMax[2], texMin[0], 0.0f);
 
-      texSpacing = math::vec3(0.0f, size.y / float(numTextures - 1), 0.0f);
+      texSpacing = vec3(0.0f, size.y / float(numTextures - 1), 0.0f);
       texStep = -1.0f * float(vd->vox[1] - 1) / float(numTextures - 1);
-      normal = math::vec3(0.0f, 1.0f, 0.0f);
+      normal = vec3(0.0f, 1.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0]);
       if (zy<0)                                   // reverse order? draw top to bottom
       {
@@ -3235,18 +3241,18 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
       //     y
       //     |__x
       //   z/
-      objTL = math::vec3(-size2.x, size2.y,-size2.z);
-      objTR = math::vec3( size2.x, size2.y,-size2.z);
-      objBL = math::vec3(-size2.x,-size2.y,-size2.z);
-      objBR = math::vec3( size2.x,-size2.y,-size2.z);
+      objTL = vec3(-size2.x, size2.y,-size2.z);
+      objTR = vec3( size2.x, size2.y,-size2.z);
+      objBL = vec3(-size2.x,-size2.y,-size2.z);
+      objBR = vec3( size2.x,-size2.y,-size2.z);
 
-      texTL = math::vec3(texMin[0], texMax[1], 0.0f);
-      texTR = math::vec3(texMax[0], texMax[1], 0.0f);
-      texBL = math::vec3(texMin[0], texMin[1], 0.0f);
-      texBR = math::vec3(texMax[0], texMin[1], 0.0f);
+      texTL = vec3(texMin[0], texMax[1], 0.0f);
+      texTR = vec3(texMax[0], texMax[1], 0.0f);
+      texBL = vec3(texMin[0], texMin[1], 0.0f);
+      texBR = vec3(texMax[0], texMin[1], 0.0f);
 
-      texSpacing = math::vec3(0.0f, 0.0f, size.z / float(numTextures - 1));
-      normal = math::vec3(0.0f, 0.0f, 1.0f);
+      texSpacing = vec3(0.0f, 0.0f, size.z / float(numTextures - 1));
+      normal = vec3(0.0f, 0.0f, 1.0f);
       texStep = -1.0f * float(vd->vox[2] - 1) / float(numTextures - 1);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0] + vd->vox[1]);
       if (zz<0)                                   // reverse order? draw front to back
@@ -3337,12 +3343,12 @@ void vvTexRend::renderVolumeGL()
   if (vox[0] * vox[1] * vox[2] == 0)
     return;
 
-  math::vec3f size = vd->getSize();            // volume size [world coordinates]
+  vec3f size = vd->getSize();                  // volume size [world coordinates]
 
   // Draw boundary lines (must be done before setGLenvironment()):
   if (_isROIUsed)
   {
-    math::vec3f probeSizeObj = size * roi_size_;
+    vec3f probeSizeObj = size * roi_size_;
     drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
   }
   if (_clipMode == 1 && _clipPlanePerimeter)
@@ -3389,7 +3395,7 @@ void vvTexRend::renderVolumeGL()
   }
 
   // Get OpenGL modelview matrix:
-  math::mat4 mv = gl::getModelviewMatrix();
+  mat4 mv = gl::getModelviewMatrix();
 
   if (geomType != VV_BRICKS || !_showBricks)
   {
@@ -3654,7 +3660,7 @@ void vvTexRend::updateLUT(const float dist)
   in 3D texturing mode if the user is inside the volume.
   @param vd  viewing direction in object coordinates
 */
-void vvTexRend::setViewingDirection(math::vec3f const& vd)
+void vvTexRend::setViewingDirection(vec3f const& vd)
 {
   vvDebugMsg::msg(3, "vvTexRend::setViewingDirection()");
   viewDir = vd;
@@ -3666,7 +3672,7 @@ void vvTexRend::setViewingDirection(math::vec3f const& vd)
   in 3D texturing mode if the viewer is outside of the volume.
   @param vd  object direction in object coordinates
 */
-void vvTexRend::setObjectDirection(math::vec3f const& od)
+void vvTexRend::setObjectDirection(vec3f const& od)
 {
   vvDebugMsg::msg(3, "vvTexRend::setObjectDirection()");
   objDir = od;
@@ -3976,8 +3982,8 @@ void vvTexRend::renderQualityDisplay() const
 {
   const int numSlices = int(_quality * 100.0f);
   vvPrintGL printGL;
-  math::vec4f clearColor = vvGLTools::queryClearColor();
-  math::vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
+  vec4f clearColor = vvGLTools::queryClearColor();
+  vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
   printGL.setFontColor(fontColor);
   printGL.print(-0.9f, 0.9f, "Textures: %d", numSlices);
 }

@@ -36,16 +36,19 @@
 
 #include <iostream>
 
+using virvo::mat4;
+using virvo::vec2f;
+using virvo::vec3f;
+using virvo::vec4f;
 using vox::vvObjView;
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
 
 
 struct vvCanvas::Impl
 {
   vvRenderState renderState;
-  math::mat4 last_rotation;
+  mat4 last_rotation;
 };
 
 vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
@@ -97,10 +100,10 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
 
   // note: Qt 4.6 introduced QVector3D
   QVector3D qlightpos = settings.value("canvas/lightpos").value<QVector3D>();
-  light_pos_ = math::vec3f(qlightpos.x(), qlightpos.y(), qlightpos.z());
+  light_pos_ = vec3f(qlightpos.x(), qlightpos.y(), qlightpos.z());
 
   QVector3D qlightatt = settings.value("canvas/lightattenuation").value<QVector3D>();
-  light_att_ = math::vec3f(qlightatt.x(), qlightatt.y(), qlightatt.z());
+  light_att_ = vec3f(qlightatt.x(), qlightatt.y(), qlightatt.z());
 
   _animTimer = new QTimer(this);
   connect(_animTimer, SIGNAL(timeout()), this, SLOT(incTimeStep()));
@@ -235,16 +238,16 @@ void vvCanvas::paintGL()
 
   if (_lighting)
   {
-    math::vec4f lightpos;
+    vec4f lightpos;
     if (_headlight)
     {
-      math::vec3f eyePos = _renderer->getEyePosition();
+      vec3f eyePos = _renderer->getEyePosition();
 
-      lightpos = math::vec4f(eyePos, 1.0f);
+      lightpos = vec4f(eyePos, 1.0f);
     }
     else
     {
-      lightpos = math::vec4f(light_pos_, 1.0f);
+      lightpos = vec4f(light_pos_, 1.0f);
     }
 
     glEnable(GL_LIGHTING);
@@ -335,7 +338,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     const float pixelInWorld = _ov.getViewportWidth() / static_cast<float>(width());
     const float dx = static_cast<float>(event->pos().x() - _lastMousePos.x());
     const float dy = static_cast<float>(event->pos().y() - _lastMousePos.y());
-    math::vec2f pan(pixelInWorld * dx, pixelInWorld * dy);
+    vec2f pan(pixelInWorld * dx, pixelInWorld * dy);
     _ov._camera.translate(pan[0], -pan[1], 0.0f);
     break;
   }
@@ -373,7 +376,7 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
   _renderer->setParameter(vvRenderer::VV_QUALITY, _movingQuality);
   _mouseButton = event->button();
   _lastMousePos = event->pos();
-  impl->last_rotation = math::mat4::identity();
+  impl->last_rotation = mat4::identity();
   if (_spinAnimation)
   {
     _spinTimer->stop();
@@ -843,12 +846,12 @@ void vvCanvas::enableClipping(bool enabled)
   setParameter(vvRenderState::VV_CLIP_MODE, static_cast< unsigned >(enabled));
 }
 
-void vvCanvas::setClipNormal(math::vec3f const& n)
+void vvCanvas::setClipNormal(vec3f const& n)
 {
   setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, n);
 }
 
-void vvCanvas::setClipOrigin(math::vec3f const& o)
+void vvCanvas::setClipOrigin(vec3f const& o)
 {
   setParameter(vvRenderState::VV_CLIP_PLANE_POINT, o);
 }
@@ -937,7 +940,7 @@ void vvCanvas::editLightPosition(bool edit)
     li->setVisible(true);
     li->setLightingEnabled(getParameter(vvParameters::VV_LIGHTING));
     li->setPos(light_pos_);
-    connect(li, SIGNAL(lightPos(virvo::math::vec3f const&)), this, SLOT(setLightPos(virvo::math::vec3f const&)));
+    connect(li, SIGNAL(lightPos(virvo::vec3f const&)), this, SLOT(setLightPos(virvo::vec3f const&)));
   }
   else
   {
@@ -953,7 +956,7 @@ void vvCanvas::editLightPosition(bool edit)
   updateGL();
 }
 
-void vvCanvas::setLightAttenuation(math::vec3f const& att)
+void vvCanvas::setLightAttenuation(vec3f const& att)
 {
   light_att_ = att;
 
@@ -984,7 +987,7 @@ void vvCanvas::repeatLastRotation()
   _spinTimer->start(static_cast<int>(delay));
 }
 
-void vvCanvas::setLightPos(math::vec3f const& pos)
+void vvCanvas::setLightPos(vec3f const& pos)
 {
   light_pos_ = pos;
 

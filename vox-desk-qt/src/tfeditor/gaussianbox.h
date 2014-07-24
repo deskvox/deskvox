@@ -41,7 +41,7 @@ public:
 
   void setHasColor(bool hascolor);
   void setColor(const vvColor& color);
-  void setSize(virvo::math::vec3f const& size);
+  void setSize(virvo::vec3f const& size);
   void setOpacity(float opacity);
 private:
 
@@ -55,7 +55,7 @@ private slots:
 signals:
   void hasColor(bool hascolor);
   void color(const QColor& color);
-  void size(virvo::math::vec3f const& size);
+  void size(virvo::vec3f const& size);
   void opacity(float opacity);
 };
 }

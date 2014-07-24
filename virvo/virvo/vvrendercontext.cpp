@@ -44,7 +44,6 @@
 #include <stdexcept>
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
 
 
 #ifdef HAVE_X11
@@ -383,7 +382,7 @@ void vvRenderContext::resize(const uint w, const uint h)
 #endif
 
 #ifdef HAVE_OPENGL
-      math::recti vp = gl::getViewport();
+      virvo::recti vp = gl::getViewport();
       glViewport(vp[0], vp[1], w, h);
 #endif
 

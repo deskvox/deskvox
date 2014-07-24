@@ -37,7 +37,9 @@
 #include <sstream>
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
+using virvo::mat4;
+using virvo::recti;
+using virvo::vec3f;
 
 
 struct vvParBrickRend::Thread
@@ -65,8 +67,8 @@ struct vvParBrickRend::Thread
 
   vvAABB aabb;
 
-  math::mat4 mv;
-  math::mat4 pr;
+  mat4 mv;
+  mat4 pr;
 
   enum Event
   {
@@ -136,7 +138,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     return;
   }
 
-  math::recti vp = gl::getViewport();
+  recti vp = gl::getViewport();
   assert(vp[2] >= 0 && vp[3] >= 0);
   _width = size_t(vp[2]);
   _height = size_t(vp[3]);
@@ -161,7 +163,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
 
     thread->parbrickrend = this;
     thread->texture.pixels = new std::vector<float>(size_t(vp[2]) * size_t(vp[3]) * 4);
-    thread->texture.rect = new math::recti;
+    thread->texture.rect = new recti;
 
     thread->barrier = barrier;
     thread->mutex = mutex;
@@ -244,7 +246,7 @@ void vvParBrickRend::renderVolumeGL()
 
   if (!_showBricks)
   {
-    math::recti vp = gl::getViewport();
+    recti vp = gl::getViewport();
     if (size_t(vp[2]) != _width || size_t(vp[3]) != _height)
     {
       _width = static_cast<size_t>(vp[2]);
@@ -258,8 +260,8 @@ void vvParBrickRend::renderVolumeGL()
       }
     }
 
-    math::mat4 mv = gl::getModelviewMatrix();
-    math::mat4 pr = gl::getProjectionMatrix();
+    mat4 mv = gl::getModelviewMatrix();
+    mat4 pr = gl::getProjectionMatrix();
 
     for (std::vector<Thread*>::iterator it = _threads.begin();
          it != _threads.end(); ++it)
@@ -287,7 +289,7 @@ void vvParBrickRend::renderVolumeGL()
     }
 
     // find eye position:
-    math::vec3f eye = getEyePosition();
+    vec3f eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
     vvssize3 veye = vd->voxelCoords(eye);
@@ -470,9 +472,9 @@ void vvParBrickRend::render(Thread* thread)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   thread->renderer->renderVolumeGL();
-  math::recti vp = gl::getViewport();
+  recti vp = gl::getViewport();
 
-  math::recti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
+  recti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
 
   (*thread->texture.rect)[0] = bounds[0];
   (*thread->texture.rect)[1] = bounds[1];

@@ -50,9 +50,9 @@
 #define logf log
 #endif
 
-namespace math = virvo::math;
-
 using namespace std;
+
+using virvo::vec3f;
 
 const size_t vvVolDesc::DEFAULT_ICON_SIZE = 64;
 const size_t vvVolDesc::NUM_HDR_BINS = 256;
@@ -378,7 +378,7 @@ void vvVolDesc::setDefaults()
   dt = 1.0f;
   real[0] = 0.0f;
   real[1] = 1.0f;
-  pos = math::vec3f(0.0f, 0.0f, 0.0f);
+  pos = vec3f(0.0f, 0.0f, 0.0f);
 }
 
 //----------------------------------------------------------------------------
@@ -480,7 +480,7 @@ size_t vvVolDesc::getMovieVoxels() const
 /// Get bounding box of the volume.
 void vvVolDesc::getBoundingBox(vvAABB& aabb) const
 {
-  math::vec3f size2 = getSize() * 0.5f;
+  vec3f size2 = getSize() * 0.5f;
   aabb = vvAABB(pos - size2, pos + size2);
 }
 
@@ -1024,7 +1024,7 @@ void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest)
      {
         dataVal = _hdrBinLimits[i];
         linearBin = size_t((dataVal - real[0]) / (real[1] - real[0]) * float(w));
-        linearBin = math::clamp(linearBin, size_t(0), w-1);
+        linearBin = virvo::clamp(linearBin, size_t(0), w-1);
         dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
      }
      delete[] tmpOp;
@@ -2587,7 +2587,7 @@ voxel to the vector (0|-1|0).
 void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bool verbose)
 {
   uint8_t* rd;                                    // raw data of current source frame
-  math::vec3f center;                             // sphere center position [voxel space]
+  vec3f center;                                   // sphere center position [voxel space]
   vvVector3 v;                                    // currently processed voxel coordinates [voxel space]
   uint8_t* newRaw;                                // raw data of current destination frame
   float dist;                                     // distance from voxel to sphere center
@@ -2615,7 +2615,7 @@ void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bo
     core = 0.0f;
   ringSize = radius - core;
   if (ringSize<1.0f) ringSize = 1.0f;             // prevent division by zero later on
-  center = math::vec3f(radius, radius, radius);
+  center = vec3f(radius, radius, radius);
   sliceVoxels = vox[0] * vox[1];
   if (verbose) vvToolshed::initProgress(outer * frames);
   raw.first();
@@ -2632,7 +2632,7 @@ void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bo
         for (size_t x=0; x<outer; ++x)
       {
         // Compute sphere coordinates of current destination voxel:
-        v = math::vec3f( (float)x, (float)y, (float)z );
+        v = vec3f( (float)x, (float)y, (float)z );
         v -= vvVector3( center );
         v[1] = -v[1];                             // adapt to vvVecmath coordinate system
         v[2] = -v[2];                             // adapt to vvVecmath coordinate system
@@ -4381,9 +4381,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
   }
 }
 
-math::vec3f vvVolDesc::getSize() const
+vec3f vvVolDesc::getSize() const
 {
-    return math::vec3f
+    return vec3f
     (
         dist[0] * float(vox[0]) * _scale,
         dist[1] * float(vox[1]) * _scale,
@@ -4398,7 +4398,7 @@ void vvVolDesc::setDist(float x, float y, float z)
   dist[2] = z;
 }
 
-void vvVolDesc::setDist(math::vec3f const& d)
+void vvVolDesc::setDist(vec3f const& d)
 {
   dist = d;
 }
@@ -4673,7 +4673,7 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
   float height = 0.f;                             // current height on scale 0..1
 
   uint8_t* rd;                                    // raw data of current source frame
-  math::vec3f v;                                  // currently processed voxel coordinates [voxel space]
+  vec3f v;                                        // currently processed voxel coordinates [voxel space]
   uint8_t* newRaw;                                // raw data of current destination frame
   uint8_t *src, *dst;                             // source and destination volume data
   size_t newFrameSize;                            // new volume's frame size [voxels]
@@ -5359,16 +5359,16 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, ssize_t 
   }
 }
 
-vvssize3 vvVolDesc::voxelCoords(math::vec3f const& objCoords) const
+vvssize3 vvVolDesc::voxelCoords(vec3f const& objCoords) const
 {
-    math::vec3f fltVox2
+    vec3f fltVox2
     (
         static_cast<float>(vox[0]) * 0.5f,
         static_cast<float>(vox[1]) * 0.5f,
         static_cast<float>(vox[2]) * 0.5f
     );
 
-    math::vec3f obj = objCoords;
+    vec3f obj = objCoords;
     for (size_t i = 0; i < 3; ++i)
     {
         obj[i] /= dist[i];
@@ -5380,16 +5380,16 @@ vvssize3 vvVolDesc::voxelCoords(math::vec3f const& objCoords) const
                   static_cast<ssize_t>(obj[2] + fltVox2[2]));
 }
 
-math::vec3f vvVolDesc::objectCoords(const vvssize3& voxCoords) const
+vec3f vvVolDesc::objectCoords(const vvssize3& voxCoords) const
 {
-    math::vec3f fltVox2
+    vec3f fltVox2
     (
         static_cast<float>(vox[0]) * 0.5f,
         static_cast<float>(vox[1]) * 0.5f,
         static_cast<float>(vox[2]) * 0.5f
     );
 
-    math::vec3f result
+    vec3f result
     (
         static_cast<float>(voxCoords[0]) - fltVox2[0],
         static_cast<float>(voxCoords[1]) - fltVox2[1],

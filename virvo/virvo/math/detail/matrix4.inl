@@ -7,10 +7,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //--------------------------------------------------------------------------------------------------
 // matrix4 members
 //
@@ -184,9 +180,6 @@ VV_FORCE_INLINE matrix< 4, 4, T > transpose(matrix< 4, 4, T > const& m)
     return result;
 
 }
-
-
-} // math
 
 
 } // virvo

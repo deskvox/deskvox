@@ -32,19 +32,19 @@
 using std::cerr;
 using std::endl;
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
-void vvBrick::render(vvTexRend* const renderer, math::vec3f const& normal,
-                     math::vec3f const& farthest, math::vec3f const& delta,
-                     math::vec3f const& probeMin, math::vec3f const& probeMax,
+void vvBrick::render(vvTexRend* const renderer, vec3f const& normal,
+                     vec3f const& farthest, vec3f const& delta,
+                     vec3f const& probeMin, vec3f const& probeMax,
                      GLuint*& texNames, vvShaderProgram* shader) const
 {
-  math::vec3f dist = max - min;
+  vec3f dist = max - min;
 
   // Clip probe object to brick extents.
-  math::vec3f minClipped;
-  math::vec3f maxClipped;
+  vec3f minClipped;
+  vec3f maxClipped;
   for (size_t i = 0; i < 3; ++i)
   {
     if (min[i] < probeMin[i])
@@ -178,10 +178,10 @@ void vvBrick::render(vvTexRend* const renderer, math::vec3f const& normal,
   }
 }
 
-void vvBrick::renderOutlines(math::vec3f const& probeMin, math::vec3f const& probeMax) const
+void vvBrick::renderOutlines(vec3f const& probeMin, vec3f const& probeMax) const
 {
-  math::vec3f minClipped;
-  math::vec3f maxClipped;
+  vec3f minClipped;
+  vec3f maxClipped;
   for (size_t i = 0; i < 3; i++)
   {
     if (min[i] < probeMin[i])
@@ -318,9 +318,9 @@ size_t vvBrick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
-void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, math::vec3f const& axis)
+void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, vec3f const& axis)
 {
-  static const math::vec3f axisGetter(0, 1, 2);
+  static const vec3f axisGetter(0, 1, 2);
   size_t a = static_cast<size_t>( dot(axis, axisGetter) );
 
   for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)

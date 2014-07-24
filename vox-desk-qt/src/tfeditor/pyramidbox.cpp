@@ -27,7 +27,7 @@
 
 #include <QColorDialog>
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 struct tf::PyramidBox::Impl
@@ -37,8 +37,8 @@ struct tf::PyramidBox::Impl
   std::auto_ptr<Ui::PyramidBox> ui;
   bool hascolor;
   vvColor color;
-  math::vec3f top;
-  math::vec3f bottom;
+  vec3f top;
+  vec3f bottom;
   float opacity;
 
 private:
@@ -75,14 +75,14 @@ void tf::PyramidBox::setColor(const vvColor& color)
   impl->color = color;
 }
 
-void tf::PyramidBox::setTop(math::vec3f const& top)
+void tf::PyramidBox::setTop(vec3f const& top)
 {
   impl->top = top;
   impl->ui->topSlider->setValue(top[0] * impl->ui->topSlider->maximum() * 0.5f);
   impl->ui->topLabel->setText(tr("Top width X: ") + QString::number(top[0]));
 }
 
-void tf::PyramidBox::setBottom(math::vec3f const& bottom)
+void tf::PyramidBox::setBottom(vec3f const& bottom)
 {
   impl->bottom = bottom;
   impl->ui->bottomSlider->setValue(bottom[0] * impl->ui->bottomSlider->maximum() * 0.5f);

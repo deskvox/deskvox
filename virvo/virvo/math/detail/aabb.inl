@@ -2,9 +2,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
 //--------------------------------------------------------------------------------------------------
 // aabb members
 //
@@ -56,8 +53,6 @@ typename base_aabb< T >::vertex_list compute_vertices(base_aabb< T > const& box)
     return result;
 
 }
-
-} // math
 
 } // virvo
 

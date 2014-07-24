@@ -28,16 +28,23 @@
 
 #include <iostream>
 
-namespace vvIbr
+namespace virvo
 {
+
+namespace ibr
+{
+
 void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
                     const vvAABB& aabb, float& minval, float& maxval);
 vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                       virvo::math::recti const& vp,
+                       virvo::recti const& vp,
                        float depthRangeMin, float depthRangeMax);
-vvMatrix calcViewportMatrix(virvo::math::recti const& vp);
+vvMatrix calcViewportMatrix(virvo::recti const& vp);
 vvMatrix calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
-}
+
+} // ibr
+
+} // virvo
 
 
 #endif

@@ -56,7 +56,7 @@ signals:
   void showLightSource(bool show);
   void enableHeadlight(bool enable);
   void editPositionToggled(bool edit);
-  void attenuationChanged(virvo::math::vec3f const& att);
+  void attenuationChanged(virvo::vec3f const& att);
 };
 
 #endif

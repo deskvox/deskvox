@@ -34,8 +34,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-namespace math = virvo::math;
-
 #define TIME 1
 #define TIME_VERBOSE 1
 
@@ -95,9 +93,9 @@ void vvIbrServer::renderImage(ConnectionPointer conn, MessagePointer message,
     float drMin = 0.0f;
     float drMax = 0.0f;
 
-    vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
+    virvo::ibr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
-    renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, math::vec2f(drMin, drMax));
+    renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, virvo::vec2f(drMin, drMax));
 
     virvo::RenderTarget* rt = renderer->getRenderTarget();
 
@@ -111,7 +109,7 @@ void vvIbrServer::renderImage(ConnectionPointer conn, MessagePointer message,
     image->setDepthMax(drMax);
     image->setViewMatrix(mv);
     image->setProjMatrix(pr);
-    image->setViewport(math::recti(0, 0, w, h));
+    image->setViewport(virvo::recti(0, 0, w, h));
 
     // Fetch rendered image
     if (!rt->downloadColorBuffer(image->colorBuffer().data().ptr(), image->colorBuffer().size()))

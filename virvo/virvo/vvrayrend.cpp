@@ -49,7 +49,10 @@
 
 namespace cu = virvo::cuda;
 namespace gl = virvo::gl;
-namespace math = virvo::math;
+
+using math::mat4;
+using math::vec3f;
+using math::vec4;
 
 
 // in vvrayrend.cu
@@ -256,15 +259,15 @@ void vvRayRend::renderVolumeGL()
     return;
   }
 
-  math::vec3f size = vd->getSize();
+  vec3f size = vd->getSize();
 
-  math::vec3f probePosObj;
-  math::vec3f probeSizeObj;
-  math::vec3f probeMin;
-  math::vec3f probeMax;
+  vec3f probePosObj;
+  vec3f probeSizeObj;
+  vec3f probeMin;
+  vec3f probeMax;
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
-  math::vec3f clippedProbeSizeObj = probeSizeObj;
+  vec3f clippedProbeSizeObj = probeSizeObj;
   for (int i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
@@ -283,18 +286,18 @@ void vvRayRend::renderVolumeGL()
                                            vd->vox[2] * vd->vox[2]));
   size_t numSlices = std::max(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
 
-  math::mat4 mv;
-  math::mat4 pr;
+  mat4 mv;
+  mat4 pr;
 
 #ifdef HAVE_OPENGL
   mv = virvo::gl::getModelviewMatrix();
   pr = virvo::gl::getProjectionMatrix();
 #endif
 
-  math::mat4 inv_view_matrix = inverse( pr * mv );
+  mat4 inv_view_matrix = inverse( pr * mv );
   cInvViewMatrix.update(inv_view_matrix.data(), 16 * sizeof(float));
 
-  math::mat4 MvPr = pr * mv;
+  mat4 MvPr = pr * mv;
   cMvPrMatrix.update(MvPr.data(), 16 * sizeof(float));
 
   const float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
@@ -314,7 +317,7 @@ void vvRayRend::renderVolumeGL()
 
   const bool isOrtho = pr(3, 0) == 0.0f && pr(3, 1) == 0.0f && pr(3, 2) == 0.0f;
 
-  math::vec3f eye = getEyePosition();
+  vec3f eye = getEyePosition();
 
   // use GL_LIGHT0 for local lighting
   GLfloat lv[4];
@@ -329,12 +332,12 @@ void vvRayRend::renderVolumeGL()
     glGetLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &quadAtt);
   }
   // position of light source. transform eye coordinates to object coordinates
-  math::vec4 LposEye(lv[0], lv[1], lv[2], 1.0f);
+  vec4 LposEye(lv[0], lv[1], lv[2], 1.0f);
   LposEye = inverse(mv) * LposEye;
   const float3 Lpos = make_float3(LposEye.x, LposEye.y, LposEye.z);
 
-  math::vec3f normal;
-  math::vec3f origin;
+  vec3f normal;
+  vec3f origin;
   getShadingNormal(normal, origin, eye, inverse(mv), isOrtho);
 
   // viewing direction equals normal direction

@@ -14,10 +14,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //-------------------------------------------------------------------------------------------------
 // simd types
 //
@@ -197,9 +193,6 @@ operator<<(std::basic_ostream< CharT, Traits >& out, rectangle< xywh_layout, T >
     return out << s.str();
 
 }
-
-
-} // math
 
 
 } // virvo

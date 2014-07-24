@@ -41,7 +41,7 @@ public:
 
   /*! initial dist should be set whenever a new volume is loaded
    */
-  void setInitialDist(virvo::math::vec3f const& dist);
+  void setInitialDist(virvo::vec3f const& dist);
 private:
   struct Impl;
   std::auto_ptr<Impl> impl_;
@@ -50,10 +50,10 @@ private:
 
   /*! update volume description with new dist
    */
-  void setDist(virvo::math::vec3f const& dist);
+  void setDist(virvo::vec3f const& dist);
   /*! refresh spin box values
    */
-  void updateGui(virvo::math::vec3f const& dist);
+  void updateGui(virvo::vec3f const& dist);
 
 private slots:
   void onApplyClicked();

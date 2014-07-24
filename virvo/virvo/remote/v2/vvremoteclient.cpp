@@ -30,7 +30,6 @@ using virvo::makeMessage;
 using virvo::Message;
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
 
 vvRemoteClient::vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
         virvo::ConnectionPointer conn, const std::string& /*filename*/)
@@ -89,7 +88,7 @@ void vvRemoteClient::setCurrentFrame(size_t index)
     vvRenderer::setCurrentFrame(index);
 }
 
-void vvRemoteClient::setObjectDirection(math::vec3f const& od)
+void vvRemoteClient::setObjectDirection(virvo::vec3f const& od)
 {
     if (conn_)
         conn_->write(makeMessage(Message::ObjectDirection, od));
@@ -97,7 +96,7 @@ void vvRemoteClient::setObjectDirection(math::vec3f const& od)
     vvRenderer::setObjectDirection(od);
 }
 
-void vvRemoteClient::setViewingDirection(math::vec3f const& vd)
+void vvRemoteClient::setViewingDirection(virvo::vec3f const& vd)
 {
     if (conn_)
         conn_->write(makeMessage(Message::ViewingDirection, vd));
@@ -105,7 +104,7 @@ void vvRemoteClient::setViewingDirection(math::vec3f const& vd)
     vvRenderer::setViewingDirection(vd);
 }
 
-void vvRemoteClient::setPosition(math::vec3f const& p)
+void vvRemoteClient::setPosition(virvo::vec3f const& p)
 {
     if (conn_)
         conn_->write(makeMessage(Message::Position, p));

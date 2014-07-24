@@ -5,10 +5,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
-
 //--------------------------------------------------------------------------------------------------
 // matrix4 members
 //
@@ -108,9 +104,6 @@ VV_FORCE_INLINE matrix< 4, 4, simd::float4 > transpose(matrix< 4, 4, simd::float
     );
 
 }
-
-
-} // math
 
 
 } // virvo

@@ -165,16 +165,16 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putUint64(uint64_t val) const;
     vvSocket::ErrorType getFloat(float& val) const;
     vvSocket::ErrorType putFloat(const float val) const;
-    vvSocket::ErrorType getVector3(virvo::math::vec3f& val) const;
-    vvSocket::ErrorType putVector3(const virvo::math::vec3f& val) const;
-    vvSocket::ErrorType getVector4(virvo::math::vec4f& val) const;
-    vvSocket::ErrorType putVector4(const virvo::math::vec4f& val) const;
+    vvSocket::ErrorType getVector3(virvo::vec3f& val) const;
+    vvSocket::ErrorType putVector3(const virvo::vec3f& val) const;
+    vvSocket::ErrorType getVector4(virvo::vec4f& val) const;
+    vvSocket::ErrorType putVector4(const virvo::vec4f& val) const;
     vvSocket::ErrorType getColor(vvColor& val) const;
     vvSocket::ErrorType putColor(const vvColor& val) const;
     vvSocket::ErrorType getAABBi(vvAABBi& val) const;
     vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
-    vvSocket::ErrorType getViewport(virvo::math::recti& val) const;
-    vvSocket::ErrorType putViewport(virvo::math::recti const& val) const;
+    vvSocket::ErrorType getViewport(virvo::recti& val) const;
+    vvSocket::ErrorType putViewport(virvo::recti const& val) const;
     vvSocket::ErrorType getWinDims(int& w, int& h) const;
     vvSocket::ErrorType putWinDims(int w, int h) const;
     vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type

@@ -84,8 +84,8 @@ private:
   vox::vvObjView _ov;
   vox::vvObjView::ProjectionType _projectionType;
   vvColor _bgColor;
-  virvo::math::vec3f light_pos_;
-  virvo::math::vec3f light_att_;
+  virvo::vec3f light_pos_;
+  virvo::vec3f light_att_;
   bool _doubleBuffering;
   bool _lighting;
   bool _headlight;
@@ -140,8 +140,8 @@ public slots:
   void lastTimeStep();
 
   void enableClipping(bool enabled);
-  void setClipNormal(virvo::math::vec3f const& n);
-  void setClipOrigin(virvo::math::vec3f const& o);
+  void setClipNormal(virvo::vec3f const& n);
+  void setClipOrigin(virvo::vec3f const& o);
   void setClipSingleSlice(bool active);
   void setClipOpaque(bool active);
   void setClipPerimeter(bool active);
@@ -150,13 +150,13 @@ public slots:
   void showLightSource(bool show);
   void enableHeadlight(bool enable);
   void editLightPosition(bool edit);
-  void setLightAttenuation(virvo::math::vec3f const& att);
+  void setLightAttenuation(virvo::vec3f const& att);
 
   void resetCamera();
 
 private slots:
   void repeatLastRotation();
-  void setLightPos(virvo::math::vec3f const& pos);
+  void setLightPos(virvo::vec3f const& pos);
 signals:
   void rendererChanged(vvRenderer* renderer);
   void newVolDesc(vvVolDesc* vd);

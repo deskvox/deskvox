@@ -41,7 +41,8 @@
 #include <sstream>
 #include <string>
 
-namespace math = virvo::math;
+using virvo::vec3f;
+using virvo::vec4f;
 
 
 //----------------------------------------------------------------------------
@@ -959,7 +960,7 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val) const
 }
 
 
-vvSocket::ErrorType vvSocketIO::putVector3(math::vec3f const& val) const
+vvSocket::ErrorType vvSocketIO::putVector3(vec3f const& val) const
 {
   if(_socket)
   {
@@ -976,7 +977,7 @@ vvSocket::ErrorType vvSocketIO::putVector3(math::vec3f const& val) const
 }
 
 
-vvSocket::ErrorType vvSocketIO::getVector3(math::vec3f& val) const
+vvSocket::ErrorType vvSocketIO::getVector3(vec3f& val) const
 {
   if(_socket)
   {
@@ -1000,7 +1001,7 @@ vvSocket::ErrorType vvSocketIO::getVector3(math::vec3f& val) const
 }
 
 
-vvSocket::ErrorType vvSocketIO::putVector4(math::vec4f const& val) const
+vvSocket::ErrorType vvSocketIO::putVector4(vec4f const& val) const
 {
   if(_socket)
   {
@@ -1018,7 +1019,7 @@ vvSocket::ErrorType vvSocketIO::putVector4(math::vec4f const& val) const
 }
 
 
-vvSocket::ErrorType vvSocketIO::getVector4(math::vec4f& val) const
+vvSocket::ErrorType vvSocketIO::getVector4(vec4f& val) const
 {
   if(_socket)
   {
@@ -1044,12 +1045,12 @@ vvSocket::ErrorType vvSocketIO::getVector4(math::vec4f& val) const
 
 vvSocket::ErrorType vvSocketIO::putColor(const vvColor& val) const
 {
-  return putVector3(math::vec3f(val[0], val[1], val[2]));
+  return putVector3(vec3f(val[0], val[1], val[2]));
 }
 
 vvSocket::ErrorType vvSocketIO::getColor(vvColor& val) const
 {
-  math::vec3f clr;
+  vec3f clr;
   vvSocket::ErrorType err = getVector3(clr);
 
   if (err == vvSocket::VV_OK)
@@ -1122,10 +1123,10 @@ vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
 }
 
 //----------------------------------------------------------------------------
-/** Writes a virvo::math::recti to the socket.
- @param val  the virvo::math::recti.
+/** Writes a virvo::recti to the socket.
+ @param val  the virvo::recti.
 */
-vvSocket::ErrorType vvSocketIO::putViewport(virvo::math::recti const& val) const
+vvSocket::ErrorType vvSocketIO::putViewport(virvo::recti const& val) const
 {
   if(_socket)
   {
@@ -1143,10 +1144,10 @@ vvSocket::ErrorType vvSocketIO::putViewport(virvo::math::recti const& val) const
 }
 
 //----------------------------------------------------------------------------
-/** Reads a virvo::math::recti from the socket.
- @param val  the virvo::math::recti.
+/** Reads a virvo::recti from the socket.
+ @param val  the virvo::recti.
 */
-vvSocket::ErrorType vvSocketIO::getViewport(virvo::math::recti& val) const
+vvSocket::ErrorType vvSocketIO::getViewport(virvo::recti& val) const
 {
   if(_socket)
   {

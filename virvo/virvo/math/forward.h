@@ -9,9 +9,6 @@ namespace virvo
 {
 
 
-namespace math
-{
-
 //--------------------------------------------------------------------------------------------------
 // Declarations
 //
@@ -67,9 +64,6 @@ typedef rectangle< xywh_layout, int >       recti;
 typedef rectangle< xywh_layout, float >     rectf;
 typedef rectangle< xywh_layout, double >    rectd;
 typedef rectangle< xywh_layout, float >     rect;
-
-
-} // math
 
 
 } // virvo

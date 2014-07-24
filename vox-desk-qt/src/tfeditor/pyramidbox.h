@@ -41,8 +41,8 @@ public:
 
   void setHasColor(bool hascolor);
   void setColor(const vvColor& color);
-  void setTop(virvo::math::vec3f const& top);
-  void setBottom(virvo::math::vec3f const& bottom);
+  void setTop(virvo::vec3f const& top);
+  void setBottom(virvo::vec3f const& bottom);
   void setOpacity(float opacity);
 private:
 
@@ -57,8 +57,8 @@ private slots:
 signals:
   void hasColor(bool hascolor);
   void color(const QColor& color);
-  void top(virvo::math::vec3f const& top);
-  void bottom(virvo::math::vec3f const& bottom);
+  void top(virvo::vec3f const& top);
+  void bottom(virvo::vec3f const& bottom);
   void opacity(float opacity);
 };
 }

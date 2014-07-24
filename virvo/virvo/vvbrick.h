@@ -60,12 +60,12 @@ public:
     return (dist < rhs.dist);
   }
 
-  void render(vvTexRend* const renderer, virvo::math::vec3f const& normal,
-              virvo::math::vec3f const& farthest, virvo::math::vec3f const& delta,
-              virvo::math::vec3f const& probeMin, virvo::math::vec3f const& probeMax,
+  void render(vvTexRend* const renderer, virvo::vec3f const& normal,
+              virvo::vec3f const& farthest, virvo::vec3f const& delta,
+              virvo::vec3f const& probeMin, virvo::vec3f const& probeMax,
               GLuint*& texNames, vvShaderProgram* shader) const;
 
-  void renderOutlines(virvo::math::vec3f const& probeMin, virvo::math::vec3f const& probeMax) const;
+  void renderOutlines(virvo::vec3f const& probeMin, virvo::vec3f const& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,
                        GLenum texFormat, GLint internalTexFormat,
                        bool interpolation = true) const;
@@ -81,13 +81,13 @@ public:
                        float& minDot,
                        float& maxDot) const;
 
-  static void sortByCenter(std::vector<vvBrick*>& bricks, virvo::math::vec3f const& axis);
+  static void sortByCenter(std::vector<vvBrick*>& bricks, virvo::vec3f const& axis);
                                                     ///< and assuming that vertices are ordered back to front
-  virvo::math::vec3f pos;                           ///< center position of brick
-  virvo::math::vec3f min;                           ///< minimum position of brick
-  virvo::math::vec3f max;                           ///< maximum position of brick
-  virvo::math::vec3f texRange;
-  virvo::math::vec3f texMin;
+  virvo::vec3f pos;                                 ///< center position of brick
+  virvo::vec3f min;                                 ///< minimum position of brick
+  virvo::vec3f max;                                 ///< maximum position of brick
+  virvo::vec3f texRange;
+  virvo::vec3f texMin;
   size_t minValue;                                  ///< min scalar value after lut, needed for empty space leaping
   size_t maxValue;                                  ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all

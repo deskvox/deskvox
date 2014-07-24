@@ -53,8 +53,7 @@ static const int tile_height = 16;
 
 }
 
-namespace math = virvo::math;
-
+namespace simd = virvo::simd;
 
 #define DIV_UP(a, b) ((a + b - 1) / b)
 
@@ -77,8 +76,8 @@ namespace math = virvo::math;
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-typedef math::simd::int4 int_type;
-typedef math::simd::float4 float_type;
+typedef simd::int4 int_type;
+typedef simd::float4 float_type;
 
 #else
 
@@ -94,15 +93,15 @@ typedef float float_type;
 
 #endif
 
-using math::simd::sub;
-using math::simd::mul;
+using simd::sub;
+using simd::mul;
 
-typedef math::base_aabb< float_type > AABB;
-typedef math::vector< 3, int_type > Vec3s;
-typedef math::vector< 4, int_type > Vec4s;
-typedef math::vector< 3, float_type > Vec3;
-typedef math::vector< 4, float_type > Vec4;
-typedef math::matrix< 4, 4, float_type > Mat4;
+typedef virvo::base_aabb< float_type > AABB;
+typedef virvo::vector< 3, int_type > Vec3s;
+typedef virvo::vector< 4, int_type > Vec4s;
+typedef virvo::vector< 3, float_type > Vec3;
+typedef virvo::vector< 4, float_type > Vec4;
+typedef virvo::matrix< 4, 4, float_type > Mat4;
 
 
 VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
@@ -353,15 +352,15 @@ void vvSoftRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderVolumeGL()");
 
-  math::mat4 mv;
-  math::mat4 pr;
+  virvo::mat4 mv;
+  virvo::mat4 pr;
 
 #ifdef HAVE_OPENGL
   mv = virvo::gl::getModelviewMatrix();
   pr = virvo::gl::getProjectionMatrix();
 #endif
 
-  math::mat4 inv_view_matrix = inverse( pr * mv );
+  virvo::mat4 inv_view_matrix = inverse( pr * mv );
 
   if (impl_->inv_view_matrix == 0)
   {
@@ -372,7 +371,7 @@ void vvSoftRayRend::renderVolumeGL()
 
   virvo::RenderTarget* rt = getRenderTarget();
 
-  math::recti vp;
+  virvo::recti vp;
   vp[0] = 0;
   vp[1] = 0;
   vp[2] = rt->width();
@@ -380,7 +379,7 @@ void vvSoftRayRend::renderVolumeGL()
 
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
-  math::recti r = virvo::bounds(aabb, mv, pr, vp);
+  virvo::recti r = virvo::bounds(aabb, mv, pr, vp);
 
   impl_->raw    = vd->getRaw(vd->getCurrentFrame());
   impl_->colors = reinterpret_cast<float*>(rt->deviceColor());
@@ -522,7 +521,7 @@ void renderTile
                                            thread->render_params->vox[2] * thread->render_params->vox[2]));
 
 
-  typedef virvo::math::vector< 4, float > float4;
+  typedef virvo::vector< 4, float > float4;
   virvo::texture< float4, virvo::ElementType, 1 > tf(lutsize);
   tf.data = reinterpret_cast< float4* >( &(*thread->rgbaTF)[0] );
   tf.set_address_mode(virvo::Clamp);

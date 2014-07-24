@@ -14,7 +14,7 @@ namespace serialization
 
 
 template < typename A, size_t D, typename T >
-inline void serialize(A& a, virvo::math::vector< D, T >& v, unsigned /* version */ )
+inline void serialize(A& a, virvo::vector< D, T >& v, unsigned /* version */ )
 {
     for (size_t d = 0; d < D; ++d)
     {
@@ -24,7 +24,7 @@ inline void serialize(A& a, virvo::math::vector< D, T >& v, unsigned /* version 
 
 
 template < typename A, typename T >
-inline void serialize(A& a, virvo::math::vector< 2, T >& v, unsigned /* version */ )
+inline void serialize(A& a, virvo::vector< 2, T >& v, unsigned /* version */ )
 {
     a & v.x;
     a & v.y;
@@ -32,7 +32,7 @@ inline void serialize(A& a, virvo::math::vector< 2, T >& v, unsigned /* version 
 
 
 template < typename A, typename T >
-inline void serialize(A& a, virvo::math::vector< 3, T >& v, unsigned /* version */ )
+inline void serialize(A& a, virvo::vector< 3, T >& v, unsigned /* version */ )
 {
     a & v.x;
     a & v.y;
@@ -41,7 +41,7 @@ inline void serialize(A& a, virvo::math::vector< 3, T >& v, unsigned /* version 
 
 
 template < typename A, typename T >
-inline void serialize(A& a, virvo::math::vector< 4, T >& v, unsigned /* version */ )
+inline void serialize(A& a, virvo::vector< 4, T >& v, unsigned /* version */ )
 {
     a & v.x;
     a & v.y;
@@ -51,7 +51,7 @@ inline void serialize(A& a, virvo::math::vector< 4, T >& v, unsigned /* version 
 
 
 template < typename A, typename T >
-inline void serialize(A& a, virvo::math::rectangle< virvo::math::xywh_layout, T >& r, unsigned /* version */ )
+inline void serialize(A& a, virvo::rectangle< virvo::xywh_layout, T >& r, unsigned /* version */ )
 {
     a & r.x;
     a & r.y;

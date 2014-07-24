@@ -77,7 +77,7 @@ void vvClipDialog::setEnabled(bool enabled)
 
 void vvClipDialog::emitNormal() const
 {
-  virvo::math::vec3f n(impl_->ui->normalxSlider->value(),
+  virvo::vec3f n(impl_->ui->normalxSlider->value(),
     impl_->ui->normalySlider->value(),
     impl_->ui->normalzSlider->value());
   n = normalize(n);
@@ -88,12 +88,12 @@ void vvClipDialog::emitNormal() const
 
 void vvClipDialog::emitOrigin() const
 {
-  virvo::math::vec3f o(impl_->ui->normalxSlider->value(),
+  virvo::vec3f o(impl_->ui->normalxSlider->value(),
     impl_->ui->normalySlider->value(),
     impl_->ui->normalzSlider->value());
   o = normalize(o);
   float d = static_cast< float >(impl_->ui->originSlider->value());
-  o *= virvo::math::vec3f(d);
+  o *= virvo::vec3f(d);
 
   emit origin(o);
 }

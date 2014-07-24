@@ -30,7 +30,7 @@
 
 #include <iostream>
 
-namespace math = virvo::math;
+using virvo::vec3f;
 
 
 struct vvLightDialog::Impl
@@ -115,16 +115,16 @@ void vvLightDialog::onEditPositionClicked()
 
 void vvLightDialog::onConstAttChanged(double value)
 {
-  emit attenuationChanged(math::vec3f(value, impl_->ui->linearSpinBox->value(), impl_->ui->quadSpinBox->value()));
+  emit attenuationChanged(vec3f(value, impl_->ui->linearSpinBox->value(), impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onLinearAttChanged(double value)
 {
-  emit attenuationChanged(math::vec3f(impl_->ui->constSpinBox->value(), value, impl_->ui->quadSpinBox->value()));
+  emit attenuationChanged(vec3f(impl_->ui->constSpinBox->value(), value, impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onQuadAttChanged(double value)
 {
-  emit attenuationChanged(math::vec3f(impl_->ui->constSpinBox->value(), impl_->ui->linearSpinBox->value(), value));
+  emit attenuationChanged(vec3f(impl_->ui->constSpinBox->value(), impl_->ui->linearSpinBox->value(), value));
 }
 

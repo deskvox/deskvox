@@ -40,7 +40,7 @@
 #include <cstdlib>
 
 namespace gl = virvo::gl;
-namespace math = virvo::math;
+using virvo::recti;
 
 using virvo::makeMessage;
 using virvo::Message;
@@ -105,7 +105,7 @@ struct vvIbrClient::Impl
     // The IBR shader
     std::auto_ptr<vvShaderProgram> shader;
     // The current viewport
-    math::recti viewport;
+    recti viewport;
     // Current image matrix
     vvMatrix imgMatrix;
 
@@ -210,11 +210,11 @@ bool vvIbrClient::render()
 
     vd->getBoundingBox(aabb);
 
-    vvIbr::calcDepthRange(currentPr, currentMv, aabb, drMin, drMax);
+    virvo::ibr::calcDepthRange(currentPr, currentMv, aabb, drMin, drMax);
 
-    math::recti vp = gl::getViewport();
+    recti vp = gl::getViewport();
 
-    vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(currentPr, currentMv, vp, drMin, drMax);
+    vvMatrix currentImgMatrix = virvo::ibr::calcImgMatrix(currentPr, currentMv, vp, drMin, drMax);
 
     bool matrixChanged = (!currentImgMatrix.equal(impl_->imgMatrix));
 
@@ -420,7 +420,7 @@ void vvIbrClient::initIbrFrame()
 {
     virvo::IbrImage& image = *impl_->curr;
 
-    impl_->imgMatrix = vvIbr::calcImgMatrix(
+    impl_->imgMatrix = virvo::ibr::calcImgMatrix(
         image.projMatrix(), image.viewMatrix(), image.viewport(), image.depthMin(), image.depthMax());
 
     int h = image.height();

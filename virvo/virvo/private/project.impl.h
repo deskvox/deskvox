@@ -9,11 +9,9 @@ namespace virvo
 
 
 template < typename T >
-inline void project(math::vector< 3, T >* win, math::vector< 3, T > const& obj, math::matrix< 4, 4, T > const& modelview,
-    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
+inline void project(vector< 3, T >* win, vector< 3, T > const& obj, matrix< 4, 4, T > const& modelview,
+    matrix< 4, 4, T > const& projection, recti const& viewport)
 {
-
-    using namespace math;
 
     vec4 u(obj, T(1.0));
     vec4 tmp = projection * modelview * u;
@@ -28,11 +26,9 @@ inline void project(math::vector< 3, T >* win, math::vector< 3, T > const& obj, 
 
 
 template < typename T >
-inline void unproject(math::vector< 3, T >* obj, math::vector< 3, T > const& win, math::matrix< 4, 4, T > const& modelview,
-    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
+inline void unproject(vector< 3, T >* obj, vector< 3, T > const& win, matrix< 4, 4, T > const& modelview,
+    matrix< 4, 4, T > const& projection, recti const& viewport)
 {
-
-    using namespace math;
 
     vec4 u
     (
@@ -51,11 +47,9 @@ inline void unproject(math::vector< 3, T >* obj, math::vector< 3, T > const& win
 
 
 template < typename T >
-math::recti bounds(vvBaseAABB< T > const& aabb, math::matrix< 4, 4, T > const& modelview,
-    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
+recti bounds(vvBaseAABB< T > const& aabb, matrix< 4, 4, T > const& modelview,
+    matrix< 4, 4, T > const& projection, recti const& viewport)
 {
-
-    using namespace math;
 
     T minx =  std::numeric_limits< T >::max();
     T miny =  std::numeric_limits< T >::max();
