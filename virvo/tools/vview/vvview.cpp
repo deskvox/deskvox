@@ -222,10 +222,10 @@ void vvView::mainLoop(int argc, char *argv[])
   else vd->printInfoLine();
 
   // Set default color scheme if no TF present:
-  if (vd->tf.isEmpty())
+  if (vd->tf[0].isEmpty())
   {
-    vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-    vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+    vd->tf[0].setDefaultAlpha(0, 0.0, 1.0);
+    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
   }
 
   if (servers.size() == 0 && rrMode != RR_NONE)
@@ -1452,40 +1452,40 @@ void vvView::transferMenuCallback(int item)
   switch(item)
   {
   case 0:                                     // bright colors
-    ds->vd->tf.setDefaultColors(0, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(0, 0.0, 1.0);
     break;
   case 1:                                     // HSV colors
-    ds->vd->tf.setDefaultColors(1, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(1, 0.0, 1.0);
     break;
   case 2:                                     // grayscale
-    ds->vd->tf.setDefaultColors(2, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(2, 0.0, 1.0);
     break;
   case 3:                                     // white
-    ds->vd->tf.setDefaultColors(3, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(3, 0.0, 1.0);
     break;
   case 4:                                     // white
-    ds->vd->tf.setDefaultColors(4, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(4, 0.0, 1.0);
     break;
   case 5:                                     // white
-    ds->vd->tf.setDefaultColors(5, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(5, 0.0, 1.0);
     break;
   case 6:                                     // white
-    ds->vd->tf.setDefaultColors(6, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(6, 0.0, 1.0);
     break;
   case 7:                                     // cool to warm
-    ds->vd->tf.setDefaultColors(7, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(7, 0.0, 1.0);
     break;
   case 8:
-    ds->vd->tf.setDefaultColors(8, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultColors(8, 0.0, 1.0);
     break;
   case 9:                                     // alpha: ascending
-    ds->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultAlpha(0, 0.0, 1.0);
     break;
   case 10:                                     // alpha: descending
-    ds->vd->tf.setDefaultAlpha(1, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultAlpha(1, 0.0, 1.0);
     break;
   case 11:                                     // alpha: opaque
-    ds->vd->tf.setDefaultAlpha(2, 0.0, 1.0);
+    ds->vd->tf[0].setDefaultAlpha(2, 0.0, 1.0);
     break;
   case 12:                                    // alpha: display peak
   case 13:                                    // alpha: shift left peak
@@ -1498,11 +1498,11 @@ void vvView::transferMenuCallback(int item)
     if (peakPosX > 1.0f) peakPosX -= 1.0f;
     cerr << "Peak position: " << peakPosX << endl;
 
-    ds->vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
-    ds->vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
-    ds->vd->tf.deleteWidgets(vvTFWidget::TF_CUSTOM);
-    ds->vd->tf.deleteWidgets(vvTFWidget::TF_SKIP);
-    ds->vd->tf._widgets.push_back(new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f));
+    ds->vd->tf[0].deleteWidgets(vvTFWidget::TF_PYRAMID);
+    ds->vd->tf[0].deleteWidgets(vvTFWidget::TF_BELL);
+    ds->vd->tf[0].deleteWidgets(vvTFWidget::TF_CUSTOM);
+    ds->vd->tf[0].deleteWidgets(vvTFWidget::TF_SKIP);
+    ds->vd->tf[0]._widgets.push_back(new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f));
     break;
   case 15:                                    // gamma red
   case 16:

@@ -239,7 +239,7 @@ void vvRemoteClient::updateTransferFunction()
 
   if (_socketIO->putEvent(virvo::TransFunc) == vvSocket::VV_OK)
   {
-    _socketIO->putTransferFunction(vd->tf);
+    _socketIO->putTransferFunction(vd->tf[0]);
   }
 }
 

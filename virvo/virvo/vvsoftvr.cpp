@@ -538,7 +538,7 @@ of the principal viewing axis (defaults to 1.0)
 */
 void vvSoftVR::makeLookupTextureCorrect(float thickness)
 {
-   vd->tf.makePreintLUTCorrect(PRE_INT_TABLE_SIZE, &preIntTable[0][0][0], thickness);
+   vd->tf[0].makePreintLUTCorrect(PRE_INT_TABLE_SIZE, &preIntTable[0][0][0], thickness);
 }
 
 
@@ -576,7 +576,7 @@ of the principal viewing axis (defaults to 1.0)
 */
 void vvSoftVR::makeLookupTextureOptimized(float thickness)
 {
-   vd->tf.makePreintLUTOptimized(PRE_INT_TABLE_SIZE, &preIntTable[0][0][0], thickness);
+   vd->tf[0].makePreintLUTOptimized(PRE_INT_TABLE_SIZE, &preIntTable[0][0][0], thickness);
 }
 
 

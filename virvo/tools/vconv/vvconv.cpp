@@ -628,14 +628,15 @@ bool vvConv::readVolumeData()
   if (importTF)
   {
     bool error=false;
-    vvVolDesc* vdTF;    // VD for the transfer functions
 
-    vdTF = new vvVolDesc(importFile);
-    fio = new vvFileIO();
-    switch (fio->loadVolumeData(vdTF, vvFileIO::TRANSFER))
+    vvVolDesc vdTF(importFile); // VD for the transfer functions
+    vvFileIO fio;
+    switch (fio.loadVolumeData(&vdTF, vvFileIO::TRANSFER))
     {
       case vvFileIO::OK:
-        vd->tf.copy(&vd->tf._widgets, &vdTF->tf._widgets);
+        if (!vd->tf.empty() && vd->tf.back()._widgets.empty())
+          vd->tf.pop_back();
+        std::copy(vdTF.tf.begin(), vdTF.tf.end(), std::back_inserter(vd->tf));
         cerr << "Transfer function imported from: " << importFile << endl;
         break;
       case vvFileIO::FILE_NOT_FOUND:
@@ -647,7 +648,6 @@ bool vvConv::readVolumeData()
         error = true;
         break;
     }
-    delete fio;
     if (error) return false;
   }
   return true;
@@ -802,12 +802,8 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (removeTF)
   {
-    for (std::vector<vvTFWidget*>::const_iterator it = v->tf._widgets.begin();
-         it != v->tf._widgets.end(); ++it)
-    {
-      delete *it;
-    }
-    v->tf._widgets.clear();
+    v->tf.clear();
+    v->tf.resize(1);
   }
   if (fillRange)
   {

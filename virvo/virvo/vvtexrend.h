@@ -90,8 +90,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_FRAG_PROG_PREINT,
       VV_FRAG_PROG_MAX                            // has always to be last in list
     };
-    float* rgbaTF;                                ///< density to RGBA conversion table, as created by TF [0..1]
-    uint8_t* rgbaLUT;                             ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
+    std::vector<std::vector<float> > rgbaTF;      ///< density to RGBA conversion table, as created by TF [0..1]
+    std::vector<std::vector<uint8_t> > rgbaLUT;   ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
     uint8_t* preintTable;                         ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
     float  lutDistance;                           ///< slice distance for which LUT was computed
     vvsize3   texels;                             ///< width, height and depth of volume, including empty space [texels]
@@ -102,7 +102,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLint internalTexFormat;                      ///< internal texture format (parameter for glTexImage...)
     GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
-    GLuint pixLUTName;                            ///< name for transfer function texture
+    std::vector<GLuint> pixLUTName;               ///< names for transfer function textures
     GLuint fragProgName[VV_FRAG_PROG_MAX];        ///< names for fragment programs (for applying transfer function)
     VoxelType voxelType;                          ///< voxel type actually used
     bool extTex3d;                                ///< true = 3D texturing supported
@@ -129,13 +129,13 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void makeLUTTexture() const;
     ErrorType makeTextures(bool newTex);
 
-    void initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const;
-    void freeClassificationStage(GLuint pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const;
-    void enableShader (vvShaderProgram* shader, GLuint lutName);
+    void initClassificationStage();
+    void freeClassificationStage();
+    void enableShader (vvShaderProgram* shader) const;
     void disableShader(vvShaderProgram* shader) const;
 
-    void enableLUTMode(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
-    void disableLUTMode();
+    void enableLUTMode() const;
+    void disableLUTMode() const;
 
     vvShaderProgram* initShader();
 
@@ -148,7 +148,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void updateLUT(float dist);
     size_t getLUTSize(vvsize3& size) const;
     size_t getPreintTableSize() const;
-    void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const;
+    void enableFragProg() const;
     void disableFragProg() const;
     void enableTexture(GLenum target) const;
     void disableTexture(GLenum target) const;
@@ -178,7 +178,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool isSupported(FeatureType) const;
     VoxelType getVoxelType() const;
     void renderQualityDisplay() const;
-    void printLUT() const;
+    void printLUT(size_t chan=0) const;
     void setTexMemorySize(size_t);
     size_t getTexMemorySize() const;
     uint8_t* getHeightFieldData(float[4][3], size_t&, size_t&);

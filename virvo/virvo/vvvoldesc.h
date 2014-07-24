@@ -143,7 +143,7 @@ class VIRVOEXPORT vvVolDesc
                                                   ///< 4 bpc:   min and max values for mapping to transfer function space
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]
-    vvTransFunc tf;                               ///< transfer functions
+    std::vector<vvTransFunc> tf;                  ///< transfer functions (if more than 1: each channel has its own)
     size_t iconSize;                              ///< width and height of icon [pixels] (0 if no icon stored, e.g., 64 for 64x64 pixels icon)
     uint8_t* iconData;                            ///< icon image data as RGBA (RGBA, RGBA, ...), starting top left,
                                                   ///< then going right, then down
@@ -331,7 +331,8 @@ class VIRVOEXPORT vvVolDesc
     int  findHDRBin(float);
     int  mapFloat2Int(float);
     void makeBinTexture(uint8_t* texture, size_t width);
-    void computeTFTexture(size_t w, size_t h, size_t d, float* dest);
+    void computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest);
+    void computeTFTexture(size_t w, size_t h, size_t d, float* dest); // tf for channel 0
     void makeLineTexture(DiagType, uchar, int, int, bool, std::vector< std::vector< float > > const& voxData, uint8_t*);
     void makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int*);
     void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;

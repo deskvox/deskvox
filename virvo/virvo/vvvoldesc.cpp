@@ -281,7 +281,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   }
 
   // Copy transfer functions:
-  tf.copy(&tf._widgets, &v->tf._widgets);
+  std::copy(v->tf.begin(), v->tf.end(), std::back_inserter(tf));
 
   if (f==-1)
   {
@@ -350,12 +350,8 @@ void vvVolDesc::initialize()
   filename = NULL;
   _mask = NULL;
   _radius = 0;
-  for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-       it != tf._widgets.end(); ++it)
-  {
-    delete *it;
-  }
-  tf._widgets.clear();
+  if (tf.empty())
+    tf.resize(1);
   iconSize = 0;
   _scale = 1.0f;
   _hdrBinLimits = new float[NUM_HDR_BINS];
@@ -522,7 +518,12 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
-    tf.copy(&tf._widgets, &src->tf._widgets);
+    if (tf.size() < src->tf.size())
+      tf.resize(src->tf.size());
+    for (size_t i=0; i<src->tf.size(); ++i)
+    {
+      tf[i].copy(&tf[i]._widgets, &src->tf[i]._widgets);
+    }
 
     // Delete sequence information from source:
     src->bpc = src->chan = src->vox[0] = src->vox[1] = src->vox[2] = src->frames = src->currentFrame = 0;
@@ -1001,19 +1002,28 @@ void vvVolDesc::makeHistogramTexture(int frame, size_t chan1, size_t numChan, si
   delete[] buckets;
 }
 
+void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest)
+{
+  computeTFTexture(0, w, h, d, dest);
+}
+
 /** Wrapper around tf.computeTFTexture.
 */
-void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest)
+void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest)
 {
   static const int RGBA = 4;
   float dataVal;
   size_t linearBin;
 
-  if (this->chan == 2)
-     tf.computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+  if (this->chan == 2 && tf.size()==1)
+  {
+     tf[0].computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+  }
   else
+  {
      //default: act as 1D
-     tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
+     tf[chan].computeTFTexture(w, h, d, dest, real[0], real[1]);
+  }
 
   // convert opacity TF if hdr mode:
   if (_binning!=LINEAR && !_transOp)
@@ -3564,7 +3574,7 @@ void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, size_t slice
       }
       if (chan==1)
       {
-        col = tf.computeColor(voxelVal);
+        col = tf[0].computeColor(voxelVal);
         dst[dstOffset]     = int(col[0] * 255.0f);
         dst[dstOffset + 1] = int(col[1] * 255.0f);
         dst[dstOffset + 2] = int(col[2] * 255.0f);
@@ -3838,7 +3848,7 @@ int vvVolDesc::findNumTransparent(int frame)
 
   size_t frameSize = getFrameBytes();
 
-  noTF = tf._widgets.empty();
+  noTF = tf[0]._widgets.empty();
 
   if (!noTF)
   {
@@ -3851,7 +3861,7 @@ int vvVolDesc::findNumTransparent(int frame)
     rgba = new float[4 * lutEntries];
 
     // Generate arrays from pins:
-    tf.computeTFTexture(lutEntries, 1, 1, rgba, real[0], real[1]);
+    tf[0].computeTFTexture(lutEntries, 1, 1, rgba, real[0], real[1]);
   }
 
   // Search volume:
@@ -5096,8 +5106,8 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
     cerr << "Removing skipped regions from data array...";
     before = numVoxels;
     numSkip = 0;
-    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-         it != tf._widgets.end(); ++it)
+    for (std::vector<vvTFWidget*>::const_iterator it = tf[0]._widgets.begin();
+         it != tf[0]._widgets.end(); ++it)
     {
       if ((sw=dynamic_cast<vvTFSkip*>(*it))!=NULL)
       {
@@ -5162,7 +5172,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
     opacities = new float[numVoxels * sizeof(float)];
     for (size_t i=0; i<numVoxels; ++i)
     {
-      opacities[i] = tf.computeOpacity(sortedData[i]);
+      opacities[i] = tf[0].computeOpacity(sortedData[i]);
       sumOpacities += opacities[i];
     }
     cerr << stop.getDiff() << " sec" << endl;

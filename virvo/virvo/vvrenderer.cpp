@@ -926,7 +926,7 @@ void vvRenderer::renderPalette() const
   w = WIDTH;
   h = (int)viewport[3];
   std::vector< float > colors(h * 4);
-  vd->tf.computeTFTexture(h, 1, 1, &colors[0], vd->real[0], vd->real[1]);
+  vd->tf[0].computeTFTexture(h, 1, 1, &colors[0], vd->real[0], vd->real[1]);
   std::vector< uint8_t > image(w * h * 3);
   for (x=0; x<w; ++x)
     for (y=0; y<h; ++y)
@@ -1314,7 +1314,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   else return -2.0f;
 
   // Determine alpha value:
-  return vd->tf.computeOpacity(index);
+  return vd->tf[0].computeOpacity(index);
 }
 
 //----------------------------------------------------------------------------

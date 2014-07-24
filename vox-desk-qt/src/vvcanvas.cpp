@@ -413,10 +413,10 @@ void vvCanvas::init()
   fio.loadVolumeData(_vd, vvFileIO::ALL_DATA);
 
   // default transfer function
-  if (_vd->tf.isEmpty())
+  if (_vd->tf[0].isEmpty())
   {
-    _vd->tf.setDefaultAlpha(0, _vd->real[0], _vd->real[1]);
-    _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 3, _vd->real[0], _vd->real[1]);
+    _vd->tf[0].setDefaultAlpha(0, _vd->real[0], _vd->real[1]);
+    _vd->tf[0].setDefaultColors((_vd->chan == 1) ? 0 : 3, _vd->real[0], _vd->real[1]);
   }
 
   // init renderer
@@ -764,8 +764,8 @@ vvParam vvCanvas::getParameter(vvRenderer::ParameterType param) const
 
 void vvCanvas::addTFWidget(vvTFWidget* widget)
 {
-  _vd->tf.putUndoBuffer();
-  _vd->tf._widgets.push_back(widget);
+  _vd->tf[0].putUndoBuffer();
+  _vd->tf[0]._widgets.push_back(widget);
   updateTransferFunction();
 }
 
@@ -777,7 +777,7 @@ void vvCanvas::updateTransferFunction()
 
 void vvCanvas::undoTransferFunction()
 {
-  _vd->tf.getUndoBuffer();
+  _vd->tf[0].getUndoBuffer();
 }
 
 void vvCanvas::startAnimation(const double fps)

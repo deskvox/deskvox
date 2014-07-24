@@ -387,10 +387,10 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
   {
     vvDebugMsg::msg(2, "Loaded file: ", ba.data());
     // use default TF if none stored
-    if (vd->tf.isEmpty())
+    if (vd->tf[0].isEmpty())
     {
-      vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
-      vd->tf.setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultAlpha(0, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
     }
     if (vd->bpc == 4 && vd->real[0] == 0.0f && vd->real[1] == 1.0f)
     {
@@ -436,10 +436,10 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
   case vvFileIO::OK:
     vvDebugMsg::msg(2, "Loaded slice sequence: ", vd->getFilename());
     // use default TF if non stored
-    if (vd->tf.isEmpty())
+    if (vd->tf[0].isEmpty())
     {
-      vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
-      vd->tf.setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultAlpha(0, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
     }
     if (vd->bpc == 4 && vd->real[0] == 0.0f && vd->real[1] == 1.0f)
     {

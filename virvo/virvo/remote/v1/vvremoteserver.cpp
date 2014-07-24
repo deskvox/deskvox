@@ -115,7 +115,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
     tf._widgets.clear();
     if ((_socketio->getTransferFunction(tf)) == vvSocket::VV_OK)
     {
-      renderer->getVolDesc()->tf = tf;
+      renderer->getVolDesc()->tf[0] = tf;
       renderer->updateTransferFunction();
     }
     break;

@@ -826,10 +826,14 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   }
   fprintf(fp, "\n");
 
-  for (std::vector<vvTFWidget*>::iterator it = vd->tf._widgets.begin();
-       it != vd->tf._widgets.end(); ++it)
+  for (size_t i=0; i<vd->tf.size(); ++i)
   {
-    (*it)->write(fp);
+    fprintf(fp, "TF %lu\n", (unsigned long)i);
+    vvTransFunc &tf = vd->tf[i];
+    for (std::vector<vvTFWidget*>::iterator it = tf._widgets.begin(); it != tf._widgets.end(); ++it)
+    {
+      (*it)->write(fp);
+    }
   }
 
   // Write icon:
@@ -1080,28 +1084,40 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           }
         }
       }
+      else if (strcmp(tok.sval, "TF")==0)
+      {
+        ttype = tok.nextToken();
+        assert(ttype == vvTokenizer::VV_NUMBER);
+        size_t ntf = size_t(tok.nval);
+        if (ntf > 0)
+        {
+          assert(vd->tf.size() == ntf);
+          vd->tf.resize(ntf + 1);
+        }
+        assert(vd->tf.size() == ntf+1);
+      }
       else if (strcmp(tok.sval, "TF_PYRAMID")==0)
       {
         file.seekg(tok.getFilePos(), file.beg);
-        vd->tf._widgets.push_back(new vvTFPyramid(file));
+        vd->tf.back()._widgets.push_back(new vvTFPyramid(file));
         tok.setFilePos(file.tellg());
       }
       else if (strcmp(tok.sval, "TF_BELL")==0)
       {
         file.seekg(tok.getFilePos(), file.beg);
-        vd->tf._widgets.push_back(new vvTFBell(file));
+        vd->tf.back()._widgets.push_back(new vvTFBell(file));
         tok.setFilePos(file.tellg());
       }
       else if (strcmp(tok.sval, "TF_COLOR")==0)
       {
         file.seekg(tok.getFilePos(), file.beg);
-        vd->tf._widgets.push_back(new vvTFColor(file));
+        vd->tf.back()._widgets.push_back(new vvTFColor(file));
         tok.setFilePos(file.tellg());
       }
       else if (strcmp(tok.sval, "TF_CUSTOM")==0)
       {
         file.seekg(tok.getFilePos(), file.beg);
-        vd->tf._widgets.push_back(new vvTFCustom(file));
+        vd->tf.back()._widgets.push_back(new vvTFCustom(file));
         tok.setFilePos(file.tellg());
       }
       else if (strcmp(tok.sval, "ICON")==0)
@@ -5284,18 +5300,20 @@ vvFileIO::ErrorType vvFileIO::importTF(vvVolDesc* vd, const char* filename)
 {
   ErrorType ret = OK;                             // this function's return value
   
-  vvVolDesc* vd2 = new vvVolDesc(filename);
+  vvVolDesc vd2(filename);
   vvFileIO fio;
-  switch (fio.loadVolumeData(vd2, vvFileIO::TRANSFER))
+  switch (fio.loadVolumeData(&vd2, vvFileIO::TRANSFER))
   {
     case vvFileIO::OK: 
-      vd->tf.copy(&vd->tf._widgets, &vd2->tf._widgets);
+      if (!vd->tf.empty() && vd->tf.back()._widgets.empty())
+        vd->tf.back().copy(&vd->tf.back()._widgets, &vd2.tf[0]._widgets);
+      else
+        std::copy(vd2.tf.begin(), vd2.tf.end(), std::back_inserter(vd->tf));
       break;
     default: 
       ret = FILE_ERROR;
       break;
   }
-  delete vd2;
   
   return ret;
 }

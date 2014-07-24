@@ -821,7 +821,7 @@ void vvTransFunc::setDiscreteColors(int numColors)
 /** @return the number of discrete colors used for color interpolation.
             0 means smooth colors.
 */
-int vvTransFunc::getDiscreteColors()
+int vvTransFunc::getDiscreteColors() const
 {
   return _discreteColors;
 }

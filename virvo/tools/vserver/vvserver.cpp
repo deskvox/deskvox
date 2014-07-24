@@ -398,10 +398,10 @@ bool vvServer::handleEvent(ThreadData *tData, const virvo::RemoteEvent event, co
       }
 
       // set default color scheme if no TF present
-      if (tData->vd->tf.isEmpty())
+      if (tData->vd->tf[0].isEmpty())
       {
-        tData->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-        tData->vd->tf.setDefaultColors((tData->vd->chan == 1) ? 0 : 2, 0.0, 1.0);
+        tData->vd->tf[0].setDefaultAlpha(0, 0.0, 1.0);
+        tData->vd->tf[0].setDefaultColors((tData->vd->chan == 1) ? 0 : 2, 0.0, 1.0);
       }
 
       // if remote server is already created, create a new one
@@ -602,10 +602,10 @@ bool vvServer::createRemoteServer(ThreadData *tData, vvTcpSocket* sock)
   if (tData->vd != NULL)
   {
     // set default color scheme if no TF present
-    if (tData->vd->tf.isEmpty())
+    if (tData->vd->tf[0].isEmpty())
     {
-      tData->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      tData->vd->tf.setDefaultColors((tData->vd->chan == 1) ? 0 : 2, 0.0, 1.0);
+      tData->vd->tf[0].setDefaultAlpha(0, 0.0, 1.0);
+      tData->vd->tf[0].setDefaultColors((tData->vd->chan == 1) ? 0 : 2, 0.0, 1.0);
     }
 
     vvRenderState rs;

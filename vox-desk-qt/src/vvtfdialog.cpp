@@ -249,8 +249,8 @@ void vvTFDialog::createPins()
   if (!_canvas->getVolDesc())
     return;
 
-  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->getVolDesc()->tf._widgets.begin();
-       it != _canvas->getVolDesc()->tf._widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->getVolDesc()->tf[0]._widgets.begin();
+       it != _canvas->getVolDesc()->tf[0]._widgets.end(); ++it)
   {
     createPin(*it);
   }
@@ -298,7 +298,7 @@ void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
   else // standard iso-range TF mode
   {
     // BGRA to fit QImage's little endian ARGB32 format
-    _canvas->getVolDesc()->tf.makeColorBar(width, &(*colorBar)[0], impl_->zoomRange[0], impl_->zoomRange[1], false, vvToolshed::VV_BGRA);
+    _canvas->getVolDesc()->tf[0].makeColorBar(width, &(*colorBar)[0], impl_->zoomRange[0], impl_->zoomRange[1], false, vvToolshed::VV_BGRA);
   }
 }
 
@@ -317,7 +317,7 @@ void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int h
   else // standard iso-range TF mode
   {
     // BGRA to fit QImage's little endian ARGB32 format
-    _canvas->getVolDesc()->tf.makeAlphaTexture(width, height, &(*alphaTex)[0], impl_->zoomRange[0], impl_->zoomRange[1], vvToolshed::VV_BGRA);
+    _canvas->getVolDesc()->tf[0].makeAlphaTexture(width, height, &(*alphaTex)[0], impl_->zoomRange[0], impl_->zoomRange[1], vvToolshed::VV_BGRA);
   }
 }
 
@@ -365,16 +365,16 @@ void vvTFDialog::onNewWidget()
 
 void vvTFDialog::onDeleteClicked()
 {
-  if(_canvas->getVolDesc()->tf._widgets.size() == 0 || impl_->selected == NULL)
+  if(_canvas->getVolDesc()->tf[0]._widgets.size() == 0 || impl_->selected == NULL)
   {
     return;
   }
-  _canvas->getVolDesc()->tf.putUndoBuffer();
+  _canvas->getVolDesc()->tf[0].putUndoBuffer();
 
   Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
-  _canvas->getVolDesc()->tf._widgets.erase
+  _canvas->getVolDesc()->tf[0]._widgets.erase
   (
-    std::find(_canvas->getVolDesc()->tf._widgets.begin(), _canvas->getVolDesc()->tf._widgets.end(), lit->second)
+    std::find(_canvas->getVolDesc()->tf[0]._widgets.begin(), _canvas->getVolDesc()->tf[0]._widgets.end(), lit->second)
   );
   impl_->selected = NULL;
 
@@ -389,7 +389,7 @@ void vvTFDialog::onPresetColorsChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetColorsChanged()");
 
-  _canvas->getVolDesc()->tf.setDefaultColors(index, impl_->zoomRange[0], impl_->zoomRange[1]);
+  _canvas->getVolDesc()->tf[0].setDefaultColors(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
   createPins();
@@ -400,7 +400,7 @@ void vvTFDialog::onPresetAlphaChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetAlphaChanged()");
 
-  _canvas->getVolDesc()->tf.setDefaultAlpha(index, impl_->zoomRange[0], impl_->zoomRange[1]);
+  _canvas->getVolDesc()->tf[0].setDefaultAlpha(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
   createPins();
@@ -410,7 +410,7 @@ void vvTFDialog::onPresetAlphaChanged(int index)
 void vvTFDialog::onDiscrChanged(int num)
 {
   impl_->ui->discrLabel->setText(QString::number(num));
-  _canvas->getVolDesc()->tf.setDiscreteColors(num);
+  _canvas->getVolDesc()->tf[0].setDiscreteColors(num);
   emitTransFunc();
   drawTF();
 }
@@ -426,7 +426,7 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
   createPins();
   if (vd != NULL)
   {
-    impl_->ui->discrSlider->setValue(vd->tf.getDiscreteColors());
+    impl_->ui->discrSlider->setValue(vd->tf[0].getDiscreteColors());
   }
   drawTF();
 }
@@ -441,7 +441,7 @@ void vvTFDialog::saveTF()
   if (!filename.isEmpty())
   {
     std::string strfn = filename.toStdString();
-    _canvas->getVolDesc()->tf.save(strfn.c_str());
+    _canvas->getVolDesc()->tf[0].save(strfn.c_str());
   }
 }
 
@@ -455,12 +455,12 @@ void vvTFDialog::loadTF()
   if (!filename.isEmpty())
   {
     std::string strfn = filename.toStdString();
-    _canvas->getVolDesc()->tf.load(strfn.c_str());
+    _canvas->getVolDesc()->tf[0].load(strfn.c_str());
   }
   emitTransFunc();
   clearPins();
   createPins();
-  impl_->ui->discrSlider->setValue(_canvas->getVolDesc()->tf.getDiscreteColors());
+  impl_->ui->discrSlider->setValue(_canvas->getVolDesc()->tf[0].getDiscreteColors());
   drawTF();
 }
 
