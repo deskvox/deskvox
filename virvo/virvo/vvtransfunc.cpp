@@ -59,36 +59,7 @@ vvTransFunc::vvTransFunc()
 // Copy Constructor
 vvTransFunc::vvTransFunc(const vvTransFunc &tf)
 {
-  for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-       it != tf._widgets.end(); ++it)
-  {
-    vvTFWidget* oldW = *it;
-
-    vvTFColor* c;
-    vvTFPyramid* p;
-    vvTFBell* b;
-    vvTFSkip* s;
-    vvTFCustom* cu;
-    vvTFCustom2D* c2;
-    vvTFCustomMap* cm;
-
-    if ((c = dynamic_cast<vvTFColor*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFColor(c));
-    else if ((p = dynamic_cast<vvTFPyramid*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFPyramid(p));
-    else if ((b = dynamic_cast<vvTFBell*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFBell(b));
-    else if ((s = dynamic_cast<vvTFSkip*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFSkip(s));
-    else if ((cu = dynamic_cast<vvTFCustom*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFCustom(cu));
-    else if ((c2 = dynamic_cast<vvTFCustom2D*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFCustom2D(c2));
-    else if ((cm = dynamic_cast<vvTFCustomMap*>(oldW)) != NULL)
-      _widgets.push_back(new vvTFCustomMap(cm));
-
-    else assert(0);
-  }
+  copy(&_widgets, &tf._widgets);
 
   _discreteColors  = tf._discreteColors;
   _bufferUsed      = 0;
