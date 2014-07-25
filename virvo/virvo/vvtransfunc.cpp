@@ -70,12 +70,7 @@ vvTransFunc::vvTransFunc(const vvTransFunc &tf)
 /// Destructor
 vvTransFunc::~vvTransFunc()
 {
-  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
-       it != _widgets.end(); ++it)
-  {
-    delete *it;
-  }
-  _widgets.clear();
+  clear();
 }
 
 vvTransFunc &vvTransFunc::operator=(vvTransFunc rhs)
@@ -112,6 +107,7 @@ void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
       (wt==vvTFWidget::TF_MAP       && dynamic_cast<vvTFCustomMap*>(w)))
     {
       it = _widgets.erase(it);
+      delete w;
     }
     else
     {
@@ -126,6 +122,16 @@ void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
 bool vvTransFunc::isEmpty()
 {
   return _widgets.empty();
+}
+
+void vvTransFunc::clear()
+{
+    for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+         it != _widgets.end(); ++it)
+    {
+      delete *it;
+    }
+    _widgets.clear();
 }
 
 //----------------------------------------------------------------------------
@@ -776,6 +782,7 @@ void vvTransFunc::getUndoBuffer()
   if (_nextBufferEntry > 0) bufferEntry = _nextBufferEntry - 1;
   else bufferEntry = BUFFER_SIZE - 1;
   _widgets = _buffer[bufferEntry];
+  _buffer[bufferEntry].clear();
   _nextBufferEntry = bufferEntry;
   --_bufferUsed;
 }
@@ -1132,12 +1139,7 @@ bool vvTransFunc::load(const std::string& filename)
 
   if (file.is_open())
   {
-    for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
-         it != _widgets.end(); ++it)
-    {
-      delete *it;
-    }
-    _widgets.clear();
+    clear();
 
     std::string line;
     while (file.good())

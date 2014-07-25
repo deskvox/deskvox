@@ -65,6 +65,7 @@ class VIRVOEXPORT vvTransFunc
     vvTransFunc &operator=(vvTransFunc rhs);
     void swap(vvTransFunc &other);
     bool isEmpty();
+    void clear();
     void deleteColorWidgets();
     void setDefaultColors(int, float, float);
     int  getNumDefaultColors();
