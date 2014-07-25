@@ -14,6 +14,8 @@
 
 #if VV_HAVE_TEEM
 
+using namespace virvo;
+
 
 struct ScopedNrrd
 {

@@ -50,9 +50,9 @@
 namespace cu = virvo::cuda;
 namespace gl = virvo::gl;
 
-using math::mat4;
-using math::vec3f;
-using math::vec4;
+using virvo::mat4;
+using virvo::vec3f;
+using virvo::vec4;
 
 
 // in vvrayrend.cu
