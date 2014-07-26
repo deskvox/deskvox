@@ -515,8 +515,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   size_t texOffset=0;
   vec4i rawVal;
   uint8_t* texData = NULL;
-  bool accommodated = true;
-  GLint glWidth;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTextures3D()");
 
@@ -696,6 +694,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
 
       glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
         texels[0], texels[1], texels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
+      GLint glWidth;
       glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
 
       if (glWidth==texels[0])
@@ -705,7 +704,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       }
       else
       {
-        accommodated = false;
         vvGLTools::printGLError("Tried to accomodate 3D textures");
 
         cerr << "Insufficient texture memory for 3D texture(s)." << endl;
@@ -785,11 +783,11 @@ void vvTexRend::unsetGLenvironment() const
 /** Render a volume entirely if probeSize=0 or a cubic sub-volume of size probeSize.
   @param mv        model-view matrix
 */
+#define USE_ARRAYS
 void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 {
   vec3f vissize, vissize2;                        // full and half object visible sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-  vec3f texcoord[12];                             // intersection points in texture coordinate space [0..1]
   vec3f farthest;                                 // volume vertex farthest from the viewer
   vec3f delta;                                    // distance vector between textures [object space]
   vec3f normal;                                   // normal vector of textures
@@ -1006,100 +1004,135 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   }
 
-  texPoint = farthest;
-  for (size_t i=0; i<numSlices; ++i)                     // loop thru all drawn textures
+  // volume section mode:
+  size_t start = minSlice==-1 ? 0 : minSlice;
+  size_t stop = maxSlice==-1 ? numSlices : maxSlice;
+  texPoint = farthest + (float)start*delta;
+
+  GLint activeTexture = GL_TEXTURE0;                                                                                                                                                                                                                                                      
+  glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE, &activeTexture);
+  glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  const size_t BatchSize = 100;
+  std::vector<GLint> firsts;
+  firsts.reserve(BatchSize);
+  std::vector<GLsizei> counts;
+  counts.reserve(BatchSize);
+  std::vector<GLfloat> vc, tc0, tc1;
+  vc.reserve(BatchSize*3*6);
+  tc0.reserve(BatchSize*3*6);
+  glVertexPointer(3, GL_FLOAT, 0, &vc[0]);
+  glClientActiveTextureARB(GL_TEXTURE0_ARB);
+  glTexCoordPointer(3, GL_FLOAT, 0, &tc0[0]);
+  if (usePreIntegration)
   {
-    // Search for intersections between texture plane (defined by texPoint and
-    // normal) and texture object (0..1):
-    size_t isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
+    tc1.reserve(BatchSize*3*6);
+    glClientActiveTextureARB(GL_TEXTURE1_ARB);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_FLOAT, 0, &tc1[0]);
+    glClientActiveTextureARB(GL_TEXTURE0_ARB);
+  }
 
-    texPoint += delta;
-
-    if (isectCnt<3) continue;                     // at least 3 intersections needed for drawing
-
-    // Check volume section mode:
-    if (minSlice != -1 && static_cast<ptrdiff_t>(i) < minSlice) continue;
-    if (maxSlice != -1 && static_cast<ptrdiff_t>(i) > maxSlice) continue;
-
-    // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
-    // and non-overlapping triangles:
-    isect->cyclicSort(isectCnt, normal);
-
-    // Generate vertices in texture coordinates:
-    if(usePreIntegration)
+  glColor4f(1.0, 1.0, 1.0, 1.0);
+  glNormal3f(normal[0], normal[1], normal[2]);
+  size_t vertCount = 0;
+  for (size_t i=start; i<stop; ++i)                     // loop thru all drawn textures
+  {
+    for (; i<stop && firsts.size()<BatchSize; ++i)
     {
-      for (size_t j=0; j<isectCnt; ++j)
+      // Search for intersections between texture plane (defined by texPoint and
+      // normal) and texture object (0..1):
+      size_t isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
+
+      texPoint += delta;
+
+      if (isectCnt<3) continue;                     // at least 3 intersections needed for drawing
+
+      counts.push_back(isectCnt);
+      firsts.push_back(vertCount);
+      vertCount += isectCnt;
+      // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
+      // and non-overlapping triangles:
+      isect->cyclicSort(isectCnt, normal);
+      for (int j=0; j<isectCnt; ++j)
       {
-        vvVector3 front, back;
-
-        if(isOrtho)
-        {
-          back = isect[j];
-          back.sub(deltahalf);
-        }
-        else
-        {
-          vvVector3 v = isect[j];
-          v.sub(deltahalf);
-          back.isectPlaneLine(normal, v, releye, isect[j]);
-        }
-
-        if(isOrtho)
-        {
-          front = isect[j];
-          front.add(deltahalf);
-        }
-        else
-        {
-          vvVector3 v;
-          v = isect[j];
-          v.add(deltahalf);
-          front.isectPlaneLine(normal, v, releye, isect[j]);
-        }
-
-        for (size_t k=0; k<3; ++k)
-        {
-          texcoord[j][k] = (back[k] - minCorner[k]) / vissize[k];
-          texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
-
-          texcoord[j+6][k] = (front[k] - minCorner[k]) / vissize[k];
-          texcoord[j+6][k] = texcoord[j+6][k] * (texMax[k] - texMin[k]) + texMin[k];
-        }
+        for (int k=0; k<3; ++k)
+          vc.push_back(isect[j][k]);
       }
-    }
-    else
-    {
-      for (size_t j=0; j<isectCnt; ++j)
-      {
-        for (size_t k=0; k<3; ++k)
-        {
-          texcoord[j][k] = (isect[j][k] - minCorner[k]) / vissize[k];
-          texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
-        }
-      }
-    }
 
-    glBegin(GL_TRIANGLE_FAN);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    glNormal3f(normal[0], normal[1], normal[2]);
-    ++drawn;
-    for (size_t j=0; j<isectCnt; ++j)
-    {
-      // The following lines are the bottleneck of this method:
+      // Generate vertices in texture coordinates:
       if(usePreIntegration)
       {
-        glMultiTexCoord3fARB(GL_TEXTURE0_ARB, texcoord[j][0], texcoord[j][1], texcoord[j][2]);
-        glMultiTexCoord3fARB(GL_TEXTURE1_ARB, texcoord[j+6][0], texcoord[j+6][1], texcoord[j+6][2]);
+        for (size_t j=0; j<isectCnt; ++j)
+        {
+          vvVector3 front, back;
+
+          if(isOrtho)
+          {
+            back = isect[j];
+            back.sub(deltahalf);
+          }
+          else
+          {
+            vvVector3 v = isect[j];
+            v.sub(deltahalf);
+            back.isectPlaneLine(normal, v, releye, isect[j]);
+          }
+
+          if(isOrtho)
+          {
+            front = isect[j];
+            front.add(deltahalf);
+          }
+          else
+          {
+            vvVector3 v;
+            v = isect[j];
+            v.add(deltahalf);
+            front.isectPlaneLine(normal, v, releye, isect[j]);
+          }
+
+          for (size_t k=0; k<3; ++k)
+          {
+            float v0 = (back[k] - minCorner[k]) / vissize[k];
+            v0 = v0 * (texMax[k] - texMin[k]) + texMin[k];
+            tc0.push_back(v0);
+
+            float v1 = (front[k] - minCorner[k]) / vissize[k];
+            v1 = v1 * (texMax[k] - texMin[k]) + texMin[k];
+            tc1.push_back(v1);
+          }
+        }
       }
       else
       {
-        glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
+        for (size_t j=0; j<isectCnt; ++j)
+        {
+          for (size_t k=0; k<3; ++k)
+          {
+            float v = (isect[j][k] - minCorner[k]) / vissize[k];
+            v = v * (texMax[k] - texMin[k]) + texMin[k];
+            tc0.push_back(v);
+          }
+        }
       }
-
-      glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
     }
-    glEnd();
+    --i; // last loop increased i by 1 too much
+
+    glMultiDrawArrays(GL_TRIANGLE_FAN, &firsts[0], &counts[0], firsts.size());
+    drawn += firsts.size();
+
+    vertCount = 0;
+    firsts.clear();
+    counts.clear();
+    vc.clear();
+    tc0.clear();
+    tc1.clear();
   }
+  glClientActiveTextureARB(activeTexture);
+  glPopClientAttrib();
+
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
 
   if (voxelType == VV_PIX_SHD && _shader)
