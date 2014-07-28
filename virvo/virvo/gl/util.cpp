@@ -19,7 +19,6 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
-#include "math/math.h"
 #include "util.h"
 
 
@@ -451,6 +450,23 @@ recti gl::getViewport()
     GLint v[4];
     glGetIntegerv(GL_VIEWPORT, v);
     return recti(v);
+}
+
+gl::light gl::getLight(GLenum l)
+{
+    glEnable(GL_LIGHTING);
+
+    gl::light result;
+    glGetLightfv(l, GL_AMBIENT,                reinterpret_cast< GLfloat* >(&result.ambient));
+    glGetLightfv(l, GL_DIFFUSE,                reinterpret_cast< GLfloat* >(&result.diffuse));
+    glGetLightfv(l, GL_SPECULAR,               reinterpret_cast< GLfloat* >(&result.specular));
+    glGetLightfv(l, GL_POSITION,               reinterpret_cast< GLfloat* >(&result.position));
+    glGetLightfv(l, GL_SPOT_DIRECTION,         reinterpret_cast< GLfloat* >(&result.spot_direction));
+    glGetLightfv(l, GL_SPOT_CUTOFF,            reinterpret_cast< GLfloat* >(&result.spot_cutoff));
+    glGetLightfv(l, GL_CONSTANT_ATTENUATION,   reinterpret_cast< GLfloat* >(&result.constant_attenuation));
+    glGetLightfv(l, GL_LINEAR_ATTENUATION,     reinterpret_cast< GLfloat* >(&result.linear_attenuation));
+    glGetLightfv(l, GL_QUADRATIC_ATTENUATION,  reinterpret_cast< GLfloat* >(&result.quadratic_attenuation));
+    return result;
 }
 
 

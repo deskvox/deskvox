@@ -9,8 +9,11 @@
 
 uniform sampler3D pix3dtex;
 uniform sampler2D pixLUT;
-uniform vec3 L;
-uniform vec3 H;
+uniform vec3 V;
+uniform vec3 lpos;
+uniform float constAtt;
+uniform float linearAtt;
+uniform float quadAtt;
 
 void main()
 {
@@ -29,7 +32,6 @@ void main()
   vec4 OUT;
   if (classification.w > THRESHOLD)
   {
-    vec3 N;
     vec3 sample1;
     vec3 sample2;
     sample1.x = texture3D(pix3dtex, gl_TexCoord[0].xyz - vec3(DELTA, 0.0, 0.0)).x;
@@ -39,8 +41,12 @@ void main()
     sample1.z = texture3D(pix3dtex, gl_TexCoord[0].xyz - vec3(0.0, 0.0, DELTA)).x;
     sample2.z = texture3D(pix3dtex, gl_TexCoord[0].xyz + vec3(0.0, 0.0, DELTA)).x;
 
-    N = normalize(sample2.xyz - sample1.xyz);
+    vec3 L = normalize(lpos - gl_TexCoord[0].xyz);
+    vec3 N = normalize(sample2.xyz - sample1.xyz);
+    vec3 H = normalize(L + V);
 
+    float dist = length(L);
+    float att = 1.0 / (constAtt + linearAtt * dist + quadAtt * dist * dist);
     float ldot = dot(L, N.xyz);
     float specular = pow(dot(H, N.xyz), shininess);
 
@@ -50,14 +56,14 @@ void main()
     if (ldot > 0.0)
     {
       // Diffuse term.
-      OUT.xyz += Kd * ldot * classification.xyz;
+      OUT.xyz += Kd * ldot * classification.xyz * att;
 
       // Specular term.
       float spec = pow(dot(H, N), shininess);
 
       if (spec > 0.0)
       {
-        OUT.xyz += Ks * spec * classification.xyz;
+        OUT.xyz += Ks * spec * classification.xyz * att;
       }
     }
     OUT.w = classification.w;

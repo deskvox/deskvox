@@ -22,8 +22,9 @@
 #ifndef VV_GL_UTIL_H
 #define VV_GL_UTIL_H
 
+#include "light.h"
 
-#include "math/forward.h"
+#include "math/math.h"
 #include "vvexport.h"
 #include "types.h"
 
@@ -85,6 +86,9 @@ namespace gl
 
     // Returns the current viewport
     VVAPI recti getViewport();
+
+    // Returns the OpenGL light specified by l
+    VVAPI light getLight(GLenum l);
 
 
 } // namespace gl

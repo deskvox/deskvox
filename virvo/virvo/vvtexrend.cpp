@@ -996,7 +996,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   {
     enableShader(_shader);
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
-    evaluateLocalIllumination(_shader, normal);
+    initLight(_shader, mv, normal);
   }
   else
   {
@@ -1991,23 +1991,26 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   return dist;
 }
 
-void vvTexRend::evaluateLocalIllumination(vvShaderProgram* shader, const vvVector3& normal)
+void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, const vvVector3& normal)
 {
-  // Local illumination based on blinn-phong shading.
-  if (voxelType == VV_PIX_SHD && _currentShader == ShaderLighting)
-  {
-    // Light direction.
-    const vvVector3 L(-normal);
+    // Local illumination based on blinn-phong shading.
+    if (voxelType == VV_PIX_SHD && _currentShader == ShaderLighting)
+    {
+        gl::light l = gl::getLight(GL_LIGHT0);
 
-    // Viewing direction.
-    const vvVector3 V(-normal);
+        // transform pos in eye coords to object coords
+        vec4 lposobj = inverse(mv) * l.position;
+        vec3 lpos = lposobj.xyz();
 
-    // Half way vector.
-    vvVector3 H(L + V);
-    H.normalize();
-    shader->setParameter3f("L", L[0], L[1], L[2]);
-    shader->setParameter3f("H", H[0], H[1], H[2]);
-  }
+        // Viewing direction.
+        vec3 V = normal;
+
+        shader->setParameter3f("V", V.x, V.y, V.z);
+        shader->setParameter3f("lpos", lpos.x, lpos.y, lpos.z);
+        shader->setParameter1f("constAtt", l.constant_attenuation);
+        shader->setParameter1f("linearAtt", l.linear_attenuation);
+        shader->setParameter1f("quadAtt", l.quadratic_attenuation);
+    }
 }
 
 size_t vvTexRend::getTextureSize(size_t sz) const
