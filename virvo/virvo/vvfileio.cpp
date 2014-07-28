@@ -2246,6 +2246,37 @@ struct vvTifData
           slicesPerFrame = nslices;
         }
       }
+
+      std::string unit = getTagValue("unit");
+      if (!unit.empty()) {
+         float res = -1.f;
+         if (unit == "nm" || unit == "nanometer") {
+            res = 1.e-9;
+         } else if (unit == "um" || unit == "micrometer") {
+            res = 1.e-6;
+         } else if (unit == "mm") {
+            res = 1.e-3;
+         } else if (unit == "cm") {
+            res = 1.e-2;
+         } else if (unit == "meter" || unit == "m") {
+            res = 1.f;
+         } else if (unit == "km") {
+            res = 1.e3;
+         } else if (unit == "inch") {
+            res = 0.0254;
+         } else if (unit == "ft") {
+            res = 0.0254*12;
+         } else if (unit == "mi") {
+            res = 0.0254*12*3*1760;
+         }
+         if (res < 0.f) {
+            VV_LOG(0) << "unknow unit: " << unit << std::endl;
+         } else if (res >= 0.f && resolutionUnit != res && resolutionUnit != 1.f) {
+            VV_LOG(0) << "resolution unit mismatch: " << unit << " != " << resolutionUnit << std::endl;
+         } else {
+            resolutionUnit = res;
+         }
+      }
     }
     return true;
   }
@@ -2495,11 +2526,11 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
                                                   // PlanarConfiguration
       case 0x11c: planarConfiguration = value; break;
       case 0x128: // ResolutionUnit
-      if (value == 1) {
+      if (value == 3) {
         tifData->resolutionUnit = 0.01; // 1cm
       } else if (value == 2) {
         tifData->resolutionUnit = 0.0254; // inch
-      } else if (value == 0) {
+      } else if (value == 1) {
         tifData->resolutionUnit = 1; // unspecified
       } else {
         tifData->resolutionUnit = 0.0254; // default: inch
