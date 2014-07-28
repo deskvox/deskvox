@@ -892,7 +892,6 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
-  evaluateLocalIllumination(_shader, normal);
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
@@ -997,6 +996,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   {
     enableShader(_shader);
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
+    evaluateLocalIllumination(_shader, normal);
   }
   else
   {
