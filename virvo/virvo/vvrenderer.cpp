@@ -76,8 +76,8 @@ vvRenderState::vvRenderState()
   , roi_pos_(vec3f(0.0f, 0.0f, 0.0f))
   , roi_size_(vec3f(0.5f, 0.5f, 0.5f))
   , _sphericalROI(false)
-  , _brickSize(vvsize3(0, 0, 0))
-  , _maxBrickSize(vvsize3(64, 64, 64))
+  , _brickSize(virvo::vector< 3, size_t >(0, 0, 0))
+  , _maxBrickSize(virvo::vector< 3, size_t >(64, 64, 64))
   , _brickTexelOverlap(1)
   , _showBricks(false)
   , _computeBrickSize(true)
@@ -464,9 +464,7 @@ void vvRenderer::init()
   }
 }
 
-void vvRenderer::getObjNormal(vec3f& normal, vec3f& origin,
-                              vec3f const& eye, const vvMatrix& invMV,
-                              bool isOrtho) const
+void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 const& invMV, bool isOrtho) const
 {
   // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -481,11 +479,11 @@ void vvRenderer::getObjNormal(vec3f& normal, vec3f& origin,
   else if ( isOrtho || viewDir == vec3f(0.0f) )
   {
     // Draw slices parallel to projection plane:
-    normal = vec3f(0.0f, 0.0f, 1.0f);             // (0|0|1) is normal on projection plane
+    normal = vec3(0.0f, 0.0f, 1.0f);              // (0|0|1) is normal on projection plane
     vvVector3 tmp( normal );                      // TODO
     tmp.multiply(invMV);
     normal = tmp;                                 // TODO
-    origin = vec3f(0.0f, 0.0f, 0.0f);
+    origin = vec3(0.0f, 0.0f, 0.0f);
     tmp = vvVector3( origin );                    // TODO
     tmp.multiply(invMV);
     origin = tmp;                                 // TODO
@@ -518,9 +516,7 @@ void vvRenderer::getObjNormal(vec3f& normal, vec3f& origin,
   normal = normalize(normal);
 }
 
-void vvRenderer::getShadingNormal(vec3f& normal, vec3f& origin,
-                                  vec3f const& eye, const vvMatrix& invMV,
-                                  bool isOrtho) const
+void vvRenderer::getShadingNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 const& invMV, bool isOrtho) const
 {
   // See calcutions in getObjNormal(). Only difference: if clip plane
   // is active, this is ignored. This normal isn't used to align
@@ -528,11 +524,11 @@ void vvRenderer::getShadingNormal(vec3f& normal, vec3f& origin,
   if ( isOrtho || viewDir == vec3f(0.0f) )
   {
     // Draw slices parallel to projection plane:
-    normal = vec3f(0.0f, 0.0f, 1.0f);             // (0|0|1) is normal on projection plane
+    normal = vec3(0.0f, 0.0f, 1.0f);              // (0|0|1) is normal on projection plane
     vvVector3 tmp( normal );                      // TODO
     tmp.multiply(invMV);
     normal = tmp;                                 // TODO
-    origin = vec3f(0.0f, 0.0f, 0.0f);
+    origin = vec3(0.0f, 0.0f, 0.0f);
     tmp = vvVector3( origin );                    // TODO
     tmp.multiply(invMV);
     origin = tmp;
@@ -552,11 +548,11 @@ void vvRenderer::getShadingNormal(vec3f& normal, vec3f& origin,
   normal = normalize(normal);
 }
 
-void vvRenderer::calcProbeDims(vec3f& probePosObj, vec3f& probeSizeObj, vec3f& probeMin, vec3f& probeMax) const
+void vvRenderer::calcProbeDims(vec3& probePosObj, vec3& probeSizeObj, vec3& probeMin, vec3& probeMax) const
 {
   // Determine texture object dimensions and half object size as a shortcut:
-  vec3f size(vd->getSize());
-  vec3f size2 = size * 0.5f;
+  vec3 size(vd->getSize());
+  vec3 size2 = size * 0.5f;
 
   if (_isROIUsed)
   {
@@ -564,7 +560,7 @@ void vvRenderer::calcProbeDims(vec3f& probePosObj, vec3f& probeSizeObj, vec3f& p
     probePosObj = roi_pos_;
 
     // Compute probe min/max coordinates in object space:
-    vec3f maxSize = roi_size_ * size2;
+    vec3 maxSize = roi_size_ * size2;
 
     probeMin = probePosObj - maxSize;
     probeMax = probePosObj + maxSize;
@@ -835,7 +831,7 @@ void vvRenderer::renderCoordinates() const
   glPushMatrix();
 
   // Compute modelview matrix:
-  vvGLTools::getModelviewMatrix(&mv);
+  mv = gl::getModelviewMatrix();
   mv.killTrans();
   for (i=0; i<3; ++i)                             // normalize base vectors to remove scaling
   {

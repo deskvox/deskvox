@@ -725,7 +725,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   renderState = *renderer;
   delete renderer;
   renderer = NULL;
-  vvsize3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
+  virvo::vector< 3, size_t > maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
   renderState.setParameter(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
   renderer = vvRendererFactory::create(vd, renderState, type.c_str(), opt);

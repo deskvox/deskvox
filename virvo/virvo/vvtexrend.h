@@ -87,7 +87,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<std::vector<uint8_t> > rgbaLUT;   ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
     uint8_t* preintTable;                         ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
     float  lutDistance;                           ///< slice distance for which LUT was computed
-    vvsize3   texels;                             ///< width, height and depth of volume, including empty space [texels]
+    virvo::vector< 3, size_t >   texels;          ///< width, height and depth of volume, including empty space [texels]
     float texMin[3];                              ///< minimum texture value of object [0..1] (to prevent border interpolation)
     float texMax[3];                              ///< maximum texture value of object [0..1] (to prevent border interpolation)
     size_t   textures;                            ///< number of textures stored in TRAM
@@ -114,7 +114,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _currentShader;                           ///< ID of currently used fragment shader
     int _previousShader;                          ///< ID of previous shader
 
-    vvVector3 _eye;                               ///< the current eye position
+    virvo::vec3 _eye;                             ///< the current eye position
 
     void setVoxelType(VoxelType vt);
     void makeLUTTexture() const;
@@ -134,11 +134,11 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex3DPlanar(virvo::mat4 const& mv);
     VoxelType findBestVoxelType(VoxelType) const;
     void updateLUT(float dist);
-    size_t getLUTSize(vvsize3& size) const;
+    size_t getLUTSize(virvo::vector< 3, size_t >& size) const;
     size_t getPreintTableSize() const;
     void enableTexture(GLenum target) const;
     void disableTexture(GLenum target) const;
-    void initLight(vvShaderProgram* pixelShader, virvo::mat4 const& mv, const vvVector3& normal);
+    void initLight(vvShaderProgram* pixelShader, virvo::mat4 const& mv, virvo::vec3 const& normal);
 
     int  getCurrentShader() const;
     void setCurrentShader(int);

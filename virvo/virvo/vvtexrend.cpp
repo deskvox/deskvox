@@ -40,7 +40,6 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvtexrend.h"
@@ -374,7 +373,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
-  vvssize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  virvo::vector< 3, ssize_t > vox = _paddingRegion.getMax() - _paddingRegion.getMin();
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
@@ -404,7 +403,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
 /// Generate texture for look-up table.
 void vvTexRend::makeLUTTexture() const
 {
-  vvsize3 size;
+  virvo::vector< 3, size_t > size;
 
   vvGLTools::printGLError("enter makeLUTTexture");
   for (size_t chan=0; chan<pixLUTName.size(); ++chan)
@@ -440,7 +439,7 @@ size_t vvTexRend::getTexMemorySize() const
 /// Update transfer function from volume description.
 void vvTexRend::updateTransferFunction()
 {
-  vvsize3 size;
+  virvo::vector< 3, size_t > size;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
   if (voxelType==VV_PIX_SHD && vd->tf.size() > 1 )
@@ -544,8 +543,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
 
   VV_LOG(2) << "Transferring textures to TRAM. Total size [KB]: " << vd->frames * texSize / 1024 << std::endl;
 
-  vvssize3 offsets(offsetX, offsetY, offsetZ);
-  offsets += _paddingRegion.getMin();
+  virvo::vector< 3, ssize_t > offsets(offsetX, offsetY, offsetZ);
+  offsets += virvo::vector< 3, ssize_t >(_paddingRegion.getMin());
 
   bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
   if (sizeX != vd->vox[0])
@@ -575,10 +574,10 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     {
       for (ssize_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
       {
-        size_t rawSliceOffset = (ts_min(ts_max(s,ssize_t(0)),vd->vox[2]-1)) * sliceSize;
+        size_t rawSliceOffset = (std::min(std::max(s,ssize_t(0)),vd->vox[2]-1)) * sliceSize;
         for (ssize_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
         {
-          size_t heightOffset = (ts_min(ts_max(y,ssize_t(0)),vd->vox[1]-1)) * vd->vox[0] * vd->bpc * vd->chan;
+          size_t heightOffset = (std::min(std::max(y,ssize_t(0)),vd->vox[1]-1)) * vd->vox[0] * vd->bpc * vd->chan;
           size_t texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
           
           if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
@@ -635,7 +634,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
               for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
+                for (size_t c = 0; c < std::min(vd->chan, size_t(4)); c++)
                 {
                   srcIndex = vd->bpc * (min(x,vd->vox[0]-1)*vd->chan+c) + rawSliceOffset + heightOffset;
                   if (vd->bpc == 1)
@@ -653,7 +652,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 }
 
                 // Copy color components:
-                for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
+                for (size_t c = 0; c < std::min(vd->chan, size_t(3)); c++)
                 {
                   texData[4 * texOffset + c] = (uint8_t) rawVal[c];
                 }
@@ -786,19 +785,19 @@ void vvTexRend::unsetGLenvironment() const
 #define USE_ARRAYS
 void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 {
-  vec3f vissize, vissize2;                        // full and half object visible sizes
+  vec3 vissize, vissize2;                         // full and half object visible sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-  vec3f farthest;                                 // volume vertex farthest from the viewer
-  vec3f delta;                                    // distance vector between textures [object space]
-  vec3f normal;                                   // normal vector of textures
-  vec3f origin;                                   // origin (0|0|0) transformed to object space
+  vec3 farthest;                                  // volume vertex farthest from the viewer
+  vec3 delta;                                     // distance vector between textures [object space]
+  vec3 normal;                                    // normal vector of textures
+  vec3 origin;                                    // origin (0|0|0) transformed to object space
   vvVector3 normClipPoint;                        // normalized point on clipping plane
-  vec3f clipPosObj;                               // clipping plane position in object space w/o position
-  vec3f probePosObj;                              // probe midpoint [object space]
-  vec3f probeSizeObj;                             // probe size [object space]
-  vec3f probeTexels;                              // number of texels in each probe dimension
-  vec3f probeMin, probeMax;                       // probe min and max coordinates [object space]
-  vec3f texSize;                                  // size of 3D texture [object space]
+  vec3 clipPosObj;                                // clipping plane position in object space w/o position
+  vec3 probePosObj;                               // probe midpoint [object space]
+  vec3 probeSizeObj;                              // probe size [object space]
+  vec3 probeTexels;                               // number of texels in each probe dimension
+  vec3 probeMin, probeMax;                        // probe min and max coordinates [object space]
+  vec3 texSize;                                   // size of 3D texture [object space]
   float     maxDist;                              // maximum length of texture drawing path
   size_t    numSlices;
 
@@ -807,17 +806,17 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   if (!extTex3d) return;                          // needs 3D texturing extension
 
   // determine visible size and half object size as shortcut
-  vvssize3 minVox = _visibleRegion.getMin();
-  vvssize3 maxVox = _visibleRegion.getMax();
+  virvo::vector< 3, ssize_t > minVox = _visibleRegion.getMin();
+  virvo::vector< 3, ssize_t > maxVox = _visibleRegion.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], ssize_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
-  const vvVector3 minCorner = vd->objectCoords(minVox);
-  const vvVector3 maxCorner = vd->objectCoords(maxVox);
+  vec3 minCorner = vd->objectCoords(minVox);
+  vec3 maxCorner = vd->objectCoords(maxVox);
   vissize = maxCorner - minCorner;
-  vec3f center = vvAABB(minCorner, maxCorner).getCenter();
+  vec3 center = vvAABB(minCorner, maxCorner).getCenter();
 
   for (size_t i=0; i<3; ++i)
   {
@@ -914,10 +913,10 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     numSlices = 1;
   // don't render an insane amount of slices
   {
-    vvssize3 sz = maxVox - minVox;
-    ssize_t maxV = ts_max(sz[0], sz[1]);
-    maxV = ts_max(maxV, sz[2]);
-    ssize_t lim = maxV * 10. * ts_max(_quality, 1.f);
+    virvo::vector< 3, ssize_t > sz = maxVox - minVox;
+    ssize_t maxV = std::max(sz[0], sz[1]);
+    maxV = std::max(maxV, sz[2]);
+    ssize_t lim = maxV * 10. * std::max(_quality, 1.f);
     if (numSlices > lim)
     {
       numSlices = lim;
@@ -1157,7 +1156,7 @@ void vvTexRend::renderVolumeGL()
 
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
-  vvssize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  virvo::vector< 3, ssize_t > vox = _paddingRegion.getMax() - _paddingRegion.getMin();
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
@@ -1323,7 +1322,7 @@ bool vvTexRend::instantClassification() const
 
 //----------------------------------------------------------------------------
 /// Returns the number of entries in the RGBA lookup table.
-size_t vvTexRend::getLUTSize(vvsize3& size) const
+size_t vvTexRend::getLUTSize(virvo::vector< 3, size_t >& size) const
 {
   size_t x, y, z;
 
@@ -1370,8 +1369,8 @@ void vvTexRend::updateLUT(const float dist)
 {
   vvDebugMsg::msg(3, "Generating texture LUT. Slice distance = ", dist);
 
-  vvVector4f corr;                                // gamma/alpha corrected RGBA values [0..1]
-  vvsize3 lutSize;                                // number of entries in the RGBA lookup table
+  vec4 corr;                                      // gamma/alpha corrected RGBA values [0..1]
+  virvo::vector< 3, size_t > lutSize;             // number of entries in the RGBA lookup table
   lutDistance = dist;
   size_t total = 0;
 
@@ -1443,7 +1442,7 @@ void vvTexRend::updateLUT(const float dist)
       case VV_PIX_SHD:
         glBindTexture(GL_TEXTURE_2D, pixLUTName[chan]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, &rgbaLUT[chan][0]);
+            GL_RGBA, GL_FLOAT, &rgbaTF[chan][0]);
         break;
       default: assert(0); break;
       }
@@ -1821,7 +1820,7 @@ vvShaderProgram* vvTexRend::initShader()
 //----------------------------------------------------------------------------
 void vvTexRend::printLUT(size_t chan) const
 {
-  vvsize3 lutEntries;
+  virvo::vector< 3, size_t > lutEntries;
 
   size_t total = getLUTSize(lutEntries);
   for (size_t i=0; i<total; ++i)
@@ -1843,8 +1842,8 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
   size_t numPixels;
   size_t index;
   float sizeX, sizeY;
-  vvVector3 size, size2;
-  vvVector3 texcoord[4];
+  vec3 size, size2;
+  vec3 texcoord[4];
 
   std::cerr << "getHeightFieldData" << endl;
 
@@ -1991,7 +1990,7 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   return dist;
 }
 
-void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, const vvVector3& normal)
+void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& normal)
 {
     // Local illumination based on blinn-phong shading.
     if (voxelType == VV_PIX_SHD && _currentShader == ShaderLighting)

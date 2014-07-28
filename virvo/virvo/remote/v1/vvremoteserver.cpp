@@ -218,7 +218,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
         assert(value[1] <= std::numeric_limits<size_t>::max());
         assert(value[2] <= std::numeric_limits<size_t>::max());
 
-        vvsize3 svalue(static_cast<size_t>(value[0]), static_cast<size_t>(value[1]), static_cast<size_t>(value[2]));
+        virvo::vector< 3, size_t > svalue(static_cast<size_t>(value[0]), static_cast<size_t>(value[1]), static_cast<size_t>(value[2]));
         renderer->setParameter((vvRenderState::ParameterType)param, svalue);
       }
     }

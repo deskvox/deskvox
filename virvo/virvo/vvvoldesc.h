@@ -130,7 +130,7 @@ class VIRVOEXPORT vvVolDesc
     
     static const size_t DEFAULT_ICON_SIZE;        ///< system default for icon size if not otherwise specified (only stored in XVF files)
     static const size_t NUM_HDR_BINS;             ///< constant value for HDR transfer functions
-    vvssize3 vox;                                 ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
+    virvo::vector< 3, ssize_t > vox;              ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
     size_t frames;                                ///< number of animation frames in movie (0 if no volume data stored)
     size_t bpc;                                   ///< bytes per channel (default = 1); each channel is scalar:<UL>
                                                   ///< <LI>1 = 1 unsigned char</LI>
@@ -336,8 +336,8 @@ class VIRVOEXPORT vvVolDesc
     void makeLineTexture(DiagType, uchar, int, int, bool, std::vector< std::vector< float > > const& voxData, uint8_t*);
     void makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int*);
     void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;
-    vvssize3 voxelCoords(virvo::vec3f const& objCoords) const;
-    virvo::vec3f objectCoords(vvssize3 const& voxCoords) const;
+    virvo::vector< 3, ssize_t > voxelCoords(virvo::vec3f const& objCoords) const;
+    virvo::vec3f objectCoords(virvo::vector< 3, ssize_t > const& voxCoords) const;
 
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)

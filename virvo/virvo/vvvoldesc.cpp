@@ -2914,7 +2914,7 @@ void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint
   uint8_t* rd;
   uint8_t* neighbor[8];                           // pointers to neighboring voxels
   float val[8];                                   // neighboring voxel values
-  vvssize3 tfl;                                   // coordinates of neighbor 0 (top-front-left)
+  virvo::vector< 3, ssize_t > tfl;                // coordinates of neighbor 0 (top-front-left)
   float dist[3];                                  // distance to neighbor 0
   size_t lineSize, sliceSize;
   int interpolated;                               // interpolated value
@@ -5369,7 +5369,7 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, ssize_t 
   }
 }
 
-vvssize3 vvVolDesc::voxelCoords(vec3f const& objCoords) const
+virvo::vector< 3, ssize_t > vvVolDesc::voxelCoords(vec3f const& objCoords) const
 {
     vec3f fltVox2
     (
@@ -5385,12 +5385,12 @@ vvssize3 vvVolDesc::voxelCoords(vec3f const& objCoords) const
         obj[i] /= _scale;
     }
 
-  return vvssize3(static_cast<ssize_t>(obj[0] + fltVox2[0]),
+  return virvo::vector< 3, ssize_t >(static_cast<ssize_t>(obj[0] + fltVox2[0]),
                   static_cast<ssize_t>(obj[1] + fltVox2[1]),
                   static_cast<ssize_t>(obj[2] + fltVox2[2]));
 }
 
-vec3f vvVolDesc::objectCoords(const vvssize3& voxCoords) const
+vec3f vvVolDesc::objectCoords(virvo::vector< 3, ssize_t > const& voxCoords) const
 {
     vec3f fltVox2
     (

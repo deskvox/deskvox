@@ -152,8 +152,8 @@ protected:
   virvo::vec3f roi_size_;                       ///< size of roi in each dimension [0..1]
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
 
-  vvsize3 _brickSize;                           ///< last bricksize in x/y/z
-  vvsize3 _maxBrickSize;                        ///< max allowed bricksize in x/y/z
+  virvo::vector< 3, size_t > _brickSize;        ///< last bricksize in x/y/z
+  virvo::vector< 3, size_t > _maxBrickSize;     ///< max allowed bricksize in x/y/z
   size_t   _brickTexelOverlap;                  /*!  overlap needed for performing calculations at brick borders
                                                      max value: min(brickSize[d])/2-1 */
   bool  _showBricks;                            ///< true = show brick boundarys
@@ -239,19 +239,19 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
 
     virtual void init();                   		  ///< initialization routine
 
-    void getObjNormal(virvo::vec3f& normal,
-                      virvo::vec3f& origin,
-                      virvo::vec3f const& eye,
-                      const vvMatrix& invMV,
+    void getObjNormal(virvo::vec3& normal,
+                      virvo::vec3& origin,
+                      virvo::vec3 const& eye,
+                      virvo::mat4 const& invMV,
                       bool isOrtho = false) const;
 
-    void getShadingNormal(virvo::vec3f& normal,
-                          virvo::vec3f& origin,
-                          virvo::vec3f const& eye,
-                          const vvMatrix& invMV,
+    void getShadingNormal(virvo::vec3& normal,
+                          virvo::vec3& origin,
+                          virvo::vec3 const& eye,
+                          virvo::mat4 const& invMV,
                           bool isOrtho = false) const;
-    void calcProbeDims(virvo::vec3f& probePosObj, virvo::vec3f& probeSizeObj,
-        virvo::vec3f& probeMin, virvo::vec3f& probeMax) const;
+    void calcProbeDims(virvo::vec3& probePosObj, virvo::vec3& probeSizeObj,
+        virvo::vec3& probeMin, virvo::vec3& probeMax) const;
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
