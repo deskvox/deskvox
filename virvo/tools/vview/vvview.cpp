@@ -2127,13 +2127,12 @@ void vvView::createMenus()
   glutAddMenuEntry("Auto select", 0);
   glutAddMenuEntry("RGBA", 1);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Fragment shader", 5);
-  if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)) glutAddMenuEntry("ARB fragment program", 6);
 
   // Renderer options menu:
   optionsMenu = glutCreateMenu(optionsMenuCallback);
   glutAddMenuEntry("Toggle slice interpolation [i]", 0);
   glutAddMenuEntry("Toggle warp interpolation [W]", 16);
-  if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)
+  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)
       && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
   {
     glutAddMenuEntry("Toggle pre-integration [P]", 1);

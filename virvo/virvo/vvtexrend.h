@@ -65,8 +65,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     {
       VV_BEST = 0,                                ///< choose best
       VV_RGBA,                                    ///< transfer function look-up done in software
-      VV_PIX_SHD,                                 ///< Fragment program (Cg or GLSL)
-      VV_FRG_PRG                                  ///< ARB fragment program
+      VV_PIX_SHD                                  ///< Fragment program (Cg or GLSL)
     };
     enum FeatureType                              /// Rendering features
     {
@@ -84,12 +83,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     static const int NUM_PIXEL_SHADERS;           ///< number of pixel shaders used
   private:
-    enum FragmentProgram
-    {
-      VV_FRAG_PROG_3D = 0,
-      VV_FRAG_PROG_PREINT,
-      VV_FRAG_PROG_MAX                            // has always to be last in list
-    };
     std::vector<std::vector<float> > rgbaTF;      ///< density to RGBA conversion table, as created by TF [0..1]
     std::vector<std::vector<uint8_t> > rgbaLUT;   ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
     uint8_t* preintTable;                         ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
@@ -103,14 +96,12 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
     std::vector<GLuint> pixLUTName;               ///< names for transfer function textures
-    GLuint fragProgName[VV_FRAG_PROG_MAX];        ///< names for fragment programs (for applying transfer function)
     VoxelType voxelType;                          ///< voxel type actually used
     bool extTex3d;                                ///< true = 3D texturing supported
     bool extNonPower2;                            ///< true = NonPowerOf2 textures supported
     bool extMinMax;                               ///< true = maximum/minimum intensity projections supported
     bool extPixShd;                               ///< true = Nvidia pixel shader support (requires GeForce FX)
     bool extBlendEquation;                        ///< true = support for blend equation extension
-    bool arbFrgPrg;                               ///< true = ARB fragment program support
     bool arbMltTex;                               ///< true = ARB multitexture support
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
@@ -134,9 +125,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void enableShader (vvShaderProgram* shader) const;
     void disableShader(vvShaderProgram* shader) const;
 
-    void enableLUTMode() const;
-    void disableLUTMode() const;
-
     vvShaderProgram* initShader();
 
     void removeTextures();
@@ -148,8 +136,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void updateLUT(float dist);
     size_t getLUTSize(vvsize3& size) const;
     size_t getPreintTableSize() const;
-    void enableFragProg() const;
-    void disableFragProg() const;
     void enableTexture(GLenum target) const;
     void disableTexture(GLenum target) const;
     void evaluateLocalIllumination(vvShaderProgram* pixelShader, const vvVector3& normal);

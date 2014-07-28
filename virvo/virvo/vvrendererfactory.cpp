@@ -208,7 +208,6 @@ void init()
 
   voxelTypeMap["default"] = vvTexRend::VV_BEST;
   voxelTypeMap["rgba"] = vvTexRend::VV_RGBA;
-  voxelTypeMap["arb"] = vvTexRend::VV_FRG_PRG;
   voxelTypeMap["shader"] = vvTexRend::VV_PIX_SHD;
 
   // TexRend
