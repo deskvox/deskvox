@@ -997,6 +997,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   // Volume render a 3D texture:
   if(voxelType == VV_PIX_SHD && _shader)
   {
+    enableShader(_shader);
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
   }
   else
@@ -1100,7 +1101,15 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     glEnd();
   }
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
-  disableTexture(GL_TEXTURE_3D_EXT);
+
+  if (voxelType == VV_PIX_SHD && _shader)
+  {
+    disableShader(_shader);
+  }
+  else
+  {
+    disableTexture(GL_TEXTURE_3D_EXT);
+  }
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
 }
@@ -1176,12 +1185,9 @@ void vvTexRend::renderVolumeGL()
   // Get OpenGL modelview matrix:
   mat4 mv = gl::getModelviewMatrix();
 
-  enableShader(_shader);
-
   renderTex3DPlanar(mv);
 
   unsetGLenvironment();
-  disableShader(_shader);
 
   if (_fpsDisplay)
   {
