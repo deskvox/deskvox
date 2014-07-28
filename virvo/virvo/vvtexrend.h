@@ -85,7 +85,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
   private:
     std::vector<std::vector<float> > rgbaTF;      ///< density to RGBA conversion table, as created by TF [0..1]
     std::vector<std::vector<uint8_t> > rgbaLUT;   ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
-    uint8_t* preintTable;                         ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
     float  lutDistance;                           ///< slice distance for which LUT was computed
     virvo::vector< 3, size_t >   texels;          ///< width, height and depth of volume, including empty space [texels]
     float texMin[3];                              ///< minimum texture value of object [0..1] (to prevent border interpolation)
