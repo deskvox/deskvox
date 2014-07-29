@@ -454,10 +454,10 @@ void vvSimpleServer::handleNewVolume()
     float min = volume_->real[0];
     float max = volume_->real[1];
 
-    if (volume_->tf.isEmpty())
+    if (volume_->tf[0].isEmpty())
     {
-        volume_->tf.setDefaultAlpha(0, min, max);
-        volume_->tf.setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
+        volume_->tf[0].setDefaultAlpha(0, min, max);
+        volume_->tf[0].setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
     }
 
     if (volume_->bpc == 4 && min == 0.0f && max == 1.0f)
