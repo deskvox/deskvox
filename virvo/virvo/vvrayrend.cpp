@@ -436,8 +436,13 @@ bool vvRayRend::checkParameter(ParameterType param, vvParam const& value) const
       virvo::tex_filter_mode mode = static_cast< virvo::tex_filter_mode >(value.asInt());
 
       if (mode == virvo::Nearest || mode == virvo::Linear
+#if DESKVOX_USE_RAYREND_BSPLINE
        || mode == virvo::BSpline || mode == virvo::BSplineInterpol
-       || mode == virvo::CardinalSpline)
+#endif
+#if DESKVOX_USE_RAYREND_CSPLINE
+       || mode == virvo::CardinalSpline
+#endif
+       )
       {
         return true;
       }
