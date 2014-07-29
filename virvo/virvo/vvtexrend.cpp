@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <iterator>
 #include <algorithm>
 #include <limits.h>
 #include <math.h>
@@ -686,9 +687,9 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
       glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
         texels[0], texels[1], texels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
@@ -1091,28 +1092,34 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
             front.isectPlaneLine(normal, v, releye, isect[j]);
           }
 
-          for (size_t k=0; k<3; ++k)
-          {
-            float v0 = (back[k] - minCorner[k]) / vissize[k];
-            v0 = v0 * (texMax[k] - texMin[k]) + texMin[k];
-            tc0.push_back(v0);
+            vec3 tex_coord_back
+            (
+                       (back[0] - minCorner[0]) / vissize[0],
+                1.0f - (back[1] - minCorner[1]) / vissize[1],
+                1.0f - (back[2] - minCorner[2]) / vissize[2]
+            );
+            std::copy( &tex_coord_back[0], &tex_coord_back[0] + 3, std::back_inserter(tc0) );
 
-            float v1 = (front[k] - minCorner[k]) / vissize[k];
-            v1 = v1 * (texMax[k] - texMin[k]) + texMin[k];
-            tc1.push_back(v1);
-          }
+            vec3 tex_coord_front
+            (
+                       (front[0] - minCorner[0]) / vissize[0],
+                1.0f - (front[1] - minCorner[1]) / vissize[1],
+                1.0f - (front[2] - minCorner[2]) / vissize[2]
+            );
+            std::copy( &tex_coord_front[0], &tex_coord_front[0] + 3, std::back_inserter(tc1) );
         }
       }
       else
       {
         for (size_t j=0; j<isectCnt; ++j)
         {
-          for (size_t k=0; k<3; ++k)
-          {
-            float v = (isect[j][k] - minCorner[k]) / vissize[k];
-            v = v * (texMax[k] - texMin[k]) + texMin[k];
-            tc0.push_back(v);
-          }
+            vec3 tex_coord
+            (
+                       (isect[j][0] - minCorner[0]) / vissize[0],
+                1.0f - (isect[j][1] - minCorner[1]) / vissize[1],
+                1.0f - (isect[j][2] - minCorner[2]) / vissize[2]
+            );
+            std::copy( &tex_coord[0], &tex_coord[0] + 3, std::back_inserter(tc0) );
         }
       }
     }
