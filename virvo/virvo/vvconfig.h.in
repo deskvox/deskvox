@@ -25,6 +25,9 @@
 
 #cmakedefine DESKVOX_USE_ASIO
 
+#cmakedefine01 DESKVOX_USE_RAYREND_BSPLINE
+#cmakedefine01 DESKVOX_USE_RAYREND_CSPLINE
+
 // compatability...
 #if VV_HAVE_BONJOUR
 #define HAVE_BONJOUR

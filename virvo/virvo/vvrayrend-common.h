@@ -21,6 +21,10 @@
 #ifndef VV_RAYREND_COMMON_H
 #define VV_RAYREND_COMMON_H
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 struct matrix4x4
 {
   float m[4][4];

@@ -604,6 +604,7 @@ void vvPrefDialog::updateUi()
     ++impl->num_interpol_algs;
   }
 
+#if DESKVOX_USE_RAYREND_BSPLINE
   if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::BSpline))
   {
     ui->interpolationBox->addItem("Cubic B-Spline");
@@ -615,12 +616,15 @@ void vvPrefDialog::updateUi()
     ui->interpolationBox->addItem("Cubic B-Spline Interpolation");
     ++impl->num_interpol_algs;
   }
+#endif
 
+#if DESKVOX_USE_RAYREND_CSPLINE
   if (renderer->checkParameter(vvRenderState::VV_SLICEINT, virvo::CardinalSpline))
   {
     ui->interpolationBox->addItem("Cubic Cardinal Spline");
     ++impl->num_interpol_algs;
   }
+#endif
 
   ui->interpolationBox->setCurrentIndex(std::min( ipol, impl->num_interpol_algs ));
 

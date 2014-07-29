@@ -72,6 +72,8 @@ __device__ float lerp(float a, float b, float x)
   return a + x * (b - a);
 }
 
+#if DESKVOX_USE_RAYREND_BSPLINE
+
 namespace bspline
 {
 
@@ -83,6 +85,10 @@ __device__ float w2( float a ) { return (1.0f / 6.0f) * (-3.0f * a * a * a + 3.0
 __device__ float w3( float a ) { return (1.0f / 6.0f) * (a * a * a); }
 
 } // bspline
+
+#endif
+
+#if DESKVOX_USE_RAYREND_CSPLINE
 
 namespace cspline
 {
@@ -96,6 +102,9 @@ __device__ float w3( float a ) { return float( 0.5 * a * a * a - 0.5 * a * a ); 
 
 } // cspline
 
+#endif
+
+#if DESKVOX_USE_RAYREND_BSPLINE
 
 // helper functions for cubic interpolation
 __device__ float g0( float x ) { return bspline::w0(x) + bspline::w1(x); }
@@ -171,6 +180,10 @@ __device__ float cubic8(T tex, float3 coord, float3 texsize)
 
 }
 
+#endif
+
+#if DESKVOX_USE_RAYREND_CSPLINE
+
 template < typename T >
 __device__ float cubic(T tex, float3 coord, float3 texsize)
 {
@@ -240,6 +253,7 @@ __device__ float cubic(T tex, float3 coord, float3 texsize)
 
 }
 
+#endif
 
 template<int t_bpc>
 __device__ float volume(float3 const& coord, float3 const& texsize, virvo::tex_filter_mode filter_mode);
@@ -258,6 +272,7 @@ __device__ float volume<1>(float3 const& coord, float3 const& texsize, virvo::te
     case virvo::Linear:
         return tex3D(volTexture8, coord.x, coord.y, coord.z);
 
+#if DESKVOX_USE_RAYREND_BSPLINE
     case virvo::BSpline:
         return cubic8(volTexture8, coord, texsize);
 
@@ -265,9 +280,12 @@ __device__ float volume<1>(float3 const& coord, float3 const& texsize, virvo::te
         // convert from prefiltered range [SHRT_MIN,SHRT_MAX] to
         // reconstructed (8-bit) data range [0,256).
         return cubic8(prefilterTexture, coord, texsize) * float(128);
+#endif
 
+#if DESKVOX_USE_RAYREND_CSPLINE
     case virvo::CardinalSpline:
         return cubic(volTexture8, coord, texsize);
+#endif
 
     }
 
@@ -287,8 +305,10 @@ __device__ float volume<2>(const float3& coord, float3 const& texsize, virvo::te
     case virvo::Linear:
         return tex3D(volTexture16, coord.x, coord.y, coord.z);
 
+#if DESKVOX_USE_RAYREND_BSPLINE
     case virvo::BSpline:
         return cubic8(volTexture16, coord, texsize);
+#endif
 
     }
 }
