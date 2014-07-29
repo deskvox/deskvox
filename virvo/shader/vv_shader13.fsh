@@ -43,6 +43,7 @@ void main()
 
     vec3 L = normalize(lpos - gl_TexCoord[0].xyz);
     vec3 N = normalize(sample2.xyz - sample1.xyz);
+    N.x = -N.x; // mind volume coordinate system
     vec3 H = normalize(L + V);
 
     float dist = length(L);
@@ -53,19 +54,13 @@ void main()
     // Ambient term.
     OUT.xyz = Ka * classification.xyz;
 
-    if (ldot > 0.0)
-    {
-      // Diffuse term.
-      OUT.xyz += Kd * ldot * classification.xyz * att;
+    // Diffuse term.
+    OUT.xyz += Kd * ldot * classification.xyz * att;
 
-      // Specular term.
-      float spec = pow(dot(H, N), shininess);
+    // Specular term.
+    float spec = pow(dot(H, N), shininess);
 
-      if (spec > 0.0)
-      {
-        OUT.xyz += Ks * spec * classification.xyz * att;
-      }
-    }
+    OUT.xyz += Ks * spec * classification.xyz * att;
     OUT.w = classification.w;
     gl_FragColor = OUT;
   }
