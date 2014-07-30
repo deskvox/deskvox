@@ -3,7 +3,6 @@
 // Author: Martin Aumueller <aumueller@hlrs.de>
 
 #define DELTA (0.01)
-#define THRESHOLD (0.05)
 
 uniform int channels;
 uniform int preintegration;
@@ -14,6 +13,7 @@ uniform vec3 lpos;
 uniform float constAtt;
 uniform float linearAtt;
 uniform float quadAtt;
+uniform float threshold;
 
 uniform sampler3D pix3dtex;
 
@@ -53,7 +53,7 @@ vec4 light(sampler3D tex, vec4 classified, vec3 tc)
   const vec3 Ks = vec3(0.8, 0.8, 0.8);
   const float shininess = 1000.0;
 
-  if (lighting!=0 && classified.w > THRESHOLD)
+  if (lighting!=0 && classified.w > threshold)
   {
     vec3 grad = gradient(tex, tc);
     vec3 L = lpos - tc;

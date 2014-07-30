@@ -137,7 +137,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     size_t getPreintTableSize() const;
     void enableTexture(GLenum target) const;
     void disableTexture(GLenum target) const;
-    void initLight(vvShaderProgram* pixelShader, virvo::mat4 const& mv, virvo::vec3 const& normal);
+    void initLight(vvShaderProgram* pixelShader, virvo::mat4 const& mv, virvo::vec3 const& normal, float sliceThickness);
 
     int  getCurrentShader() const;
     void setCurrentShader(int);

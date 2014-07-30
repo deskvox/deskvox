@@ -926,10 +926,10 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 
   VV_LOG(3) << "Number of textures to render: " << numSlices << std::endl;
 
+  float thickness = sliceDistance/voxelDistance;
   // Use alpha correction in indexed mode: adapt alpha values to number of textures:
   if (instantClassification())
   {
-    float thickness = sliceDistance/voxelDistance;
 
     // just tolerate slice distance differences imposed on us
     // by trying to keep the number of slices constant
@@ -995,7 +995,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   {
     enableShader(_shader);
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
-    initLight(_shader, mv, normal);
+    initLight(_shader, mv, normal, thickness);
   }
   else
   {
@@ -2001,7 +2001,7 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   return dist;
 }
 
-void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& normal)
+void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& normal, float sliceThickness)
 {
   if (voxelType == VV_PIX_SHD)
   {
@@ -2024,6 +2024,8 @@ void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& n
       shader->setParameter1f("constAtt", l.constant_attenuation);
       shader->setParameter1f("linearAtt", l.linear_attenuation);
       shader->setParameter1f("quadAtt", l.quadratic_attenuation);
+
+      shader->setParameter1f("threshold", 1.f - powf(1.f-0.1f, thickness));
     }
   }
 }

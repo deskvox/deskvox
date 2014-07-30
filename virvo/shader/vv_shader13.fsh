@@ -5,7 +5,6 @@
 //  Stavros Delisavas <stavros.delisavas@uni-koeln.de>
 
 #define DELTA (0.01)
-#define THRESHOLD (0.1)
 
 uniform sampler3D pix3dtex;
 uniform sampler2D pixLUT;
@@ -14,6 +13,7 @@ uniform vec3 lpos;
 uniform float constAtt;
 uniform float linearAtt;
 uniform float quadAtt;
+uniform float threshold;
 
 void main()
 {
@@ -30,7 +30,7 @@ void main()
   vec4 classification = texture2D(pixLUT, center.wx);
 
   vec4 OUT;
-  if (classification.w > THRESHOLD)
+  if (classification.w > threshold)
   {
     vec3 sample1;
     vec3 sample2;
