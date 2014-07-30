@@ -41,12 +41,13 @@ void main()
     sample1.z = texture3D(pix3dtex, gl_TexCoord[0].xyz - vec3(0.0, 0.0, DELTA)).x;
     sample2.z = texture3D(pix3dtex, gl_TexCoord[0].xyz + vec3(0.0, 0.0, DELTA)).x;
 
-    vec3 L = normalize(lpos - gl_TexCoord[0].xyz);
+    vec3 L = lpos - gl_TexCoord[0].xyz;
     vec3 N = normalize(sample2.xyz - sample1.xyz);
     N.x = -N.x; // mind volume coordinate system
+    float dist = length(L);
+    L = normalize(L);
     vec3 H = normalize(L + V);
 
-    float dist = length(L);
     float att = 1.0 / (constAtt + linearAtt * dist + quadAtt * dist * dist);
     float ldot = dot(L, N.xyz);
     float specular = pow(dot(H, N.xyz), shininess);
