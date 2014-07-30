@@ -454,10 +454,6 @@ recti gl::getViewport()
 
 gl::light gl::getLight(GLenum l)
 {
-    GLboolean light_enabled;
-    glGetBooleanv(GL_LIGHTING, &light_enabled);
-    glEnable(GL_LIGHTING);
-
     gl::light result;
     glGetLightfv(l, GL_AMBIENT,                reinterpret_cast< GLfloat* >(&result.ambient));
     glGetLightfv(l, GL_DIFFUSE,                reinterpret_cast< GLfloat* >(&result.diffuse));
@@ -468,12 +464,6 @@ gl::light gl::getLight(GLenum l)
     glGetLightfv(l, GL_CONSTANT_ATTENUATION,   reinterpret_cast< GLfloat* >(&result.constant_attenuation));
     glGetLightfv(l, GL_LINEAR_ATTENUATION,     reinterpret_cast< GLfloat* >(&result.linear_attenuation));
     glGetLightfv(l, GL_QUADRATIC_ATTENUATION,  reinterpret_cast< GLfloat* >(&result.quadratic_attenuation));
-
-    if (!light_enabled)
-    {
-        glDisable(GL_LIGHTING);
-    }
-
     return result;
 }
 

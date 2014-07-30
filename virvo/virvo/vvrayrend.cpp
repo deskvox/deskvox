@@ -319,21 +319,14 @@ void vvRayRend::renderVolumeGL()
 
   vec3f eye = getEyePosition();
 
-  // use GL_LIGHT0 for local lighting
-  GLfloat lv[4];
-  float constAtt = 1.0f;
-  float linearAtt = 0.0f;
-  float quadAtt = 0.0f;
-  if (glIsEnabled(GL_LIGHTING))
-  {
-    glGetLightfv(GL_LIGHT0, GL_POSITION, &lv[0]);
-    glGetLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &constAtt);
-    glGetLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &linearAtt);
-    glGetLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &quadAtt);
-  }
+    gl::light l;
+    if (glIsEnabled(GL_LIGHTING))
+    {
+        l = gl::getLight(GL_LIGHT0);
+    }
+
   // position of light source. transform eye coordinates to object coordinates
-  vec4 LposEye(lv[0], lv[1], lv[2], 1.0f);
-  LposEye = inverse(mv) * LposEye;
+  vec4 LposEye = inverse(mv) * l.position;
   const float3 Lpos = make_float3(LposEye.x, LposEye.y, LposEye.z);
 
   vec3f normal;
@@ -407,9 +400,9 @@ void vvRayRend::renderVolumeGL()
                     _interpolation,
                     Lpos,
                     V,
-                    constAtt,
-                    linearAtt,
-                    quadAtt,
+                    l.constant_attenuation,
+                    l.linear_attenuation,
+                    l.quadratic_attenuation,
                     kernelParams.clipMode == 1,
                     kernelParams.clipMode == 2,
                     false,
