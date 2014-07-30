@@ -2025,7 +2025,7 @@ void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& n
       shader->setParameter1f("linearAtt", l.linear_attenuation);
       shader->setParameter1f("quadAtt", l.quadratic_attenuation);
 
-      shader->setParameter1f("threshold", 1.f - powf(1.f-0.1f, thickness));
+      shader->setParameter1f("threshold", 1.f - powf(1.f-0.1f, sliceThickness));
     }
   }
 }
