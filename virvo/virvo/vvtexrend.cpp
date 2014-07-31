@@ -72,7 +72,7 @@ enum {
   Shader1Chan = 0,
   ShaderPreInt = 11,
   ShaderLighting = 12,
-  ShaderMultiTF = 13,
+  ShaderMultiTF = 13
 };
 
 
@@ -1054,7 +1054,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
       // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
       // and non-overlapping triangles:
       isect->cyclicSort(isectCnt, normal);
-      for (int j=0; j<isectCnt; ++j)
+      for (size_t j=0; j<isectCnt; ++j)
       {
         for (int k=0; k<3; ++k)
           vc.push_back(isect[j][k]);
