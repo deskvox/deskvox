@@ -397,8 +397,8 @@ void vvSoftRayRend::renderVolumeGL()
     maxvox[i] = std::min(maxvox[i], vd->vox[i]);
   }
 
-  virvo::Vec3 const mincorner     = vd->objectCoords(minvox);
-  virvo::Vec3 const maxcorner     = vd->objectCoords(maxvox);
+  virvo::vec3 mincorner     = vd->objectCoords(minvox);
+  virvo::vec3 maxcorner     = vd->objectCoords(maxvox);
 
   impl_->render_params.width                 = rt->width();
   impl_->render_params.height                = rt->height();

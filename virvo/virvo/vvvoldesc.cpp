@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <limits>
 #include <sstream>
 
 #include <boost/detail/endian.hpp>
@@ -42,6 +43,7 @@
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvclock.h"
+#include "vvvecmath.h"
 #include "vvvoldesc.h"
 #include "mem/swap.h"
 
@@ -157,12 +159,12 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
   bpc    = 1;
   chan    = 1;
   frames = f;
-  real[0] = VV_FLT_MAX;
-  real[1] = -VV_FLT_MAX;
+  real[0] =  std::numeric_limits< float >::max();
+  real[1] = -std::numeric_limits< float >::max();
 
   for (size_t i=0; i<f; ++i)
   {
-    vvToolshed::getMinMaxIgnore(d[i], getFrameVoxels(), VV_FLT_MAX, &frameMin, &frameMax);
+    vvToolshed::getMinMaxIgnore(d[i], getFrameVoxels(), std::numeric_limits< float >::max(), &frameMin, &frameMax);
     if (frameMin < real[0]) real[0] = frameMin;
     if (frameMax > real[1]) real[1] = frameMax;
   }
@@ -170,7 +172,7 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
   {
     data = new uint8_t[getFrameBytes()];
     vvToolshed::convertFloat2UCharClampZero(d[i], data, getFrameVoxels(),
-      real[0], real[1], VV_FLT_MAX);
+      real[0], real[1], std::numeric_limits< float >::max());
     addFrame(data, ARRAY_DELETE);
   }
   if (strcmp("COVISE", fn)==0)                    // convert data if source is COVISE
@@ -1705,8 +1707,10 @@ with the destination slice.</LI>
 </UL>
 @param axis axis along which to flip the volume data
 */
-void vvVolDesc::flip(vvVecmath::AxisType axis)
+void vvVolDesc::flip(virvo::cartesian_axis< 3 > axis)
 {
+    typedef virvo::cartesian_axis< 3 > axis_type;
+
   uint8_t* rd;
   uint8_t* voxelData;                             // temporary buffer for voxel data
   uint8_t* dst;                                   // destination pointer
@@ -1718,7 +1722,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
 
   lineSize = vox[0] * getBPV();
   sliceSize = getSliceBytes();
-  if (axis==vvVecmath::Z_AXIS) voxelData = new uchar[sliceSize];
+  if (axis==axis_type::Z) voxelData = new uchar[sliceSize];
   else voxelData = new uint8_t[lineSize];
   raw.first();
   for (size_t f=0; f<frames; ++f)
@@ -1726,7 +1730,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
     rd = raw.getData();
     switch (axis)
     {
-      case vvVecmath::X_AXIS:
+      case axis_type::X:
         dst = rd;
         for (ssize_t z=0; z<vox[2]; ++z)
           for (ssize_t y=0; y<vox[1]; ++y)
@@ -1741,7 +1745,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
           }
         }
         break;
-      case vvVecmath::Y_AXIS:
+      case axis_type::Y:
         for (ssize_t z=0; z<vox[2]; ++z)
           for (ssize_t y=0; y<vox[1]/2; ++y)
         {
@@ -1752,7 +1756,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
           memcpy((void*)src, (void*)voxelData, lineSize);
         }
         break;
-      case vvVecmath::Z_AXIS:
+      case axis_type::Z:
         for (ssize_t z=0; z<vox[2]/2; ++z)
         {
           dst = rd + z * sliceSize;
@@ -1780,8 +1784,10 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
   @param dir  direction into which to rotate when looking at the origin
               from the positive half of the chosen coordinate axis (-1=left, 1=right)
 */
-void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
+void vvVolDesc::rotate(virvo::cartesian_axis< 3 > axis, int dir)
 {
+    typedef virvo::cartesian_axis< 3 > axis_type;
+
   uint8_t* rd;
   uint8_t* dst;                                   // destination pointer
   uint8_t* src;                                   // source pointer
@@ -1796,17 +1802,17 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
   // Compute the new volume size:
   switch (axis)
   {
-    case vvVecmath::X_AXIS:
+    case axis_type::X:
       newWidth  = vox[0];
       newHeight = vox[2];
       newSlices = vox[1];
       break;
-    case vvVecmath::Y_AXIS:
+    case axis_type::Y:
       newWidth  = vox[2];
       newHeight = vox[1];
       newSlices = vox[0];
       break;
-    case vvVecmath::Z_AXIS:
+    case axis_type::Z:
       newWidth  = vox[1];
       newHeight = vox[0];
       newSlices = vox[2];
@@ -1827,7 +1833,7 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
     src = rd;
     switch (axis)
     {
-      case vvVecmath::X_AXIS:
+      case axis_type::X:
         for (y=0; y<newHeight; ++y)
         {
           if (dir>0) ypos = y;
@@ -1845,7 +1851,7 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
           }
         }
         break;
-      case vvVecmath::Y_AXIS:
+      case axis_type::Y:
         for (x=0; x<newWidth; ++x)
         {
           if (dir>0) xpos = x;
@@ -1861,7 +1867,7 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
           }
         }
         break;
-      case vvVecmath::Z_AXIS:
+      case axis_type::Z:
         for (z=0; z<newSlices; ++z)
           for (x=0; x<newWidth; ++x)
         {
@@ -2653,8 +2659,8 @@ void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bo
         if (dist<=radius && dist>=core)           // is voxel within source volume?
         {
           // Compute source coordinates of current destination voxel:
-          sx = phi / (2.0f * VV_PI) * (float)vox[0];
-          sy = theta / VV_PI * (float)vox[1];
+          sx = phi / (2.0f * M_PI) * (float)vox[0];
+          sy = theta / M_PI * (float)vox[1];
           sz = (float)vox[2] - 1.0f - ((dist-core) / ringSize * (float)vox[2]);
           if (ipt==TRILINEAR)                     // trilinear interpolation
           {
@@ -3486,8 +3492,10 @@ void vvVolDesc::setSliceData(uint8_t* newData, int slice, int frame)
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * bpc * chan bytes
 */
-void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t slice, uint8_t* dst)
+void vvVolDesc::extractSliceData(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst)
 {
+    typedef virvo::cartesian_axis< 3 > axis_type;
+
   uint8_t* raw;                                   // raw volume data of current frame
   size_t sliceSize;                               // bytes per volume slice (z-axis view)
   size_t lineSize;                                // bytes per voxel line
@@ -3497,7 +3505,7 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t sli
   raw = getRaw(frame);
   switch (axis)
   {
-    case 0:                                       // x axis
+    case axis_type::X:                                       // x axis
       for (ssize_t j=0; j<vox[1]; ++j)
         for (ssize_t i=0; i<vox[2]; ++i)
       {
@@ -3505,11 +3513,11 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t sli
         dst += getBPV();
       }
       break;
-    case 1:                                       // y axis
+    case axis_type::Y:                                       // y axis
       for (ssize_t i=0; i<vox[2]; ++i)
         memcpy(dst + i * lineSize, raw + (vox[2] - i - 1) * sliceSize + slice * lineSize, lineSize);
       break;
-    case 2:                                       // z axis
+    case axis_type::Z:                                       // z axis
       memcpy(dst, raw + slice * sliceSize, sliceSize);
       break;
     default: assert(0); break;
@@ -3520,13 +3528,15 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t sli
 /** @return volume size when looking from a specific axis
   @param axis viewing axis
 */
-void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, size_t& width, size_t& height, size_t& slices)
+void vvVolDesc::getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t& width, size_t& height, size_t& slices)
 {
+    typedef virvo::cartesian_axis< 3 > axis_type;
+
   switch(axis)
   {
-    case vvVecmath::X_AXIS: width = vox[2]; height = vox[1]; slices = vox[0]; return;
-    case vvVecmath::Y_AXIS: width = vox[0]; height = vox[2]; slices = vox[1]; return;
-    case vvVecmath::Z_AXIS: width = vox[0]; height = vox[1]; slices = vox[2]; return;
+    case axis_type::X: width = vox[2]; height = vox[1]; slices = vox[0]; return;
+    case axis_type::Y: width = vox[0]; height = vox[2]; slices = vox[1]; return;
+    case axis_type::Z: width = vox[0]; height = vox[1]; slices = vox[2]; return;
     default: assert(0); width = 0; height = 0; slices = 0; return;
   }
 }
@@ -3539,7 +3549,7 @@ void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, size_t& width, size_t& h
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
 */
-void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, size_t slice, uint8_t* dst)
+void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst)
 {
   uint8_t* sliceData;
   vvColor col;
@@ -3653,8 +3663,8 @@ void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax)
       scalarMax = 0.0f;
       break;
     case 4:
-      scalarMin =  VV_FLT_MAX;
-      scalarMax = -VV_FLT_MAX;
+      scalarMin =  std::numeric_limits< float >::max();
+      scalarMax = -std::numeric_limits< float >::max();
       break;
     default: assert(0); break;
   }

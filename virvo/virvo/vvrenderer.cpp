@@ -418,7 +418,7 @@ vvVolDesc* vvRenderer::getVolDesc()
   return vd;
 }
 
-vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(mat4 const& mv,
+virvo::cartesian_axis< 3 > vvRenderer::getPrincipalViewingAxis(mat4 const& mv,
                                                         float& zx, float& zy, float& zz) const
 {
   mat4 invMV = inverse(mv);
@@ -435,13 +435,13 @@ vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(mat4 const& mv,
 
   if (fabs(zx) > fabs(zy))
   {
-    if (fabs(zx) > fabs(zz)) return vvVecmath::X_AXIS;
-    else return vvVecmath::Z_AXIS;
+    if (fabs(zx) > fabs(zz)) return virvo::cartesian_axis< 3 >::X;
+    else return virvo::cartesian_axis< 3 >::Z;
   }
   else
   {
-    if (fabs(zy) > fabs(zz)) return vvVecmath::Y_AXIS;
-    else return vvVecmath::Z_AXIS;
+    if (fabs(zy) > fabs(zz)) return virvo::cartesian_axis< 3 >::Y;
+    else return virvo::cartesian_axis< 3 >::Z;
   }
 }
 

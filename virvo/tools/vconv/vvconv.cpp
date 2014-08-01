@@ -26,6 +26,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <virvo/math/math.h>
 #include "vvvirvo.h"
 #include "vvconv.h"
 #include "vvfileio.h"
@@ -39,100 +40,98 @@ using namespace std;
 //----------------------------------------------------------------------------
 /// Constructor
 vvConv::vvConv()
+    : vd(NULL)
+    , srcFile(NULL)
+    , dstFile(NULL)
+    , files(1)
+    , increment(1)
+    , showHelp(false)
+    , fileInfo(false)
+    , bpchan(-1)
+    , sphere(false)
+    , outer(0)
+    , inner(0)
+    , heightField(false)
+    , hfHeight(0)
+    , hfMode(0)
+    , crop(false)
+    , croptime(false)
+    , resize(false)
+    , resizeFactor(0.0f)
+    , setDist(false)
+    , setRange(false)
+    , flip(false)
+    , flipAxis(virvo::cartesian_axis< 3 >::X)
+    , rotate(false)
+    , rotDir(0)
+    , rotAxis(virvo::cartesian_axis< 3 >::X)
+    , swap(false)
+    , sign(false)
+    , shift(false)
+    , bitshift(false)
+    , bshiftDist(0)
+    , importTF(false)
+    , removeTF(false)
+    , importFile(NULL)
+    , drawLine(false)
+    , loadRaw(false)
+    , lineColor(0)
+    , drawBox(false)
+    , boxColor(0)
+    , rawBPC(1)
+    , rawCh(1)
+    , rawWidth(0)
+    , rawHeight(0)
+    , rawSlices(0)
+    , rawSkip(0)
+    , ipt(vvVolDesc::NEAREST)
+    , statistics(false)
+    , fillRange(false)
+    , dicomRename(false)
+    , leicaRename(false)
+    , compression(true)
+    , animTime(0.0f)
+    , deinterlace(false)
+    , zoomData(false)
+    , loadXB7(false)
+    , xb7Size(0)
+    , xb7Param(0)
+    , xb7Global(false)
+    , loadCPT(false)
+    , cptSize(0)
+    , cptParam(0)
+    , cptGlobal(false)
+    , setPos(false)
+    , histogram(false)
+    , histType(0)
+    , blend(false)
+    , blendFile(NULL)
+    , blendType(0)
+    , channels(-1)
+    , setIcon(false)
+    , makeVolume(-1)
+    , makeIconSize(0)
+    , getIcon(false)
+    , swapChannels(false)
+    , extractChannel(false)
+    , addChannel(false)
+    , addFile(NULL)
+    , autoRealRange(false)
+    , invertVoxelOrder(false)
+    , lineAverage(0)
+    , sections(0)
+    , pinhole(0)
+    , height(0)
+    , width(0)
+    , time(0)
+    , thickness(0)
+    , lasercount(0)
+    , starttime(999999)
+    , endtime(0)
+    , mergeType(0)
 {
-  vd = NULL;
-  srcFile       = NULL;
-  dstFile       = NULL;
-  files         = 1;
-  increment     = 1;
-  showHelp      = false;
-  fileInfo      = false;
-  overwrite     = false;
-  bpchan        = -1;
-  sphere        = false;
-  outer         = 0;
-  inner         = 0;
-  heightField   = false;
-  hfHeight      = 0;
-  hfMode        = 0;
-  crop          = false;
-  croptime      = false;
-  drawLine      = false;
-  drawBox       = false;
-  lineColor     = 0;
-  boxColor      = 0;
-  resize        = false;
-  ipt           = vvVolDesc::NEAREST;
-  resizeFactor  = 0.0f;
-  flip          = false;
-  flipAxis      = vvVecmath::X_AXIS;
-  rotate        = false;
-  rotAxis       = vvVecmath::X_AXIS;
-  rotDir        = 0;
-  setDist       = false;
-  setRange      = false;
-  swap          = false;
-  sign          = false;
-  shift         = false;
-  bitshift      = false;
-  bshiftDist    = 0;
-  importTF      = false;
-  removeTF      = false;
-  importFile    = NULL;
-  loadRaw       = false;
-  rawBPC        = 1;
-  rawCh         = 1;
-  rawWidth = rawHeight = rawSlices = 0;
-  rawSkip       = 0;
   newRange[0]   = 0.0f;
   newRange[1]   = 1.0f;
-  statistics    = false;
-  fillRange     = false;
-  dicomRename   = false;
-  leicaRename   = false;
-  compression   = true;
-  animTime      = 0.0f;
-  deinterlace   = false;
-  zoomData      = false;
-  loadXB7       = false;
-  xb7Size       = 0;
-  xb7Param      = 0;
-  xb7Global     = false;
-  loadCPT       = false;
-  cptSize       = 0;
-  cptParam      = 0;
-  cptGlobal     = false;
-  setPos        = false;
-  histogram     = false;
-  histType      = 0;
-  blend         = false;
-  blendFile     = NULL;
-  blendType     = 0;
-  channels      = -1;
-  setIcon       = false;
-  iconFile      = NULL;
-  makeIcon      = false;
-  makeVolume    = -1;
-  makeIconSize  = 0;
-  getIcon       = false;
-	swapChannels  = false;
-  extractChannel = false;
-  addChannel    = false;
-  addFile       = NULL;
-  autoRealRange = false;
-  invertVoxelOrder = false;
-  lineAverage = 0;
-  sections = 0;
-  pinhole = 0;
-  height = 0;
-  width = 0;
-  time = 0;
-  thickness = 0;
-  lasercount = 0;
-  starttime = 999999;
-  endtime = 0;
-  mergeType     = 0;
-
   for (int i=0; i<3; ++i)
   {
     chan[i] = -1;
@@ -152,7 +151,7 @@ vvConv::vvConv()
   for (int i=0; i<2; ++i)
   {
     cropSteps[i]  = 0;
-		swapChan[i]   = 0;
+    swapChan[i]   = 0;
   } 
 }
 
@@ -1374,9 +1373,9 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       flip = true;
       switch (tolower(argv[arg][0]))
       {
-        case 'x': flipAxis = vvVecmath::X_AXIS; break;
-        case 'y': flipAxis = vvVecmath::Y_AXIS; break;
-        case 'z': flipAxis = vvVecmath::Z_AXIS; break;
+        case 'x': flipAxis = virvo::cartesian_axis< 3 >::X; break;
+        case 'y': flipAxis = virvo::cartesian_axis< 3 >::Y; break;
+        case 'z': flipAxis = virvo::cartesian_axis< 3 >::Z; break;
         default: cerr << "Invalid flip parameter." << endl; return false;
       }
     }
@@ -1399,9 +1398,9 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       {
         switch (tolower(argv[arg][1]))
         {
-          case 'x': rotAxis = vvVecmath::X_AXIS; break;
-          case 'y': rotAxis = vvVecmath::Y_AXIS; break;
-          case 'z': rotAxis = vvVecmath::Z_AXIS; break;
+          case 'x': rotAxis = virvo::cartesian_axis< 3 >::X; break;
+          case 'y': rotAxis = virvo::cartesian_axis< 3 >::Y; break;
+          case 'z': rotAxis = virvo::cartesian_axis< 3 >::Z; break;
           default: rotDir = 0; break;
         }
       }
@@ -2442,7 +2441,7 @@ int vvConv::run(int argc, char** argv)
         tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0], tmpVD->real[1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
         imgVD->frames = 1;
-        imgVD->flip(vvVecmath::Y_AXIS);
+        imgVD->flip(virvo::cartesian_axis< 3 >::Y);
         vvFileIO* fio = new vvFileIO();
         switch (fio->saveVolumeData(imgVD, false))
         {

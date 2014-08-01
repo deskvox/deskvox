@@ -22,6 +22,7 @@
 
 #include "ui_vvsliceviewer.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 #include <virvo/vvvoldesc.h>
 
@@ -37,13 +38,13 @@ struct vvSliceViewer::Impl
   Impl()
     : ui(new Ui::SliceViewer)
     , slice(0)
-    , axis(vvVecmath::Z_AXIS)
+    , axis(virvo::cartesian_axis< 3 >::Z)
   {
   }
  
   std::auto_ptr<Ui::SliceViewer> ui;
   size_t slice;
-  vvVecmath::AxisType axis;
+  virvo::cartesian_axis< 3 > axis;
 
 private:
 
@@ -59,7 +60,7 @@ void clamp(size_t* slice, size_t slices)
   *slice = std::max(size_t(0), *slice);
 }
 
-QImage getSlice(vvVolDesc* vd, std::vector<uchar>* texture, size_t slice, vvVecmath::AxisType axis)
+QImage getSlice(vvVolDesc* vd, std::vector<uchar>* texture, size_t slice, virvo::cartesian_axis< 3 > axis)
 {
   assert(texture != NULL);
 
@@ -139,17 +140,17 @@ void vvSliceViewer::updateUi()
 
   switch (impl_->axis)
   {
-  case vvVecmath::X_AXIS:
+  case virvo::cartesian_axis< 3 >::X:
     impl_->ui->xaxisButton->setChecked(true);
     impl_->ui->yaxisButton->setChecked(false);
     impl_->ui->zaxisButton->setChecked(false);
     break;
-  case vvVecmath::Y_AXIS:
+  case virvo::cartesian_axis< 3 >::Y:
     impl_->ui->xaxisButton->setChecked(false);
     impl_->ui->yaxisButton->setChecked(true);
     impl_->ui->zaxisButton->setChecked(false);
     break;
-  case vvVecmath::Z_AXIS:
+  case virvo::cartesian_axis< 3 >::Z:
     impl_->ui->xaxisButton->setChecked(false);
     impl_->ui->yaxisButton->setChecked(false);
     impl_->ui->zaxisButton->setChecked(true);
@@ -169,7 +170,7 @@ void vvSliceViewer::onNewVolDesc(vvVolDesc* vd)
 {
   _vd = vd;
   impl_->slice = 0;
-  impl_->axis = vvVecmath::Z_AXIS;
+  impl_->axis = virvo::cartesian_axis< 3 >::Z;
   paint();
   updateUi();
 }
@@ -208,15 +209,15 @@ void vvSliceViewer::updateAxis(bool checked)
 
   if (QObject::sender() == impl_->ui->xaxisButton)
   {
-    impl_->axis = vvVecmath::X_AXIS;
+    impl_->axis = virvo::cartesian_axis< 3 >::X;
   }
   else if (QObject::sender() == impl_->ui->yaxisButton)
   {
-    impl_->axis = vvVecmath::Y_AXIS;
+    impl_->axis = virvo::cartesian_axis< 3 >::Y;
   }
   else if (QObject::sender() == impl_->ui->zaxisButton)
   {
-    impl_->axis = vvVecmath::Z_AXIS;
+    impl_->axis = virvo::cartesian_axis< 3 >::Z;
   }
   paint();
   updateUi();

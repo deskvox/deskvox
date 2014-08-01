@@ -21,7 +21,8 @@
 #ifndef VVCONV_H
 #define VVCONV_H
 
-#include "vvvoldesc.h"
+#include <virvo/math/forward.h>
+#include <virvo/vvvoldesc.h>
 
 /** Command line volume file format converter.
   Usage: Type 'vconv' to get a list of command line parameters, or
@@ -64,10 +65,10 @@ class vvConv
     bool  setRange;     ///< true = set physical scalar value range
     float newRange[2];  ///< new realMin and realMax values
     bool  flip;         ///< true = flip volume
-    vvVecmath::AxisType flipAxis; ///< flip axis
+    virvo::cartesian_axis< 3 > flipAxis; ///< flip axis
     bool  rotate;       ///< true = rotate volume
     int   rotDir;       ///< rotation direction: -1=negative, +1=positive, 0=invalid parameter
-    vvVecmath::AxisType rotAxis;  ///< rotation axis
+    virvo::cartesian_axis< 3 > rotAxis;  ///< rotation axis
     bool  swap;         ///< true = byte swapping on
     bool  shift;        ///< true = shift volume
     int   shiftDist[3]; ///< shift distance [voxels]

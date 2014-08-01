@@ -28,7 +28,6 @@
 #include "vvparam.h"
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
-#include "vvvecmath.h"
 
 #include <memory>
 
@@ -311,7 +310,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual vvVecmath::AxisType getPrincipalViewingAxis(virvo::mat4 const& mv, float& zx, float& zy, float& zz) const;
+    virtual virvo::cartesian_axis< 3 > getPrincipalViewingAxis(virvo::mat4 const& mv, float& zx, float& zy, float& zz) const;
 
     // Returns the current render target
     virvo::RenderTarget const* getRenderTarget() const {

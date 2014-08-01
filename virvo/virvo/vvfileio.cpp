@@ -52,6 +52,7 @@
 #include <ctype.h>
 #include <cstring>
 #include <algorithm>
+#include <limits>
 
 #include "vvfileio.h"
 #include "vvtoolshed.h"
@@ -1796,11 +1797,11 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   // Read all time step data but don't create volume yet:
   for (size_t i=0; i<3; ++i)
   {
-    boxMin[i] =  VV_FLT_MAX;
-    boxMax[i] = -VV_FLT_MAX;
+    boxMin[i] =  std::numeric_limits< float >::max();
+    boxMax[i] = -std::numeric_limits< float >::max();
   }
-  globalMin =  VV_FLT_MAX;
-  globalMax = -VV_FLT_MAX;
+  globalMin =  std::numeric_limits< float >::max();
+  globalMax = -std::numeric_limits< float >::max();
   for(;;)
   {
     // Parse header:
@@ -1839,8 +1840,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     timesteps.append(new ParticleTimestep(numParticles), vvSLNode<ParticleTimestep*>::NORMAL_DELETE);
     cerr << "Reading " << numParticles << " particles" << endl;
 
-    timesteps.getData()->min = VV_FLT_MAX;
-    timesteps.getData()->max = -VV_FLT_MAX;
+    timesteps.getData()->min =  std::numeric_limits< float >::max();
+    timesteps.getData()->max = -std::numeric_limits< float >::max();
 
     // Load particles, but don't create the volume yet:
     for (size_t i=0; i<numParticles; ++i)
@@ -2035,11 +2036,11 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   // Initialize variables:
   for (size_t i=0; i<3; ++i)
   {
-    boxMin[i] =  VV_FLT_MAX;
-    boxMax[i] = -VV_FLT_MAX;
+    boxMin[i] =  std::numeric_limits< float >::max();
+    boxMax[i] = -std::numeric_limits< float >::max();
   }
-  globalMin =  VV_FLT_MAX;
-  globalMax = -VV_FLT_MAX;
+  globalMin =  std::numeric_limits< float >::max();
+  globalMax = -std::numeric_limits< float >::max();
 
   // Loop thru time steps:
   for(;;)
@@ -2062,8 +2063,8 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     xpos.clear();
     ypos.clear();
     zpos.clear();
-    minVal =  VV_FLT_MAX;
-    maxVal = -VV_FLT_MAX;
+    minVal =  std::numeric_limits< float >::max();
+    maxVal = -std::numeric_limits< float >::max();
     val = 0.f;
 
     // Load particles, but don't create the volume yet:
@@ -3108,7 +3109,7 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
 
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
   if (!machineBigEndian) vd->toggleEndianness();
-  vd->flip(vvVecmath::Y_AXIS);
+  vd->flip(virvo::cartesian_axis< 3 >::Y);
 
   fclose(fp);
   return OK;

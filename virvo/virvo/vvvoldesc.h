@@ -32,7 +32,6 @@
 
 #include "vvexport.h"
 #include "vvinttypes.h"
-#include "vvvecmath.h"
 #include "vvtransfunc.h"
 #include "vvsllist.h"
 
@@ -249,8 +248,8 @@ class VIRVOEXPORT vvVolDesc
     void   bitShiftData(int, int frame=-1, bool=false);
     void   invert();
     void   convertRGB24toRGB8();
-    void   flip(vvVecmath::AxisType);
-    void   rotate(vvVecmath::AxisType, int);
+    void   flip(virvo::cartesian_axis< 3 > axis);
+    void   rotate(virvo::cartesian_axis< 3 > axis, int dir);
     void   convertRGBPlanarToRGBInterleaved(int frame=-1);
     void   toggleEndianness(int frame=-1);
     void   crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s);
@@ -299,9 +298,9 @@ class VIRVOEXPORT vvVolDesc
     size_t serializeAttributes(uint8_t* = NULL) const;
     void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uint8_t*, int=0, int=0);
-    void   extractSliceData(int, vvVecmath::AxisType, size_t slice, uint8_t*);
-    void   makeSliceImage(int, vvVecmath::AxisType, size_t slice, uint8_t*);
-    void   getVolumeSize(vvVecmath::AxisType, size_t&, size_t&, size_t&);
+    void   extractSliceData(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*);
+    void   makeSliceImage(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*);
+    void   getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t&, size_t&, size_t&);
     void   deinterlace();
     void   findMinMax(size_t channel, float&, float&);
     int    findNumValue(int, float);

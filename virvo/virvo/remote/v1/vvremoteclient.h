@@ -25,6 +25,7 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
+#include "vvvecmath.h"
 
 #include <boost/shared_ptr.hpp>
 
