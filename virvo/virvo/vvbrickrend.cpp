@@ -18,6 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "math/math.h"
+
 #include "vvbrickrend.h"
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
@@ -100,14 +102,14 @@ bool vvBrickRend::buildBspTree(size_t numBricks)
    return (_bspTree != NULL);
 }
 
-void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aabb, size_t padding)
+void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::base_aabb< ssize_t > const& box, size_t padding)
 {
   vvDebugMsg::msg(3, "vvBrickRend::setVisibleRegion()");
 
-  renderer->setParameter(vvRenderer::VV_VISIBLE_REGION, aabb);
+  renderer->setParameter(vvRenderer::VV_VISIBLE_REGION, box);
 
-  vvssize3 minval = aabb.getMin();
-  vvssize3 maxval = aabb.getMax();
+  virvo::vector< 3, ssize_t > minval = box.min;
+  virvo::vector< 3, ssize_t > maxval = box.max;
   for (size_t j = 0; j < 3; ++j)
   {
     if (minval[j] > 0)
@@ -120,7 +122,7 @@ void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aa
       maxval[j] += padding;
     }
   }
-  renderer->setParameter(vvRenderer::VV_PADDING_REGION, virvo::AABBss(minval, maxval));
+  renderer->setParameter(vvRenderer::VV_PADDING_REGION, virvo::base_aabb< ssize_t >(minval, maxval));
 
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

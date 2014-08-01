@@ -12,7 +12,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvaabb.h"
 #include "vvdebugmsg.h"
 #include "vvmacros.h"
 #include "vvpthread.h"
@@ -142,19 +141,19 @@ struct Ray
 VV_FORCE_INLINE float_type intersectBox(const Ray& ray, const AABB& aabb, float_type* tnear, float_type* tfar)
 {
   // compute intersection of ray with all six bbox planes
-  Vec3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
-  float_type t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
-  float_type t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
+  Vec3 invR(1.0f / ray.d.x, 1.0f / ray.d.y, 1.0f / ray.d.z);
+  float_type t1 = (aabb.min.x - ray.o.x) * invR.x;
+  float_type t2 = (aabb.max.x - ray.o.x) * invR.x;
   float_type tmin = min(t1, t2);
   float_type tmax = max(t1, t2);
 
-  t1 = (aabb.getMin()[1] - ray.o[1]) * invR[1];
-  t2 = (aabb.getMax()[1] - ray.o[1]) * invR[1];
+  t1 = (aabb.min.y - ray.o.y) * invR.y;
+  t2 = (aabb.max.y - ray.o.y) * invR.y;
   tmin = max(min(t1, t2), tmin);
   tmax = min(max(t1, t2), tmax);
 
-  t1 = (aabb.getMin()[2] - ray.o[2]) * invR[2];
-  t2 = (aabb.getMax()[2] - ray.o[2]) * invR[2];
+  t1 = (aabb.min.z - ray.o.z) * invR.z;
+  t2 = (aabb.max.z - ray.o.z) * invR.z;
   tmin = max(min(t1, t2), tmin);
   tmax = min(max(t1, t2), tmax);
 
@@ -377,9 +376,8 @@ void vvSoftRayRend::renderVolumeGL()
   vp[2] = rt->width();
   vp[3] = rt->height();
 
-  vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
-  vd->getBoundingBox(aabb);
-  virvo::recti r = virvo::bounds(aabb, mv, pr, vp);
+  virvo::aabb bbox = vd->getBoundingBox();
+  virvo::recti r = virvo::bounds(bbox, mv, pr, vp);
 
   impl_->raw    = vd->getRaw(vd->getCurrentFrame());
   impl_->colors = reinterpret_cast<float*>(rt->deviceColor());
@@ -390,9 +388,9 @@ void vvSoftRayRend::renderVolumeGL()
   rect.bottom = r[1];
   rect.top    = r[1] + r[3];
 
-  virvo::AABBss const& vr         = getParameter(vvRenderer::VV_VISIBLE_REGION);
-  virvo::ssize3 minvox            = vr.getMin();
-  virvo::ssize3 maxvox            = vr.getMax();
+  virvo::base_aabb< ssize_t > const& vr      = getParameter(vvRenderer::VV_VISIBLE_REGION);
+  virvo::vector< 3, ssize_t > minvox         = vr.min;
+  virvo::vector< 3, ssize_t > maxvox         = vr.max;
   for (size_t i = 0; i < 3; ++i)
   {
     minvox[i] = std::max(minvox[i], ssize_t(0));

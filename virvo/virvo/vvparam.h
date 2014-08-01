@@ -29,7 +29,6 @@
 
 #include "vvinttypes.h"
 #include "vvcolor.h"
-#include "vvaabb.h"
 
 #include <cassert>
 #include <stdexcept>
@@ -157,14 +156,14 @@ public:
     case VV_VEC3ULL:  save_as< virvo::vector< 3, unsigned long long >   >(a); return;
     case VV_VEC4F:    save_as< virvo::vector< 4, float >                >(a); return;
     case VV_COLOR:    save_as< vvColor                                  >(a); return;
-    case VV_AABBF:    save_as< virvo::AABBf                             >(a); return;
-    case VV_AABBD:    save_as< virvo::AABBd                             >(a); return;
-    case VV_AABBI:    save_as< virvo::AABBi                             >(a); return;
-    case VV_AABBUI:   save_as< virvo::AABBui                            >(a); return;
-    case VV_AABBL:    save_as< virvo::AABBl                             >(a); return;
-    case VV_AABBUL:   save_as< virvo::AABBul                            >(a); return;
-    case VV_AABBLL:   save_as< virvo::AABBll                            >(a); return;
-    case VV_AABBULL:  save_as< virvo::AABBull                           >(a); return;
+    case VV_AABBF:    save_as< virvo::base_aabb< float >                >(a); return;
+    case VV_AABBD:    save_as< virvo::base_aabb< double >               >(a); return;
+    case VV_AABBI:    save_as< virvo::base_aabb< int >                  >(a); return;
+    case VV_AABBUI:   save_as< virvo::base_aabb< unsigned int >         >(a); return;
+    case VV_AABBL:    save_as< virvo::base_aabb< long >                 >(a); return;
+    case VV_AABBUL:   save_as< virvo::base_aabb< unsigned long >        >(a); return;
+    case VV_AABBLL:   save_as< virvo::base_aabb< long long >            >(a); return;
+    case VV_AABBULL:  save_as< virvo::base_aabb< unsigned long long >   >(a); return;
     //
     // NOTE:
     //
@@ -218,14 +217,14 @@ public:
     case VV_VEC3ULL:  load_as< virvo::vector< 3, unsigned long long >   >(a); return;
     case VV_VEC4F:    load_as< virvo::vector< 3, float >                >(a); return;
     case VV_COLOR:    load_as< vvColor                                  >(a); return;
-    case VV_AABBF:    load_as< virvo::AABBf                             >(a); return;
-    case VV_AABBD:    load_as< virvo::AABBd                             >(a); return;
-    case VV_AABBI:    load_as< virvo::AABBi                             >(a); return;
-    case VV_AABBUI:   load_as< virvo::AABBui                            >(a); return;
-    case VV_AABBL:    load_as< virvo::AABBl                             >(a); return;
-    case VV_AABBUL:   load_as< virvo::AABBul                            >(a); return;
-    case VV_AABBLL:   load_as< virvo::AABBll                            >(a); return;
-    case VV_AABBULL:  load_as< virvo::AABBull                           >(a); return;
+    case VV_AABBF:    load_as< virvo::base_aabb< float >                >(a); return;
+    case VV_AABBD:    load_as< virvo::base_aabb< double >               >(a); return;
+    case VV_AABBI:    load_as< virvo::base_aabb< int >                  >(a); return;
+    case VV_AABBUI:   load_as< virvo::base_aabb< unsigned int >         >(a); return;
+    case VV_AABBL:    load_as< virvo::base_aabb< long >                 >(a); return;
+    case VV_AABBUL:   load_as< virvo::base_aabb< unsigned long >        >(a); return;
+    case VV_AABBLL:   load_as< virvo::base_aabb< long long >            >(a); return;
+    case VV_AABBULL:  load_as< virvo::base_aabb< unsigned long long >   >(a); return;
     //
     // NOTE:
     //
@@ -404,49 +403,49 @@ public:
   {
   }
 
-  vvParam(const virvo::AABBf& val)
+  vvParam(virvo::base_aabb< float > const& val)
     : type(VV_AABBF)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBd& val)
+  vvParam(virvo::base_aabb< double > const& val)
     : type(VV_AABBD)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBi& val)
+  vvParam(virvo::base_aabb< int > const& val)
     : type(VV_AABBI)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBui& val)
+  vvParam(virvo::base_aabb< unsigned int > const& val)
     : type(VV_AABBUI)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBl& val)
+  vvParam(virvo::base_aabb< long > const& val)
     : type(VV_AABBL)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBul& val)
+  vvParam(virvo::base_aabb< unsigned long > const& val)
     : type(VV_AABBUL)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBll& val)
+  vvParam(virvo::base_aabb< long long > const& val)
     : type(VV_AABBLL)
     , value(val)
   {
   }
 
-  vvParam(const virvo::AABBull& val)
+  vvParam(virvo::base_aabb< unsigned long long > const& val)
     : type(VV_AABBULL)
     , value(val)
   {
@@ -560,36 +559,36 @@ public:
     return boost::any_cast<vvColor>(value);
   }
 
-  virvo::AABBf asAABBf() const {
-    return boost::any_cast<virvo::AABBf>(value);
+  virvo::base_aabb< float > asAABBf() const {
+    return boost::any_cast< virvo::base_aabb< float > >(value);
   }
 
-  virvo::AABBd asAABBd() const {
-    return boost::any_cast<virvo::AABBd>(value);
+  virvo::base_aabb< double > asAABBd() const {
+    return boost::any_cast< virvo::base_aabb< double > >(value);
   }
 
-  virvo::AABBi asAABBi() const {
-    return boost::any_cast<virvo::AABBi>(value);
+  virvo::base_aabb< int > asAABBi() const {
+    return boost::any_cast< virvo::base_aabb< int > >(value);
   }
 
-  virvo::AABBui asAABBui() const {
-    return boost::any_cast<virvo::AABBui>(value);
+  virvo::base_aabb< unsigned int > asAABBui() const {
+    return boost::any_cast< virvo::base_aabb< unsigned int > >(value);
   }
 
-  virvo::AABBl asAABBl() const {
-    return boost::any_cast<virvo::AABBl>(value);
+  virvo::base_aabb< long > asAABBl() const {
+    return boost::any_cast< virvo::base_aabb< long > >(value);
   }
 
-  virvo::AABBul asAABBul() const {
-    return boost::any_cast<virvo::AABBul>(value);
+  virvo::base_aabb< unsigned long > asAABBul() const {
+    return boost::any_cast< virvo::base_aabb< unsigned long > >(value);
   }
 
-  virvo::AABBll asAABBll() const {
-    return boost::any_cast<virvo::AABBll>(value);
+  virvo::base_aabb< long long > asAABBll() const {
+    return boost::any_cast< virvo::base_aabb< long long > >(value);
   }
 
-  virvo::AABBull asAABBull() const {
-    return boost::any_cast<virvo::AABBull>(value);
+  virvo::base_aabb< unsigned long long >  asAABBull() const {
+    return boost::any_cast< virvo::base_aabb< unsigned long long > >(value);
   }
 
   operator bool() const {
@@ -700,35 +699,35 @@ public:
     return asColor();
   }
 
-  operator virvo::AABBf() const {
+  operator virvo::base_aabb< float >() const {
     return asAABBf();
   }
 
-  operator virvo::AABBd() const {
+  operator virvo::base_aabb< double >() const {
     return asAABBd();
   }
 
-  operator virvo::AABBi() const {
+  operator virvo::base_aabb< int >() const {
     return asAABBi();
   }
 
-  operator virvo::AABBui() const {
+  operator virvo::base_aabb< unsigned int >() const {
     return asAABBui();
   }
 
-  operator virvo::AABBl() const {
+  operator virvo::base_aabb< long >() const {
     return asAABBl();
   }
 
-  operator virvo::AABBul() const {
+  operator virvo::base_aabb< unsigned long >() const {
     return asAABBul();
   }
 
-  operator virvo::AABBll() const {
+  operator virvo::base_aabb< long long >() const {
     return asAABBll();
   }
 
-  operator virvo::AABBull() const {
+  operator virvo::base_aabb< unsigned long long >() const {
     return asAABBull();
   }
 

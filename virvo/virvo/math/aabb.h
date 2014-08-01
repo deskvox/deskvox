@@ -20,6 +20,7 @@ class base_aabb
 {
 public:
 
+    typedef T value_type;
     typedef vector< 3, T > vec_type;
 #if VV_CXXLIB_HAS_HDR_ARRAY
     typedef std::array< vec_type, 8 > vertex_list;
@@ -30,21 +31,11 @@ public:
     vec_type min;
     vec_type max;
 
-    inline base_aabb(vec_type const& min, vec_type const& max)
-        : min(min)
-        , max(max)
-    {
-    }
+    base_aabb();
+    base_aabb(vec_type const& min, vec_type const& max);
 
-    inline vec_type getMin() const
-    {
-        return min;
-    }
-
-    inline vec_type getMax() const
-    {
-        return max;
-    }
+    vec_type center() const;
+    vec_type size() const;
 
     bool contains(vec_type const& v) const;
 
@@ -54,6 +45,6 @@ public:
 
 #include "detail/aabb.inl"
 
-#endif
+#endif // VV_MATH_AABB_H
 
 

@@ -22,12 +22,17 @@
 #include "vvibr.h"
 
 
-void virvo::ibr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
-                           const vvAABB& aabb, float& minval, float& maxval)
+namespace virvo
 {
-  vec4f center4(aabb.getCenter()[0], aabb.getCenter()[1], aabb.getCenter()[2], 1.0f);
-  vec4f min4(aabb.getMin()[0], aabb.getMin()[1], aabb.getMin()[2], 1.0f);
-  vec4f max4(aabb.getMax()[0], aabb.getMax()[1], aabb.getMax()[2], 1.0f);
+namespace ibr
+{
+
+void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
+                    aabb const& bbox, float& minval, float& maxval)
+{
+  vec4 center4(bbox.center(), 1.0f);
+  vec4 min4(bbox.min, 1.0f);
+  vec4 max4(bbox.max, 1.0f);
 
   vvVector4 tmp( center4 );     // TODO
   tmp.multiply(mv);
@@ -39,14 +44,14 @@ void virvo::ibr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   tmp.multiply(mv);
   max4 = tmp;                   // TODO
 
-  vec3f center(center4[0], center4[1], center4[2]);
-  vec3f min3(min4[0], min4[1], min4[2]);
-  vec3f max3(max4[0], max4[1], max4[2]);
+  vec3 center(center4[0], center4[1], center4[2]);
+  vec3 min3(min4[0], min4[1], min4[2]);
+  vec3 max3(max4[0], max4[1], max4[2]);
 
   float radius = length(max3 - min3) * 0.5f;
 
   // Depth buffer of ibrPlanes
-  vec3f scal(center);
+  vec3 scal(center);
   scal = normalize(scal) * radius;
   min3 = center - scal;
   max3 = center + scal;
@@ -67,9 +72,9 @@ void virvo::ibr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   maxval = (max3[2]+1.f) * 0.5f;
 }
 
-vvMatrix virvo::ibr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                                  recti const& vp,
-                                  const float depthRangeMin, const float depthRangeMax)
+vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
+                       recti const& vp,
+                       const float depthRangeMin, const float depthRangeMax)
 {
   vvMatrix invModelviewProjection = pr * mv;
   invModelviewProjection.invert();
@@ -79,7 +84,7 @@ vvMatrix virvo::ibr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
     * calcDepthScaleMatrix(depthRangeMin, depthRangeMax);
 }
 
-vvMatrix virvo::ibr::calcViewportMatrix(recti const& vp)
+vvMatrix calcViewportMatrix(recti const& vp)
 {
   vvMatrix result;
   result.identity();
@@ -92,7 +97,7 @@ vvMatrix virvo::ibr::calcViewportMatrix(recti const& vp)
   return result;
 }
 
-vvMatrix virvo::ibr::calcDepthScaleMatrix(const float depthRangeMin, const float depthRangeMax)
+vvMatrix calcDepthScaleMatrix(const float depthRangeMin, const float depthRangeMax)
 {
   vvMatrix result;
   result.identity();
@@ -100,3 +105,9 @@ vvMatrix virvo::ibr::calcDepthScaleMatrix(const float depthRangeMin, const float
   result.translate(0.0f, 0.0f, depthRangeMin);
   return result;
 }
+
+
+} // ibr
+} // virvo
+
+

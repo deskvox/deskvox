@@ -6,6 +6,7 @@
 #include "simd/veci.h"
 
 #include "aabb.h"
+#include "axis.h"
 #include "output.h"
 #include "matrix.h"
 #include "rectangle.h"

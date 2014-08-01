@@ -113,7 +113,7 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
   vvDebugMsg::msg(3, "vvSerBrickRend::createRenderers()");
 
   // start out with empty rendering regions
-  virvo::AABBss emptyBox = virvo::AABBss(virvo::ssize3(), virvo::ssize3());
+  virvo::base_aabb< ssize_t > emptyBox(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(ssize_t(0)));
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
@@ -131,7 +131,7 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
 
   for (size_t i = 0; i < _renderers.size(); ++i)
   {
-    virvo::AABBss const aabb = _bspTree->getLeafs().at(i)->getAabb();
+    typename vvBspTree::box_type aabb = _bspTree->getLeafs().at(i)->getAabb();
 
     setVisibleRegion(_renderers.at(i), aabb);
   }

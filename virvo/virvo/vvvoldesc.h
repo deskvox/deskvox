@@ -36,11 +36,6 @@
 #include "vvtransfunc.h"
 #include "vvsllist.h"
 
-template <typename T>
-class vvBaseAABB;
-typedef vvBaseAABB<float> vvAABBf;
-typedef vvAABBf vvAABB;
-
 //============================================================================
 // Class Definition
 //============================================================================
@@ -231,7 +226,7 @@ class VIRVOEXPORT vvVolDesc
     size_t getSliceVoxels() const;
     size_t getFrameVoxels() const;
     size_t getMovieVoxels() const;
-    void getBoundingBox(vvAABB& aabb) const;
+    virvo::aabb getBoundingBox() const;
     /** Legacy function, returns current frame
      @param  default to -1 in the past meant current frame */
     uint8_t* getRaw(int frame = -1) const;

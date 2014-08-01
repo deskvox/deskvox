@@ -23,7 +23,6 @@
 
 #include "math/forward.h"
 
-#include "vvaabb.h"
 #include "vvvecmath.h"
 
 #include <iostream>
@@ -35,7 +34,7 @@ namespace ibr
 {
 
 void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
-                    const vvAABB& aabb, float& minval, float& maxval);
+                    aabb const& bbox, float& minval, float& maxval);
 vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
                        virvo::recti const& vp,
                        float depthRangeMin, float depthRangeMax);

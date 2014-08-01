@@ -21,6 +21,8 @@
 #ifndef VV_BRICKREND_H
 #define VV_BRICKREND_H
 
+#include "math/forward.h"
+
 #include "vvrenderer.h"
 #include "vvrendererfactory.h"
 #include "vvvoldesc.h"
@@ -66,7 +68,7 @@ protected:
 
   /*! update visibible region of renderer with border padding for interpolation
    */
-  static void setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aabb, size_t padding = 1);
+  static void setVisibleRegion(vvRenderer* renderer, virvo::base_aabb< ssize_t > const& box, size_t padding = 1);
 };
 
 #endif // VV_BRICKREND_H

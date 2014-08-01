@@ -51,6 +51,14 @@ inline void serialize(A& a, virvo::vector< 4, T >& v, unsigned /* version */ )
 
 
 template < typename A, typename T >
+inline void serialize(A& a, virvo::base_aabb< T >& b, unsigned /* version */ )
+{
+    a & b.min;
+    a & b.max;
+}
+
+
+template < typename A, typename T >
 inline void serialize(A& a, virvo::rectangle< virvo::xywh_layout, T >& r, unsigned /* version */ )
 {
     a & r.x;

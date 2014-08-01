@@ -363,7 +363,8 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     if (_socketIO->putEvent(virvo::ParameterAABBI) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
-      _socketIO->putAABBi(value);
+      std::cerr << "TODO: " << __FILE__ << ":" << __LINE__ << std::endl;
+//       _socketIO->putAABBi(value);
     }
     return;
   }

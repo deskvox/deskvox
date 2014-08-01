@@ -31,8 +31,9 @@
 #include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 
+using virvo::aabb;
 using virvo::recti;
-using virvo::vec2f;
+using virvo::vec2;
 
 
 vvIbrServer::vvIbrServer(vvSocket *socket)
@@ -64,16 +65,14 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   renderer->endFrame();
 
   // Compute depth range
-  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-
-  renderer->getVolDesc()->getBoundingBox(aabb);
+  aabb box = renderer->getVolDesc()->getBoundingBox();
 
   float drMin = 0.0f;
   float drMax = 0.0f;
 
-  virvo::ibr::calcDepthRange(pr, mv, aabb, drMin, drMax);
+  virvo::ibr::calcDepthRange(pr, mv, box, drMin, drMax);
 
-  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vec2f(drMin, drMax));
+  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vec2(drMin, drMax));
 
   virvo::RenderTarget* rt = renderer->getRenderTarget();
 

@@ -13,11 +13,17 @@ namespace virvo
 // Declarations
 //
 
+template < int Dim >
+class cartesian_axis;
+
 template < size_t Dim, typename T >
 class vector;
 
 template < size_t N /* rows */, size_t M /* columns */, typename T >
 class matrix;
+
+template < typename T >
+class base_aabb;
 
 template
 <
@@ -58,6 +64,12 @@ typedef vector< 4, float >                  vec4;
 typedef matrix< 4, 4, float >               mat4f;
 typedef matrix< 4, 4, double >              mat4d;
 typedef matrix< 4, 4, float >               mat4;
+
+
+typedef base_aabb< int >                    aabbi;
+typedef base_aabb< float >                  aabbf;
+typedef base_aabb< double >                 aabbd;
+typedef base_aabb< float >                  aabb;
 
 
 typedef rectangle< xywh_layout, int >       recti;

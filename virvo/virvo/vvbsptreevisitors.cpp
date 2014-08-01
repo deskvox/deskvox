@@ -110,8 +110,8 @@ void vvShowBricksVisitor::visit(vvVisitable* obj) const
   if (node->isLeaf())
   {
     // convert voxel to obj coordinates
-    vvAABB objAabb = vvAABB(_vd->objectCoords(node->getAabb().getMin()),
-                            _vd->objectCoords(node->getAabb().getMax()));
+    vvAABB objAabb(_vd->objectCoords(node->getAabb().min),
+                            _vd->objectCoords(node->getAabb().max));
 
     const vvAABB::vvBoxCorners& vertices = objAabb.getVertices();
 

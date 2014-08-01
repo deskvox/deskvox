@@ -59,6 +59,7 @@ using namespace std;
 
 namespace gl = virvo::gl;
 
+using virvo::aabb;
 using virvo::mat4;
 using virvo::vec3f;
 using virvo::vec3;
@@ -369,7 +370,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
-  virvo::vector< 3, ssize_t > vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  virvo::vector< 3, ssize_t > vox = _paddingRegion.max - _paddingRegion.min;
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
@@ -544,7 +545,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   VV_LOG(2) << "Transferring textures to TRAM. Total size [KB]: " << vd->frames * texSize / 1024 << std::endl;
 
   virvo::vector< 3, ssize_t > offsets(offsetX, offsetY, offsetZ);
-  offsets += virvo::vector< 3, ssize_t >(_paddingRegion.getMin());
+  offsets += _paddingRegion.min;
 
   bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
   if (sizeX != vd->vox[0])
@@ -806,8 +807,8 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   if (!extTex3d) return;                          // needs 3D texturing extension
 
   // determine visible size and half object size as shortcut
-  virvo::vector< 3, ssize_t > minVox = _visibleRegion.getMin();
-  virvo::vector< 3, ssize_t > maxVox = _visibleRegion.getMax();
+  virvo::vector< 3, ssize_t > minVox = _visibleRegion.min;
+  virvo::vector< 3, ssize_t > maxVox = _visibleRegion.max;
   for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], ssize_t(0));
@@ -816,7 +817,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   vec3 minCorner = vd->objectCoords(minVox);
   vec3 maxCorner = vd->objectCoords(maxVox);
   vissize = maxCorner - minCorner;
-  vec3 center = vvAABB(minCorner, maxCorner).getCenter();
+  vec3 center = aabb(minCorner, maxCorner).center();
 
   for (size_t i=0; i<3; ++i)
   {
@@ -1162,7 +1163,7 @@ void vvTexRend::renderVolumeGL()
 
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
-  virvo::vector< 3, ssize_t > vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  virvo::vector< 3, ssize_t > vox = _paddingRegion.max - _paddingRegion.min;
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
@@ -1190,8 +1191,8 @@ void vvTexRend::renderVolumeGL()
   for (size_t i = 0; i < 3; ++i)
   {
     // padded borders for (trilinear) interpolation
-    size_t paddingLeft = size_t(abs(ptrdiff_t(_visibleRegion.getMin()[i] - _paddingRegion.getMin()[i])));
-    size_t paddingRight = size_t(abs(ptrdiff_t(_visibleRegion.getMax()[i] - _paddingRegion.getMax()[i])));
+    size_t paddingLeft = size_t(abs(ptrdiff_t(_visibleRegion.min[i] - _paddingRegion.min[i])));
+    size_t paddingRight = size_t(abs(ptrdiff_t(_visibleRegion.max[i] - _paddingRegion.max[i])));
     // a voxels size
     const float vsize = 1.0f / (float)texels[i];
     // half a voxels size

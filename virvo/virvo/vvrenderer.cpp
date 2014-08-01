@@ -46,6 +46,7 @@
 #include "private/vvlog.h"
 
 namespace gl = virvo::gl;
+using virvo::aabb;
 using virvo::mat4;
 using virvo::vec3f;
 using virvo::vec3;
@@ -95,8 +96,8 @@ vvRenderState::vvRenderState()
   , _showTexture(true)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
-  , _visibleRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
-  , _paddingRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
+  , _visibleRegion(virvo::base_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
+  , _paddingRegion(virvo::base_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
   , _interpolation(virvo::Linear)
   , _earlyRayTermination(true)
@@ -1545,11 +1546,9 @@ void vvRenderer::renderBoundingBox() const
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
 
-  vvAABB bb(vec3f(0.0f), vec3f(0.0f));
+  aabb bb = vd->getBoundingBox();
 
-  vd->getBoundingBox(bb);
-
-  drawBoundingBox(bb.getMax() - bb.getMin(), vd->pos, _boundColor);
+  drawBoundingBox(bb.max - bb.min, vd->pos, _boundColor);
 }
 
 //============================================================================

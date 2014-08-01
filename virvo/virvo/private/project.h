@@ -3,8 +3,6 @@
 
 #include "math/math.h"
 
-#include "vvaabb.h"
-
 
 namespace virvo
 {
@@ -33,7 +31,7 @@ void unproject(vector< 3, T >* obj, vector< 3, T > const& win, matrix< 4, 4, T >
 /*! calc bounding rect of box in screen space coordinates
  */
 template < typename T >
-recti bounds(vvBaseAABB< T > const& aabb, matrix< 4, 4, T > const& modelview,
+recti bounds(aabb const& box, matrix< 4, 4, T > const& modelview,
     matrix< 4, 4, T > const& projection, recti const& viewport);
 
 

@@ -28,6 +28,7 @@
 #include "vvparam.h"
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
+#include "vvvecmath.h"
 
 #include <memory>
 
@@ -173,8 +174,8 @@ protected:
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
-  virvo::AABBss _visibleRegion;                 ///< part of the vd that is visible and thus rendered
-  virvo::AABBss _paddingRegion;                 ///< padding region for interpolation
+  virvo::base_aabb< ssize_t > _visibleRegion;   ///< part of the vd that is visible and thus rendered
+  virvo::base_aabb< ssize_t > _paddingRegion;   ///< padding region for interpolation
   bool _opacityCorrection;                      ///< true = opacity correction on
   virvo::tex_filter_mode _interpolation;
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered

@@ -37,9 +37,11 @@
 #include <sstream>
 
 namespace gl = virvo::gl;
+using virvo::aabb;
 using virvo::mat4;
 using virvo::recti;
 using virvo::vec3f;
+using virvo::vec3;
 
 
 struct vvParBrickRend::Thread
@@ -47,7 +49,6 @@ struct vvParBrickRend::Thread
   Thread()
     : parbrickrend(NULL)
     , renderer(NULL)
-    , aabb(vvVector3(), vvVector3())
   {
   }
 
@@ -65,7 +66,7 @@ struct vvParBrickRend::Thread
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
 
-  vvAABB aabb;
+  aabb bbox;
 
   mat4 mv;
   mat4 pr;
@@ -117,7 +118,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   // start out with empty rendering regions
-  virvo::AABBss emptyBox = virvo::AABBss(virvo::ssize3(), virvo::ssize3());
+  virvo::base_aabb< ssize_t > emptyBox(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(ssize_t(0)));
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
@@ -168,8 +169,8 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     thread->barrier = barrier;
     thread->mutex = mutex;
 
-    thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMin()),
-                          vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMax()));
+    thread->bbox = aabb(vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().min),
+                        vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().max));
 
     thread->mv = gl::getModelviewMatrix();
     thread->pr = gl::getProjectionMatrix();
@@ -474,7 +475,7 @@ void vvParBrickRend::render(Thread* thread)
   thread->renderer->renderVolumeGL();
   recti vp = gl::getViewport();
 
-  recti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
+  recti bounds = virvo::bounds(thread->bbox, thread->mv, thread->pr, vp);
 
   (*thread->texture.rect)[0] = bounds[0];
   (*thread->texture.rect)[1] = bounds[1];

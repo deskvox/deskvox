@@ -47,7 +47,7 @@ inline void unproject(vector< 3, T >* obj, vector< 3, T > const& win, matrix< 4,
 
 
 template < typename T >
-recti bounds(vvBaseAABB< T > const& aabb, matrix< 4, 4, T > const& modelview,
+recti bounds(aabb const& box, matrix< 4, 4, T > const& modelview,
     matrix< 4, 4, T > const& projection, recti const& viewport)
 {
 
@@ -57,7 +57,7 @@ recti bounds(vvBaseAABB< T > const& aabb, matrix< 4, 4, T > const& modelview,
     T maxy = -std::numeric_limits< T >::max();
 
 
-    const typename vvBaseAABB< T >::vvBoxCorners& vertices = aabb.getVertices();
+    typename base_aabb< T >::vertex_list const& vertices = compute_vertices(box);
 
     for (size_t i = 0; i < 8; ++i)
     {

@@ -239,7 +239,8 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
       {
-        renderer->setParameter((vvRenderState::ParameterType)param, value);
+        std::cerr << "TODO: " << __FILE__ << ":" << __LINE__ << std::endl;
+//        renderer->setParameter((vvRenderState::ParameterType)param, value);
       }
     }
     break;

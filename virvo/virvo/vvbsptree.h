@@ -21,7 +21,8 @@
 #ifndef VV_BSPTREE_H
 #define VV_BSPTREE_H
 
-#include "vvaabb.h"
+#include "math/math.h"
+
 #include "vvvecmath.h"
 #include "vvvisitor.h"
 #include "vvinttypes.h"
@@ -33,7 +34,10 @@ class vvVisitor;
 class vvBspNode : public vvVisitable
 {
 public:
-  vvBspNode(virvo::AABBss const& aabb);
+
+    typedef virvo::base_aabb< ssize_t > box_type;
+
+  vvBspNode(box_type const& aabb);
   virtual ~vvBspNode();
 
   virtual void accept(vvVisitor* visitor);
@@ -41,12 +45,12 @@ public:
   void addChild(vvBspNode* child);
   bool isLeaf() const;
   void setId(size_t id);
-  void setAabb(virvo::AABBss const& aabb);
+  void setAabb(box_type const& aabb);
 
   size_t getId() const;
   vvBspNode* getChildLeft() const;
   vvBspNode* getChildRight() const;
-  virvo::AABBss const& getAabb() const;
+  box_type const& getAabb() const;
 
   void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                  vvVector3& probePosObj, vvVector3& probeSizeObj) const;
@@ -55,7 +59,7 @@ private:
   vvBspNode* _childLeft;
   vvBspNode* _childRight;
 
-  virvo::AABBss _aabb;
+  box_type _aabb;
 };
 
 /*! \brief Data passed to bsp-tree ctor
@@ -75,6 +79,9 @@ struct vvBspData
 class vvBspTree
 {
 public:
+
+    typedef typename vvBspNode::box_type box_type;
+
   vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data);
   virtual ~vvBspTree();
 

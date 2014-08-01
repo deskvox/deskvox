@@ -86,14 +86,12 @@ void vvIbrServer::renderImage(ConnectionPointer conn, MessagePointer message,
     renderer->endFrame();
 
     // Compute depth range
-    vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-
-    renderer->getVolDesc()->getBoundingBox(aabb);
+    virvo::aabb box = renderer->getVolDesc()->getBoundingBox();
 
     float drMin = 0.0f;
     float drMax = 0.0f;
 
-    virvo::ibr::calcDepthRange(pr, mv, aabb, drMin, drMax);
+    virvo::ibr::calcDepthRange(pr, mv, box, drMin, drMax);
 
     renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, virvo::vec2f(drMin, drMax));
 
@@ -144,14 +142,12 @@ void vvIbrServer::renderImage(ConnectionPointer conn, MessagePointer message,
     renderer->endFrame();
 
     // Compute depth range
-    vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-
-    renderer->getVolDesc()->getBoundingBox(aabb);
+    aabb box = renderer->getVolDesc()->getBoundingBox();
 
     float drMin = 0.0f;
     float drMax = 0.0f;
 
-    vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
+    vvIbr::calcDepthRange(pr, mv, box, drMin, drMax);
 
     renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vvVector2(drMin, drMax));
 

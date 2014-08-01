@@ -38,7 +38,6 @@
 
 #include "math/math.h"
 
-#include "vvaabb.h"
 #include "vvplatform.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
@@ -52,7 +51,9 @@
 
 using namespace std;
 
+using virvo::aabb;
 using virvo::vec3f;
+using virvo::vec3;
 
 const size_t vvVolDesc::DEFAULT_ICON_SIZE = 64;
 const size_t vvVolDesc::NUM_HDR_BINS = 256;
@@ -474,10 +475,10 @@ size_t vvVolDesc::getMovieVoxels() const
 
 //----------------------------------------------------------------------------
 /// Get bounding box of the volume.
-void vvVolDesc::getBoundingBox(vvAABB& aabb) const
+aabb vvVolDesc::getBoundingBox() const
 {
-  vec3f size2 = getSize() * 0.5f;
-  aabb = vvAABB(pos - size2, pos + size2);
+  vec3 size2 = getSize() * 0.5f;
+  return aabb(pos - size2, pos + size2);
 }
 
 //----------------------------------------------------------------------------

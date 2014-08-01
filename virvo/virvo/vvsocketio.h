@@ -25,6 +25,7 @@
 
 #include "math/forward.h"
 
+#include "vvaabb.h"
 #include "vvcolor.h"
 #include "vvexport.h"
 #include "vvremoteevents.h"

@@ -40,6 +40,7 @@
 #include <cstdlib>
 
 namespace gl = virvo::gl;
+using virvo::aabb;
 using virvo::recti;
 
 using virvo::makeMessage;
@@ -206,11 +207,9 @@ bool vvIbrClient::render()
     float drMin = 0.0f;
     float drMax = 0.0f;
 
-    vvAABB aabb = vvAABB(vvVector3(), vvVector3());
+    aabb box = vd->getBoundingBox();
 
-    vd->getBoundingBox(aabb);
-
-    virvo::ibr::calcDepthRange(currentPr, currentMv, aabb, drMin, drMax);
+    virvo::ibr::calcDepthRange(currentPr, currentMv, box, drMin, drMax);
 
     recti vp = gl::getViewport();
 

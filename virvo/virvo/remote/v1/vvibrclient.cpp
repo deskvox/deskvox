@@ -179,9 +179,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   float drMin = 0.0f;
   float drMax = 0.0f;
-  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-  vd->getBoundingBox(aabb);
-  virvo::ibr::calcDepthRange(_currentPr, _currentMv, aabb, drMin, drMax);
+  aabb box = vd->getBoundingBox();
+  virvo::ibr::calcDepthRange(_currentPr, _currentMv, box, drMin, drMax);
   recti vp = virvo::gl::getViewport();
   vvMatrix currentImgMatrix = virvo::ibr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
   bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
