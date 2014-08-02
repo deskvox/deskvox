@@ -87,7 +87,7 @@ public:
   void setParameterArray3f(const std::string& parameterName, const float* array, const int& count);
 
   void setParameterMatrix4f(const std::string& parameterName, const float* mat);
-  void setParameterMatrix4f(const std::string& parameterName, const vvMatrix &mat);
+  void setParameterMatrix4f(const std::string& parameterName, virvo::mat4 const& mat);
 
   void setParameterTex1D(const std::string& parameterName, const unsigned int& ui);
   void setParameterTex2D(const std::string& parameterName, const unsigned int& ui);

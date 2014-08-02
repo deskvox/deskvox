@@ -42,6 +42,8 @@
 #include <cassert>
 #include <cstdio>
 
+using virvo::vec3;
+
 #define TIME_FPS 0
 #define TIME_READS 0
 #define TIME_WRITES 0
@@ -329,7 +331,7 @@ void vvSimpleServer::processObjectDirection(MessagePointer const& message)
 
     // Extract the 3D-vector from the message
     // and set the new direction
-    renderer_->setObjectDirection(message->deserialize<vvVector3>());
+    renderer_->setObjectDirection(message->deserialize<vec3>());
 }
 
 void vvSimpleServer::processParameter(MessagePointer const& message)
@@ -349,7 +351,7 @@ void vvSimpleServer::processPosition(MessagePointer const& message)
 
     // Extract the 3D-vector from the message
     // and set the new direction
-    renderer_->setPosition(message->deserialize<vvVector3>());
+    renderer_->setPosition(message->deserialize<vec3>());
 }
 
 void vvSimpleServer::processRemoteServerType(MessagePointer const& message)
@@ -392,7 +394,7 @@ void vvSimpleServer::processViewingDirection(MessagePointer const& message)
 
     // Extract the 3D-vector from the message
     // and set the new direction
-    renderer_->setViewingDirection(message->deserialize<vvVector3>());
+    renderer_->setViewingDirection(message->deserialize<vec3>());
 }
 
 void vvSimpleServer::processVolume(MessagePointer const& message)

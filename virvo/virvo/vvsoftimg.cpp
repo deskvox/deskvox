@@ -30,12 +30,16 @@ using std::endl;
 #include "vvopengl.h"
 #endif
 #include <assert.h>
+#include "math/math.h"
+#include "private/vvlog.h"
 #include "vvdebugmsg.h"
-#include "vvvecmath.h"
 #include "vvsoftimg.h"
 #include "vvtoolshed.h"
 
 #include "private/vvgltools.h"
+
+using virvo::mat4;
+using virvo::vec3;
 
 const int vvSoftImg::PIXEL_SIZE = 4;
 
@@ -385,7 +389,7 @@ void vvSoftImg::drawBorder(int r, int g, int b)
   @param w        4x4 warp matrix, only 2D components are used
   @param srcImg   source image which is to be warped
 */
-void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
+void vvSoftImg::warp(mat4 const& w, vvSoftImg* srcImg)
 {
    int xs, ys;                                    // source image coordinates
    int i, j;                                      // counters
@@ -397,8 +401,8 @@ void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
 
    vvDebugMsg::msg(3, "vvSoftImg::warp()");
 
-   vvMatrix inv = *w;                             // inverted warp matrix
-   inv.invert();                                  // invert to compute source coords from destination coords
+   mat4 inv = inverse(w);                         // inverted warp matrix
+                                                  // invert to compute source coords from destination coords
 
    inv00 = inv(0, 0);
    inv01 = inv(0, 1);
@@ -438,19 +442,18 @@ void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
 /** Warp the current image to the OpenGL viewport using 2D texture mapping.
   @param w 4x4 warp matrix, only 2D components are used
 */
-void vvSoftImg::warpTex(vvMatrix* w)
+void vvSoftImg::warpTex(mat4 const& w)
 {
 #ifndef VV_REMOTE_RENDERING
    const float ZPOS = 0.0f;                       // texture z position. TODO: make zPos changeable and adjust warp matrix accordingly
    static vvSoftImg* texImg = new vvSoftImg(1,1); // texture image
-   GLfloat glmatrix[16];                          // OpenGL compatible matrix
    GLenum format;                                 // pixel format
    int texWidth, texHeight;                       // texture compatible image size
    bool useOriginalImg;                           // true if no additional image needs to be generated because the original image size is already a power of 2
    vvSoftImg* imgUsed;                            // points to the image to use for the warp
 
    vvDebugMsg::msg(3, "vvSoftImg::warpTex()");
-   if (vvDebugMsg::isActive(3)) w->print("warp matrix");
+   VV_LOG(3) << "warp matrix: " << w;
 
    /* Save intermediate image to file:
      {
@@ -513,8 +516,7 @@ void vvSoftImg::warpTex(vvMatrix* w)
 
    // Modelview matrix becomes warp matrix:
    glMatrixMode(GL_MODELVIEW);
-   w->getGL(glmatrix);
-   glLoadMatrixf(glmatrix);
+   glLoadMatrixf(w.data());
 
    // Projection matrix is identity matrix:
    glMatrixMode(GL_PROJECTION);

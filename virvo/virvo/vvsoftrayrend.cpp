@@ -16,7 +16,6 @@
 #include "vvmacros.h"
 #include "vvpthread.h"
 #include "vvsoftrayrend.h"
-#include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
 #include "math/math.h"

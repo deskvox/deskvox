@@ -49,6 +49,7 @@
 #include "vvshaderprogram.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
+#include "vvvecmath.h"
 
 #include "gl/util.h"
 
@@ -1245,7 +1246,7 @@ void vvTexRend::renderVolumeGL()
 void vvTexRend::activateClippingPlane()
 {
   GLdouble planeEq[4];                            // plane equation
-  vvVector3 clipNormal2;                          // clipping normal pointing to opposite direction
+  vec3 clipNormal2;                               // clipping normal pointing to opposite direction
   float thickness;                                // thickness of single slice clipping plane
 
   vvDebugMsg::msg(3, "vvTexRend::activateClippingPlane()");
@@ -1264,10 +1265,10 @@ void vvTexRend::activateClippingPlane()
   {
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
     clipNormal2 = -clip_plane_normal_;
-    planeEq[0] = -clipNormal2[0];
-    planeEq[1] = -clipNormal2[1];
-    planeEq[2] = -clipNormal2[2];
-    planeEq[3] = clipNormal2.dot(clip_plane_point_) + thickness;
+    planeEq[0] = -clipNormal2.x;
+    planeEq[1] = -clipNormal2.y;
+    planeEq[2] = -clipNormal2.z;
+    planeEq[3] = dot(clipNormal2, clip_plane_point_) + thickness;
     glClipPlane(GL_CLIP_PLANE1, planeEq);
     glEnable(GL_CLIP_PLANE1);
   }

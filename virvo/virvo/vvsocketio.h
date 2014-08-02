@@ -25,14 +25,12 @@
 
 #include "math/forward.h"
 
-#include "vvaabb.h"
 #include "vvcolor.h"
 #include "vvexport.h"
 #include "vvremoteevents.h"
 #include "vvrequestmanagement.h"
 #include "vvsocket.h"
 #include "vvinttypes.h"
-#include "vvvecmath.h"
 #include "vvtransfunc.h"
 
 struct vvMulticastParameters;
@@ -152,8 +150,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putFileName(const std::string& fn) const;
     vvSocket::ErrorType allocateAndGetData(uchar**, int&) const;             //  unknown number and type
     vvSocket::ErrorType putData(uchar*, int) const;
-    vvSocket::ErrorType getMatrix(vvMatrix*) const;
-    vvSocket::ErrorType putMatrix(const vvMatrix*) const;
+    vvSocket::ErrorType getMatrix(virvo::mat4*) const;
+    vvSocket::ErrorType putMatrix(virvo::mat4 const*) const;
     vvSocket::ErrorType getBool(bool& val) const;
     vvSocket::ErrorType putBool(const bool val) const;
     vvSocket::ErrorType getInt32(int32_t& val) const;
@@ -172,8 +170,6 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putVector4(const virvo::vec4f& val) const;
     vvSocket::ErrorType getColor(vvColor& val) const;
     vvSocket::ErrorType putColor(const vvColor& val) const;
-    vvSocket::ErrorType getAABBi(vvAABBi& val) const;
-    vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
     vvSocket::ErrorType getViewport(virvo::recti& val) const;
     vvSocket::ErrorType putViewport(virvo::recti const& val) const;
     vvSocket::ErrorType getWinDims(int& w, int& h) const;

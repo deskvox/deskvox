@@ -25,7 +25,6 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
-#include "vvvecmath.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -78,8 +77,8 @@ protected:
   vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required
-  vvMatrix _currentMv;                                    ///< Current modelview matrix
-  vvMatrix _currentPr;                                    ///< Current projection matrix
+  virvo::mat4 _currentMv;                                    ///< Current modelview matrix
+  virvo::mat4 _currentPr;                                    ///< Current projection matrix
 
 private:
   // NOT copyable!

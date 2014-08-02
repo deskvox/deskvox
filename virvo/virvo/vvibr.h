@@ -23,23 +23,19 @@
 
 #include "math/forward.h"
 
-#include "vvvecmath.h"
-
-#include <iostream>
-
 namespace virvo
 {
 
 namespace ibr
 {
 
-void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
+void calcDepthRange(mat4 const& pr, mat4 const& mv,
                     aabb const& bbox, float& minval, float& maxval);
-vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                       virvo::recti const& vp,
-                       float depthRangeMin, float depthRangeMax);
-vvMatrix calcViewportMatrix(virvo::recti const& vp);
-vvMatrix calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
+mat4 calcImgMatrix(mat4 const& pr, mat4 const& mv,
+                   virvo::recti const& vp,
+                   float depthRangeMin, float depthRangeMax);
+mat4 calcViewportMatrix(virvo::recti const& vp);
+mat4 calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
 
 } // ibr
 

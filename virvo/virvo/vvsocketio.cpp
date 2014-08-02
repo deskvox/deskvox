@@ -28,7 +28,6 @@
 
 #include "math/math.h"
 
-#include "private/vvgltools.h"
 #include "private/vvimage.h"
 #include "private/vvibrimage.h"
 #include "private/vvcompressedvector.h"
@@ -41,6 +40,7 @@
 #include <sstream>
 #include <string>
 
+using virvo::mat4;
 using virvo::vec3f;
 using virvo::vec4f;
 
@@ -737,9 +737,9 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type) c
 
 //----------------------------------------------------------------------------
 /** Gets a Matrix from the socket.
-    @param m  pointer to an object of vvMatrix.
+    @param m  pointer to an object of mat4
 */
-vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m) const
+vvSocket::ErrorType vvSocketIO::getMatrix(mat4* m) const
 {
   if(_socket)
   {
@@ -1065,64 +1065,6 @@ vvSocket::ErrorType vvSocketIO::getColor(vvColor& val) const
 }
 
 //----------------------------------------------------------------------------
-/** Writes a vvAABBi to the socket.
- @param val  the vvAABBi.
-*/
-vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val) const
-{
-  if(_socket)
-  {
-    uchar buffer[24];
-    const vvVector3i minval = val.getMin();
-    const vvVector3i maxval = val.getMax();
-    virvo::serialization::write32(&buffer[0], minval[0]);
-    virvo::serialization::write32(&buffer[4], minval[1]);
-    virvo::serialization::write32(&buffer[8], minval[2]);
-    virvo::serialization::write32(&buffer[12], maxval[0]);
-    virvo::serialization::write32(&buffer[16], maxval[1]);
-    virvo::serialization::write32(&buffer[20], maxval[2]);
-    return _socket->writeData(&buffer[0], 24);
-  }
-  else
-  {
-    return vvSocket::VV_SOCK_ERROR;
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Reads a vvAABBi from the socket.
- @param val  the vvAABBi.
-*/
-vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
-{
-  if(_socket)
-  {
-    uchar buffer[24];
-    vvSocket::ErrorType retval;
-
-    if ((retval =_socket->readData(&buffer[0], 24)) != vvSocket::VV_OK)
-    {
-      return retval;
-    }
-
-    vvVector3i minval;
-    vvVector3i maxval;
-    minval[0] = virvo::serialization::read32(&buffer[0]);
-    minval[1] = virvo::serialization::read32(&buffer[4]);
-    minval[2] = virvo::serialization::read32(&buffer[8]);
-    maxval[0] = virvo::serialization::read32(&buffer[12]);
-    maxval[1] = virvo::serialization::read32(&buffer[16]);
-    maxval[2] = virvo::serialization::read32(&buffer[20]);
-    val = vvAABBi(minval, maxval);
-    return retval;
-  }
-  else
-  {
-    return vvSocket::VV_SOCK_ERROR;
-  }
-}
-
-//----------------------------------------------------------------------------
 /** Writes a virvo::recti to the socket.
  @param val  the virvo::recti.
 */
@@ -1212,9 +1154,9 @@ vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h) const
 
 //----------------------------------------------------------------------------
 /** Writes a Matrix to the socket.
- @param m  pointer to the matrix to write, has to be an object of vvMatrix.
+ @param m  pointer to the matrix to write, has to be an object of mat4.
 */
-vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m) const
+vvSocket::ErrorType vvSocketIO::putMatrix(mat4 const* m) const
 {
   if(_socket)
   {

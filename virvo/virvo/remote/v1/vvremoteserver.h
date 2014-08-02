@@ -21,11 +21,12 @@
 #ifndef VVREMOTESERVER_H
 #define VVREMOTESERVER_H
 
+#include "math/forward.h"
+
 #include "vvexport.h"
 #include "vvremoteevents.h"
 #include "vvsocket.h"
 
-class vvMatrix;
 class vvRenderer;
 class vvSocketIO;
 class vvVolDesc;
@@ -50,7 +51,7 @@ protected:
 
   int _codetype;
 
-  virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) = 0;
+  virtual void renderImage(virvo::mat4 const& pr, virvo::mat4 const& mv, vvRenderer* renderer) = 0;
   virtual void resize(int w, int h) { (void)w; (void)h; }
 private:
   vvRemoteServer::ErrorType initSocket();

@@ -13,7 +13,7 @@ namespace virvo
 // Declarations
 //
 
-template < int Dim >
+template < size_t Dim >
 class cartesian_axis;
 
 template < size_t Dim, typename T >
@@ -21,6 +21,9 @@ class vector;
 
 template < size_t N /* rows */, size_t M /* columns */, typename T >
 class matrix;
+
+template < size_t Dim, typename T >
+class hyper_plane;
 
 template < typename T >
 class base_aabb;
@@ -64,6 +67,12 @@ typedef vector< 4, float >                  vec4;
 typedef matrix< 4, 4, float >               mat4f;
 typedef matrix< 4, 4, double >              mat4d;
 typedef matrix< 4, 4, float >               mat4;
+
+
+typedef hyper_plane< 3, int >               plane3i;
+typedef hyper_plane< 3, float >             plane3f;
+typedef hyper_plane< 3, double >            plane3d;
+typedef hyper_plane< 3, float >             plane3;
 
 
 typedef base_aabb< int >                    aabbi;

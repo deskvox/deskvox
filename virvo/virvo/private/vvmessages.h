@@ -21,9 +21,9 @@
 #ifndef VV_PRIVATE_MESSAGES_H
 #define VV_PRIVATE_MESSAGES_H
 
+#include "../math/math.h"
 #include "../vvparam.h"
 #include "../vvrenderer.h"
-#include "../vvvecmath.h"
 
 #include <istream>
 #include <ostream>
@@ -36,15 +36,15 @@ namespace messages
 struct CameraMatrix
 {
     // The model-view matrix
-    vvMatrix view;
+    mat4 view;
     // The projection matrix
-    vvMatrix proj;
+    mat4 proj;
 
     CameraMatrix()
     {
     }
 
-    CameraMatrix(vvMatrix const& view, vvMatrix const& proj)
+    CameraMatrix(mat4 const& view, mat4 const& proj)
         : view(view)
         , proj(proj)
     {

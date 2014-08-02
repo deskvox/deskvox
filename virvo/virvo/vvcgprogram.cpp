@@ -301,11 +301,9 @@ void vvCgProgram::setParameterMatrix4f(const string& parameterName, const float*
     cgSetMatrixParameterfr(it->second, mat);
 }
 
-void vvCgProgram::setParameterMatrix4f(const string& parameterName, const vvMatrix &mat)
+void vvCgProgram::setParameterMatrix4f(const string& parameterName, virvo::mat4 const& mat)
 {
-  float m[16];
-  mat.getGL(m);
-  setParameterMatrix4f(parameterName, m);
+  setParameterMatrix4f(parameterName, mat.data());
 }
 
 void vvCgProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)

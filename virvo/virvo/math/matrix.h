@@ -33,6 +33,7 @@ public:
            T const& m01, T const& m11, T const& m21, T const& m31,
            T const& m02, T const& m12, T const& m22, T const& m32,
            T const& m03, T const& m13, T const& m23, T const& m33);
+    matrix(T const& m00, T const& m11, T const& m22, T const& m33);
 
     explicit matrix(T const data[16]);
 

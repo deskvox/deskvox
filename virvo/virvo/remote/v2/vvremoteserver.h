@@ -21,9 +21,9 @@
 #ifndef VV_REMOTE_SERVER_H
 #define VV_REMOTE_SERVER_H
 
+#include "math/forward.h"
 #include "private/connection.h"
 #include "vvcompiler.h"
-#include "vvvecmath.h"
 
 namespace virvo
 {
@@ -50,7 +50,7 @@ public:
 
     // Sends the image to the client
     virtual void renderImage(ConnectionPointer conn, MessagePointer message,
-        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) = 0;
+        virvo::mat4 const& pr, virvo::mat4 const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) = 0;
 };
 
 #endif

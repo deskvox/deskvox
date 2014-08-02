@@ -21,6 +21,7 @@
 #ifndef VV_SOFTVR_H
 #define VV_SOFTVR_H
 
+#include "math/math.h"
 #include "vvexport.h"
 #include "vvrenderer.h"
 
@@ -84,21 +85,21 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       };
       vvSoftImg* outImg;                          ///< output image
       uchar* raw[3];                              ///< scalar voxel field for principle viewing axes (x, y, z)
-      vvMatrix owView;                           ///< viewing transformation matrix from object space to world space
-      vvMatrix osPerm;                           ///< permutation matrix
-      vvMatrix wvConv;                           ///< conversion from world space to OpenGL viewport space
-      vvMatrix oiShear;                          ///< shear matrix from object space to intermediate image space
-      vvMatrix ivWarp;                           ///< warp object from intermediate image space to OpenGL viewport space
-      vvMatrix iwWarp;                           ///< warp object from intermediate image space to world space
+      virvo::mat4 owView;                         ///< viewing transformation matrix from object space to world space
+      virvo::mat4 osPerm;                         ///< permutation matrix
+      virvo::mat4 wvConv;                         ///< conversion from world space to OpenGL viewport space
+      virvo::mat4 oiShear;                        ///< shear matrix from object space to intermediate image space
+      virvo::mat4 ivWarp;                         ///< warp object from intermediate image space to OpenGL viewport space
+      virvo::mat4 iwWarp;                         ///< warp object from intermediate image space to world space
       int vWidth;                                 ///< OpenGL viewport width [pixels]
       int vHeight;                                ///< OpenGL viewport height [pixels]
       int len[3];                                 ///< volume dimensions in standard object space (x,y,z)
-      vvVecmath::AxisType principal;              ///< principal viewing axis
+      virvo::cartesian_axis< 3 > principal;       ///< principal viewing axis
       bool stacking;                              ///< slice stacking order; true=front to back
       WarpType warpMode;                          ///< current warp mode
       float rgbaTF[4096*4];                       ///< transfer function lookup table
       uchar rgbaConv[4096][4];                    ///< density to RGBA conversion table (max. 8 bit density supported) [scalar values][RGBA]
-      vvVector3 xClipNormal;                      ///< clipping plane normal in permuted voxel coordinate system
+      virvo::vec3 xClipNormal;                    ///< clipping plane normal in permuted voxel coordinate system
       float xClipDist;                            ///< clipping plane distance in permuted voxel coordinate system
       uchar** rleStart[3];                        ///< pointer lists to line beginnings, for each principal viewing axis (x,y,z). If first entry is NULL, there is no RLE compressed volume data
       uchar* rle[3];                              ///< RLE encoded volume data for each principal viewing axis (x,y,z)
@@ -116,7 +117,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       uchar preIntTable[PRE_INT_TABLE_SIZE][PRE_INT_TABLE_SIZE][4];
       int earlyRayTermination;                    ///< counter for number of voxels which are skipped due to early ray termination
       bool _timing;
-      vvVector3 _size;
+      virvo::vec3 _size;
 
       void setOutputImageSize();
       void findVolumeDimensions();
@@ -126,8 +127,8 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void findViewMatrix();
       void findPermutationMatrix();
       void findViewportMatrix(int, int);
-      void findSlicePosition(int, vvVector4*, vvVector4*);
-      void findSlicePosition(int, vvVector3*, vvVector3*);
+      void findSlicePosition(int, virvo::vec4*, virvo::vec4*);
+      void findSlicePosition(int, virvo::vec3*, virvo::vec3*);
       void findClipPlaneEquation();
       bool isVoxelClipped(int, int, int);
       void compositeOutline();
@@ -151,7 +152,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void     setCurrentFrame(size_t);
       void     renderVolumeGL();
       void     getIntermediateImage(vvImage*);
-      void     getWarpMatrix(vvMatrix*);
+      virvo::mat4 getWarpMatrix() const;
       bool     prepareRendering();
       virtual void setParameter(ParameterType param, const vvParam& value);
       virtual vvParam getParameter(ParameterType param) const;

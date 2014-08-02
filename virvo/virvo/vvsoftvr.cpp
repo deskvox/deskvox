@@ -32,27 +32,35 @@ using std::endl;
 
 #include <assert.h>
 #include <math.h>
+#include "gl/util.h"
+#include "private/vvlog.h"
 #include "vvdebugmsg.h"
-#include "vvvecmath.h"
 #include "vvsoftimg.h"
 #include "vvsoftvr.h"
 #include "vvclock.h"
 #include "vvimage.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
+#include "vvvecmath.h"
 
 #include "private/vvgltools.h"
+
+namespace gl = virvo::gl;
+using virvo::mat4;
+using virvo::vec3;
+using virvo::vec4;
 
 //----------------------------------------------------------------------------
 /// Constructor.
 vvSoftVR::vvSoftVR(vvVolDesc* vd, vvRenderState rs) : vvRenderer(vd, rs)
+    , principal(virvo::cartesian_axis< 3 >::X)
 {
    int i;
 
    vvDebugMsg::msg(1, "vvSoftVR::vvSoftVR()");
 
    // Initialize variables:
-   xClipNormal.set(0.0f, 0.0f, 1.0f);
+   xClipNormal = vec3(0.0f, 0.0f, 1.0f);
    xClipDist = 0.0f;
    numProc = vvToolshed::getNumProcessors();
    len[0] = len[1] = len[2] = 0;
@@ -180,14 +188,14 @@ void vvSoftVR::renderVolumeGL()
 
    if (warpMode==SOFTWARE)
    {
-      outImg->warp(&ivWarp, intImg);
+      outImg->warp(ivWarp, intImg);
       if (vvDebugMsg::isActive(3))
          outImg->overlay(intImg);
       outImg->draw();
    }
    else
    {
-      intImg->warpTex(&iwWarp);
+      intImg->warpTex(iwWarp);
       if (vvDebugMsg::isActive(3))
          intImg->draw();
    }
@@ -217,7 +225,7 @@ void vvSoftVR::renderVolumeGL()
 */
 void vvSoftVR::compositeOutline()
 {
-   vvVector3 vertex[8];
+   vec3 vertex[8];
    int vert[12][2] =                              // volume edge point indices
    {
       { 0,1 },
@@ -261,9 +269,9 @@ void vvSoftVR::compositeOutline()
       vertex[i][0] = (float)(((i+1)/2) % 2);
       vertex[i][1] = (float)((i/2) % 2);
       vertex[i][2] = (float)((i/4) % 2);
-      vertex[i].sub(0.5f);                        // vertices become -0.5 or +0.5
-      vertex[i].scale(_size);                     // vertices are scaled to correct object space coordinates
-      vertex[i].multiply(oiShear);                // shear and project vertex to intermediate image space
+      vertex[i] -= 0.5f;                        // vertices become -0.5 or +0.5
+      vertex[i] *= _size;                     // vertices are scaled to correct object space coordinates
+      vertex[i] = ( oiShear * vec4(vertex[i], 1.0f) ).xyz();
    }
 
    // Draw lines:
@@ -311,17 +319,17 @@ void vvSoftVR::findVolumeDimensions()
 
    switch (principal)
    {
-      case vvVecmath::X_AXIS:
+      case virvo::cartesian_axis< 3 >::X:
          len[0] = vd->vox[1];
          len[1] = vd->vox[2];
          len[2] = vd->vox[0];
          break;
-      case vvVecmath::Y_AXIS:
+      case virvo::cartesian_axis< 3 >::Y:
          len[0] = vd->vox[2];
          len[1] = vd->vox[0];
          len[2] = vd->vox[1];
          break;
-      case vvVecmath::Z_AXIS:
+      case virvo::cartesian_axis< 3 >::Z:
       default:
          len[0] = vd->vox[0];
          len[1] = vd->vox[1];
@@ -414,15 +422,13 @@ void vvSoftVR::encodeRLE()
    int i,j;
    size_t len;                                    // length of encoded data [bytes]
    size_t rest;                                   // number of bytes remaining in buffer
-   vvsize3 numvox;                                // object dimensions (x,y,z) [voxels]
+   virvo::vector< 3, size_t > numvox;             // object dimensions (x,y,z) [voxels]
 
    vvDebugMsg::msg(1, "vvSoftVR::encodeRLE()");
 
    if (vd->getBPV() != 1) return;                      // TODO: enhance for other data types
 
-   numvox[0] = vd->vox[0];
-   numvox[1] = vd->vox[1];
-   numvox[2] = vd->vox[2];
+   numvox = virvo::vector< 3, size_t >(vd->vox);
 
    vvDebugMsg::msg(1, "Original volume size: ", static_cast<int>(vd->getFrameBytes()));
 
@@ -614,18 +620,12 @@ int vvSoftVR::getLUTSize()
 */
 void vvSoftVR::findViewMatrix()
 {
-   vvMatrix mv;                                  // modelview matrix
-   vvMatrix pm;                                  // projection matrix
+    mat4 mv = gl::getModelviewMatrix();
+    mat4 pr = gl::getProjectionMatrix();
 
-   vvDebugMsg::msg(3, "vvSoftVR::findViewMatrix()");
+    owView = pr * mv;
 
-   vvGLTools::getModelviewMatrix(&mv);
-   vvGLTools::getProjectionMatrix(&pm);
-
-   // Compute view matrix:
-   owView = vvMatrix(mv);
-   owView.multiplyLeft(pm);
-   if (vvDebugMsg::isActive(3)) owView.print("owView");
+    VV_LOG(3)  << "owView: " << owView;
 }
 
 
@@ -639,22 +639,29 @@ void vvSoftVR::findPermutationMatrix()
 {
    vvDebugMsg::msg(3, "vvSoftVR::findPermutationMatrix()");
 
-   osPerm.zero();
+   for (size_t i = 0; i < 4; ++i)
+   {
+      for (size_t j = 0; j < 4; ++j)
+      {
+         osPerm(i, j) = 0.0f;
+      }
+   }
+
    switch (principal)
    {
-      case vvVecmath::X_AXIS:
+      case virvo::cartesian_axis< 3 >::X:
          osPerm(0, 1) = 1.0f;
          osPerm(1, 2) = 1.0f;
          osPerm(2, 0) = 1.0f;
          osPerm(3, 3) = 1.0f;
          break;
-      case vvVecmath::Y_AXIS:
+      case virvo::cartesian_axis< 3 >::Y:
          osPerm(0, 2) = 1.0f;
          osPerm(1, 0) = 1.0f;
          osPerm(2, 1) = 1.0f;
          osPerm(3, 3) = 1.0f;
          break;
-      case vvVecmath::Z_AXIS:
+      case virvo::cartesian_axis< 3 >::Z:
       default:
          osPerm(0, 0) = 1.0f;
          osPerm(1, 1) = 1.0f;
@@ -662,7 +669,7 @@ void vvSoftVR::findPermutationMatrix()
          osPerm(3, 3) = 1.0f;
          break;
    }
-   if (vvDebugMsg::isActive(3)) osPerm.print("osPerm");
+   VV_LOG(3) << "osPerm: " << osPerm;
 }
 
 
@@ -683,13 +690,13 @@ void vvSoftVR::findViewportMatrix(int w, int h)
 {
    vvDebugMsg::msg(2, "vvSoftVR::findViewportMatrix()");
 
-   wvConv.identity();
+   wvConv = mat4::identity();
    wvConv(0, 0) = (float)(w / 2);
    wvConv(0, 3) = (float)(w / 2);
    wvConv(1, 1) = (float)(h / 2);
    wvConv(1, 3) = (float)(h / 2);
 
-   if (vvDebugMsg::isActive(3)) wvConv.print("wvConv");
+   VV_LOG(3) << "wvConv: " << wvConv;
 
 }
 
@@ -701,18 +708,18 @@ void vvSoftVR::findViewportMatrix(int w, int h)
   @param start  bottom left corner
   @param end    top right corner (pass NULL if not required)
 */
-void vvSoftVR::findSlicePosition(int slice, vvVector3* start, vvVector3* end)
+void vvSoftVR::findSlicePosition(int slice, vec3* start, vec3* end)
 {
-   vvVector4 start4, end4;
+   vec4 start4, end4;
    findSlicePosition(slice, &start4, end?&end4:NULL);
-   vvVector3 tmp = vvVector3(start4);
+   vec3 tmp = start4.xyz() / start4.w;
    for (int i = 0; i < 3; ++i)
    {
      (*start)[i] = tmp[i];
    }
    if (end)
    {
-     tmp = vvVector3(end4);
+     tmp = end4.xyz() / end4.w;
      for (int i = 0; i < 3; ++i)
      {
        (*end)[i] = tmp[i];
@@ -728,12 +735,12 @@ void vvSoftVR::findSlicePosition(int slice, vvVector3* start, vvVector3* end)
   @param start  bottom left corner
   @param end    top right corner (pass NULL if not required)
 */
-void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
+void vvSoftVR::findSlicePosition(int slice, vec4* start, vec4* end)
 {
    // Determine voxel coordinates in object space:
    switch (principal)
    {
-      case vvVecmath::X_AXIS:
+      case virvo::cartesian_axis< 3 >::X:
          (*start)[0] =  0.5f * _size[0] - (float)slice / (float)len[2] * _size[0];
          (*start)[1] = -0.5f * _size[1];
          (*start)[2] = -0.5f * _size[2];
@@ -746,7 +753,7 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
             (*end)[3] = 1.;
          }
          break;
-      case vvVecmath::Y_AXIS:
+      case virvo::cartesian_axis< 3 >::Y:
          (*start)[0] = -0.5f * _size[0];
          (*start)[1] =  0.5f * _size[1] - (float)slice / (float)len[2] * _size[1];
          (*start)[2] = -0.5f * _size[2];
@@ -759,7 +766,7 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
             (*end)[3] = 1.;
          }
          break;
-      case vvVecmath::Z_AXIS:
+      case virvo::cartesian_axis< 3 >::Z:
          (*start)[0] = -0.5f * _size[0];
          (*start)[1] = -0.5f * _size[1];
          (*start)[2] =  0.5f * _size[2] - (float)slice / (float)len[2] * _size[2];
@@ -775,9 +782,9 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
    }
 
    // Project bottom left voxel of this slice to intermediate image:
-   start->multiply(oiShear);
+   *start = oiShear * *start;
    if (end)
-      end->multiply(oiShear);
+      *end = oiShear * *end;
 }
 
 
@@ -786,15 +793,15 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
  */
 void vvSoftVR::findClipPlaneEquation()
 {
-   vvMatrix oxConv;                              // conversion matrix from object space to permuted voxel space
-   vvMatrix xxPerm;                              // coordinate permutation matrix
-   vvVector3 planePoint;                          // point on clipping plane = starting point of normal
-   vvVector3 normalPoint;                         // end point of normal
+   mat4 oxConv;                                  // conversion matrix from object space to permuted voxel space
+   mat4 xxPerm;                                  // coordinate permutation matrix
+   vec3 planePoint;                              // point on clipping plane = starting point of normal
+   vec3 normalPoint;                             // end point of normal
 
    vvDebugMsg::msg(3, "vvSoftVR::findClipPlaneEquation()");
 
    // Compute conversion matrix:
-   oxConv.identity();
+   oxConv = mat4::identity();
    oxConv(0, 0) =  (float)vd->vox[0]  / _size[0];
    oxConv(1, 1) = -(float)vd->vox[1] / _size[1]; // negate because y coodinate points down
    oxConv(2, 2) = -(float)vd->vox[2] / _size[2]; // negate because z coordinate points back
@@ -803,10 +810,17 @@ void vvSoftVR::findClipPlaneEquation()
    oxConv(2, 3) =  (float)vd->vox[2] / 2.0f;
 
    // Find coordinate permutation matrix:
-   xxPerm.zero();
+   for (size_t i = 0; i < 4; ++i)
+   {
+      for (size_t j = 0; j < 4; ++j)
+      {
+         xxPerm(i, j) = 0.0f;
+      }
+   }
+
    switch (principal)
    {
-      case vvVecmath::X_AXIS:
+      case virvo::cartesian_axis< 3 >::X:
          xxPerm(0, 1) =-1.0f;
          xxPerm(0, 3) = (float)vd->vox[1];
          xxPerm(1, 2) = 1.0f;
@@ -814,7 +828,7 @@ void vvSoftVR::findClipPlaneEquation()
          xxPerm(2, 3) = (float)vd->vox[0];
          xxPerm(3, 3) = 1.0f;
          break;
-      case vvVecmath::Y_AXIS:
+      case virvo::cartesian_axis< 3 >::Y:
          xxPerm(0, 2) =-1.0f;
          xxPerm(0, 3) = (float)vd->vox[2];
          xxPerm(1, 0) =-1.0f;
@@ -822,7 +836,7 @@ void vvSoftVR::findClipPlaneEquation()
          xxPerm(2, 1) = 1.0f;
          xxPerm(3, 3) = 1.0f;
          break;
-      case vvVecmath::Z_AXIS:
+      case virvo::cartesian_axis< 3 >::Z:
       default:
          xxPerm(0, 0) = 1.0f;
          xxPerm(1, 1) = 1.0f;
@@ -834,21 +848,21 @@ void vvSoftVR::findClipPlaneEquation()
    // Find two points determining the plane:
    planePoint = clip_plane_point_;
    normalPoint = clip_plane_point_;
-   normalPoint.add(clip_plane_normal_);
+   normalPoint += clip_plane_normal_;
 
    // Transfer points to voxel coordinate system:
-   planePoint.multiply(oxConv);
-   normalPoint.multiply(oxConv);
+   planePoint = ( oxConv * vec4(normalPoint, 1.0f) ).xyz();
+   normalPoint = ( oxConv * vec4(normalPoint, 1.0f) ).xyz();
 
    // Permute the points:
-   planePoint.multiply(xxPerm);
-   normalPoint.multiply(xxPerm);
+   planePoint = ( xxPerm * vec4(planePoint, 1.0f) ).xyz();
+   normalPoint = ( xxPerm * vec4(planePoint, 1.0f) ).xyz();
 
    // Compute plane equation:
    xClipNormal = normalPoint;
-   xClipNormal.sub(planePoint);
-   xClipNormal.normalize();
-   xClipDist = xClipNormal.dot(planePoint);
+   xClipNormal -= planePoint;
+   xClipNormal = normalize(xClipNormal);
+   xClipDist = dot(xClipNormal, planePoint);
 }
 
 
@@ -923,10 +937,9 @@ void vvSoftVR::getIntermediateImage(vvImage* image)
 /** Return warp matrix iwWarp (intermediate image space to world space).
   @param iwWarp matrix which will be set to the warp matrix
 */
-void vvSoftVR::getWarpMatrix(vvMatrix* warp)
+mat4 vvSoftVR::getWarpMatrix() const
 {
-  delete warp;
-  warp = new vvMatrix(iwWarp);
+    return iwWarp;
 }
 
 
@@ -937,7 +950,7 @@ void vvSoftVR::getWarpMatrix(vvMatrix* warp)
 */
 void vvSoftVR::getIntermediateImageExtent(int* xmin, int* xmax, int* ymin, int* ymax)
 {
-   vvVector3 corner[4];                           // corners of first and last voxel slice on intermediate image
+   vec3 corner[4];                                // corners of first and last voxel slice on intermediate image
    int i;
 
    findSlicePosition(0, &corner[0], &corner[1]);
@@ -969,20 +982,17 @@ void vvSoftVR::getIntermediateImageExtent(int* xmin, int* xmax, int* ymin, int* 
 */
 bool vvSoftVR::prepareRendering()
 {
-   vvMatrix mv;                                  // modelview matrix
-   vvMatrix pm;                                  // projection matrix
-   vvMatrix trans;                               // translation matrix
-
    vvDebugMsg::msg(3, "vvSoftVR::prepareRendering()");
 
    // Translate object by its position:
-   trans.identity();
-   trans.translate(vd->pos[0], vd->pos[1], vd->pos[2]);
-   vvGLTools::getModelviewMatrix(&mv);
-   mv.multiplyRight(trans);
-   vvGLTools::setModelviewMatrix(mv);
+   mat4 trans = mat4::identity();                // translation matrix
+   trans = translate( trans, vec3(vd->pos[0], vd->pos[1], vd->pos[2]) );
+   mat4 mv = gl::getModelviewMatrix();
+   mv = mv * trans;
+   gl::setModelviewMatrix(mv);
 
    // Make sure a parallel projection matrix is used:
+   vvMatrix pm;
    vvGLTools::getProjectionMatrix(&pm);
    if (rendererType==SOFTPAR && !pm.isProjOrtho())
    {
@@ -1043,25 +1053,23 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
 {
    vvDebugMsg::msg(3, "vvSoftVR::getCullingStatus()");
 
-   vvVector3 nearNormal;                          // normal vector of near plane
-   vvVector3 volPos;                              // volume position
+   vec3 nearNormal;                               // normal vector of near plane
+   vec3 volPos;                                   // volume position
    float     radius;                              // bounding sphere radius
    float     volDist;                             // distance of volume from near plane
-   vvMatrix mv;                                  // modelview matrix
 
    // Generate plane equation for near plane (distance value = nearPlaneZ):
-   nearNormal.set(0.0f, 0.0f, 1.0f);
+   nearNormal = vec3(0.0f, 0.0f, 1.0f);
 
    // Find bounding sphere radius:
-   radius = _size.length() / 2.0f;
+   radius = length(_size) / 2.0f;
 
    // Find volume midpoint location:
-   vvGLTools::getModelviewMatrix(&mv);
-   volPos.zero();
-   volPos.multiply(mv);
+   mat4 mv = gl::getModelviewMatrix();
+   volPos = ( mv * vec4(0.0f, 0.0f, 0.0f, 1.0f) ).xyz();
 
    // Apply plane equation to volume midpoint:
-   volDist = nearNormal.dot(volPos) - nearPlaneZ;
+   volDist = dot(nearNormal, volPos) - nearPlaneZ;
 
    if (fabs(volDist) < radius) return 0;
    else if (volDist < 0) return 1;

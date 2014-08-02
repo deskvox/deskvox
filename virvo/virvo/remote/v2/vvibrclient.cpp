@@ -41,7 +41,10 @@
 
 namespace gl = virvo::gl;
 using virvo::aabb;
+using virvo::mat4;
 using virvo::recti;
+using virvo::vec3;
+using virvo::vec4;
 
 using virvo::makeMessage;
 using virvo::Message;
@@ -108,7 +111,7 @@ struct vvIbrClient::Impl
     // The current viewport
     recti viewport;
     // Current image matrix
-    vvMatrix imgMatrix;
+    mat4 imgMatrix;
 
     Impl()
         : pointVBO(gl::createBuffer())
@@ -191,18 +194,14 @@ bool vvIbrClient::render()
     // Draw boundary lines
     if (_boundaries)
     {
-        const vvVector3 size(vd->getSize()); // volume size [world coordinates]
+        vec3 size = vd->getSize(); // volume size [world coordinates]
         drawBoundingBox(size, vd->pos, _boundColor);
     }
 
     // Get the current projection and model-view matrices
-    vvMatrix currentPr;
-    vvMatrix currentMv;
-
-    vvGLTools::getProjectionMatrix(&currentPr);
-    vvGLTools::getModelviewMatrix(&currentMv);
-
-    vvMatrix currentMatrix = currentPr * currentMv;
+    mat4 currentPr = gl::getProjectionMatrix();
+    mat4 currentMv = gl::getModelviewMatrix();
+    mat4 currentMatrix = currentPr * currentMv;
 
     float drMin = 0.0f;
     float drMax = 0.0f;
@@ -213,38 +212,34 @@ bool vvIbrClient::render()
 
     recti vp = gl::getViewport();
 
-    vvMatrix currentImgMatrix = virvo::ibr::calcImgMatrix(currentPr, currentMv, vp, drMin, drMax);
+    mat4 currentImgMatrix = virvo::ibr::calcImgMatrix(currentPr, currentMv, vp, drMin, drMax);
 
-    bool matrixChanged = (!currentImgMatrix.equal(impl_->imgMatrix));
+    bool matrixChanged = currentImgMatrix != impl_->imgMatrix;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    vvMatrix reprojectionMatrix;
+    mat4 reprojectionMatrix;
     if (!matrixChanged)
     {
-        reprojectionMatrix.identity();
+        reprojectionMatrix = mat4::identity();
     }
     else
     {
-        vvMatrix invOld = image.projMatrix() * image.viewMatrix();
-        invOld.invert();
+        mat4 invOld = inverse(image.projMatrix() * image.viewMatrix());
         reprojectionMatrix = currentMatrix * invOld;
     }
 
-    vvMatrix invMv = currentMv;
+    mat4 invMv = inverse(currentMv);
 
-    invMv.invert();
-
-    vvVector4 viewerObj(0.f, 0.f, 0.f, 1.f);
-
-    viewerObj.multiply(invMv);
-    viewerObj.multiply(image.viewMatrix());
+    vec4 viewerObj(0.f, 0.f, 0.f, 1.f);
+    viewerObj = invMv * viewerObj;
+    viewerObj = image.viewMatrix() * viewerObj;
 
     bool closer = viewerObj[2] > 0.f; // inverse render order if viewer has moved closer
 
     // project current viewer onto original image along its normal
-    viewerObj.multiply(image.projMatrix());
+    viewerObj = image.projMatrix() * viewerObj;
 
     float splitX = (viewerObj[0] / viewerObj[3] + 1.f) * image.viewport()[2] * 0.5f;
     float splitY = (viewerObj[1] / viewerObj[3] + 1.f) * image.viewport()[3] * 0.5f;
@@ -297,8 +292,7 @@ bool vvIbrClient::render()
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     };
-    vvMatrix V_i = vvMatrix(v_i);
-    V_i.invert();
+    mat4 V_i = inverse(mat4(v_i));
 
     impl_->shader->setParameter1f("si", 1.0);
     impl_->shader->setParameter1f("sj", 1.0);

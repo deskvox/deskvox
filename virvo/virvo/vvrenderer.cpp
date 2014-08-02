@@ -26,6 +26,7 @@
 #include "vvopengl.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
+#include "vvvecmath.h"
 #include <string.h>
 #include <math.h>
 #include <assert.h>
@@ -481,13 +482,11 @@ void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 
   {
     // Draw slices parallel to projection plane:
     normal = vec3(0.0f, 0.0f, 1.0f);              // (0|0|1) is normal on projection plane
-    vvVector3 tmp( normal );                      // TODO
-    tmp.multiply(invMV);
-    normal = tmp;                                 // TODO
+    vec4 normal4 = invMV * vec4(normal, 1.0f);
+    normal = normal4.xyz() / normal4.w;
     origin = vec3(0.0f, 0.0f, 0.0f);
-    tmp = vvVector3( origin );                    // TODO
-    tmp.multiply(invMV);
-    origin = tmp;                                 // TODO
+    vec4 origin4 = invMV * vec4(origin, 1.0f);
+    origin = origin4.xyz() / origin4.w;
     normal -= origin;
   }
   else if (!_isROIUsed && isInVolume(eye))
@@ -526,13 +525,11 @@ void vvRenderer::getShadingNormal(vec3& normal, vec3& origin, vec3 const& eye, m
   {
     // Draw slices parallel to projection plane:
     normal = vec3(0.0f, 0.0f, 1.0f);              // (0|0|1) is normal on projection plane
-    vvVector3 tmp( normal );                      // TODO
-    tmp.multiply(invMV);
-    normal = tmp;                                 // TODO
+    vec4 normal4 = invMV * vec4(normal, 1.0f);
+    normal = normal4.xyz() / normal4.w;
     origin = vec3(0.0f, 0.0f, 0.0f);
-    tmp = vvVector3( origin );                    // TODO
-    tmp.multiply(invMV);
-    origin = tmp;
+    vec4 origin4 = invMV * vec4(origin, 1.0f);
+    origin = origin4.xyz() / origin4.w;
     normal -= origin;
   }
   else if (!_isROIUsed && isInVolume(eye))

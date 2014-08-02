@@ -9,6 +9,7 @@
 #include "axis.h"
 #include "output.h"
 #include "matrix.h"
+#include "plane.h"
 #include "rectangle.h"
 #include "vector.h"
 

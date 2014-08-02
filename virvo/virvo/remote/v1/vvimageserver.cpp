@@ -18,13 +18,19 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "gl/util.h"
+#include "math/math.h"
+
 #include "vvimageserver.h"
 #include "vvdebugmsg.h"
 #include "vvrenderer.h"
 #include "vvsocketio.h"
 
-#include "private/vvgltools.h"
 #include "private/vvimage.h"
+
+namespace gl = virvo::gl;
+
+using virvo::mat4;
 
 vvImageServer::vvImageServer(vvSocket *socket)
   : vvRemoteServer(socket)
@@ -41,13 +47,13 @@ vvImageServer::~vvImageServer()
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvImageServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer)
+void vvImageServer::renderImage(mat4 const& pr, mat4 const& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvImageServer::renderImage()");
 
   // Update matrices
-  vvGLTools::setProjectionMatrix(pr);
-  vvGLTools::setModelviewMatrix(mv);
+  gl::setProjectionMatrix(pr);
+  gl::setModelviewMatrix(mv);
 
   renderer->beginFrame(virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH);
   renderer->renderVolumeGL();

@@ -19,13 +19,16 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <GL/glew.h>
-#include <cassert>
+
 #include "vvdebugmsg.h"
 #include "vvglslprogram.h"
 #include "vvtoolshed.h"
 
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
+
+#include <cassert>
+#include <iostream>
 
 using std::cerr;
 using std::cout;
@@ -430,13 +433,11 @@ void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const floa
     glUniformMatrix4fv(uniform, 1, GL_FALSE, mat);
 }
 
-void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const vvMatrix &mat)
+void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, virvo::mat4 const& mat)
 {
-  float m[16];
-  mat.get(m);
   const GLint uniform = getUniform(_data, parameterName, "setParameterMatrix4f");
   if(uniform != -1)
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, m);
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, mat.data());
 }
 
 void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)

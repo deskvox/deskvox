@@ -21,11 +21,11 @@
 #ifndef VV_SHADERPROGRAM_H
 #define VV_SHADERPROGRAM_H
 
+#include "math/forward.h"
 #include "vvexport.h"
 
 #include <string>
 
-class vvMatrix;
 
 enum ShaderType
 {
@@ -108,7 +108,7 @@ public:
   virtual void setParameterArray3f(const std::string& parameterName, const float* array, const int& count) = 0;
 
   virtual void setParameterMatrix4f(const std::string& parameterName, const float* mat) = 0;          ///< set uniform 4x4-matrix float
-  virtual void setParameterMatrix4f(const std::string& parameterName, const vvMatrix &mat) = 0;       ///< set uniform 4x4-matrix float
+  virtual void setParameterMatrix4f(const std::string& parameterName, virvo::mat4 const& mat) = 0;       ///< set uniform 4x4-matrix float
 
   virtual void setParameterTex1D(const std::string& parameterName, const unsigned int& ui) = 0;
   virtual void setParameterTex2D(const std::string& parameterName, const unsigned int& ui) = 0;

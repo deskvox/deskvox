@@ -1,11 +1,13 @@
 #ifndef VV_MATH_AXIS_H
 #define VV_MATH_AXIS_H
 
+#include <cstddef>
+
 
 namespace virvo
 {
 
-template < int Dim >
+template < size_t Dim >
 class cartesian_axis;
 
 

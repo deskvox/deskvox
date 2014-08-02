@@ -90,7 +90,10 @@ const float vvView::OBJ_SIZE  = 1.0f;
 const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
+using virvo::mat4;
 using virvo::vec3f;
+using virvo::vec3;
+using virvo::vec4;
 
 
 //----------------------------------------------------------------------------
@@ -253,7 +256,7 @@ void vvView::mainLoop(int argc, char *argv[])
   
   createRenderer(currentRenderer, currentOptions);
 
-  const vvVector3 size = vd->getSize();
+  vec3 size = vd->getSize();
   const float maxedge = ts_max(size[0], size[1], size[2]);
 
   mvScale = 1.0f / maxedge;
@@ -1241,7 +1244,7 @@ void vvView::voxelMenuCallback(int item)
 */
 void vvView::optionsMenuCallback(int item)
 {
-  vvVector3 size;
+  vec3 size;
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
 
@@ -1291,8 +1294,7 @@ void vvView::optionsMenuCallback(int item)
     ds->useHeadLight = !ds->useHeadLight;
     if(ds->useHeadLight)
     {
-      vvVector3 eyePos;
-      eyePos = ds->renderer->getEyePosition();
+      vec3 eyePos = ds->renderer->getEyePosition();
 
       glEnable(GL_LIGHTING);
       glLightfv(GL_LIGHT0, GL_POSITION, &vvVector4(eyePos, 1.0f)[0]);
@@ -1670,7 +1672,7 @@ void vvView::roiMenuCallback(const int item)
       const float size = probeSize[0];
       if (size <= 0.0f)
       {
-        probeSize = vvVector3(0.00001f);
+        probeSize = vec3(0.00001f);
       }
       ds->renderer->setProbeSize(probeSize);
     }
@@ -1687,7 +1689,7 @@ void vvView::roiMenuCallback(const int item)
       const float size = probeSize[0];
       if (size > 1.0f)
       {
-        probeSize = vvVector3(1.0f);
+        probeSize = vec3(1.0f);
       }
       ds->renderer->setProbeSize(probeSize);
     }
@@ -2387,35 +2389,38 @@ void vvView::renderMotion() const
 
 void vvView::editClipPlane(const int command, const float val)
 {
-  vec3f tmp = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
-  vvVector3 clipNormal(tmp);
+  vec3 tmp = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  vec3 clipNormal(tmp);
   switch (command)
   {
   case PLANE_X:
     {
       vvMatrix m;
       m.identity();
-      const vvVector3 axis(1, 0, 0);
+      static const vec3 axis(1, 0, 0);
       m.rotate(val, axis);
-      clipNormal.multiply(m);
+      vec4 tmp = mat4(m) * vec4(clipNormal, 1.0f);
+      clipNormal = tmp.xyz() / tmp.w;
     }
     break;
   case PLANE_Y:
     {
       vvMatrix m;
       m.identity();
-      const vvVector3 axis(0, 1, 0);
+      static const vec3 axis(0, 1, 0);
       m.rotate(val, axis);
-      clipNormal.multiply(m);
+      vec4 tmp = mat4(m) * vec4(clipNormal, 1.0f);
+      clipNormal = tmp.xyz() / tmp.w;
     }
     break;
   case PLANE_Z:
     {
       vvMatrix m;
       m.identity();
-      const vvVector3 axis(0, 0, 1);
+      static const vec3 axis(0, 0, 1);
       m.rotate(val, axis);
-      clipNormal.multiply(m);
+      vec4 tmp = mat4(m) * vec4(clipNormal, 1.0f);
+      clipNormal = tmp.xyz() / tmp.w;
     }
     break;
   default:

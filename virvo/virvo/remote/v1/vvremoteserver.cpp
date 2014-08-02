@@ -31,6 +31,7 @@
 
 using std::cerr;
 using std::endl;
+using virvo::mat4;
 using virvo::vec3f;
 using virvo::vec4f;
 
@@ -73,8 +74,8 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
   {
   case virvo::CameraMatrix:
     {
-      vvMatrix pr;
-      vvMatrix mv;
+      mat4 pr;
+      mat4 mv;
       if ((_socketio->getMatrix(&pr) == vvSocket::VV_OK)
          && (_socketio->getMatrix(&mv) == vvSocket::VV_OK))
       {
@@ -210,7 +211,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
   case virvo::ParameterSize3:
     {
       int32_t param;
-      vvBaseVector3<uint64_t> value;
+      virvo::vector< 3, uint64_t > value;
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getUint64(value[0]) == vvSocket::VV_OK
        && _socketio->getUint64(value[1]) == vvSocket::VV_OK && _socketio->getUint64(value[2]) == vvSocket::VV_OK)
       {
@@ -235,13 +236,13 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
     break;
   case virvo::ParameterAABBI:
     {
-      int32_t param;
-      vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
-      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
-      {
+//      int32_t param;
+//      vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
+//      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
+//      {
         std::cerr << "TODO: " << __FILE__ << ":" << __LINE__ << std::endl;
 //        renderer->setParameter((vvRenderState::ParameterType)param, value);
-      }
+//      }
     }
     break;
   default:

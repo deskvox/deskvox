@@ -290,10 +290,10 @@ void vvParBrickRend::renderVolumeGL()
     }
 
     // find eye position:
-    vec3f eye = getEyePosition();
+    vec3 eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
-    vvssize3 veye = vd->voxelCoords(eye);
+    virvo::vector< 3, ssize_t > veye = vd->voxelCoords(eye);
 
     // TODO: if we want to use this context for rendering,
     // store the framebuffer before rendering and restore

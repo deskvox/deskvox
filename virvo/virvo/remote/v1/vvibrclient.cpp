@@ -29,7 +29,8 @@
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
-#include "private/vvgltools.h"
+#include "math/math.h"
+
 #include "private/vvibrimage.h"
 
 #include "gl/util.h"
@@ -175,39 +176,37 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     drawBoundingBox(size, vd->pos, _boundColor);
   }
 
-  vvMatrix currentMatrix = _currentPr * _currentMv;
+  mat4 currentMatrix = _currentPr * _currentMv;
 
   float drMin = 0.0f;
   float drMax = 0.0f;
   aabb box = vd->getBoundingBox();
   virvo::ibr::calcDepthRange(_currentPr, _currentMv, box, drMin, drMax);
   recti vp = virvo::gl::getViewport();
-  vvMatrix currentImgMatrix = virvo::ibr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
-  bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
+  mat4 currentImgMatrix = virvo::ibr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
+  bool matrixChanged = currentImgMatrix != _imgMatrix;
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-  vvMatrix reprojectionMatrix;
+  mat4 reprojectionMatrix;
   if (!matrixChanged)
   {
-    reprojectionMatrix.identity();
+    reprojectionMatrix = mat4::identity();
   }
   else
   {
-    vvMatrix invOld = _imgPr * _imgMv;
-    invOld.invert();
+    mat4 invOld = inverse(_imgPr * _imgMv);
     reprojectionMatrix = currentMatrix * invOld;
   }
-  vvMatrix invMv = _currentMv;
-  invMv.invert();
-  vvVector4 viewerObj(0.f, 0.f, 0.f, 1.f);
-  viewerObj.multiply(invMv);
-  viewerObj.multiply(_imgMv);
+  mat4 invMv = inverse(_currentMv);
+  vec4 viewerObj(0.f, 0.f, 0.f, 1.f);
+  viewerObj = invMv * viewerObj;
+  viewerObj = invMv * viewerObj;
   bool closer = viewerObj[2] > 0.f; // inverse render order if viewer has moved closer
 
   // project current viewer onto original image along its normal
-  viewerObj.multiply(_imgPr);
+  viewerObj = _imgPr * viewerObj;
   float splitX = (viewerObj[0]/viewerObj[3]+1.f)*_imgVp[2]*0.5f;
   float splitY = (viewerObj[1]/viewerObj[3]+1.f)*_imgVp[3]*0.5f;
   splitX = ts_clamp(splitX, 0.f, float(_imgVp[2]-1));
@@ -253,8 +252,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
   };
-  vvMatrix V_i = vvMatrix(v_i);
-  V_i.invert();
+  mat4 V_i = inverse(mat4(v_i));
 
   _shader->setParameter1f("si", 1.0);
   _shader->setParameter1f("sj", 1.0);

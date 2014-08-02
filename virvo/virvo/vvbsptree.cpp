@@ -27,6 +27,8 @@
 #include "vvopengl.h"
 #include "vvtoolshed.h"
 
+using virvo::vec3;
+
 
 //============================================================================
 // vvBspNode Method Definitions
@@ -97,8 +99,7 @@ vvBspNode::box_type const& vvBspNode::getAabb() const
   return _aabb;
 }
 
-void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
-                          vvVector3&, vvVector3&) const
+void vvBspNode::clipProbe(vec3& probeMin, vec3& probeMax, vec3&, vec3&) const
 {
   virvo::vector< 3, ssize_t > probeMinI(static_cast<ssize_t>(probeMin[0]),
                      static_cast<ssize_t>(probeMin[1]),
@@ -122,7 +123,7 @@ void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data)
+vvBspTree::vvBspTree(virvo::vector< 3, ssize_t > const& volsize, const vvBspData& data)
   : _root(NULL)
   , _visitor(NULL)
   , _data(data)
@@ -183,7 +184,7 @@ vvBspTree::~vvBspTree()
   delete _root;
 }
 
-void vvBspTree::traverse(const vvssize3& pos) const
+void vvBspTree::traverse(virvo::vector< 3, ssize_t > const& pos) const
 {
   traverse(pos, _root);
 }
@@ -249,7 +250,7 @@ float vvBspTree::calcRelativeFraction(size_t leafIdx)
   return _data.loadBalance[leafIdx] / total;
 }
 
-void vvBspTree::traverse(const vvssize3& pos, vvBspNode* node) const
+void vvBspTree::traverse(virvo::vector< 3, ssize_t > const& pos, vvBspNode* node) const
 {
   if (node->isLeaf())
   {
@@ -260,8 +261,8 @@ void vvBspTree::traverse(const vvssize3& pos, vvBspNode* node) const
   }
   else
   {
-    vvssize3 minval = node->getChildLeft()->getAabb().min;
-    vvssize3 maxval = node->getChildLeft()->getAabb().max;
+    virvo::vector< 3, ssize_t > minval = node->getChildLeft()->getAabb().min;
+    virvo::vector< 3, ssize_t > maxval = node->getChildLeft()->getAabb().max;
 
     for (size_t i = 0; i < 3; ++i)
     {

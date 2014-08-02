@@ -23,9 +23,11 @@
 #include <string.h>
 #include <cstdlib>
 #include <GL/glew.h>
+
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
+#include "vvvecmath.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -331,11 +333,11 @@ void vvGLTools::drawQuad(float x1, float y1, float x2, float y2)
 //----------------------------------------------------------------------------
 /** Query the color specificied using glClearColor (rgba)
 */
-vec4f vvGLTools::queryClearColor()
+vec4 vvGLTools::queryClearColor()
 {
   GLfloat tmp[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, tmp);
-  return vec4f(tmp[0], tmp[1], tmp[2], tmp[3]);
+  return vec4(tmp[0], tmp[1], tmp[2], tmp[3]);
 }
 
 //----------------------------------------------------------------------------
@@ -394,38 +396,6 @@ void vvGLTools::setProjectionMatrix(const vvMatrix& pm)
   glLoadMatrixf(glmatrix);
 }
 
-//----------------------------------------------------------------------------
-/** Calc near- and far clipping in eye coordinates
-  @param znear Near-clipping plane
-  @param zfar  Far-clipping plane
-*/
-void vvGLTools::getClippingPlanes(vvPlane& znear, vvPlane& zfar)
-{
-  // Normalized device coordinates.
-  znear = vvPlane(vvVector3(0.0f, 0.0f, -1.0f), vvVector3(0.0f, 0.0f, 1.0f));
-  zfar = vvPlane(vvVector3(0.0f, 0.0f, 1.0f), vvVector3(0.0f, 0.0f, 1.0f));
-
-  vvMatrix invPr;
-  vvGLTools::getProjectionMatrix(&invPr);
-  invPr.invert();
-
-  // Matrix to transform normal.
-  vvMatrix trPr;
-  vvGLTools::getProjectionMatrix(&trPr);
-  //trPr.invert();
-  trPr.transpose();
-  //trPr.invert();
-
-  // Transform to eye coordinates.
-  znear._point.multiply(invPr);
-  zfar._point.multiply(invPr);
-  znear._normal.multiply(trPr);
-  zfar._normal.multiply(trPr);
-  znear._normal.normalize();
-  zfar._normal.normalize();
-}
-
-
 std::string virvo::gltools::lastError(const std::string& file, int line)
 {
   std::stringstream out;
@@ -436,20 +406,6 @@ std::string virvo::gltools::lastError(const std::string& file, int line)
     out << file << ":" << line << ": OpenGL error: " << str;
   }
   return out.str();
-}
-
-virvo::Matrix virvo::gltools::getModelViewMatrix()
-{
-  Matrix mv;
-  vvGLTools::getModelviewMatrix(&mv);
-  return mv;
-}
-
-virvo::Matrix virvo::gltools::getProjectionMatrix()
-{
-  Matrix pr;
-  vvGLTools::getProjectionMatrix(&pr);
-  return pr;
 }
 
 //============================================================================

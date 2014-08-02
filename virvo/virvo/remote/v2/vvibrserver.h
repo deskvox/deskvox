@@ -40,7 +40,7 @@ public:
 
     // Sends the image to the client
     VVAPI virtual void renderImage(ConnectionPointer conn, MessagePointer message,
-       vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) VV_OVERRIDE;
+       virvo::mat4 const& pr, virvo::mat4 const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) VV_OVERRIDE;
 };
 
 #endif

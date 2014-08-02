@@ -60,9 +60,9 @@ private:
 
   std::vector<GLuint> _indexArray[4];                     ///< four possible traversal directions for drawing the vertices
 
-  vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
-  vvMatrix _imgMv;                                        ///< model-view matrix of _ibrImg
-  vvMatrix _imgPr;                                        ///< Projection matrix of _ibrImg
+  virvo::mat4 _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
+  virvo::mat4 _imgMv;                                        ///< model-view matrix of _ibrImg
+  virvo::mat4 _imgPr;                                        ///< Projection matrix of _ibrImg
   virvo::recti _imgVp;                                    ///< Viewport of _ibrImg
   float _imgDepthRange[2];                                ///< Depth range of _ibrImg
   void initIbrFrame();                                    ///< initialize pixel-points in object space

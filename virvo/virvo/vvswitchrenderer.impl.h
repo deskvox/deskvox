@@ -20,6 +20,7 @@
 
 #include "vvswitchrenderer.h"
 #include "vvdebugmsg.h"
+#include "vvvecmath.h"
 
 template<class Orthographic, class Perspective>
 vvSwitchRenderer<Orthographic, Perspective>::vvSwitchRenderer(vvVolDesc *vd, vvRenderState renderState)

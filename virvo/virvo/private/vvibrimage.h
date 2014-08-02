@@ -26,7 +26,6 @@
 #include "math/math.h"
 
 #include "vvimage.h"
-#include "vvvecmath.h"
 
 
 class vvSocketIO;
@@ -89,16 +88,16 @@ public:
   void setDepthMax(float value) { depthMax_ = value; }
 
   // Returns the model-view matrix
-  vvMatrix const& viewMatrix() const { return viewMatrix_; }
+  virvo::mat4 const& viewMatrix() const { return viewMatrix_; }
 
   // Sets the model-view matrix
-  void setViewMatrix(vvMatrix const& value) { viewMatrix_ = value; }
+  void setViewMatrix(virvo::mat4 const& value) { viewMatrix_ = value; }
 
   // Returns the projection matrix
-  vvMatrix const& projMatrix() const { return projMatrix_; }
+  virvo::mat4 const& projMatrix() const { return projMatrix_; }
 
   // Sets the projection matrix
-  void setProjMatrix(vvMatrix const& value) { projMatrix_ = value; }
+  void setProjMatrix(virvo::mat4 const& value) { projMatrix_ = value; }
 
   // Returns the viewport
   virvo::recti const& viewport() const { return viewport_; }
@@ -121,9 +120,9 @@ private:
   float depthMin_;
   float depthMax_;
   // View matrix
-  vvMatrix viewMatrix_;
+  virvo::mat4 viewMatrix_;
   // Projection matrix
-  vvMatrix projMatrix_;
+  virvo::mat4 projMatrix_;
   // The viewport
   virvo::recti viewport_;
 

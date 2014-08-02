@@ -74,9 +74,9 @@ ovView  = wvConv x iwWarp x siShear x osPerm
 class VIRVOEXPORT vvSoftPar : public vvSoftVR
 {
    protected:
-      vvVector3 wViewDir;                         ///< viewing direction [world space]
-      vvVector3 oViewDir;                         ///< viewing direction [object space]
-      vvVector3 sViewDir;                         ///< viewing direction [standard object space]
+      virvo::vec3 wViewDir;                       ///< viewing direction [world space]
+      virvo::vec3 oViewDir;                       ///< viewing direction [object space]
+      virvo::vec3 sViewDir;                       ///< viewing direction [standard object space]
       float* bufSlice[2];                         ///< buffer slices for preintegrated rendering
       int bufSliceLen[2];                         ///< size of buffer slices
       int readSlice;                              ///< index of buffer slice currently used for reading [0..1]

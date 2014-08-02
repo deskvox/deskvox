@@ -96,6 +96,7 @@ set(VIRVO_HEADERS
   math/detail/aabb.inl
   math/detail/math.h
   math/detail/matrix4.inl
+  math/detail/plane3.inl
   math/detail/rectangle.inl
   math/detail/vector.inl
   math/detail/vector2.inl
@@ -111,6 +112,7 @@ set(VIRVO_HEADERS
   math/matrix.h
   math/math.h
   math/output.h
+  math/plane.h
   math/rectangle.h
   math/serialization.h
 
@@ -135,8 +137,6 @@ set(VIRVO_HEADERS
   vvbonjour/vvbonjourregistrar.h
   vvbonjour/vvbonjourresolver.h
 
-  vvaabb.h
-  vvaabb.impl.h
   vvbrickrend.h
   vvbsptree.h
   vvbsptreevisitors.h

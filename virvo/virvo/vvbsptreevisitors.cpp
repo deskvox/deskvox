@@ -20,7 +20,6 @@
 
 #include <GL/glew.h>
 
-#include "vvaabb.h"
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
@@ -109,11 +108,13 @@ void vvShowBricksVisitor::visit(vvVisitable* obj) const
 
   if (node->isLeaf())
   {
-    // convert voxel to obj coordinates
-    vvAABB objAabb(_vd->objectCoords(node->getAabb().min),
-                            _vd->objectCoords(node->getAabb().max));
+    using virvo::aabb;
 
-    const vvAABB::vvBoxCorners& vertices = objAabb.getVertices();
+    // convert voxel to obj coordinates
+    aabb objAabb(_vd->objectCoords(node->getAabb().min),
+                 _vd->objectCoords(node->getAabb().max));
+
+    aabb::vertex_list const& vertices = compute_vertices(objAabb);
 
     glBegin(GL_LINES);
       glColor3f(1.0f, 1.0f, 1.0f);

@@ -51,6 +51,16 @@ inline void serialize(A& a, virvo::vector< 4, T >& v, unsigned /* version */ )
 
 
 template < typename A, typename T >
+inline void serialize(A& a, virvo::matrix< 4, 4, T >& m, unsigned /* version */ )
+{
+    a & m.col0;
+    a & m.col1;
+    a & m.col2;
+    a & m.col3;
+}
+
+
+template < typename A, typename T >
 inline void serialize(A& a, virvo::base_aabb< T >& b, unsigned /* version */ )
 {
     a & b.min;

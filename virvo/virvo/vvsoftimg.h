@@ -21,13 +21,13 @@
 #ifndef VV_SOFTIMG_H
 #define VV_SOFTIMG_H
 
+#include "math/forward.h"
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvinttypes.h"
 
 #include <boost/shared_ptr.hpp>
 
-class vvMatrix;
 
 /** Description of pixel image.
   This class was written for the software implementation of the
@@ -79,8 +79,8 @@ class VIRVOEXPORT vvSoftImg
       void clear();
       void fill(int, int, int, int);
       void drawBorder(int, int, int);
-      void warp(vvMatrix*, vvSoftImg*);
-      void warpTex(vvMatrix*);
+      void warp(virvo::mat4 const& w, vvSoftImg*);
+      void warpTex(virvo::mat4 const& w);
       void putPixel(int, int, uint);
       void drawLine(int, int, int, int, int, int, int);
       void saveGLState();

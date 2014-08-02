@@ -60,7 +60,7 @@ void vvBrickRend::renderVolumeGL()
   {
     _bspTree->setVisitor(_showBricksVisitor);
     // no depth ordering necessary, don't calculate eye pos
-    vvssize3 eye(0, 0, 0);
+    virvo::vector< 3, ssize_t > eye(0, 0, 0);
     _bspTree->traverse(eye);
   }
   else

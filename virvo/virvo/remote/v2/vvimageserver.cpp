@@ -20,7 +20,7 @@
 
 #include "vvimageserver.h"
 
-#include "private/vvgltools.h"
+#include "gl/util.h"
 #include "private/vvimage.h"
 #include "private/vvtimer.h"
 #include "private/work_queue.h"
@@ -28,6 +28,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+
+namespace gl = virvo::gl;
+using virvo::mat4;
 
 #define TIME 1
 #define TIME_VERBOSE 1
@@ -58,13 +61,13 @@ vvImageServer::~vvImageServer()
 }
 
 void vvImageServer::renderImage(ConnectionPointer conn, MessagePointer message,
-        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer, virvo::WorkQueue& queue)
+        mat4 const& pr, mat4 const& mv, vvRenderer* renderer, virvo::WorkQueue& queue)
 {
 #if 1
 
     // Update matrices
-    vvGLTools::setProjectionMatrix(pr);
-    vvGLTools::setModelviewMatrix(mv);
+    gl::setProjectionMatrix(pr);
+    gl::setModelviewMatrix(mv);
 
     renderer->beginFrame(virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH);
     renderer->renderVolumeGL();

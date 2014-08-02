@@ -47,6 +47,15 @@ VV_FORCE_INLINE matrix< 4, 4, T >::matrix
 }
 
 template < typename T >
+inline matrix< 4, 4, T >::matrix(T const& m00, T const& m11, T const& m22, T const& m33)
+    : col0(m00,    T(0.0), T(0.0), T(0.0))
+    , col1(T(0.0), m11,    T(0.0), T(0.0))
+    , col2(T(0.0), T(0.0), m22,    T(0.0))
+    , col3(T(0.0), T(0.0), T(0.0), m33   )
+{
+}
+
+template < typename T >
 VV_FORCE_INLINE matrix< 4, 4, T >::matrix(T const data[16])
     : col0(&data[ 0])
     , col1(&data[ 4])
@@ -150,6 +159,23 @@ VV_FORCE_INLINE vector< 4, T > operator*(matrix< 4, 4, T > const& m, vector< 4, 
 
 
 //--------------------------------------------------------------------------------------------------
+// Comparisons
+//
+
+template < typename T >
+inline bool operator==(matrix< 4, 4, T > const& a, matrix< 4, 4, T > const& b)
+{
+    return a(0) == b(0) && a(1) == b(1) && a(2) == b(2) && a(3) == b(3);
+}
+
+template < typename T >
+inline bool operator!=(matrix< 4, 4, T > const& a, matrix< 4, 4, T > const& b)
+{
+    return !(a == b);
+}
+
+
+//--------------------------------------------------------------------------------------------------
 // Geometric functions
 //
 
@@ -178,6 +204,35 @@ VV_FORCE_INLINE matrix< 4, 4, T > transpose(matrix< 4, 4, T > const& m)
     }
 
     return result;
+
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Transforms
+//
+
+template < typename T >
+VV_FORCE_INLINE matrix< 4, 4, T > translate(matrix< 4, 4, T > const& m, vector< 3, T > const& v)
+{
+
+    matrix< 4, 4, T > t = matrix< 4, 4, T >::identity();
+    t(0, 3) = v.x;
+    t(1, 3) = v.y;
+    t(2, 3) = v.z;
+    return m * t;
+
+}
+
+template < typename T >
+VV_FORCE_INLINE matrix< 4, 4, T > scale(matrix< 4, 4, T > const& m, vector< 3, T > const& v)
+{
+
+    matrix< 4, 4, T > s = matrix< 4, 4, T >::identity();
+    s(0, 0) = v.x;
+    s(1, 1) = v.y;
+    s(2, 2) = v.z;
+    return m * s;
 
 }
 

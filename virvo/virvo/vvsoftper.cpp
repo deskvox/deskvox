@@ -26,13 +26,17 @@ using std::endl;
 
 #include <math.h>
 #include <assert.h>
+#include "private/vvlog.h"
 #include "vvdebugmsg.h"
-#include "vvvecmath.h"
 #include "vvsoftper.h"
 #include "vvsoftimg.h"
 #include "vvclock.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
+
+using virvo::mat4;
+using virvo::vec3;
+using virvo::vec4;
 
 //----------------------------------------------------------------------------
 /// Constructor.
@@ -111,8 +115,8 @@ ia := ia + va * (1 - ia)
 void vvSoftPer::compositeSliceNearest(int slice, int from, int to)
 {
 #define FLOAT_MATH                             // undefine for integer math
-   vvVector3 vStart;                              // bottom left voxel of the current slice
-   vvVector3 vEnd;                                // top right voxel of the current slice
+   vec3 vStart;                                   // bottom left voxel of the current slice
+   vec3 vEnd;                                     // top right voxel of the current slice
    float  iStartX, iStartY;                       // coordinates of bottom left intermediate image pixel for this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates
    int    vPosX, vPosY;                           // current slice x and y coordinates [16.16 fixed point]
@@ -267,8 +271,8 @@ void vvSoftPer::compositeSliceNearest(int slice, int from, int to)
 */
 void vvSoftPer::compositeSliceBilinear(int slice, int from, int to)
 {
-   vvVector3 vStart;                              // bottom left voxel of the current slice
-   vvVector3 vEnd;                                // top right voxel of the current slice
+   vec3 vStart;                                   // bottom left voxel of the current slice
+   vec3 vEnd;                                     // top right voxel of the current slice
    float  vPosYBase;                              // first slice y coordinate
    float  vStepX, vStepY;                         // step size: voxels traversed per image pixel
    float  vr,vg,vb,va;                            // RGBA components of current voxel
@@ -570,11 +574,11 @@ void vvSoftPer::findDIConvMatrix()
 {
    vvDebugMsg::msg(3, "vvSoftPer::findDIConvMatrix()");
 
-   diConv.identity();
+   diConv = mat4::identity();
    diConv(0, 3) = (float)(intImg->width / 2);
    diConv(1, 3) = (float)(intImg->height / 2);
 
-   if (vvDebugMsg::isActive(3)) diConv.print("diConv");
+   VV_LOG(3) << "diConv: " << diConv;
 }
 
 
@@ -582,16 +586,15 @@ void vvSoftPer::findDIConvMatrix()
 /// Find the eye position in object space.
 void vvSoftPer::findOEyePosition()
 {
-   vvMatrix woView;                              // inverse of viewing transformation matrix
+   mat4 woView;                              // inverse of viewing transformation matrix
 
    vvDebugMsg::msg(3, "vvSoftPer::findOEyePosition()");
 
    // Find eye position in object space:
-   oEye.set(0.0f, 0.0f, -1.0f, 0.0f);
-   woView = owView;
-   woView.invert();
-   oEye.multiply(woView);
-   if (vvDebugMsg::isActive(3)) oEye.print("Eye position in object space:");
+   oEye = vec4(0.0f, 0.0f, -1.0f, 0.0f);
+   woView = inverse(owView);
+   oEye = woView * oEye;
+   VV_LOG(3) << "Eye position in object space: " << oEye;
 }
 
 
@@ -604,21 +607,27 @@ void vvSoftPer::findOEyePosition()
 */
 void vvSoftPer::findPrincipalAxis()
 {
-   vvVecmath::AxisType pa[8];                     // principal axis for each volume vertex
-   vvVector3 vertex;                              // volume vertex
-   vvVector3 dist;                                // distance from eye to volume corner
-   vvVector3 oEye3;                               // eye position in object space
+    typedef virvo::cartesian_axis< 3 > axis_type;
+
+   axis_type pa[8] =
+   {
+        axis_type::X, axis_type::X, axis_type::X, axis_type::X,
+        axis_type::X, axis_type::X, axis_type::X, axis_type::X
+   };                                             // principal axis for each volume vertex
+   vec3 vertex;                                   // volume vertex
+   vec3 dist;                                     // distance from eye to volume corner
+   vec3 oEye3;                                    // eye position in object space
    float ax, ay, az;                              // absolute coordinate components
    float maxDist;                                 // maximum distance
    int   count[3];                                // occurrences of coordinate axes as principal viewing axis (0=x-axis etc)
    int   maxCount;                                // maximum counter value
    int   i;                                       // counter
    bool  stack[3] = {true, true, true };          // stacking order for coordinate axes
-   const vvVector3 size = vd->getSize();
+   vec3 size = vd->getSize();
 
    vvDebugMsg::msg(3, "vvSoftPer::findPrincipalAxis()");
 
-   oEye3 = vvVector3(oEye);                       // convert eye coordinates from vector4 to vector3
+   oEye3 = oEye.xyz() / oEye.w;                   // convert eye coordinates from vector4 to vector3
 
    // Find principal axes:
    for (i=0; i<8; ++i)
@@ -627,21 +636,20 @@ void vvSoftPer::findPrincipalAxis()
       vertex[0] = (float)(i % 2);
       vertex[1] = (float)((i/2) % 2);
       vertex[2] = (float)((i/4) % 2);
-      vertex.sub(0.5f);                           // vertices become -0.5 or +0.5
-      vertex.scale(size);                         // vertices are scaled to correct object space coordinates
+      vertex -= 0.5f;                           // vertices become -0.5 or +0.5
+      vertex *= size;                         // vertices are scaled to correct object space coordinates
 
       // Compute distance between eye and corner:
-      dist = vertex;
-      dist.sub(oEye3);
+      dist = vertex - oEye3;
 
       // Determine the principal viewing axis and the stacking order:
       ax = (float)fabs(dist[0]);
       ay = (float)fabs(dist[1]);
       az = (float)fabs(dist[2]);
       maxDist = ts_max(ax, ay, az);
-      if      (maxDist==ax) { pa[i] = vvVecmath::X_AXIS; stack[0] = (dist[0] < 0.0f); }
-      else if (maxDist==ay) { pa[i] = vvVecmath::Y_AXIS; stack[1] = (dist[1] < 0.0f); }
-      else                  { pa[i] = vvVecmath::Z_AXIS; stack[2] = (dist[2] < 0.0f); }
+      if      (maxDist==ax) { pa[i] = axis_type::X; stack[0] = (dist[0] < 0.0f); }
+      else if (maxDist==ay) { pa[i] = axis_type::Y; stack[1] = (dist[1] < 0.0f); }
+      else                  { pa[i] = axis_type::Z; stack[2] = (dist[2] < 0.0f); }
       vvDebugMsg::msg(3, "Found principal viewing axis (0=x, 1=y, 2=z): ", pa[i]);
    }
 
@@ -652,18 +660,18 @@ void vvSoftPer::findPrincipalAxis()
    {
       switch (pa[i])
       {
-         case vvVecmath::X_AXIS: ++count[0]; break;
-         case vvVecmath::Y_AXIS: ++count[1]; break;
-         case vvVecmath::Z_AXIS: ++count[2]; break;
+         case axis_type::X: ++count[0]; break;
+         case axis_type::Y: ++count[1]; break;
+         case axis_type::Z: ++count[2]; break;
          default: break;
       }
    }
 
    // Assign the dominant axis for the principal axis (favor the Z axis for ties):
    maxCount = ts_max(count[0], count[1], count[2]);
-   if (maxCount==count[2])      { principal = vvVecmath::Z_AXIS; stacking = stack[2]; }
-   else if (maxCount==count[1]) { principal = vvVecmath::Y_AXIS; stacking = stack[1]; }
-   else                         { principal = vvVecmath::X_AXIS; stacking = stack[0]; }
+   if (maxCount==count[2])      { principal = axis_type::Z; stacking = stack[2]; }
+   else if (maxCount==count[1]) { principal = axis_type::Y; stacking = stack[1]; }
+   else                         { principal = axis_type::X; stacking = stack[0]; }
 
    if (vvDebugMsg::isActive(3)) cerr << "Principal axis: " << principal << endl;
    if (vvDebugMsg::isActive(3))
@@ -682,24 +690,22 @@ void vvSoftPer::findPrincipalAxis()
 */
 void vvSoftPer::findShiftMatrix()
 {
-   vvVector4 permEye;                             // object space eye position after permutation
-
    vvDebugMsg::msg(3, "vvSoftPer::findShiftMatrix()");
 
-   permEye = vvVector4(oEye);
-   permEye.multiply(osPerm);
+   vec4 permEye = oEye;                           // object space eye position after permutation
+   permEye = osPerm * permEye;
 
-   shift.identity();
+   shift = mat4::identity();
    if (permEye[2] == 0.0f)                        // is eye in z=0 plane?
    {
       // TODO: find algorithm when eye inside of volume
       // Shift eye position to other edge of volume to prevent
       // division by zero in shear:
-      const vvVector3 size = vd->getSize();
-      shift.translate(0.0f, 0.0f, -size[2]);
+      vec3 size = vd->getSize();
+      shift = translate(shift, vec3(0.0f, 0.0f, -size[2]));
       cerr << "Eye inside of volume!" << endl;
    }
-   if (vvDebugMsg::isActive(3)) shift.print("shift");
+   VV_LOG(3) << "shift: " << shift;
 }
 
 
@@ -709,11 +715,9 @@ void vvSoftPer::findSEyePosition()
 {
    vvDebugMsg::msg(3, "vvSoftPer::findSEyePosition()");
 
-   sEye = vvVector4(oEye);
-   sEye.multiply(osPerm);
-   sEye.multiply(shift);
-   if (vvDebugMsg::isActive(3))
-      sEye.print("Eye position in standard object space: ");
+   sEye = osPerm * oEye;
+   sEye = shift * sEye;
+   VV_LOG(3) << "Eye position in standard object space: " << sEye;
 }
 
 
@@ -725,20 +729,20 @@ void vvSoftPer::findScaleMatrix()
 
    vvDebugMsg::msg(3, "vvSoftPer::findScaleMatrix()");
 
-   scale.identity();
+   scale = mat4::identity();
 
-   const vvVector3 size = vd->getSize();
+   vec3 size = vd->getSize();
    switch(principal)
    {
-      case vvVecmath::X_AXIS:
-         scale.scaleLocal(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+      case virvo::cartesian_axis< 3 >::X:
+         scale = virvo::scale( scale, vec3(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]) );
          break;
-      case vvVecmath::Y_AXIS:
-         scale.scaleLocal(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+      case virvo::cartesian_axis< 3 >::Y:
+         scale = virvo::scale( scale, vec3(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]) );
          break;
-      case vvVecmath::Z_AXIS:
+      case virvo::cartesian_axis< 3 >::Z:
       default:
-         scale.scaleLocal(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+         scale = virvo::scale( scale, vec3(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]) );
          break;
    }
 
@@ -748,12 +752,12 @@ void vvSoftPer::findScaleMatrix()
       sf = sdShear(3, 2) + 1;
 
    sf = 1.0f / sf;                                // invert scale factor
-   scale.scaleLocal(sf, sf, 1.0f);
+   scale = virvo::scale( scale, vec3(sf, sf, 1.0f) );
 
    // Adjust intermediate image size to desired image quality:
-   scale.scaleLocal(_quality, _quality, 1.0f);
+   scale = virvo::scale( scale, vec3(_quality, _quality, 1.0f) );
 
-   if (vvDebugMsg::isActive(3)) scale.print("scale");
+   VV_LOG(3) << "scale: " << scale;
 }
 
 
@@ -768,13 +772,13 @@ void vvSoftPer::findSDShearMatrix()
 {
    vvDebugMsg::msg(3, "vvSoftPer::findShearMatrix()");
 
-   sdShear.identity();
+   sdShear = mat4::identity();
    assert(sEye[2] != 0.0f);                       // this should be asserted by the shift matrix
    sdShear(0, 2) = -sEye[0] / sEye[2];          // shear in x direction
    sdShear(1, 2) = -sEye[1] / sEye[2];          // shear in y direction
    sdShear(3, 2) = -sEye[3] / sEye[2];          // perspective scale component
 
-   if (vvDebugMsg::isActive(3)) sdShear.print("sdShear");
+   VV_LOG(3) << "sdShear: " << sdShear;
 }
 
 
@@ -786,15 +790,9 @@ void vvSoftPer::findSDShearMatrix()
 */
 void vvSoftPer::findOIShearMatrix()
 {
-   vvDebugMsg::msg(3, "vvSoftPer::findOIShearMatrix()");
+    oiShear = diConv * scale * sdShear * shift * osPerm;
 
-   oiShear = vvMatrix(osPerm);
-   oiShear.multiplyLeft(shift);
-   oiShear.multiplyLeft(sdShear);
-   oiShear.multiplyLeft(scale);
-   oiShear.multiplyLeft(diConv);
-
-   if (vvDebugMsg::isActive(3)) oiShear.print("oiShear");
+    VV_LOG(3) << "oiShear: " << oiShear;
 }
 
 
@@ -804,21 +802,18 @@ void vvSoftPer::findOIShearMatrix()
 */
 void vvSoftPer::findWarpMatrix()
 {
-   vvMatrix ioShear;                             // inverse of oiShear
+   mat4 ioShear;                             // inverse of oiShear
 
    vvDebugMsg::msg(3, "vvSoftPer::findWarpMatrix()");
 
    // Compute inverse of oiShear:
-   ioShear = vvMatrix(oiShear);
-   ioShear.invert();
+   ioShear = inverse(oiShear);
 
    // Assemble warp matrices:
-   iwWarp = vvMatrix(ioShear);
-   iwWarp.multiplyLeft(owView);
-   if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
-   ivWarp = vvMatrix(iwWarp);
-   ivWarp.multiplyLeft(wvConv);
-   if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
+   iwWarp = owView * ioShear;
+   VV_LOG(3) << "iwWarp: " << iwWarp;
+   ivWarp = wvConv * iwWarp;
+   VV_LOG(3) << "ivWarp: " << ivWarp;
 }
 
 

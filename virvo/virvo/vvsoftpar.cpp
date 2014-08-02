@@ -27,12 +27,16 @@ using std::endl;
 
 #include <math.h>
 #include <assert.h>
+#include "private/vvlog.h"
 #include "vvdebugmsg.h"
-#include "vvvecmath.h"
 #include "vvclock.h"
 #include "vvsoftimg.h"
 #include "vvvoldesc.h"
 #include "vvsoftpar.h"
+
+using virvo::mat4;
+using virvo::vec3;
+using virvo::vec4;
 
 //----------------------------------------------------------------------------
 /** Constructor.
@@ -49,7 +53,7 @@ vvSoftPar::vvSoftPar(vvVolDesc* vd, vvRenderState rs) : vvSoftVR(vd, rs)
    bufSlice[0] = bufSlice[1] = NULL;
    bufSliceLen[0] = bufSliceLen[1] = 0;
    readSlice = 0;
-   wViewDir.set(0.0f, 0.0f, 1.0f);
+   wViewDir = vec3(0.0f, 0.0f, 1.0f);
 
    // Provide enough space for all possible shear matrices:
    imgSize = 2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
@@ -128,10 +132,10 @@ void vvSoftPar::compositeVolume(int from, int to)
       // Compute opacity correction table:
       int i;
       float dx;
-      vvVector3 pos1, pos2, dummy;
+      vec3 pos1, pos2, dummy;
       findSlicePosition(0, &pos1, &dummy);
       findSlicePosition(1, &pos2, &dummy);
-      pos1.sub(pos2);
+      pos1 -= pos2;
       dx = sqrtf(1.0f + pos1[0] * pos1[0] + pos1[1] * pos1[1]);
       for (i=0; i<VV_OP_CORR_TABLE_SIZE; ++i)
       {
@@ -185,7 +189,7 @@ ia := ia + va * (1 - ia)
 */
 void vvSoftPar::compositeSliceNearest(int slice, int from, int to)
 {
-   vvVector3 vStart;                              // bottom left voxel of this slice
+   vec3 vStart;                                   // bottom left voxel of this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates (Y=0 is bottom)
    int    ix,iy;                                  // counters [intermediate image space]
    uchar* vScalar;                                // pointer to scalar voxel data corresponding to current image pixel
@@ -277,7 +281,7 @@ void vvSoftPar::compositeSliceNearest(int slice, int from, int to)
 */
 void vvSoftPar::compositeSliceBilinear(int slice)
 {
-   vvVector3 vStart;                              // bottom left voxel of this slice
+   vec3 vStart;                                   // bottom left voxel of this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates (Y=0 is bottom)
    int    ix,iy;                                  // counters [intermediate image space]
    uchar* vScalar[4];                             // ptr to scalar data: 0=bot.left, 1=top left, 2=top right, 3=bot.right
@@ -439,7 +443,7 @@ ia := ia + va * (1 - ia)
 */
 void vvSoftPar::compositeSliceCompressedNearest(int slice)
 {
-   vvVector3 vStart;                              // bottom left voxel of this slice
+   vec3 vStart;                                   // bottom left voxel of this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates (Y=0 is bottom)
    int    ix,iy,i;                                // counters [intermediate image space]
    uchar* vScalar;                                // pointer to scalar voxel data corresponding to current image pixel
@@ -554,7 +558,7 @@ void vvSoftPar::compositeSliceCompressedNearest(int slice)
 */
 void vvSoftPar::compositeSliceCompressedBilinear(int slice)
 {
-   vvVector3 vStart;                              // bottom left voxel of this slice
+   vec3 vStart;                                   // bottom left voxel of this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates (Y=0 is bottom)
    int    ix,iy;                                  // counters [intermediate image space]
    uchar* vScalar[4];                             // ptr to scalar data: 0=bot.left, 1=top left, 2=top right, 3=bot.right
@@ -666,7 +670,7 @@ void vvSoftPar::compositeSliceCompressedBilinear(int slice)
 */
 void vvSoftPar::compositeSlicePreIntegrated(int slice, int sliceStep)
 {
-   vvVector3 vStart;                              // bottom left voxel of this slice
+   vec3 vStart;                                   // bottom left voxel of this slice
    int    iPosX, iPosY;                           // current intermediate image coordinates (Y=0 is bottom)
    int    ix,iy;                                  // counters [intermediate image space]
    uchar* vScalarB[4];                            // ptr to scalar data (back): 0=bot.left, 1=top left, 2=top right, 3=bot.right
@@ -900,18 +904,15 @@ void vvSoftPar::compositeSlicePreIntegrated(int slice, int sliceStep)
 */
 void vvSoftPar::findOViewingDirection()
 {
-   vvMatrix woView;                              // inverse viewing transformation matrix
 
    vvDebugMsg::msg(3, "vvSoftPar::findOViewingDirection()");
 
    // Compute inverse of view matrix:
-   woView = owView;
-   woView.invert();
+   mat4 woView = inverse(owView);
 
    // Compute viewing direction:
-   oViewDir = vvVector3(wViewDir);
-   oViewDir.multiply(woView);
-   if (vvDebugMsg::isActive(3)) oViewDir.print("oViewDir");
+   oViewDir = ( woView * vec4(wViewDir, 1.0f) ).xyz();
+   VV_LOG(3) << "oViewDir: " << oViewDir;
 }
 
 
@@ -925,9 +926,9 @@ void vvSoftPar::findPrincipalAxis()
 
    maximum = (float)ts_max(fabs(oViewDir[0]), fabs(oViewDir[1]), fabs(oViewDir[2]));
 
-   if      (fabs(oViewDir[0]) == maximum) principal = vvVecmath::X_AXIS;
-   else if (fabs(oViewDir[1]) == maximum) principal = vvVecmath::Y_AXIS;
-   else principal = vvVecmath::Z_AXIS;
+   if      (fabs(oViewDir[0]) == maximum) principal = virvo::cartesian_axis< 3 >::X;
+   else if (fabs(oViewDir[1]) == maximum) principal = virvo::cartesian_axis< 3 >::Y;
+   else principal = virvo::cartesian_axis< 3 >::Z;
 
    if (oViewDir[principal] > 0) stacking = false;
    else stacking = true;
@@ -951,9 +952,8 @@ void vvSoftPar::findSViewingDirection()
 {
    vvDebugMsg::msg(3, "vvSoftPar::findSViewingDirection()");
 
-   sViewDir = vvVector3(oViewDir);
-   sViewDir.multiply(osPerm);
-   if (vvDebugMsg::isActive(3)) sViewDir.print("sViewDir");
+   sViewDir = ( osPerm * vec4(oViewDir, 1.0f) ).xyz();
+   VV_LOG(3) << "sViewDir: " << sViewDir;
 }
 
 
@@ -966,8 +966,7 @@ void vvSoftPar::findSViewingDirection()
 void vvSoftPar::findShearMatrix()
 {
    float si, sj;                                  // shear factors
-   vvMatrix imgConv;                             // conversion to intermediate image coordinate system
-   vvMatrix siShear;                             // shear standard object space to intermediate image space
+   mat4 siShear;                                 // shear standard object space to intermediate image space
 
    vvDebugMsg::msg(3, "vvSoftPar::findShearMatrix()");
 
@@ -976,27 +975,26 @@ void vvSoftPar::findShearMatrix()
    sj = - sViewDir[1] / sViewDir[2];
 
    // Assemble standard object space shear matrix from shear factors:
-   siShear.identity();
+   siShear = mat4::identity();
    siShear(0, 2) = si;
    siShear(1, 2) = sj;
 
    // Add scale factor depending on object size:
-   const vvVector3 size = vd->getSize();
-   vvMatrix scaleMat;
-   scaleMat.identity();
+   vec3 size = vd->getSize();
+   mat4 scaleMat = mat4::identity();
    switch(principal)
    {
-      case vvVecmath::X_AXIS:
-         scaleMat.scaleLocal(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+      case virvo::cartesian_axis< 3 >::X:
+         scaleMat = scale( scaleMat, vec3(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]) );
          break;
-      case vvVecmath::Y_AXIS:
-         scaleMat.scaleLocal(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+      case virvo::cartesian_axis< 3 >::Y:
+         scaleMat = scale( scaleMat, vec3(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]) );
          break;
-      case vvVecmath::Z_AXIS:
-         scaleMat.scaleLocal(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+      case virvo::cartesian_axis< 3 >::Z:
+         scaleMat = scale( scaleMat, vec3(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]) );
          break;
    }
-   siShear.multiplyLeft(scaleMat);
+   siShear = scaleMat * siShear;
 
    // Create conversion matrix for intermediate image coordinates:
    // Shift right and down.
@@ -1005,23 +1003,22 @@ void vvSoftPar::findShearMatrix()
    //  0   1    0   h/2
    //  0   0    1    0
    //  0   0    0    1
-   imgConv.identity();
-   imgConv.scaleLocal(quality, quality, 1.0f);
+   mat4 imgConv = mat4::identity();
+   imgConv = scale( imgConv, vec3(quality, quality, 1.0f) );
    imgConv(0, 3) = (float)(intImg->width / 2);
    imgConv(1, 3) = (float)(intImg->height / 2);
-   siShear.multiplyLeft(imgConv);
+   siShear = imgConv * siShear;
    if (vvDebugMsg::isActive(3))
    {
       intImg->print("intImg:");
-      imgConv.print("imgConv:");
-      siShear.print("siShear:");
    }
+   VV_LOG(3) << "imgConv: " << imgConv;
+   VV_LOG(3) << "siShear: " << siShear;
 
    // Assemble final shear matrix:
-   oiShear = vvMatrix(osPerm);
-   oiShear.multiplyLeft(siShear);
+   oiShear = siShear * osPerm;
 
-   if (vvDebugMsg::isActive(3)) oiShear.print("oiShear");
+   VV_LOG(3) << "oiShear: " << oiShear;
 }
 
 
@@ -1032,21 +1029,17 @@ void vvSoftPar::findShearMatrix()
 */
 void vvSoftPar::findWarpMatrix()
 {
-   vvMatrix ioShear;                             // inverse of shear matrix
 
    vvDebugMsg::msg(3, "vvSoftPar::findWarpMatrix()");
 
    // Compute inverse of shear matrix:
-   ioShear = oiShear;
-   ioShear.invert();
+   mat4 ioShear = inverse(oiShear);
 
    // Compute warp matrices:
-   iwWarp = vvMatrix(ioShear);
-   iwWarp.multiplyLeft(owView);
-   if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
-   ivWarp = vvMatrix(iwWarp);
-   ivWarp.multiplyLeft(wvConv);
-   if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
+   iwWarp = owView * ioShear;
+   VV_LOG(3) << "iwWarp: " << iwWarp;
+   ivWarp = wvConv * iwWarp;
+   VV_LOG(3) << "ivWarp: " << ivWarp;
 }
 
 

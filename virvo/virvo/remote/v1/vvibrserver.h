@@ -30,7 +30,7 @@ public:
   VVAPI virtual ~vvIbrServer();
 
 private:
-  virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) VV_OVERRIDE;
+  virtual void renderImage(virvo::mat4 const& pr, virvo::mat4 const& mv, vvRenderer* renderer) VV_OVERRIDE;
 };
 
 #endif

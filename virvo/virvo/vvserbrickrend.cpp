@@ -60,8 +60,7 @@ void vvSerBrickRend::renderVolumeGL()
     virvo::vec3f eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
-    vvssize3 veye = vd->voxelCoords(eye);
-    _bspTree->traverse(veye);
+    _bspTree->traverse(vd->voxelCoords(eye));
   }
   else
   {

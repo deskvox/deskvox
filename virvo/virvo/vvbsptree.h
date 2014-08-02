@@ -23,7 +23,6 @@
 
 #include "math/math.h"
 
-#include "vvvecmath.h"
 #include "vvvisitor.h"
 #include "vvinttypes.h"
 
@@ -52,8 +51,8 @@ public:
   vvBspNode* getChildRight() const;
   box_type const& getAabb() const;
 
-  void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
-                 vvVector3& probePosObj, vvVector3& probeSizeObj) const;
+  void clipProbe(virvo::vec3& probeMin, virvo::vec3& probeMax,
+                 virvo::vec3& probePosObj, virvo::vec3& probeSizeObj) const;
 private:
   size_t _id;
   vvBspNode* _childLeft;
@@ -82,10 +81,10 @@ public:
 
   typedef vvBspNode::box_type box_type;
 
-  vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data);
+  vvBspTree(virvo::vector< 3, ssize_t > const& volsize, const vvBspData& data);
   virtual ~vvBspTree();
 
-  void traverse(const vvssize3& pos) const;
+  void traverse(virvo::vector< 3, ssize_t > const& pos) const;
 
   const std::vector<vvBspNode*>& getLeafs() const;
 
@@ -106,7 +105,7 @@ private:
    [2] := 100% of remaining fraction (0.1) == 1.0
   */
   float calcRelativeFraction(size_t leafIdx);
-  void traverse(const vvssize3& pos, vvBspNode* node) const;
+  void traverse(virvo::vector< 3, ssize_t > const& pos, vvBspNode* node) const;
 };
 
 #endif // VV_BSPTREE_H

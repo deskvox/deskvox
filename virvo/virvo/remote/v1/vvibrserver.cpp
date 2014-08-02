@@ -22,16 +22,21 @@
 #include "vvconfig.h"
 #endif
 
+#include "gl/util.h"
+#include "math/math.h"
+
 #include "vvibrserver.h"
 #include "vvibr.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvsocketio.h"
 
-#include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 
+namespace gl = virvo::gl;
+
 using virvo::aabb;
+using virvo::mat4;
 using virvo::recti;
 using virvo::vec2;
 
@@ -51,13 +56,13 @@ vvIbrServer::~vvIbrServer()
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer)
+void vvIbrServer::renderImage(mat4 const& pr, mat4 const& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvIbrServer::renderImage()");
 
   // Update matrices
-  vvGLTools::setProjectionMatrix(pr);
-  vvGLTools::setModelviewMatrix(mv);
+  gl::setProjectionMatrix(pr);
+  gl::setModelviewMatrix(mv);
 
   // Render volume:
   renderer->beginFrame(virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH);

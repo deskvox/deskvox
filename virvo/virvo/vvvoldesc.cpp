@@ -2649,7 +2649,7 @@ voxel to the vector (0|-1|0).
 void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bool verbose)
 {
   uint8_t* rd;                                    // raw data of current source frame
-  vec3f center;                                   // sphere center position [voxel space]
+  vec3 center;                                    // sphere center position [voxel space]
   vvVector3 v;                                    // currently processed voxel coordinates [voxel space]
   uint8_t* newRaw;                                // raw data of current destination frame
   float dist;                                     // distance from voxel to sphere center
@@ -2694,7 +2694,7 @@ void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bo
         for (size_t x=0; x<outer; ++x)
       {
         // Compute sphere coordinates of current destination voxel:
-        v = vec3f( (float)x, (float)y, (float)z );
+        v = vec3( (float)x, (float)y, (float)z );
         v -= vvVector3( center );
         v[1] = -v[1];                             // adapt to vvVecmath coordinate system
         v[2] = -v[2];                             // adapt to vvVecmath coordinate system

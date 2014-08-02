@@ -27,9 +27,11 @@
 #include "vvimage.h"
 #include "vvtoolshed.h"
 
+#include "gl/util.h"
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
 
+namespace gl = virvo::gl;
 using virvo::vec3f;
 
 
@@ -105,8 +107,8 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
-  vvGLTools::getModelviewMatrix(&_currentMv);
-  vvGLTools::getProjectionMatrix(&_currentPr);
+    _currentMv = gl::getModelviewMatrix();
+    _currentPr = gl::getProjectionMatrix();
 
   if (render() != vvRemoteClient::VV_OK)
   {

@@ -24,8 +24,8 @@
 #include "math/math.h"
 
 #include "vvexport.h"
-#include "vvvecmath.h"
 
+class vvMatrix;
 
 //============================================================================
 // Class Definitions
@@ -58,12 +58,11 @@ class VIRVOEXPORT vvGLTools
     static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();
     static void drawQuad(float x1 = -1.0f, float y1 = -1.0f, float x2 =  1.0f, float y2 =  1.0f);
-    static virvo::vec4f queryClearColor();
+    static virvo::vec4 queryClearColor();
     static void getModelviewMatrix(vvMatrix*);
     static void getProjectionMatrix(vvMatrix*);
     static void setModelviewMatrix(const vvMatrix& mv);
     static void setProjectionMatrix(const vvMatrix& pr);
-    static void getClippingPlanes(vvPlane& znear, vvPlane& zfar);
 };
 
 namespace virvo
@@ -71,8 +70,6 @@ namespace virvo
 namespace gltools
 {
 std::string lastError(const std::string& file, int line);
-VVAPI Matrix getModelViewMatrix();
-VVAPI Matrix getProjectionMatrix();
 }
 }
 

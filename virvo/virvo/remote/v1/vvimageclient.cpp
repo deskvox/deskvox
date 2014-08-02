@@ -24,7 +24,6 @@
 
 #include "gl/util.h"
 
-#include "private/vvgltools.h"
 #include "private/vvimage.h"
 
 using std::cerr;

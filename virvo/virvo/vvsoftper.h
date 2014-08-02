@@ -82,12 +82,12 @@ ivWarp  = wvConv x owView x soPerm x shift-1 x dsShear x scale-1 x idConv
 class VIRVOEXPORT vvSoftPer : public vvSoftVR
 {
    protected:
-      vvVector4 oEye;                             ///< eye position [object space]
-      vvVector4 sEye;                             ///< eye position [standard object space]
-      vvMatrix shift;                            ///< shift volume if eye in slice 0 = T_shift
-      vvMatrix scale;                            ///< scale front voxel slice to 1:1 pixel:voxel ratio
-      vvMatrix diConv;                           ///< convert deformed space to intermediate image space
-      vvMatrix sdShear;                          ///< shear matrix from standard object space to deformed (sheared) space
+      virvo::vec4 oEye;                          ///< eye position [object space]
+      virvo::vec4 sEye;                          ///< eye position [standard object space]
+      virvo::mat4 shift;                         ///< shift volume if eye in slice 0 = T_shift
+      virvo::mat4 scale;                         ///< scale front voxel slice to 1:1 pixel:voxel ratio
+      virvo::mat4 diConv;                        ///< convert deformed space to intermediate image space
+      virvo::mat4 sdShear;                       ///< shear matrix from standard object space to deformed (sheared) space
 
       void compositeSliceNearest(int, int = -1, int = -1);
       void compositeSliceBilinear(int, int = -1, int = -1);
