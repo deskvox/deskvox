@@ -32,7 +32,7 @@
 // vvBspNode Method Definitions
 //============================================================================
 
-vvBspNode::vvBspNode(typename vvBspNode::box_type const& aabb)
+vvBspNode::vvBspNode(vvBspNode::box_type const& aabb)
   : _aabb(aabb)
 {
   _childLeft = NULL;
@@ -72,7 +72,7 @@ void vvBspNode::setId(size_t id)
   _id = id;
 }
 
-void vvBspNode::setAabb(typename vvBspNode::box_type const& aabb)
+void vvBspNode::setAabb(vvBspNode::box_type const& aabb)
 {
   _aabb = aabb;
 }
@@ -92,7 +92,7 @@ vvBspNode* vvBspNode::getChildRight() const
   return _childRight;
 }
 
-typename vvBspNode::box_type const& vvBspNode::getAabb() const
+vvBspNode::box_type const& vvBspNode::getAabb() const
 {
   return _aabb;
 }

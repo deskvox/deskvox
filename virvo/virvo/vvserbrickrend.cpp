@@ -131,7 +131,7 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
 
   for (size_t i = 0; i < _renderers.size(); ++i)
   {
-    typename vvBspTree::box_type aabb = _bspTree->getLeafs().at(i)->getAabb();
+    vvBspTree::box_type aabb = _bspTree->getLeafs().at(i)->getAabb();
 
     setVisibleRegion(_renderers.at(i), aabb);
   }

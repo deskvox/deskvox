@@ -80,7 +80,7 @@ class vvBspTree
 {
 public:
 
-    typedef typename vvBspNode::box_type box_type;
+  typedef vvBspNode::box_type box_type;
 
   vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data);
   virtual ~vvBspTree();
