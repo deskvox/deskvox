@@ -2051,6 +2051,49 @@ void vvVolDesc::toggleSign(int /* frame */)
 }
 
 //----------------------------------------------------------------------------
+/** Make data values unsigned
+  <UL>
+    <LI>bpv=1: add 128</LI>
+    <LI>bpv=2: add 32768</LI>
+    <LI>bpv=4: do nothing</LI>
+  </UL>
+*/
+void vvVolDesc::makeUnsigned(int /* frame */)
+{
+  uint8_t* rd;
+  float  val;
+
+  vvDebugMsg::msg(2, "vvVolDesc::makeUnsigned()");
+
+  size_t frameVoxels = getFrameVoxels();
+  raw.first();
+  for (size_t f=0; f<frames; ++f)
+  {
+    rd = raw.getData();
+    for (size_t i=0; i<frameVoxels*chan; ++i)
+    {
+      switch(bpc)
+      {
+        case 1: {
+          int v = *(int8_t *)rd;
+          v += 0x80;
+          *rd = v;
+          break;
+        }
+        case 2: {
+          int v = *(int16_t *)rd;
+          v += 0x8000;
+          *(uint16_t *)rd = v;
+          break;
+        }
+      }
+      rd += bpc;
+    }
+    raw.next();
+  }
+}
+
+//----------------------------------------------------------------------------
 /** Returns true if a specific channel is nonzero in any voxel of the volume.
   @param m channel index (0=first)
 */

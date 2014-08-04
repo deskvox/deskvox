@@ -84,6 +84,7 @@ vvConv::vvConv()
     , rawHeight(0)
     , rawSlices(0)
     , rawSkip(0)
+    , signedData(false)
     , ipt(vvVolDesc::NEAREST)
     , statistics(false)
     , fillRange(false)
@@ -712,6 +713,11 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   {
     cerr << "Toggle sign." << endl;
     v->toggleSign();
+  }
+  if (signedData)
+  {
+    cerr << "Making unsigned." << endl;
+    v->makeUnsigned();
   }
   if (autoRealRange)
   {
@@ -1821,6 +1827,11 @@ bool vvConv::parseCommandLine(int argc, char** argv)
 	  // altoll not available on windows rawSkip = atoll(argv[arg]);
     }
 
+    else if (vvToolshed::strCompare(argv[arg], "-signed")==0)
+    {
+       signedData = true;
+    }
+
     else if (vvToolshed::strCompare(argv[arg], "-loadcpt")==0)
     {
       loadCPT = true;
@@ -2165,6 +2176,9 @@ void vvConv::displayHelpInfo()
   cerr << " <ch>                      = number of channels" << endl;
   cerr << " <skip>                    = number of bytes to skip (to ignore header)" << endl;
   cerr << endl;
+  cerr << "-signed" << endl;
+  cerr << " Interpret raw volume as signed data (add half of integer data range (128 or 32768))" << endl;
+  cerr << endl;
   cerr << "-loadcpt <size> <param> <minmax>" << endl;
   cerr << " Load a checkpoint particles file. The parameters are:" << endl;
   cerr << " <size    = volume edge length [voxels]" << endl;
@@ -2338,6 +2352,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-interpolation <n|t>               set interpolation type (n: nearest neighbour, t: trilinear)" << endl;
     cerr << "-invertorder                       invert voxel order" << endl;
     cerr << "-loadraw <w> <h> <s> <bc> <c> <sk> load raw volume data from file" << endl;
+    cerr << "-signed                            interpret raw as signed data" << endl;
     cerr << "-loadcpt <size> <param> <minmax>   load checkpoint particles file" << endl;
     cerr << "-loadxb7 <size> <param> <minmax>   load XB7 particles file" << endl;
     cerr << "-makeicon <size>                   create icon from data set" << endl;

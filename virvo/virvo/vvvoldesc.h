@@ -265,6 +265,7 @@ class VIRVOEXPORT vvVolDesc
     void   expandDataRange(bool = false);
     void   zoomDataRange(int, int, int, bool = false);
     void   toggleSign(int frame=-1);
+    void   makeUnsigned(int frame=-1);
     void   blend(vvVolDesc*, int, bool=false);
     void   swapChannels(size_t, size_t, bool=false);
     void   extractChannel(float[3], bool=false);

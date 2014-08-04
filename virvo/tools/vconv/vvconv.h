@@ -90,6 +90,7 @@ class vvConv
     int   rawCh;        ///< number of channels in raw file
     int   rawWidth, rawHeight, rawSlices; ///< volume size in raw file
     ssize_t rawSkip;    ///< number of bytes to skip in a raw file (to ignore header)
+    bool  signedData;   ///< true = make data unsigned
     vvVolDesc::InterpolationType ipt;     ///< interpolation type to use for resampling
     bool  statistics;   ///< true = print statistics about volume data
     bool  fillRange;    ///< true = expand data range to use all values from 0 to maximum
