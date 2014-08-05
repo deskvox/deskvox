@@ -1244,7 +1244,7 @@ void vvView::voxelMenuCallback(int item)
 */
 void vvView::optionsMenuCallback(int item)
 {
-  vec3 size;
+  vec3 size(0.0f, 0.0f, 0.0f);
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
 
