@@ -1015,24 +1015,24 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
   const size_t BatchSize = 100;
+
   std::vector<GLint> firsts;
+
   firsts.reserve(BatchSize);
+
   std::vector<GLsizei> counts;
+
   counts.reserve(BatchSize);
+
   std::vector<GLfloat> vc, tc0, tc1;
+
   vc.reserve(BatchSize*3*6);
   tc0.reserve(BatchSize*3*6);
-  glVertexPointer(3, GL_FLOAT, 0, &vc[0]);
-  glClientActiveTextureARB(GL_TEXTURE0_ARB);
-  glTexCoordPointer(3, GL_FLOAT, 0, &tc0[0]);
   if (usePreIntegration)
   {
     tc1.reserve(BatchSize*3*6);
-    glClientActiveTextureARB(GL_TEXTURE1_ARB);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(3, GL_FLOAT, 0, &tc1[0]);
-    glClientActiveTextureARB(GL_TEXTURE0_ARB);
   }
 
   glColor4f(1.0, 1.0, 1.0, 1.0);
@@ -1126,6 +1126,15 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
       }
     }
     --i; // last loop increased i by 1 too much
+
+    glVertexPointer(3, GL_FLOAT, 0, &vc[0]);
+    glClientActiveTextureARB(GL_TEXTURE0_ARB);
+    glTexCoordPointer(3, GL_FLOAT, 0, &tc0[0]);
+    if (usePreIntegration)
+    {
+      glClientActiveTextureARB(GL_TEXTURE1_ARB);
+      glTexCoordPointer(3, GL_FLOAT, 0, &tc1[0]);
+    }
 
     glMultiDrawArrays(GL_TRIANGLE_FAN, &firsts[0], &counts[0], firsts.size());
     drawn += firsts.size();
