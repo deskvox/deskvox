@@ -1126,17 +1126,20 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     }
     --i; // last loop increased i by 1 too much
 
-    glVertexPointer(3, GL_FLOAT, 0, &vc[0]);
-    glClientActiveTextureARB(GL_TEXTURE0_ARB);
-    glTexCoordPointer(3, GL_FLOAT, 0, &tc0[0]);
-    if (usePreIntegration)
+    if (vertCount != 0)
     {
-      glClientActiveTextureARB(GL_TEXTURE1_ARB);
-      glTexCoordPointer(3, GL_FLOAT, 0, &tc1[0]);
-    }
+      glVertexPointer(3, GL_FLOAT, 0, &vc[0]);
+      glClientActiveTextureARB(GL_TEXTURE0_ARB);
+      glTexCoordPointer(3, GL_FLOAT, 0, &tc0[0]);
+      if (usePreIntegration)
+      {
+        glClientActiveTextureARB(GL_TEXTURE1_ARB);
+        glTexCoordPointer(3, GL_FLOAT, 0, &tc1[0]);
+      }
 
-    glMultiDrawArrays(GL_TRIANGLE_FAN, &firsts[0], &counts[0], firsts.size());
-    drawn += firsts.size();
+      glMultiDrawArrays(GL_TRIANGLE_FAN, &firsts[0], &counts[0], firsts.size());
+      drawn += firsts.size();
+    }
 
     vertCount = 0;
     firsts.clear();
