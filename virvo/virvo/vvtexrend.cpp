@@ -1016,9 +1016,6 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   glEnableClientState(GL_VERTEX_ARRAY);
   glClientActiveTextureARB(GL_TEXTURE0_ARB);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glClientActiveTextureARB(GL_TEXTURE1_ARB);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glClientActiveTextureARB(GL_TEXTURE0_ARB);
 
   const size_t BatchSize = 100;
   std::vector<GLint> firsts;
@@ -1031,6 +1028,9 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   tc0.reserve(BatchSize*3*6);
   if (usePreIntegration)
   {
+    glClientActiveTextureARB(GL_TEXTURE1_ARB);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glClientActiveTextureARB(GL_TEXTURE0_ARB);
     tc1.reserve(BatchSize*3*6);
   }
 
