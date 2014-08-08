@@ -1014,18 +1014,17 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE, &activeTexture);
   glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
   glEnableClientState(GL_VERTEX_ARRAY);
+  glClientActiveTextureARB(GL_TEXTURE0_ARB);
   glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glClientActiveTextureARB(GL_TEXTURE1_ARB);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glClientActiveTextureARB(GL_TEXTURE0_ARB);
 
   const size_t BatchSize = 100;
-
   std::vector<GLint> firsts;
-
   firsts.reserve(BatchSize);
-
   std::vector<GLsizei> counts;
-
   counts.reserve(BatchSize);
-
   std::vector<GLfloat> vc, tc0, tc1;
 
   vc.reserve(BatchSize*3*6);
