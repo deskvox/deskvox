@@ -57,7 +57,7 @@ recti bounds(aabb const& box, matrix< 4, 4, T > const& modelview,
     T maxy = -std::numeric_limits< T >::max();
 
 
-    typename base_aabb< T >::vertex_list const& vertices = compute_vertices(box);
+    typename basic_aabb< T >::vertex_list const& vertices = compute_vertices(box);
 
     for (size_t i = 0; i < 8; ++i)
     {

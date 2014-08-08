@@ -34,7 +34,7 @@ class vvBspNode : public vvVisitable
 {
 public:
 
-    typedef virvo::base_aabb< ssize_t > box_type;
+    typedef virvo::basic_aabb< ssize_t > box_type;
 
   vvBspNode(box_type const& aabb);
   virtual ~vvBspNode();

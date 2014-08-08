@@ -7,9 +7,11 @@
 
 #include "aabb.h"
 #include "axis.h"
+#include "intersect.h"
 #include "output.h"
 #include "matrix.h"
 #include "plane.h"
+#include "ray.h"
 #include "rectangle.h"
 #include "vector.h"
 

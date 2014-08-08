@@ -12,15 +12,15 @@ namespace virvo
 //
 
 template < typename T >
-inline base_aabb< T >::base_aabb()
+inline basic_aabb< T >::basic_aabb()
 {
 }
 
 template < typename T >
-inline base_aabb< T >::base_aabb
+inline basic_aabb< T >::basic_aabb
 (
-    typename base_aabb< T >::vec_type const& min,
-    typename base_aabb< T >::vec_type const& max
+    typename basic_aabb< T >::vec_type const& min,
+    typename basic_aabb< T >::vec_type const& max
 )
     : min(min)
     , max(max)
@@ -28,19 +28,19 @@ inline base_aabb< T >::base_aabb
 }
 
 template < typename T >
-inline typename base_aabb< T >::vec_type base_aabb< T >::center() const
+inline typename basic_aabb< T >::vec_type basic_aabb< T >::center() const
 {
     return (max + min) * value_type(0.5);
 }
 
 template < typename T >
-inline typename base_aabb< T >::vec_type base_aabb< T >::size() const
+inline typename basic_aabb< T >::vec_type basic_aabb< T >::size() const
 {
     return max - min;
 }
 
 template < typename T >
-inline bool base_aabb< T >::contains(typename base_aabb< T >::vec_type const& v) const
+inline bool basic_aabb< T >::contains(typename basic_aabb< T >::vec_type const& v) const
 {
     return v.x >= min.x && v.x <= max.x
         && v.y >= min.y && v.y <= max.y
@@ -53,19 +53,19 @@ inline bool base_aabb< T >::contains(typename base_aabb< T >::vec_type const& v)
 //
 
 template < typename T >
-base_aabb< T > combine(base_aabb< T > const& a, base_aabb< T > const& b)
+basic_aabb< T > combine(basic_aabb< T > const& a, basic_aabb< T > const& b)
 {
-    return base_aabb< T >( min(a.min, b.min), max(a.max, b.max) );
+    return basic_aabb< T >( min(a.min, b.min), max(a.max, b.max) );
 }
 
 template < typename T >
-base_aabb< T > intersect(base_aabb< T > const& a, base_aabb< T > const& b)
+basic_aabb< T > intersect(basic_aabb< T > const& a, basic_aabb< T > const& b)
 {
-    return base_aabb< T >( max(a.min, b.min), min(a.max, b.max) );
+    return basic_aabb< T >( max(a.min, b.min), min(a.max, b.max) );
 }
 
 template < typename T >
-std::pair< base_aabb< T >, base_aabb< T > > split(base_aabb< T > const& box, cartesian_axis< 3 > axis, T splitpos)
+std::pair< basic_aabb< T >, basic_aabb< T > > split(basic_aabb< T > const& box, cartesian_axis< 3 > axis, T splitpos)
 {
 
     vector< 3, T > min1 = box.min;
@@ -76,20 +76,20 @@ std::pair< base_aabb< T >, base_aabb< T > > split(base_aabb< T > const& box, car
     max1[axis] = splitpos;
     min2[axis] = splitpos;
 
-    base_aabb< T > box1(min1, max1);
-    base_aabb< T > box2(min2, max2);
+    basic_aabb< T > box1(min1, max1);
+    basic_aabb< T > box2(min2, max2);
     return std::make_pair(box1, box2);
 
 }
 
 template < typename T >
-typename base_aabb< T >::vertex_list compute_vertices(base_aabb< T > const& box)
+typename basic_aabb< T >::vertex_list compute_vertices(basic_aabb< T > const& box)
 {
 
     vector< 3, T > min = box.min;
     vector< 3, T > max = box.max;
 
-    typename base_aabb< T >::vertex_list result =
+    typename basic_aabb< T >::vertex_list result =
     {{
         vector< 3, T >(max.x, max.y, max.z),
         vector< 3, T >(min.x, max.y, max.z),

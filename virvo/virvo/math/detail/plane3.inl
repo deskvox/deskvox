@@ -7,21 +7,21 @@ namespace virvo
 //
 
 template < typename T >
-inline hyper_plane< 3, T >::hyper_plane()
+inline basic_plane< 3, T >::basic_plane()
 {
 }
 
 template < typename T >
-inline hyper_plane< 3, T >::hyper_plane(vector< 3, T > const& n, T o)
+inline basic_plane< 3, T >::basic_plane(vector< 3, T > const& n, T o)
     : normal(n)
     , offset(o)
 {
 }
 
 template < typename T >
-inline hyper_plane< 3, T >::hyper_plane(vector< 3, T > const& n, vector< 3, T > const& p)
+inline basic_plane< 3, T >::basic_plane(vector< 3, T > const& n, vector< 3, T > const& p)
     : normal(n)
-    , offset(-dot(n, p))
+    , offset(dot(n, p))
 {
 }
 

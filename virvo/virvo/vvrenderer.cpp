@@ -97,8 +97,8 @@ vvRenderState::vvRenderState()
   , _showTexture(true)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
-  , _visibleRegion(virvo::base_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
-  , _paddingRegion(virvo::base_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
+  , _visibleRegion(virvo::basic_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
+  , _paddingRegion(virvo::basic_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
   , _interpolation(virvo::Linear)
   , _earlyRayTermination(true)
@@ -839,7 +839,7 @@ void vvRenderer::renderCoordinates() const
   }
   mv.translate(0.8f * half[0], -0.8f * half[1], 0.0f);
   mv.scaleLocal(0.2f, 0.2f, 0.2f);
-  vvGLTools::setModelviewMatrix(mv);
+  gl::setModelviewMatrix(mv);
 
   // Draw axis cross:
   glBegin(GL_LINES);

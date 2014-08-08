@@ -23,10 +23,13 @@ template < size_t N /* rows */, size_t M /* columns */, typename T >
 class matrix;
 
 template < size_t Dim, typename T >
-class hyper_plane;
+class basic_plane;
 
 template < typename T >
-class base_aabb;
+class basic_aabb;
+
+template < typename T >
+class basic_ray;
 
 template
 <
@@ -69,16 +72,19 @@ typedef matrix< 4, 4, double >              mat4d;
 typedef matrix< 4, 4, float >               mat4;
 
 
-typedef hyper_plane< 3, int >               plane3i;
-typedef hyper_plane< 3, float >             plane3f;
-typedef hyper_plane< 3, double >            plane3d;
-typedef hyper_plane< 3, float >             plane3;
+typedef basic_plane< 3, int >               plane3i;
+typedef basic_plane< 3, float >             plane3f;
+typedef basic_plane< 3, double >            plane3d;
+typedef basic_plane< 3, float >             plane3;
 
 
-typedef base_aabb< int >                    aabbi;
-typedef base_aabb< float >                  aabbf;
-typedef base_aabb< double >                 aabbd;
-typedef base_aabb< float >                  aabb;
+typedef basic_aabb< int >                   aabbi;
+typedef basic_aabb< float >                 aabbf;
+typedef basic_aabb< double >                aabbd;
+typedef basic_aabb< float >                 aabb;
+
+
+typedef basic_ray< float >                  ray;
 
 
 typedef rectangle< xywh_layout, int >       recti;

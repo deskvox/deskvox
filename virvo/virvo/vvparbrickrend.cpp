@@ -118,7 +118,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   // start out with empty rendering regions
-  virvo::base_aabb< ssize_t > emptyBox(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(ssize_t(0)));
+  virvo::basic_aabb< ssize_t > emptyBox(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(ssize_t(0)));
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 

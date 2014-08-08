@@ -992,8 +992,7 @@ bool vvSoftVR::prepareRendering()
    gl::setModelviewMatrix(mv);
 
    // Make sure a parallel projection matrix is used:
-   vvMatrix pm;
-   vvGLTools::getProjectionMatrix(&pm);
+   vvMatrix pm = gl::getProjectionMatrix();
    if (rendererType==SOFTPAR && !pm.isProjOrtho())
    {
       vvDebugMsg::msg(1, "Parallel projection matrix expected! Rendering aborted.");

@@ -10,7 +10,7 @@ namespace virvo
 {
 
 template < typename T >
-class hyper_plane< 3, T >
+class basic_plane< 3, T >
 {
 public:
 
@@ -18,13 +18,13 @@ public:
     typedef vector< 3, T > vec_type;
 
     vec_type normal;
-    vec_type offset;
+    value_type offset;
 
-    hyper_plane();
+    basic_plane();
 
     // NOTE: n must be normalied!
-    hyper_plane(vec_type const& n, value_type o);
-    hyper_plane(vec_type const& n, vec_type const& p);
+    basic_plane(vec_type const& n, value_type o);
+    basic_plane(vec_type const& n, vec_type const& p);
 
 };
 

@@ -62,6 +62,8 @@ namespace gl = virvo::gl;
 
 using virvo::aabb;
 using virvo::mat4;
+using virvo::plane3;
+using virvo::ray;
 using virvo::vec3f;
 using virvo::vec3;
 using virvo::vec4f;
@@ -793,7 +795,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   vec3 delta;                                     // distance vector between textures [object space]
   vec3 normal;                                    // normal vector of textures
   vec3 origin;                                    // origin (0|0|0) transformed to object space
-  vvVector3 normClipPoint;                        // normalized point on clipping plane
+  vec3 normClipPoint;                             // normalized point on clipping plane
   vec3 clipPosObj;                                // clipping plane position in object space w/o position
   vec3 probePosObj;                               // probe midpoint [object space]
   vec3 probeSizeObj;                              // probe size [object space]
@@ -956,17 +958,29 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     // due to the automatic opacity correction.)
     // First find point on clipping plane which is on a line perpendicular
     // to clipping plane and which traverses the origin:
-    vec3f temp = delta * vec3f(-0.5f);
+    vec3 temp = delta * vec3(-0.5f);
     farthest += temp;                          // add a half delta to farthest
     clipPosObj = clip_plane_point_;
     clipPosObj -= pos;
     temp = probePosObj;
     temp += normal;
-    normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
-    maxDist = length( farthest - vec3f(normClipPoint) );
+    /* auto */ virvo::hit_record< ray, plane3 > hr = intersect
+    (
+        ray(probePosObj, probePosObj - temp),
+        plane3(normal, clipPosObj)
+    );
+    if (hr.hit)
+    {
+        normClipPoint = hr.pos;
+    }
+    else
+    {
+        normClipPoint = vec3(0.0f, 0.0f, 0.0f);
+    }
+    maxDist = length( farthest - vec3(normClipPoint) );
     numSlices = (size_t)( maxDist / length(delta) ) + 1;
     temp = delta;
-    temp *= vec3f( ((float)(1 - static_cast<ptrdiff_t>(numSlices))) );
+    temp *= vec3( ((float)(1 - static_cast<ptrdiff_t>(numSlices))) );
     farthest = normClipPoint;
     farthest += temp;
     if (_clipSingleSlice)
@@ -1066,31 +1080,36 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
       {
         for (size_t j=0; j<isectCnt; ++j)
         {
-          vvVector3 front, back;
+          vec3 front, back;
 
           if(isOrtho)
           {
-            back = isect[j];
-            back.sub(deltahalf);
+            back = vec3(isect[j]) - deltahalf;
           }
           else
           {
-            vvVector3 v = isect[j];
-            v.sub(deltahalf);
-            back.isectPlaneLine(normal, v, releye, isect[j]);
+            vec3 v = vec3(isect[j]) - deltahalf;
+            /* auto */ virvo::hit_record< ray, plane3 > hr = intersect
+            (
+                ray(releye, releye - vec3(isect[j])),
+                plane3(normal, v)
+            );
+            back = hr.pos;
           }
 
           if(isOrtho)
           {
-            front = isect[j];
-            front.add(deltahalf);
+            front = vec3(isect[j]) + deltahalf;
           }
           else
           {
-            vvVector3 v;
-            v = isect[j];
-            v.add(deltahalf);
-            front.isectPlaneLine(normal, v, releye, isect[j]);
+            vec3 v = vec3(isect[j]) + deltahalf;
+            /* auto */ virvo::hit_record< ray, plane3 > hr = intersect
+            (
+                ray(releye, releye - vec3(isect[j])),
+                plane3(normal, v)
+            );
+            front = hr.pos;
           }
 
             vec3 tex_coord_back

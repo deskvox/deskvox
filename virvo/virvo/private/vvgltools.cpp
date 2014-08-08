@@ -27,7 +27,6 @@
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
-#include "vvvecmath.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -338,62 +337,6 @@ vec4 vvGLTools::queryClearColor()
   GLfloat tmp[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, tmp);
   return vec4(tmp[0], tmp[1], tmp[2], tmp[3]);
-}
-
-//----------------------------------------------------------------------------
-/** Get the current modelview matrix.
-  @param a matrix which will be set to the current modelview matrix
-*/
-void vvGLTools::getModelviewMatrix(vvMatrix* mv)
-{
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-
-  vvDebugMsg::msg(3, "vvRenderer::getModelviewMatrix()");
-  glGetFloatv(GL_MODELVIEW_MATRIX, glmatrix);
-  mv->setGL((float*)glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Get the current projection matrix.
-  @param a matrix which will be set to the current projection matrix
-*/
-void vvGLTools::getProjectionMatrix(vvMatrix* pm)
-{
-  vvDebugMsg::msg(3, "vvRenderer::getProjectionMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  glGetFloatv(GL_PROJECTION_MATRIX, glmatrix);
-  pm->setGL((float*)glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Set the OpenGL modelview matrix.
-    Adjusts the opengl matrix mode to GL_MODELVIEW.
-  @param new OpenGL modelview matrix
-*/
-void vvGLTools::setModelviewMatrix(const vvMatrix& mv)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  mv.getGL((float*)glmatrix);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadMatrixf(glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Set the OpenGL projection matrix.
-    Adjusts the opengl matrix mode to GL_PROJECTION.
-  @param new OpenGL projection matrix
-*/
-void vvGLTools::setProjectionMatrix(const vvMatrix& pm)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  pm.getGL((float*)glmatrix);
-  glMatrixMode(GL_PROJECTION);
-  glLoadMatrixf(glmatrix);
 }
 
 std::string virvo::gltools::lastError(const std::string& file, int line)

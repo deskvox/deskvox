@@ -61,7 +61,7 @@ inline void serialize(A& a, virvo::matrix< 4, 4, T >& m, unsigned /* version */ 
 
 
 template < typename A, typename T >
-inline void serialize(A& a, virvo::base_aabb< T >& b, unsigned /* version */ )
+inline void serialize(A& a, virvo::basic_aabb< T >& b, unsigned /* version */ )
 {
     a & b.min;
     a & b.max;

@@ -94,7 +94,8 @@ typedef float float_type;
 using simd::sub;
 using simd::mul;
 
-typedef virvo::base_aabb< float_type > AABB;
+typedef virvo::basic_aabb< float_type > AABB;
+typedef virvo::basic_ray< float_type > Ray;
 typedef virvo::vector< 3, int_type > Vec3s;
 typedef virvo::vector< 4, int_type > Vec4s;
 typedef virvo::vector< 3, float_type > Vec3;
@@ -125,34 +126,22 @@ VV_FORCE_INLINE float_type pixely(float y)
 #endif
 }
 
-struct Ray
-{
-  VV_FORCE_INLINE Ray(Vec3 const& ori, Vec3 const& dir)
-    : o(ori)
-    , d(dir)
-  {
-  }
-
-  Vec3 o;
-  Vec3 d;
-};
-
 VV_FORCE_INLINE float_type intersectBox(const Ray& ray, const AABB& aabb, float_type* tnear, float_type* tfar)
 {
   // compute intersection of ray with all six bbox planes
-  Vec3 invR(1.0f / ray.d.x, 1.0f / ray.d.y, 1.0f / ray.d.z);
-  float_type t1 = (aabb.min.x - ray.o.x) * invR.x;
-  float_type t2 = (aabb.max.x - ray.o.x) * invR.x;
+  Vec3 invR(1.0f / ray.dir.x, 1.0f / ray.dir.y, 1.0f / ray.dir.z);
+  float_type t1 = (aabb.min.x - ray.ori.x) * invR.x;
+  float_type t2 = (aabb.max.x - ray.ori.x) * invR.x;
   float_type tmin = min(t1, t2);
   float_type tmax = max(t1, t2);
 
-  t1 = (aabb.min.y - ray.o.y) * invR.y;
-  t2 = (aabb.max.y - ray.o.y) * invR.y;
+  t1 = (aabb.min.y - ray.ori.y) * invR.y;
+  t2 = (aabb.max.y - ray.ori.y) * invR.y;
   tmin = max(min(t1, t2), tmin);
   tmax = min(max(t1, t2), tmax);
 
-  t1 = (aabb.min.z - ray.o.z) * invR.z;
-  t2 = (aabb.max.z - ray.o.z) * invR.z;
+  t1 = (aabb.min.z - ray.ori.z) * invR.z;
+  t2 = (aabb.max.z - ray.ori.z) * invR.z;
   tmin = max(min(t1, t2), tmin);
   tmax = min(max(t1, t2), tmax);
 
@@ -387,7 +376,7 @@ void vvSoftRayRend::renderVolumeGL()
   rect.bottom = r[1];
   rect.top    = r[1] + r[3];
 
-  virvo::base_aabb< ssize_t > const& vr      = getParameter(vvRenderer::VV_VISIBLE_REGION);
+  virvo::basic_aabb< ssize_t > const& vr     = getParameter(vvRenderer::VV_VISIBLE_REGION);
   virvo::vector< 3, ssize_t > minvox         = vr.min;
   virvo::vector< 3, ssize_t > maxvox         = vr.max;
   for (size_t i = 0; i < 3; ++i)
@@ -548,8 +537,7 @@ void renderTile
       d = inv_view_matrix * d;
 
       Ray ray(o.xyz() / o.w, d.xyz() / d.w);
-      ray.d = ray.d - ray.o;
-      ray.d = normalize(ray.d);
+      ray.dir = normalize( ray.dir - ray.ori );
 
       float_type tbnear = 0.0f;
       float_type tbfar = 0.0f;
@@ -564,7 +552,7 @@ void renderTile
 
         while (any(active))
         {
-          Vec3 pos = ray.o + ray.d * t;
+          Vec3 pos = ray.ori + ray.dir * t;
           Vec3 texcoord((pos[0] - volpos[0] + size2[0]) * invsize[0],
                        (-pos[1] - volpos[1] + size2[1]) * invsize[1],
                        (-pos[2] - volpos[2] + size2[2]) * invsize[2]);

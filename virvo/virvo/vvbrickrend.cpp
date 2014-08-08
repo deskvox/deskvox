@@ -102,7 +102,7 @@ bool vvBrickRend::buildBspTree(size_t numBricks)
    return (_bspTree != NULL);
 }
 
-void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::base_aabb< ssize_t > const& box, size_t padding)
+void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::basic_aabb< ssize_t > const& box, size_t padding)
 {
   vvDebugMsg::msg(3, "vvBrickRend::setVisibleRegion()");
 
@@ -122,7 +122,7 @@ void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::base_aabb< ssize
       maxval[j] += padding;
     }
   }
-  renderer->setParameter(vvRenderer::VV_PADDING_REGION, virvo::base_aabb< ssize_t >(minval, maxval));
+  renderer->setParameter(vvRenderer::VV_PADDING_REGION, virvo::basic_aabb< ssize_t >(minval, maxval));
 
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

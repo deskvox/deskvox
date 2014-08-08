@@ -16,7 +16,7 @@ namespace virvo
 
 
 template < typename T >
-class base_aabb
+class basic_aabb
 {
 public:
 
@@ -31,8 +31,8 @@ public:
     vec_type min;
     vec_type max;
 
-    base_aabb();
-    base_aabb(vec_type const& min, vec_type const& max);
+    basic_aabb();
+    basic_aabb(vec_type const& min, vec_type const& max);
 
     vec_type center() const;
     vec_type size() const;

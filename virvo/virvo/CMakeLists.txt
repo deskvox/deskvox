@@ -109,10 +109,12 @@ set(VIRVO_HEADERS
   math/simd/intrinsics.h
   math/aabb.h
   math/forward.h
+  math/intersect.h
   math/matrix.h
   math/math.h
   math/output.h
   math/plane.h
+  math/ray.h
   math/rectangle.h
   math/serialization.h
 
