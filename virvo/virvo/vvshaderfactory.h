@@ -34,6 +34,17 @@ public:
   /// Constructor initiating factory and call glewInit()
   vvShaderFactory();
 
+  /** Provide a string to prepend to each of the loaded shader programs
+   \param defines the string
+   \note intended for GLSL preprocessor defines
+   */
+  void setDefines(const std::string &defines);
+
+  /** Provide name of a file to insert before fragment shader
+    \param file name of file to load
+   */
+  bool loadFragmentLibrary(const std::string &file);
+
   /** Create Program and try to attach shaders with given name
     \param name name contained in all shaders names with standard pattern
     \note the prefix, suffix, extensions etc are added to the names internally
@@ -67,6 +78,8 @@ private:
 
   vvShaderProgram::GeoShaderArgs _geoShaderArgs;
 
+  std::string _defines;
+  std::string _libFileString;
   std::string _shaderName[3];
   std::string _fileString[3];
   std::string _shaderDir;

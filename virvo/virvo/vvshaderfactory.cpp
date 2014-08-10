@@ -48,6 +48,33 @@ vvShaderFactory::vvShaderFactory()
   glewInit();
 }
 
+void vvShaderFactory::setDefines(const std::string &defines)
+{
+  _defines = defines;
+}
+
+bool vvShaderFactory::loadFragmentLibrary(const std::string &file)
+{
+  _libFileString.clear();
+  if (!file.empty())
+  {
+    if(_shaderDir.empty())
+      _shaderDir = getShaderDir();
+
+    try
+    {
+      _libFileString = vvToolshed::file2string(_shaderDir + "/vv_" + file + ".fsh");
+    } 
+    catch (std::exception &e)
+    {
+      std::cerr << e.what() << std::endl;
+      return false;
+    }
+  }
+
+  return true;
+}
+
 vvShaderProgram* vvShaderFactory::createProgram(const std::string& name)
 {
   return createProgram(name, name, name);
@@ -83,8 +110,33 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
       vvDebugMsg::msg(2, "GLSL-shaders found:");
 
       for(int i=0;i<3;i++)
+      {
         if(_fileString[i].length() > 0)
+        {
           vvDebugMsg::msg(2, _shaderName[i].c_str());
+
+          // prepend defines and fragment shader library, but keep #version on first line
+          std::string version;
+          std::string::size_type lineend = _fileString[i].find_first_of("\n\r");
+          if (lineend != std::string::npos)
+          {
+            version = _fileString[i].substr(0, lineend);
+            if (version.find("#version") == std::string::npos)
+            {
+              version.clear();
+            }
+            else
+            {
+              _fileString[i] = _fileString[i].substr(lineend);
+            }
+          }
+
+          if (i == 2)
+            _fileString[i] = version + _defines + _libFileString + _fileString[i];
+          else
+            _fileString[i] = version + _defines + _fileString[i];
+        }
+      }
 
       program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2], _geoShaderArgs);
       if(!program->isValid())

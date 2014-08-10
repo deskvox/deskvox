@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#include <boost/scoped_ptr.hpp>
+
 // Virvo:
 #include "vvexport.h"
 #include "vvrenderer.h"
@@ -107,8 +109,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     size_t _lastFrame;                            ///< last frame rendered
 
-    vvShaderFactory* _shaderFactory;              ///< Factory for shader-creation
-    vvShaderProgram* _shader;                     ///< shader performing intersection test on gpu
+    boost::scoped_ptr<vvShaderFactory> _shaderFactory; ///< Factory for shader-creation
+    boost::scoped_ptr<vvShaderProgram> _shader;   ///< shader performing intersection test on gpu
 
     int _currentShader;                           ///< ID of currently used fragment shader
     int _previousShader;                          ///< ID of previous shader

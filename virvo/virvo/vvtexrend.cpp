@@ -195,7 +195,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
     cerr << endl;
   }
 
-  _shaderFactory = new vvShaderFactory();
+  _shaderFactory.reset(new vvShaderFactory());
+  _shaderFactory->loadFragmentLibrary("texrend");
 
   rendererType = TEXREND;
   texNames = NULL;
@@ -213,6 +214,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   {
     _currentShader = ShaderMultiTF; // TF for each channel
   }
+  _currentShader = ShaderMultiTF; // TF for each channel
 
   _lastFrame = std::numeric_limits<size_t>::max();
   lutDistance = -1.0;
@@ -231,7 +233,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   // Determine best rendering algorithm for current hardware:
   setVoxelType(findBestVoxelType(vox));
 
-  _shader = initShader();
+  _shader.reset(initShader());
   if(voxelType == VV_PIX_SHD && !_shader)
     setVoxelType(VV_RGBA);
   initClassificationStage();
@@ -252,6 +254,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
     makeTextures(true);      // we only have to do this once for non-RGBA textures
   }
   updateTransferFunction();
+  _shader.reset(initShader());
 }
 
 //----------------------------------------------------------------------------
@@ -262,9 +265,6 @@ vvTexRend::~vvTexRend()
 
   freeClassificationStage();
   removeTextures();
-
-  delete _shader;
-  _shader = NULL;
 }
 
 
@@ -442,7 +442,7 @@ void vvTexRend::updateTransferFunction()
   virvo::vector< 3, size_t > size;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
-  if (voxelType==VV_PIX_SHD && vd->tf.size() > 1)
+  if (voxelType==VV_PIX_SHD /* && vd->tf.size() > 1*/)
   {
      _currentShader = ShaderMultiTF;
 
@@ -1009,9 +1009,9 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   // Volume render a 3D texture:
   if(voxelType == VV_PIX_SHD && _shader)
   {
-    enableShader(_shader);
+    enableShader(_shader.get());
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
-    initLight(_shader, mv, normal, thickness);
+    initLight(_shader.get(), mv, normal, thickness);
   }
   else
   {
@@ -1174,7 +1174,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 
   if (voxelType == VV_PIX_SHD && _shader)
   {
-    disableShader(_shader);
+    disableShader(_shader.get());
   }
   else
   {
@@ -1579,9 +1579,8 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
     case vvRenderer::VV_PREINT:
       vvRenderer::setParameter(param, newValue);
       updateTransferFunction();
-      disableShader(_shader);
-      delete _shader;
-      _shader = initShader();
+      disableShader(_shader.get());
+      _shader.reset(initShader());
       break;
     case vvRenderer::VV_BINNING:
       vd->_binning = (vvVolDesc::BinningType)newValue.asInt();
@@ -1615,21 +1614,8 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_LIGHTING:
       vvRenderer::setParameter(param, newValue);
-      if (_currentShader != ShaderMultiTF)
-      {
-        if (_lighting)
-        {
-          _previousShader = _currentShader;
-          _currentShader = ShaderLighting;
-        }
-        else
-        {
-          _currentShader = _previousShader;
-        }
-        disableShader(_shader);
-        delete _shader;
-        _shader = initShader();
-      }
+      disableShader(_shader.get());
+      _shader.reset(initShader());
       break;
     case vvRenderer::VV_PIX_SHADER:
       setCurrentShader(newValue);
@@ -1735,9 +1721,8 @@ void vvTexRend::setCurrentShader(const int shader)
   else
     _currentShader = shader;
 
-  disableShader(_shader);
-  delete _shader;
-  _shader = initShader();
+  disableShader(_shader.get());
+  _shader.reset(initShader());
 }
 
 //----------------------------------------------------------------------------
@@ -1780,7 +1765,6 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
   {
     if (_currentShader == ShaderMultiTF)
     {
-      shader->setParameter1i("channels", vd->chan);
       for (size_t chan=0; chan < pixLUTName.size(); ++chan)
       {
         std::stringstream str;
@@ -1851,6 +1835,19 @@ vvShaderProgram* vvTexRend::initShader()
   {
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
+
+  std::stringstream defines;
+  defines << "#define NUM_CHANNELS " << vd->chan << std::endl;
+  if (_lighting)
+  {
+    defines << "#define LIGHTING 1" << std::endl;
+  }
+  if (usePreIntegration)
+  {
+    defines << "#define PREINTEGRATION 1" << std::endl;
+  }
+
+  _shaderFactory->setDefines(defines.str());
 
   // intersection on CPU, try to create fragment program
   vvShaderProgram* shader = _shaderFactory->createProgram("", "", fragName.str());
