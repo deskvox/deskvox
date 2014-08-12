@@ -1254,6 +1254,147 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
 }
 
 //----------------------------------------------------------------------------
+/** Load VTK structured point data
+*/
+vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
+{
+
+  vvDebugMsg::msg(1, "vvFileIO::loadVTKFile()");
+
+  if (vd->getFilename()==NULL) return FILE_ERROR;
+
+  std::ifstream file(vd->getFilename(), std::ios::binary);
+  if (!file.is_open())
+  {
+    vvDebugMsg::msg(1, "Error: Cannot open file.");
+    return FILE_ERROR;
+  }
+
+  std::string header = "";
+  ssize_t dim[3] = {0, 0, 0};
+  size_t bpc = 1;
+  ssize_t numPoints = -1;
+  virvo::vec3 origin(0., 0., 0.);
+  for (size_t count=0; count<10; ++count)
+  {
+    std::string line;
+    if (!std::getline(file, line))
+    {
+      vvDebugMsg::msg(1, "Error: Unknown .vtk format - not enough lines in header.");
+      return FILE_ERROR;
+    }
+
+    if (line.empty())
+    {
+      continue;
+    }
+
+    if (count == 0)
+    {
+      if (line.find("vtk") == std::string::npos
+          || line.find("DataFile") == std::string::npos
+          || line.find("Version") == std::string::npos
+          || line.find("3.0") == std::string::npos)
+      {
+        vvDebugMsg::msg(1, "Error: Unknown .vtk format - file version and identifier.");
+        return FILE_ERROR;
+      }
+      continue;
+    }
+
+    if (count == 1)
+    {
+      header = line;
+      vvDebugMsg::msg(1, "VTK header: ", header.c_str());
+      continue;
+    }
+
+    if (count == 2)
+    {
+      if (line != "BINARY")
+      {
+        vvDebugMsg::msg(1, "Error: Unknown .vtk format - format.");
+        return FILE_ERROR;
+      }
+      continue;
+    }
+
+    std::string::size_type wordend = line.find(' ');
+    std::string key = line;
+    std::string value;
+    if (wordend != std::string::npos) {
+      key = line.substr(0, wordend);
+      value = line.substr(wordend+1);
+
+      if (key == "DATASET")
+      {
+        if (value != "STRUCTURED_POINTS")
+        {
+          vvDebugMsg::msg(1, "Error: Unknown .vtk type - expected 'STRUCTURED_POINTS'.");
+          return FILE_ERROR;
+        }
+      }
+      else if (key == "POINT_DATA")
+      {
+        numPoints = std::stoi(value);
+      }
+      else if (key == "SCALARS")
+      {
+        if (value == "scalars short")
+        {
+          bpc = 2;
+        }
+        else
+        {
+          vvDebugMsg::msg(1, "Error: Unknown .vtk type - unknown SCALARS type.");
+          return FILE_ERROR;
+        }
+      }
+      else if (key == "DIMENSIONS")
+      {
+        std::stringstream str(value);
+        str >> dim[0] >> dim[1] >> dim[2];
+      }
+      else if (key == "ORIGIN")
+      {
+        std::stringstream str(value);
+        str >> origin[0] >> origin[1] >> origin[2];
+      }
+      else if (key == "SPACING")
+      {
+        std::stringstream str(value);
+        str >> vd->dist[0] >> vd->dist[1] >> vd->dist[2];
+      }
+      else if (key == "LOOKUP_TABLE")
+      {
+      }
+      else
+      {
+        std::cerr << "ignored key: " << key << ", value: " << value << std::endl;
+      }
+    }
+  }
+
+  if (numPoints != dim[0]*dim[1]*dim[2])
+  {
+    vvDebugMsg::msg(1, "Error: Unknown .vtk type - dimensions do not match data size.");
+    return FILE_ERROR;
+  }
+
+  std::istream::pos_type pos = file.tellg();
+  if (pos < 0)
+  {
+    vvDebugMsg::msg(1, "Error: Unknown .vtk type - cannot seek past header.");
+    return FILE_ERROR;
+  }
+
+  virvo::vec3 size(vd->dist[0]*dim[0], vd->dist[1]*dim[1], vd->dist[2]*dim[2]);
+  vd->pos = origin + size * 0.5f;
+
+  return loadRawFile(vd, dim[0], dim[1], dim[2], bpc, 1, pos);
+}
+
+//----------------------------------------------------------------------------
 /** Save volume data to a Nrrd file (Gordon Kindlmann's proprietary format).
   See http://www.cs.utah.edu/~gk/teem/nrrd/ for more information.
   This file format cannot save transfer functions in the Virvo format.
@@ -4984,6 +5125,8 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   else if (suffix == "tif" || suffix == "tiff")
     err = loadTIFFile(vd, addFrame);
 
+  else if (suffix == "vtk")
+    err = loadVTKFile(vd);
                                                   // VHD CT data
   else if (suffix == "fro" || suffix == "fre")
     err = loadVHDCTFile(vd);
