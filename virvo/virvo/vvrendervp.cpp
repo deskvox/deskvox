@@ -23,6 +23,7 @@ using std::setprecision;
 #include "vvclock.h"
 #include "vvvoldesc.h"
 #include "vvswitchrenderer.impl.h"
+#include "gl/util.h"
 #include "private/vvlog.h"
 
 #ifdef HAVE_VOLPACK
@@ -237,13 +238,12 @@ void vvRenderVP::classifyVolume()
 void vvRenderVP::updateModelviewMatrix()
 {
   double vpm[4][4];
-  vvMatrix mv;           // current modelview matrix
   vvMatrix m;            // temporary matrix
 
   vvDebugMsg::msg(3, "vvRenderVP::updateModelviewMatrix()");
 
   // Get modelview matrix from OpenGL:
-  vvGLTools::getModelviewMatrix(&mv);
+  vvMatrix mv = virvo::gl::getModelviewMatrix();
 
   // Set view matrix:
   vpCurrentMatrix(vpc, VP_VIEW);
@@ -270,11 +270,9 @@ void vvRenderVP::updateModelviewMatrix()
 */
 void vvRenderVP::updateProjectionMatrix()
 {
-  vvMatrix pm;           // current projection matrix
-
   vvDebugMsg::msg(3, "vvRenderVP::updateProjectionMatrix()");
 
-  vvGLTools::getProjectionMatrix(&pm);
+  vvMatrix pm = virvo::gl::getProjectionMatrix();
 
   if (pm.isProjOrtho()) // VolPack can only do parallel projections
   {
@@ -324,7 +322,6 @@ void vvRenderVP::renderVolumeGL()
   GLfloat glmatrix[16];   // OpenGL matrix
   GLint viewport[4];      // OpenGL viewport information (position and size)
   vvVector3 pos;          // object location
-  vvMatrix pm;           // current projection matrix
   vvStopwatch* sw = NULL; // stop watch
   int w, h;               // width and height of rendered image
 
@@ -341,7 +338,7 @@ void vvRenderVP::renderVolumeGL()
   pos = vd->pos;
 
   // Check for projection type:
-  vvGLTools::getProjectionMatrix(&pm);
+  vvMatrix pm = virvo::gl::getProjectionMatrix();
   if (pm.isProjOrtho())  // VolPack can only do parallel projections
   {
     if (timing)
