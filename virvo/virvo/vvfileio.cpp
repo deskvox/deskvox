@@ -1253,6 +1253,40 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   return OK;
 }
 
+static bool interpret_vtk_type(const std::string &type, size_t *bpc, bool *signedData)
+{
+  if (type == "char")
+  {
+    *bpc = 1;
+    *signedData = true;
+  }
+  else if (type == "unsigned_char")
+  {
+    *bpc = 1;
+    *signedData = false;
+  }
+  else if (type == "short")
+  {
+    *bpc = 2;
+    *signedData = true;
+  }
+  else if (type == "unsigned_short")
+  {
+    *bpc = 2;
+    *signedData = false;
+  }
+  else if (type == "float")
+  {
+    *bpc = 4;
+  }
+  else
+  {
+    return false;
+  }
+
+  return true;
+}
+
 //----------------------------------------------------------------------------
 /** Load VTK structured point data
 */
@@ -1273,10 +1307,16 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
   std::string header = "";
   ssize_t dim[3] = {0, 0, 0};
   size_t bpc = 1;
+  bool signedData = false;
   ssize_t numPoints = -1;
   virvo::vec3 origin(0., 0., 0.);
-  for (size_t count=0; count<10; ++count)
+  ssize_t numFields = -1;
+  size_t channels = 0;
+  for (size_t count=0; count<20; ++count)
   {
+    if (numFields == 0)
+      break;
+
     std::string line;
     if (!std::getline(file, line))
     {
@@ -1338,18 +1378,6 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
       {
         numPoints = std::stoi(value);
       }
-      else if (key == "SCALARS")
-      {
-        if (value == "scalars short")
-        {
-          bpc = 2;
-        }
-        else
-        {
-          vvDebugMsg::msg(1, "Error: Unknown .vtk type - unknown SCALARS type.");
-          return FILE_ERROR;
-        }
-      }
       else if (key == "DIMENSIONS")
       {
         std::stringstream str(value);
@@ -1367,6 +1395,46 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
       }
       else if (key == "LOOKUP_TABLE")
       {
+        break;
+      }
+      else if (key == "SCALARS")
+      {
+        std::string::size_type wordend = value.find(' ');
+        if (wordend != std::string::npos)
+        {
+          std::string name = value.substr(0, wordend);
+          std::string type = value.substr(wordend+1);
+          if (!interpret_vtk_type(type, &bpc, &signedData))
+          {
+            vvDebugMsg::msg(1, "Error: Unknown .vtk type - unsupported SCALARS type: ", type.c_str());
+            return FILE_ERROR;
+          }
+          channels = 1;
+        }
+        else
+        {
+          vvDebugMsg::msg(1, "Error: Unknown .vtk type - cannot parse SCALARS field description.");
+          return FILE_ERROR;
+        }
+      }
+      else if (key == "FIELD")
+      {
+        std::string name;
+        std::stringstream str(value);
+        str >> name >> numFields;
+      }
+      else if (numFields > 0)
+      {
+        --numFields;
+        std::string name = key;
+        std::string type;
+        std::stringstream str(value);
+        str >> channels >> numPoints >> type;
+        if (!interpret_vtk_type(type, &bpc, &signedData))
+        {
+          vvDebugMsg::msg(1, "Error: Unknown .vtk type - unsupported FIELD data type: ", type.c_str());
+          return FILE_ERROR;
+        }
       }
       else
       {
@@ -1391,7 +1459,27 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
   virvo::vec3 size(vd->dist[0]*dim[0], vd->dist[1]*dim[1], vd->dist[2]*dim[2]);
   vd->pos = origin + size * 0.5f;
 
-  return loadRawFile(vd, dim[0], dim[1], dim[2], bpc, 1, pos);
+  //std::cerr << "loadVTKFile: loading " << dim[0] << "x" << dim[1] << "x" << dim[2] << " voxels, offset " << pos
+    << ", " << bpc << " bpc, " << channels << " channels "
+    << (signedData ? "(signed)" : "(unsigned)")
+    << std::endl;
+  ErrorType err = loadRawFile(vd, dim[0], dim[1], dim[2], bpc, channels, pos);
+  if (err != OK)
+  {
+    return err;
+  }
+
+  if (!machineBigEndian)
+  {
+    vd->toggleEndianness();
+  }
+
+  if (signedData)
+  {
+    vd->makeUnsigned();
+  }
+
+  return err;
 }
 
 //----------------------------------------------------------------------------
