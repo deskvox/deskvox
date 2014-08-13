@@ -126,31 +126,6 @@ VV_FORCE_INLINE float_type pixely(float y)
 #endif
 }
 
-VV_FORCE_INLINE float_type intersectBox(const Ray& ray, const AABB& aabb, float_type* tnear, float_type* tfar)
-{
-  // compute intersection of ray with all six bbox planes
-  Vec3 invR(1.0f / ray.dir.x, 1.0f / ray.dir.y, 1.0f / ray.dir.z);
-  float_type t1 = (aabb.min.x - ray.ori.x) * invR.x;
-  float_type t2 = (aabb.max.x - ray.ori.x) * invR.x;
-  float_type tmin = min(t1, t2);
-  float_type tmax = max(t1, t2);
-
-  t1 = (aabb.min.y - ray.ori.y) * invR.y;
-  t2 = (aabb.max.y - ray.ori.y) * invR.y;
-  tmin = max(min(t1, t2), tmin);
-  tmax = min(max(t1, t2), tmax);
-
-  t1 = (aabb.min.z - ray.ori.z) * invR.z;
-  t2 = (aabb.max.z - ray.ori.z) * invR.z;
-  tmin = max(min(t1, t2), tmin);
-  tmax = min(max(t1, t2), tmax);
-
-  *tnear = tmin;
-  *tfar = tmax;
-
-  return ((tmax >= tmin) && (tmax >= 0.0f));
-}
-
 
 namespace virvo
 {
@@ -539,15 +514,13 @@ void renderTile
       Ray ray(o.xyz() / o.w, d.xyz() / d.w);
       ray.dir = normalize( ray.dir - ray.ori );
 
-      float_type tbnear = 0.0f;
-      float_type tbfar = 0.0f;
-
-      float_type active = intersectBox(ray, aabb, &tbnear, &tbfar);
+      virvo::hit_record< Ray, AABB > hr = intersect(ray, aabb);
+      float_type active = hr.hit;
       if (any(active))
       {
 
         float_type dist = diagonalVoxels / float_type(numSlices);
-        float_type t = tbnear;
+        float_type t = hr.tnear;
         Vec4 dst(0.0f);
 
         while (any(active))
@@ -601,7 +574,7 @@ void renderTile
           }
 
           t += dist;
-          active = active && (t < tbfar);
+          active = active && (t < hr.tfar);
         }
 
 #if VV_USE_SSE

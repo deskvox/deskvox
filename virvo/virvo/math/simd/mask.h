@@ -23,6 +23,10 @@ public:
   typedef __m128 value_type;
   value_type value;
 
+    base_mask()
+    {
+    }
+
   VV_FORCE_INLINE base_mask(value_type const& m)
     : value(m)
   {
@@ -46,7 +50,7 @@ public:
 
 
 typedef base_mask< __m128 > sse_mask;
-typedef sse_mask Mask;
+typedef sse_mask mask4;
 
 
 /* float4 */
