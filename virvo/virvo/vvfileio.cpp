@@ -1459,10 +1459,13 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
   virvo::vec3 size(vd->dist[0]*dim[0], vd->dist[1]*dim[1], vd->dist[2]*dim[2]);
   vd->pos = origin + size * 0.5f;
 
-  //std::cerr << "loadVTKFile: loading " << dim[0] << "x" << dim[1] << "x" << dim[2] << " voxels, offset " << pos
-    << ", " << bpc << " bpc, " << channels << " channels "
-    << (signedData ? "(signed)" : "(unsigned)")
-    << std::endl;
+  if (vvDebugMsg::isActive(1))
+  {
+    std::cerr << "loadVTKFile: loading " << dim[0] << "x" << dim[1] << "x" << dim[2] << " voxels, offset " << pos
+      << ", " << bpc << " bpc, " << channels << " channels "
+      << (signedData ? "(signed)" : "(unsigned)")
+      << std::endl;
+  }
   ErrorType err = loadRawFile(vd, dim[0], dim[1], dim[2], bpc, channels, pos);
   if (err != OK)
   {
