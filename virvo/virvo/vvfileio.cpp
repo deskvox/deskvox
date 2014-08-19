@@ -1376,7 +1376,8 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
       }
       else if (key == "POINT_DATA")
       {
-        numPoints = std::stoi(value);
+        std::stringstream str(value);
+        str >> numPoints;
       }
       else if (key == "DIMENSIONS")
       {
