@@ -68,7 +68,7 @@ namespace
 #define WINAPI
 #endif
   void WINAPI debugCallback(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
-      GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
+      GLsizei /*length*/, GLchar const* message, const GLvoid* /*userParam*/)
   {
     std::cerr << "GL error: " << message << std::endl;
     if(debugPrintBacktrace)
@@ -78,6 +78,12 @@ namespace
       abort();
   }
 }
+
+  void WINAPI debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+      GLsizei length, GLchar const* message, GLvoid* userParam)
+  {
+    return debugCallback(source, type, id, severity, length, message, (const GLvoid*)userParam);
+  }
 
 //============================================================================
 // Method Definitions
@@ -93,7 +99,7 @@ bool vvGLTools::enableGLErrorBacktrace(bool printBacktrace, bool abortOnError)
   debugAbortOnGLError = abortOnError;
 
 #ifdef GL_ARB_debug_output
-#if !defined(__GNUC__) || !defined(_WIN32)
+#if !defined(_WIN32)
   glewInit();
   if (glDebugMessageCallbackARB != NULL)
   {
