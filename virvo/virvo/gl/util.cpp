@@ -120,7 +120,7 @@ void gl::enableDebugCallback()
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-        glDebugMessageCallback(DebugCallback, 0);
+        glDebugMessageCallback((GLDEBUGPROC)DebugCallback, 0);
     }
 #endif
 }
