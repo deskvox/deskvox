@@ -7,7 +7,7 @@
 #include <cassert>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -51,7 +51,7 @@ public:
 };
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #include "detail/matrix4.inl"

@@ -6,7 +6,7 @@
 
 #include <ostream>
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -50,7 +50,7 @@ vector< 4, simd::float4 > operator*(matrix< 4, 4, simd::float4 > const& m,
 matrix< 4, 4, simd::float4 > transpose(matrix< 4, 4, simd::float4 > const& m);
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #include "../detail/simd/matrix4.inl"

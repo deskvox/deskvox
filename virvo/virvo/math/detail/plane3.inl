@@ -1,4 +1,4 @@
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -25,6 +25,6 @@ inline basic_plane< 3, T >::basic_plane(vector< 3, T > const& n, vector< 3, T > 
 {
 }
 
-} // virvo
+} // MATH_NAMESPACE
 
 

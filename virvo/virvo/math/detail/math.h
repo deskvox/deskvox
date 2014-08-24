@@ -1,13 +1,14 @@
 #ifndef VV_DETAIL_MATH_H
 #define VV_DETAIL_MATH_H
 
+#include "../config.h"
 
 #include <virvo/vvmacros.h>
 
 #include <cmath>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 //--------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ inline T det2(T const& m00, T const& m01, T const& m10, T const& m11)
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #endif // VV_DETAIL_MATH_H

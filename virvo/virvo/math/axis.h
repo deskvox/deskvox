@@ -4,7 +4,7 @@
 #include <cstddef>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 template < size_t Dim >
@@ -47,7 +47,7 @@ private:
 };
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #endif // VV_MATH_AXIS_H

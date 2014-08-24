@@ -1,11 +1,12 @@
 #ifndef VV_MATH_RECTANGLE_H
 #define VV_MATH_RECTANGLE_H
 
+#include "vector.h"
 
 #include <cstddef>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 

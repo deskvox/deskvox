@@ -6,7 +6,7 @@
 
 #include <stdexcept>
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -183,6 +183,6 @@ VV_FORCE_INLINE int4 max(int4 const& u, int4 const& v)
 } // simd
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

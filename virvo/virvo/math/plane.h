@@ -6,7 +6,7 @@
 #include <cstddef>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 template < typename T >
@@ -28,7 +28,7 @@ public:
 
 };
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #include "detail/plane3.inl"

@@ -1,11 +1,12 @@
 #ifndef VV_MATH_FORWARD_H
 #define VV_MATH_FORWARD_H
 
+#include "config.h"
 
 #include <cstddef>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -93,7 +94,7 @@ typedef rectangle< xywh_layout, double >    rectd;
 typedef rectangle< xywh_layout, float >     rect;
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #endif // VV_MATH_FORWARD_H

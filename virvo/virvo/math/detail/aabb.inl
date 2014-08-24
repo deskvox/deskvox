@@ -3,7 +3,7 @@
 #include <utility>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -105,6 +105,6 @@ typename basic_aabb< T >::vertex_list compute_vertices(basic_aabb< T > const& bo
 
 }
 
-} // virvo
+} // MATH_NAMESPACE
 
 

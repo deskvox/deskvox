@@ -4,7 +4,7 @@
 #include "../vector.h"
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -354,6 +354,6 @@ VV_FORCE_INLINE vector< 4, T > div(T const& s, vector< 4, T > const& v, M const&
 } // simd
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -325,6 +325,6 @@ VV_FORCE_INLINE vector< 4, float4 > transpose(vector< 4, float4 > const& v)
 } // simd
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

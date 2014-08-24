@@ -3,7 +3,7 @@
 #endif
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -237,6 +237,6 @@ VV_FORCE_INLINE matrix< 4, 4, T > scale(matrix< 4, 4, T > const& m, vector< 3, T
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

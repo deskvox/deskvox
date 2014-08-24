@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -170,6 +170,6 @@ inline matrix< 4, 4, float > lu_inverse(matrix< 4, 4, float > const& m)
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

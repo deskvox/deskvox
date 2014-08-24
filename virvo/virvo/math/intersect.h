@@ -8,7 +8,7 @@
 #include "plane.h"
 #include "vector.h"
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 template < typename T1, typename T2 >
@@ -108,7 +108,7 @@ inline hit_record< basic_ray< T >, basic_aabb< T > > intersect
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 #endif // VV_MATH_INTERSECT_H
 

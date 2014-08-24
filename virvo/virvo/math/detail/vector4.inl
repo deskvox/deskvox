@@ -1,4 +1,4 @@
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -277,6 +277,6 @@ VV_FORCE_INLINE vector< 4, T > normalize(vector< 4, T > const& v)
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

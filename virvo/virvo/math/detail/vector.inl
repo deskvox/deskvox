@@ -1,4 +1,4 @@
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -59,6 +59,6 @@ VV_FORCE_INLINE vector< Dim, T >& operator/=(vector< Dim, T >& v, T s)
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

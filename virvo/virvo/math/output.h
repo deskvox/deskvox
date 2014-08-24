@@ -10,7 +10,7 @@
 #include <sstream>
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -195,7 +195,7 @@ operator<<(std::basic_ostream< CharT, Traits >& out, rectangle< xywh_layout, T >
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #endif // VV_MATH_OUTPUT_H

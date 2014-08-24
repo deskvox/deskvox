@@ -1,4 +1,4 @@
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -298,6 +298,6 @@ VV_FORCE_INLINE vector< 3, T > max(vector< 3, T > const& u, vector< 3, T > const
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

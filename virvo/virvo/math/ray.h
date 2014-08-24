@@ -3,7 +3,7 @@
 
 #include <virvo/vvmacros.h>
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 template < typename T >
@@ -19,7 +19,7 @@ public:
 
 };
 
-} // virvo
+} // MATH_NAMESPACE
 
 #endif // VV_MATH_RAY_H
 

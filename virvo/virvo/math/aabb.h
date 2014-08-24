@@ -11,7 +11,7 @@
 #include <boost/array.hpp>
 #endif
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -41,7 +41,7 @@ public:
 
 };
 
-} // virvo
+} // MATH_NAMESPACE
 
 #include "detail/aabb.inl"
 

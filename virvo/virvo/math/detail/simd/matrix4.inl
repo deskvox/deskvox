@@ -1,7 +1,7 @@
 #include "../../vector.h"
 
 
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -106,6 +106,6 @@ VV_FORCE_INLINE matrix< 4, 4, simd::float4 > transpose(matrix< 4, 4, simd::float
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 

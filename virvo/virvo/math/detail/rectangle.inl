@@ -1,4 +1,4 @@
-namespace virvo
+namespace MATH_NAMESPACE
 {
 
 
@@ -101,6 +101,6 @@ VV_FORCE_INLINE rectangle< xywh_layout, T > intersect(rectangle< xywh_layout, T 
 }
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
