@@ -12,119 +12,143 @@ namespace simd
 {
 
 
-template < typename T >
-class base_mask;
-
-
-template < >
-class base_mask< __m128 >
+union mask4
 {
 public:
-  typedef __m128 value_type;
-  value_type value;
 
-    base_mask()
+    __m128  f;
+    __m128i i;
+
+    mask4()
     {
     }
 
-  VV_FORCE_INLINE base_mask(value_type const& m)
-    : value(m)
-  {
-  }
+    VV_FORCE_INLINE mask4(__m128 m)
+        : f(m)
+    {
+    }
 
-  VV_FORCE_INLINE base_mask(float4 const& m)
-    : value(m)
-  {
-  }
+    VV_FORCE_INLINE mask4(__m128i m)
+        : i(m)
+    {
+    }
 
-  VV_FORCE_INLINE operator value_type() const
-  {
-    return value;
-  }
+    VV_FORCE_INLINE mask4(float4 const& m)
+        : f(m)
+    {
+    }
 
-  VV_FORCE_INLINE operator float4() const
-  {
-    return value;
-  }
+    VV_FORCE_INLINE operator float4() const
+    {
+        return f;
+    }
+
 };
-
-
-typedef base_mask< __m128 > sse_mask;
-typedef sse_mask mask4;
 
 
 /* float4 */
 
-VV_FORCE_INLINE sse_mask operator<(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator<(float4 const& u, float4 const& v)
 {
   return _mm_cmplt_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator>(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator>(float4 const& u, float4 const& v)
 {
   return _mm_cmpgt_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator<=(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator<=(float4 const& u, float4 const& v)
 {
   return _mm_cmple_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator>=(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator>=(float4 const& u, float4 const& v)
 {
   return _mm_cmpge_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator==(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator==(float4 const& u, float4 const& v)
 {
   return _mm_cmpeq_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator!=(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator!=(float4 const& u, float4 const& v)
 {
   return _mm_cmpneq_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator&&(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator&&(float4 const& u, float4 const& v)
 {
   return _mm_and_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator||(float4 const& u, float4 const& v)
+VV_FORCE_INLINE mask4 operator||(float4 const& u, float4 const& v)
 {
   return _mm_and_ps(u, v);
 }
 
 
-VV_FORCE_INLINE bool any(sse_mask const& m)
+VV_FORCE_INLINE bool any(mask4 const& m)
 {
-  return _mm_movemask_ps(m) != 0;
+    return _mm_movemask_ps(m.f) != 0;
 }
 
-VV_FORCE_INLINE bool all(sse_mask const& m)
+VV_FORCE_INLINE bool all(mask4 const& m)
 {
-  return _mm_movemask_ps(m) == 0xF;
+    return _mm_movemask_ps(m.f) == 0xF;
 }
 
-#if 1
-VV_FORCE_INLINE float4 if_else(float4 const& ifexpr, float4 const& elseexpr, sse_mask const& mask)
+VV_FORCE_INLINE float4 select(mask4 const& m, float4 const& a, float4 const& b)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
-  return _mm_blendv_ps(elseexpr, ifexpr, mask);
+    return _mm_blendv_ps(b, a, m.f);
 #else
-  return _mm_or_ps(_mm_and_ps(mask, ifexpr), _mm_andnot_ps(mask, elseexpr));
+    return _mm_or_ps(_mm_and_ps(m.f, a), _mm_andnot_ps(m.f, b));
 #endif
 }
-#endif
 
-VV_FORCE_INLINE float4 neg(float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE mask4 operator&(mask4 const& a, mask4 const& b)
 {
-  return if_else(-v, 0.0f, mask);
+    return _mm_and_si128(a.i, b.i);
 }
 
-VV_FORCE_INLINE float4 add(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE mask4 operator|(mask4 const &a, mask4 const& b)
 {
-  return if_else(u + v, 0.0f, mask);
+    return _mm_or_si128(a.i, b.i);
+}
+
+VV_FORCE_INLINE mask4 operator^(mask4 const& a, mask4 const& b)
+{
+    return _mm_xor_si128(a.i, b.i);
+}
+
+VV_FORCE_INLINE mask4& operator&=(mask4& a, mask4 const& b)
+{
+    a = a & b;
+    return a;
+}
+
+VV_FORCE_INLINE mask4& operator|=(mask4& a, mask4 const& b)
+{
+    a = a | b;
+    return a;
+}
+
+VV_FORCE_INLINE mask4& operator^=(mask4& a, mask4 const& b)
+{
+    a = a ^ b;
+    return a;
+}
+
+VV_FORCE_INLINE float4 neg(float4 const& v, mask4 const& mask)
+{
+    return select(mask, -v, 0.0f);
+}
+
+VV_FORCE_INLINE float4 add(float4 const& u, float4 const& v, mask4 const& mask)
+{
+    return select(mask, u + v, 0.0f);
 }
 
 VV_FORCE_INLINE float sub(float u, float v, float /* mask */)
@@ -132,55 +156,55 @@ VV_FORCE_INLINE float sub(float u, float v, float /* mask */)
   return u - v;
 }
 
-VV_FORCE_INLINE float4 sub(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 sub(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u - v, 0.0f, mask);
+    return select(mask, u - v, 0.0f);
 }
 
-VV_FORCE_INLINE float4 mul(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 mul(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u * v, 0.0f, mask);
+    return select(mask, u * v, 0.0f);
 }
 
-VV_FORCE_INLINE float4 div(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 div(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u / v, 0.0f, mask);
+    return select(mask, u / v, 0.0f);
 }
 
-VV_FORCE_INLINE float4 lt(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 lt(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u < v, 0.0f, mask);
+    return select(mask, mask4(u < v).f, 0.0f);
 }
 
-VV_FORCE_INLINE float4 gt(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 gt(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u > v, 0.0f, mask);
+    return select(mask, mask4(u > v).f, 0.0f);
 }
 
-VV_FORCE_INLINE float4 le(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 le(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u <= v, 0.0f, mask);
+    return select(mask, mask4(u <= v).f, 0.0f);
 }
 
-VV_FORCE_INLINE float4 ge(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 ge(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u >= v, 0.0f, mask);
+    return select(mask, mask4(u >= v).f, 0.0f);
 }
 
-VV_FORCE_INLINE float4 eq(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 eq(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u == v, 0.0f, mask);
+    return select(mask, mask4(u == v).f, 0.0f);
 }
 
-VV_FORCE_INLINE float4 neq(float4 const& u, float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 neq(float4 const& u, float4 const& v, mask4 const& mask)
 {
-  return if_else(u != v, 0.0f, mask);
+    return select(mask, mask4(u != v).f, 0.0f);
 }
 
-VV_FORCE_INLINE void store(float dst[4], float4 const& v, sse_mask const& mask)
+VV_FORCE_INLINE void store(float dst[4], float4 const& v, mask4 const& mask)
 {
-  float4 tmp = if_else(v, 0.0f, mask);
-  store(dst, tmp);
+    float4 tmp = select(mask, v, 0.0f);
+    store(dst, tmp);
 }
 
 

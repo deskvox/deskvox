@@ -82,8 +82,8 @@ typedef simd::float4 float_type;
 #define PACK_SIZE_X 1
 #define PACK_SIZE_Y 1
 
-#define any(x) (x)
-#define all(x) (x)
+using virvo::any;
+using virvo::all;
 using std::min;
 using std::max;
 typedef size_t int_type;

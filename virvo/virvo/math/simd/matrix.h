@@ -34,6 +34,8 @@ public:
     column_type& operator()(size_t col);
     column_type const& operator()(size_t col) const;
 
+    static matrix identity();
+
 };
 
 

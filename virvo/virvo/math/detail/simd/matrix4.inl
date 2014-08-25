@@ -45,6 +45,17 @@ VV_FORCE_INLINE simd::float4 const& matrix< 4, 4, simd::float4 >::operator()(siz
     return *(reinterpret_cast< simd::float4 const* >(this) + col);
 }
 
+inline matrix< 4, 4, simd::float4 > matrix< 4, 4, simd::float4 >::identity()
+{
+    return matrix< 4, 4, simd::float4 >
+    (
+        simd::float4(1.0f, 0.0f, 0.0f, 0.0f),
+        simd::float4(0.0f, 1.0f, 0.0f, 0.0f),
+        simd::float4(0.0f, 0.0f, 1.0f, 0.0f),
+        simd::float4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+}
+
 
 //--------------------------------------------------------------------------------------------------
 // Basic arithmetic

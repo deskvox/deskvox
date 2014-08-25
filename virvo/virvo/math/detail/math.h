@@ -54,11 +54,37 @@ VV_FORCE_INLINE T rsqrt(T const& x)
 }
 
 template < typename T >
+inline T cot(T x)
+{
+    return tan(M_PI_2 - x);
+}
+
+template < typename T >
 inline T det2(T const& m00, T const& m01, T const& m10, T const& m11)
 {
     return m00 * m11 - m10 * m01;
 }
 
+
+//--------------------------------------------------------------------------------------------------
+// Misc.
+//
+
+template < typename T >
+inline T select(bool k, T const& a, T const& b)
+{
+    return k ? a : b;
+}
+
+inline bool any(bool b)
+{
+    return b;
+}
+
+inline bool all(bool b)
+{
+    return b;
+}
 
 } // MATH_NAMESPACE
 

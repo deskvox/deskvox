@@ -32,6 +32,9 @@ class basic_aabb;
 template < typename T >
 class basic_ray;
 
+template < size_t Dim, typename T, typename P = unsigned >
+class basic_triangle;
+
 template
 <
     template < typename > class L,
@@ -41,6 +44,13 @@ class rectangle;
 
 template< typename T >
 class xywh_layout;
+
+namespace simd
+{
+union mask4;
+class int4;
+class float4;
+}
 
 
 //--------------------------------------------------------------------------------------------------
@@ -86,6 +96,10 @@ typedef basic_aabb< float >                 aabb;
 
 
 typedef basic_ray< float >                  ray;
+namespace simd
+{
+typedef basic_ray< float4 >                 ray4;
+}
 
 
 typedef rectangle< xywh_layout, int >       recti;

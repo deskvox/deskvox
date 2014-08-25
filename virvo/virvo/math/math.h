@@ -13,6 +13,7 @@
 #include "plane.h"
 #include "ray.h"
 #include "rectangle.h"
+#include "triangle.h"
 #include "vector.h"
 
 

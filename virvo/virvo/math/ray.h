@@ -11,11 +11,14 @@ class basic_ray
 {
 public:
 
-    vector< 3, T > ori;
-    vector< 3, T > dir;
+    typedef T value_type;
+    typedef vector< 3, T > vec_type;
+
+    vec_type ori;
+    vec_type dir;
 
     VV_FORCE_INLINE basic_ray() {}
-    VV_FORCE_INLINE basic_ray(vector< 3, T > const& o, vector< 3, T > const& d) : ori(o), dir(d) {}
+    VV_FORCE_INLINE basic_ray(vec_type const& o, vec_type const& d) : ori(o), dir(d) {}
 
 };
 
