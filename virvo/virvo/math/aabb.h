@@ -34,6 +34,9 @@ public:
     basic_aabb();
     basic_aabb(vec_type const& min, vec_type const& max);
 
+    template < typename U >
+    explicit basic_aabb(vector< 3, U > const& min, vector< 3, U > const& max);
+
     vec_type center() const;
     vec_type size() const;
 

@@ -28,6 +28,14 @@ inline basic_aabb< T >::basic_aabb
 }
 
 template < typename T >
+template < typename U >
+inline basic_aabb< T >::basic_aabb(vector< 3, U > const& min, vector< 3, U > const& max)
+    : min(min)
+    , max(max)
+{
+}
+
+template < typename T >
 inline typename basic_aabb< T >::vec_type basic_aabb< T >::center() const
 {
     return (max + min) * value_type(0.5);
