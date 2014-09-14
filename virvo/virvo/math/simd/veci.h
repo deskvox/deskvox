@@ -52,6 +52,20 @@ public:
 };
 
 
+//--------------------------------------------------------------------------------------------------
+// Reinterpret casts
+//
+
+inline float4 reinterpret_as_float(int4 const& a)
+{
+    return _mm_castsi128_ps(a);
+}
+
+inline int4 reinterpret_as_int(float4 const& a)
+{
+    return _mm_castps_si128(a);
+}
+
 VV_FORCE_INLINE void store(int dst[4], int4 const& v)
 {
   _mm_store_si128(reinterpret_cast<__m128i*>(dst), v);

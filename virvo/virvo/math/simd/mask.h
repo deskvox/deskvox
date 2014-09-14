@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vec.h"
+#include "veci.h"
 #include "../vector.h"
 
 
@@ -108,6 +109,11 @@ VV_FORCE_INLINE float4 select(mask4 const& m, float4 const& a, float4 const& b)
 #endif
 }
 
+VV_FORCE_INLINE int4 select(mask4 const& m, int4 const& a, int4 const& b)
+{
+    return reinterpret_as_int( select(m, reinterpret_as_float(a), reinterpret_as_float(b)) );
+}
+
 VV_FORCE_INLINE mask4 operator&(mask4 const& a, mask4 const& b)
 {
     return _mm_and_si128(a.i, b.i);
@@ -173,37 +179,37 @@ VV_FORCE_INLINE float4 div(float4 const& u, float4 const& v, mask4 const& mask)
 
 VV_FORCE_INLINE float4 lt(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u < v).f, 0.0f);
+    return select(mask, mask4(u < v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE float4 gt(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u > v).f, 0.0f);
+    return select(mask, mask4(u > v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE float4 le(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u <= v).f, 0.0f);
+    return select(mask, mask4(u <= v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE float4 ge(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u >= v).f, 0.0f);
+    return select(mask, mask4(u >= v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE float4 eq(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u == v).f, 0.0f);
+    return select(mask, mask4(u == v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE float4 neq(float4 const& u, float4 const& v, mask4 const& mask)
 {
-    return select(mask, mask4(u != v).f, 0.0f);
+    return select(mask, mask4(u != v).f, float4(0.0f));
 }
 
 VV_FORCE_INLINE void store(float dst[4], float4 const& v, mask4 const& mask)
 {
-    float4 tmp = select(mask, v, 0.0f);
+    float4 tmp = select(mask, v, float4(0.0f));
     store(dst, tmp);
 }
 
