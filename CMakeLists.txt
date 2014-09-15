@@ -9,6 +9,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
 )
 
+#qt policy 
+cmake_policy( SET CMP0020 NEW)
 
 #set(DESKVOX_VERSION_MAJOR 1)
 #set(DESKVOX_VERSION_MINOR 0)
