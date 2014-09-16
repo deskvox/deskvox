@@ -259,7 +259,7 @@ VV_FORCE_INLINE T norm(vector< 4, T > const& v)
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 4, T > norm2(vector< 4, T > const& v)
+VV_FORCE_INLINE T norm2(vector< 4, T > const& v)
 {
     return dot(v, v);
 }
