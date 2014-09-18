@@ -83,7 +83,7 @@ template
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-ReturnT cubic(VoxelT const* tex, FloatT coord, FloatT texsize)
+ReturnT cubic2(VoxelT const* tex, FloatT coord, FloatT texsize)
 {
 
     typedef FloatT float_type;
@@ -118,6 +118,46 @@ ReturnT cubic(VoxelT const* tex, FloatT coord, FloatT texsize)
 template
 <
     typename ReturnT,
+    typename W0,
+    typename W1,
+    typename W2,
+    typename W3,
+    typename FloatT,
+    typename VoxelT
+>
+inline ReturnT cubic(VoxelT const* tex, FloatT coord, FloatT texsize, W0 w0, W1 w1, W2 w2, W3 w3)
+{
+
+    typedef FloatT float_type;
+
+    float_type x = coord * texsize - float_type(0.5);
+    float_type floorx = floor( x );
+    float_type fracx = x - floor( x );
+
+    float_type pos[4] =
+    {
+        float_type( floorx - 1 ),
+        float_type( floorx ),
+        float_type( floorx + 1 ),
+        float_type( floorx + 2 )
+    };
+
+    using virvo::clamp;
+
+    for (size_t i = 0; i < 4; ++i)
+    {
+        pos[i] = clamp(pos[i], float_type(0.0), texsize - float_type(1.0));
+    }
+
+#define TEX(x) (point(tex,x))
+    return w0(fracx) * TEX(pos[0]) + w1(fracx) * TEX(pos[1]) + w2(fracx) * TEX(pos[2]) + w3(fracx) * TEX(pos[3]);
+#undef TEX
+}
+
+
+template
+<
+    typename ReturnT,
     typename FloatT,
     typename VoxelT
 >
@@ -138,7 +178,18 @@ VV_FORCE_INLINE ReturnT tex1D(texture< VoxelT, virvo::ElementType, 1 > const& te
         return linear< ReturnT >( tex.data, coord, texsize );
 
     case virvo::BSpline:
-        return cubic< ReturnT >( tex.data, coord, texsize );
+        return cubic2< ReturnT >( tex.data, coord, texsize );
+
+/*    case virvo::BSplineInterpol:
+        return cubic< ReturnT >( tex.prefiltered_data, coord, texsize,
+            bspline::w0_func< FloatT >(), bspline::w1_func< FloatT >(),
+            bspline::w2_func< FloatT >(), bspline::w3_func< FloatT >() );*/
+
+
+    case virvo::CardinalSpline:
+        return cubic< ReturnT >( tex.data, coord, texsize,
+            cspline::w0_func< FloatT >(), cspline::w1_func< FloatT >(),
+            cspline::w2_func< FloatT >(), cspline::w3_func< FloatT >() );
 
     }
 
