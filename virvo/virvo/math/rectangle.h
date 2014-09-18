@@ -79,7 +79,7 @@ public:
 };
 
 
-} // virvo
+} // MATH_NAMESPACE
 
 
 #include "detail/rectangle.inl"
