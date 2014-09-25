@@ -552,7 +552,7 @@ void renderTile
 
           if (opacityCorrection)
           {
-            src[3] = 1 - powf(1 - src[3], dist);
+            src[3] = 1 - pow(1 - src[3], dist);
           }
 
           if (mipMode == 0)

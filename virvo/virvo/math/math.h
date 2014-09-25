@@ -1,9 +1,7 @@
 #pragma once
 
-#include "simd/mask.h"
 #include "simd/matrix.h"
-#include "simd/vec.h"
-#include "simd/veci.h"
+#include "simd/sse.h"
 
 #include "aabb.h"
 #include "axis.h"

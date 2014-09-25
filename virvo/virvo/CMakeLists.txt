@@ -102,10 +102,8 @@ set(VIRVO_HEADERS
   math/detail/vector2.inl
   math/detail/vector3.inl
   math/detail/vector4.inl
-  math/simd/mask.h
   math/simd/matrix.h
-  math/simd/vec.h
-  math/simd/veci.h
+  math/simd/sse.h
   math/simd/intrinsics.h
   math/aabb.h
   math/forward.h

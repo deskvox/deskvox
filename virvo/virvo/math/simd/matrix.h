@@ -2,7 +2,7 @@
 #define VV_SIMD_MATRIX_H
 
 
-#include "vec.h"
+#include "sse.h"
 
 #include <ostream>
 
