@@ -1,8 +1,7 @@
 #ifndef VV_MATH_INTERSECT_H
 #define VV_MATH_INTERSECT_H
 
-#include "simd/mask.h"
-#include "simd/vec.h"
+#include "simd/sse.h"
 
 #include "aabb.h"
 #include "plane.h"
@@ -121,6 +120,7 @@ struct hit_record< basic_ray< T >, basic_triangle< 3, U, unsigned > >
 
     bool hit;
     unsigned prim_id;
+    unsigned geom_id;
     value_type t;
 
     value_type u;
@@ -136,6 +136,7 @@ struct hit_record< simd::ray4, basic_triangle< 3, U, unsigned > >
 
     simd::mask4 hit;
     simd::int4 prim_id;
+    simd::int4 geom_id;
     value_type t;
 
     value_type u;
@@ -193,6 +194,7 @@ inline hit_record< basic_ray< T >, basic_triangle< 3, U, unsigned > > intersect
     }
 
     result.prim_id = tri.prim_id;
+    result.geom_id = tri.geom_id;
     result.t = dot(e2, s2) * inv_div;
     result.u = b1;
     result.v = b2;
