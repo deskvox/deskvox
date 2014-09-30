@@ -681,20 +681,6 @@ VV_FORCE_INLINE void store(float dst[4], float4 const& v, mask4 const& mask)
     store(dst, tmp);
 }
 
-
-//-------------------------------------------------------------------------------------------------
-// Transcendental functions
-//
-
-VV_FORCE_INLINE float4 pow(float4 const& v, float4 const& exp)
-{
-#if VV_SIMD_HAS_SVML
-    return _mm_pow_ps(v, exp);
-#else
-    throw std::runtime_error("not implemented yet");
-#endif
-}
-
 VV_FORCE_INLINE float4 sqrt(float4 const& v)
 {
     return _mm_sqrt_ps(v);

@@ -2,6 +2,7 @@
 
 #include "simd/matrix.h"
 #include "simd/sse.h"
+#include "simd/trans.h"
 
 #include "aabb.h"
 #include "axis.h"
