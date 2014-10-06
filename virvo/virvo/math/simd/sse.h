@@ -75,6 +75,11 @@ public:
     {
     }
 
+    VV_FORCE_INLINE int4(int const v[4])
+        : value(_mm_load_si128(reinterpret_cast< __m128i const* >(v)))
+    {
+    }
+
     VV_FORCE_INLINE int4(int s)
         : value(_mm_set1_epi32(s))
     {
@@ -675,10 +680,17 @@ VV_FORCE_INLINE int4 mul(int4 const& u, int4 const& v, mask4 const& mask)
     return select(mask, u * v, 0);
 }
 
-VV_FORCE_INLINE void store(float dst[4], float4 const& v, mask4 const& mask)
+template < typename S, typename T >
+VV_FORCE_INLINE void store(S dst[4], T const& v, mask4 const& mask)
 {
-    float4 tmp = select(mask, v, float4(0.0f));
-    store(dst, tmp);
+    T old(dst);
+    store( dst, select(mask, v, old) );
+}
+
+template < typename S, typename T >
+VV_FORCE_INLINE void store(S dst[4], T const& v, mask4 const& mask, T const& old)
+{
+    store( dst, select(mask, v, old) );
 }
 
 VV_FORCE_INLINE float4 sqrt(float4 const& v)
