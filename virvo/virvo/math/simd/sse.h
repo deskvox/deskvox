@@ -85,6 +85,11 @@ public:
     {
     }
 
+    VV_FORCE_INLINE int4(unsigned s)
+        : value(_mm_set1_epi32(s))
+    {
+    }
+
     VV_FORCE_INLINE int4(float4 const& f)
         : value(_mm_cvtps_epi32(f))
     {
