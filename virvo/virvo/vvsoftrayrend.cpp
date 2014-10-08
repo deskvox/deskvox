@@ -166,7 +166,7 @@ struct Thread
     float                   maxcorner[3];
 
     // vd attributes
-    ssize_t                 vox[3];
+    int                     vox[3];
     float                   volsize[3];
     float                   volpos[3];
     size_t                  bpc;
