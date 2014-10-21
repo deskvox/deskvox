@@ -22,7 +22,7 @@ public:
 
     basic_plane();
 
-    // NOTE: n must be normalied!
+    // NOTE: n must be normalized!
     basic_plane(vec_type const& n, value_type o);
     basic_plane(vec_type const& n, vec_type const& p);
 
