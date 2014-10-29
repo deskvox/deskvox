@@ -15,6 +15,11 @@ find_package(SNAPPY)
 find_package(Teem)
 find_package(VolPack)
 find_package(X11)
+find_package(GDCM)
+if (GDCM_FOUND)
+   include(${GDCM_USE_FILE})
+   add_definitions(-DHAVE_GDCM)
+endif()
 
 deskvox_use_package(Bonjour)
 deskvox_use_package(Boost)
@@ -375,6 +380,10 @@ else()
   if(BUILD_SHARED_LIBS)
     deskvox_link_libraries(dl)
   endif()
+endif()
+
+if(GDCM_FOUND)
+   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon gdcmuuid)
 endif()
 
 
