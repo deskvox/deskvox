@@ -102,7 +102,7 @@ struct pow2_t< 1 > : public poly_t< 1 >
             T(1.0), T(1.0)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 1 >::eval(x, p);
     }
 };
 
@@ -119,7 +119,7 @@ struct pow2_t< 2 > : public poly_t< 2 >
             T(3.4428667394258472E-1)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 2 >::eval(x, p);
     }
 };
 
@@ -137,7 +137,7 @@ struct pow2_t< 3 > : public poly_t< 3 >
             T(7.9244930154334980E-2)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 3 >::eval(x, p);
     }
 };
 
@@ -156,7 +156,7 @@ struct pow2_t< 4 > : public poly_t< 4 >
             T(1.3701998859367848E-2)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 4 >::eval(x, p);
     }
 };
 
@@ -176,7 +176,7 @@ struct pow2_t< 5 > : public poly_t< 5 >
             T(1.8968500441332026E-3)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 5 >::eval(x, p);
     }
 };
 
@@ -197,7 +197,7 @@ struct pow2_t< 6 > : public poly_t< 6 >
             T(2.1892283501756538E-4)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 6 >::eval(x, p);
     }
 };
 
@@ -219,7 +219,7 @@ struct pow2_t< 7 > : public poly_t< 7 >
             T(2.1662892777385423E-5)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 7 >::eval(x, p);
     }
 };
 
@@ -250,7 +250,7 @@ struct log2_t< 1 > : public poly_t< 1 >
             T(0.0), T(1.0)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 1 >::eval(x, p);
     }
 };
 
@@ -272,7 +272,7 @@ struct log2_t< 7 > : public poly_t< 7 >
             T(+1.5209108363023915E-2)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 7 >::eval(x, p);
     }
 };
 
@@ -295,7 +295,7 @@ struct log2_t< 8 > : public poly_t< 8 >
             T(-9.1364020499895560E-3)
         };
 
-        return poly_t::eval(x, p);
+        return poly_t< 8 >::eval(x, p);
     }
 };
 
