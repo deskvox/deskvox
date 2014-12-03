@@ -280,23 +280,21 @@ template <unsigned N>
 VV_FORCE_INLINE float4 rcp(float4 const& v)
 {
   float4 x0 = _mm_rcp_ps(v);
-  rcp_step<N>(x0);
-  return x0;
+  return rcp_step<N>(x0);
 }
 
 VV_FORCE_INLINE float4 rcp(float4 const& v)
 {
   float4 x0 = _mm_rcp_ps(v);
-  rcp_step<1>(x0);
-  return x0;
+  return rcp_step<1>(x0);
 }
 
 template <unsigned N>
-VV_FORCE_INLINE float4 rsqrt_step(float4 const& v)
+VV_FORCE_INLINE float4 rsqrt_step(float4 const& v, float4 const& x0)
 {
   float4 threehalf(1.5f);
   float4 vhalf = v * float4(0.5f);
-  float4 t = v;
+  float4 t = x0;
 
   for (unsigned i = 0; i < N; ++i)
   {
@@ -310,15 +308,13 @@ template <unsigned N>
 VV_FORCE_INLINE float4 rsqrt(float4 const& v)
 {
   float4 x0 = _mm_rsqrt_ps(v);
-  rsqrt_step<N>(x0);
-  return x0;
+  return rsqrt_step<N>(v, x0);
 }
 
 VV_FORCE_INLINE float4 rsqrt(float4 const& v)
 {
   float4 x0 = _mm_rsqrt_ps(v);
-  rsqrt_step<1>(x0);
-  return x0;
+  return rsqrt_step<1>(v, x0);
 }
 
 // TODO: find a better place for this
