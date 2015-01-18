@@ -650,21 +650,48 @@ bool vvToolshed::increaseFilename(char* filename)
   extractExtension(ext, filename);
   if (strlen(ext)==0) i=strlen(filename) - 1;
   else i = strlen(filename) - strlen(ext) - 2;
-  while (!done)
-  {
-    if (i<0 || filename[i]<'0' || filename[i]>'9')
-      return false;
+  bool hex = false;
 
-    if (filename[i] == '9')                       // overflow?
-    {
-      filename[i] = '0';
-      --i;
-    }
-    else
-    {
-      ++filename[i];
-      done = 1;
-    }
+  if(hex)
+  {
+	  while (!done)
+	  {
+		  if (i<0 || (filename[i]<'0' || filename[i]>'9')&& (filename[i]<'A' || filename[i]>'F'))
+			  return false;
+
+		  if (filename[i] == 'F')                       // overflow?
+		  {
+			  filename[i] = '0';
+			  --i;
+		  }
+		  else
+		  {
+			  if(filename[i]== '9')
+				  filename[i] = 'A';
+			  else
+			  ++filename[i];
+			  done = 1;
+		  }
+	  }
+  }
+  else
+  {
+	  while (!done)
+	  {
+		  if (i<0 || filename[i]<'0' || filename[i]>'9')
+			  return false;
+
+		  if (filename[i] == '9')                       // overflow?
+		  {
+			  filename[i] = '0';
+			  --i;
+		  }
+		  else
+		  {
+			  ++filename[i];
+			  done = 1;
+		  }
+	  }
   }
   return true;
 }
