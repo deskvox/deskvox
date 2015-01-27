@@ -134,8 +134,8 @@ void vvCocoaGLContext::createGLContext()
     NSOpenGLPFAAccelerated,
     NSOpenGLPFADepthSize,
     (NSOpenGLPixelFormatAttribute)32,
-    _options.doubleBuffering ? (NSOpenGLPixelFormatAttribute)NSOpenGLPFADoubleBuffer : (NSOpenGLPixelFormatAttribute)nil,
-    (NSOpenGLPixelFormatAttribute)nil
+    _options.doubleBuffering ?  (NSOpenGLPixelFormatAttribute)NSOpenGLPFADoubleBuffer : (NSOpenGLPixelFormatAttribute)0,
+    (NSOpenGLPixelFormatAttribute)0
   };
 
   _pixelFormat = (NSOpenGLPixelFormat*)[[NSOpenGLPixelFormat alloc]
