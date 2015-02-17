@@ -105,7 +105,6 @@ ReturnT linear(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT >
 
     typedef FloatT float_type;
     typedef vector< 3, float_type > float3;
-    typedef ReturnT return_type;
 
     float3 texcoordf( coord * texsize - float_type(0.5) );
 
