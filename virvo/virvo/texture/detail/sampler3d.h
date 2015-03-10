@@ -17,7 +17,7 @@ namespace detail
 
 
 template < typename T >
-VV_FORCE_INLINE T index(T x, T y, T z, vector< 3, T > texsize)
+inline T index(T x, T y, T z, vector< 3, T > texsize)
 {
     return z * texsize[0] * texsize[1] + y * texsize[0] + x;
 }
@@ -29,10 +29,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-#ifndef _MSC_VER
-VV_FORCE_INLINE
-#endif
-ReturnT nearest(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
+inline ReturnT nearest(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
 {
 
 #if 1
@@ -95,10 +92,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-#ifndef _MSC_VER
-VV_FORCE_INLINE
-#endif
-ReturnT linear(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
+inline ReturnT linear(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
 {
 
     using virvo::clamp;
@@ -152,10 +146,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-#ifndef _MSC_VER
-VV_FORCE_INLINE
-#endif
-ReturnT cubic8(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
+inline ReturnT cubic8(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize)
 {
 
     typedef FloatT float_type;
@@ -233,10 +224,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-#ifndef _MSC_VER
-VV_FORCE_INLINE
-#endif
-ReturnT cubic(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize, W0 w0, W1 w1, W2 w2, W3 w3)
+inline ReturnT cubic(VoxelT const* tex, vector< 3, FloatT > coord, vector< 3, FloatT > texsize, W0 w0, W1 w1, W2 w2, W3 w3)
 {
 
     typedef FloatT float_type;
@@ -309,7 +297,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex3D(texture< VoxelT, ElementType, 3 > const& tex, vector< 3, FloatT > coord)
+inline ReturnT tex3D(texture< VoxelT, ElementType, 3 > const& tex, vector< 3, FloatT > coord)
 {
 
     vector< 3, FloatT > texsize( tex.width(), tex.height(), tex.depth() );
