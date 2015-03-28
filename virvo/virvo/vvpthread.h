@@ -21,6 +21,13 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 
+#ifdef __APPLE__
+#include <boost/bind/bind.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/condition_variable.hpp>
+#endif
+
 /* Pthread barriers aren't available on Mac OS X 10.3.
  * Albeit we know that there are other Unixes that don't implement
  * barriers either, we only use our barrier implementation when
@@ -175,6 +182,41 @@ public:
 //------------------------------------------------------------------------------
 // Semaphore
 //
+
+#ifdef __APPLE__
+
+class Semaphore
+{
+public:
+
+    Semaphore(unsigned count = 0) : count_(count) {}
+
+    void signal()
+    {
+        boost::mutex::scoped_lock l(mutex_);
+        ++count_;
+        cond_.notify_one();
+    }
+
+    void wait()
+    {
+        boost::mutex::scoped_lock l(mutex_);
+        cond_.wait(l, boost::bind(&Semaphore::wait_predicate, this));
+        count_--;
+    }
+
+private:
+
+    boost::condition_variable cond_;
+    boost::mutex mutex_;
+    unsigned count_;
+
+    bool wait_predicate() const { return count_ > 0; }
+
+};
+
+#else
+
 class Semaphore
 {
   // The actual semaphore
@@ -211,40 +253,6 @@ public:
   }
 };
 
-//------------------------------------------------------------------------------
-// Named Semaphore
-//
-#ifndef _WIN32
-class NamedSemaphore
-{
-
-  sem_t* sem;
-  char const* name_;
-
-public:
-  NamedSemaphore(char const* name, int value = 0)
-    : name_(name)
-  {
-    sem_unlink(name_);
-    sem = sem_open(name_, O_CREAT, S_IRUSR | S_IWUSR, value);
-  }
-
-  ~NamedSemaphore()
-  {
-    sem_close(sem);
-    sem_unlink(name_);
-  }
-
-  void wait()
-  {
-    sem_wait(sem);
-  }
-
-  void signal()
-  {
-    sem_post(sem);
-  }
-};
 #endif
 
 } // namespace virvo

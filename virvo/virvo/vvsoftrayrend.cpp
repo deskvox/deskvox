@@ -186,11 +186,7 @@ struct Thread
   struct SyncParams
   {
     SyncParams()
-#ifdef __APPLE__
-      : image_ready(virvo::NamedSemaphore("vv_softrayrend_image_ready"))
-#else
       : image_ready(0)
-#endif
       , exit_render_loop(false)
     {
     }
@@ -199,11 +195,7 @@ struct Thread
     long tile_fin_counter;
     long tile_idx_max;
     virvo::SyncedCondition start_render;
-#ifdef __APPLE__
-    virvo::NamedSemaphore image_ready;
-#else
     virvo::Semaphore image_ready;
-#endif
     bool exit_render_loop;
   };
 
