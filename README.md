@@ -101,29 +101,3 @@ before installing by editing `CMakeCache.txt` in your build directory.
 
 On Windows, use the generated solution files for Microsoft Visual Studio
 and build the corresponding targets in the IDE.
-
-
-4. How to build the Virvo library from source
-=============================================
-
-In order to build only the Virvo library, switch to the virvo folder right
-under the topmost folder of the one this document is located in. As
-described under 3., create a build folder for an out-of-source build, e.g.:
-
-    $ mkdir build
-
-Change to that directory:
-
-    $ cd build
-
-Invoke CMake:
-
-    $ cmake ..
-
-Optionally edit `CMakeCache.txt` (for a more detailled description, see 3.).
-
-On Unix platforms, type:
-
-    $ make
-
-The Virvo library will be located in `build/virvo`.
