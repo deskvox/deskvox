@@ -656,7 +656,7 @@ bool vvToolshed::increaseFilename(char* filename)
   {
 	  while (!done)
 	  {
-		  if (i<0 || (filename[i]<'0' || filename[i]>'9')&& (filename[i]<'A' || filename[i]>'F'))
+		  if (i<0 || ((filename[i]<'0' || filename[i]>'9')&& (filename[i]<'A' || filename[i]>'F')))
 			  return false;
 
 		  if (filename[i] == 'F')                       // overflow?
