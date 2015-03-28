@@ -29,6 +29,10 @@
 #include <GL/wglew.h>
 #endif
 
+#ifdef HAVE_OPENGL
+#include "vvopengl.h"
+#endif
+
 #include "gl/util.h"
 #include "math/math.h"
 #include "vvcocoaglcontext.h"
