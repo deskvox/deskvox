@@ -398,7 +398,7 @@ deskvox_add_library(virvo
 
 if(COVISE_BUILD)
     install(TARGETS virvo EXPORT covise-targets
-    RUNTIME DESTINATION covise/${ARCHSUFFIX}/bin${_category_path}
-    LIBRARY DESTINATION covise/${ARCHSUFFIX}/lib
-    ARCHIVE DESTINATION covise/${ARCHSUFFIX}/lib COMPONENT modules.${category})
+    RUNTIME DESTINATION ${ARCHSUFFIX}/bin${_category_path}
+    LIBRARY DESTINATION ${ARCHSUFFIX}/lib
+    ARCHIVE DESTINATION ${ARCHSUFFIX}/lib COMPONENT modules.${category})
 endif(COVISE_BUILD)
