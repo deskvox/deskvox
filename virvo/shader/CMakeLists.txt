@@ -39,6 +39,8 @@ SET(GLSL_SHADERS
   vv_shader11.fsh
   vv_shader12.fsh
   vv_shader13.fsh
+  vv_shader14.fsh
+  vv_texrend.fsh
 )
 
 IF(NOT COVISE_BUILD)

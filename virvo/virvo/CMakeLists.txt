@@ -338,6 +338,8 @@ set(VIRVO_SHADERS
   ../shader/vv_shader11.fsh
   ../shader/vv_shader12.fsh
   ../shader/vv_shader13.fsh
+  ../shader/vv_shader14.fsh
+  ../shader/vv_texrend.fsh
 )
 
 if(APPLE)
