@@ -234,6 +234,9 @@ const string vvShaderFactory::getShaderDir()
   }
   else
   {
+#ifdef VIRVO_SHADER_DIR
+    result = VIRVO_SHADER_DIR;
+#else
     cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
     static char shaderDir[256];
 #ifdef _WIN32
@@ -255,6 +258,7 @@ const string vvShaderFactory::getShaderDir()
     vvToolshed::getProgramDirectory(shaderDir, 256);
     strcat(shaderDir, deskVoxShaderPath);
     result = shaderDir;
+#endif
 #endif
 #endif
   }

@@ -349,7 +349,16 @@ static bool hasRayRenderer(std::string const& arch)
 {
   const char* pluginEnv = "VV_PLUGIN_PATH";
   char* pluginPath = getenv(pluginEnv);
-  std::string ppath = pluginPath == NULL ? "." : pluginPath;
+  std::string ppath = ".";
+  if (pluginPath) {
+    ppath = pluginPath;
+  }
+#ifdef VIRVO_PLUGIN_DIR
+  else
+  {
+    ppath = VIRVO_PLUGIN_DIR;
+  }
+#endif
 
   if (!archSupported(arch))
   {
