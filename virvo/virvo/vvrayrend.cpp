@@ -24,6 +24,7 @@
 
 #ifdef HAVE_CUDA
 
+#include <cstring> // memset
 
 #include "vvrayrend-common.h"
 
@@ -533,7 +534,8 @@ void vvRayRend::initVolumeTexture()
     VV_LOG(1) << "Total CUDA memory (MB):     " << (size_t)(totalMem/1024/1024) << std::endl;
     VV_LOG(1) << "Available CUDA memory (MB): " << (size_t)(availableMem/1024/1024) << std::endl;
 
-    cudaMemcpy3DParms copyParams = { 0 };
+    cudaMemcpy3DParms copyParams;
+    memset(&copyParams, 0, sizeof(copyParams));
 
     virvo::texture< uint8_t, virvo::ElementType, 3 > tex( vd->vox[0], vd->vox[1], vd->vox[2] );
     if (_interpolation == virvo::BSplineInterpol)
