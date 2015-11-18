@@ -72,7 +72,7 @@ namespace virvo
         virtual bool EndFrameImpl() VV_OVERRIDE;
         virtual bool ResizeImpl(int w, int h) VV_OVERRIDE;
 
-        virtual bool DisplayColorBufferImpl() const;
+        virtual bool DisplayColorBufferImpl() const VV_OVERRIDE;
 
         virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
         virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
