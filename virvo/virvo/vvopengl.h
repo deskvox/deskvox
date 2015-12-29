@@ -42,6 +42,7 @@
 #ifndef GLX_GLEXT_LEGACY
 # define GLX_GLEXT_LEGACY 1
 #endif
+#include <GL/glext.h>
 #include <GL/glx.h>
 #endif
 #endif
