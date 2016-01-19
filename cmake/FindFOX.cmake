@@ -55,7 +55,7 @@ else()
 endif()
 
 find_package_handle_standard_args(FOX
-  FOX DEFAULT_MSG
+  DEFAULT_MSG
   FOX_INCLUDE_DIR
   FOX_LIBRARY
 )
