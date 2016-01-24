@@ -1569,6 +1569,7 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
   }
   if (verbose) vvToolshed::initProgress(vox[2] * (endFrame-startFrame));
   raw.first();
+  for (size_t f=0; f<startFrame; ++f) raw.next();
   for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = raw.getData();
