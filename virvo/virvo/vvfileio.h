@@ -128,6 +128,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType loadVHDCTFile(vvVolDesc*);
     ErrorType loadVMRFile(vvVolDesc*);
     ErrorType loadVTCFile(vvVolDesc*);
+    ErrorType loadNiftiFile(vvVolDesc* vd);
     ErrorType loadNrrdFile(vvVolDesc*);
     ErrorType saveNrrdFile(const vvVolDesc*);
     ErrorType loadXIMGFile(vvVolDesc*);

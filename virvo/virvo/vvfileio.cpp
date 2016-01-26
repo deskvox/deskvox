@@ -61,6 +61,10 @@
 #include "vvdicom.h"
 #include "private/vvlog.h"
 
+#if VV_HAVE_NIFTI
+#include "fileio/nifti.h"
+#endif
+
 #if VV_HAVE_TEEM
 #include "fileio/nrrd.h"
 #endif
@@ -4089,6 +4093,25 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
 //----------------------------------------------------------------------------
 /** Loader for voxel file in nrrd (teem volume file) format.
  */
+vvFileIO::ErrorType vvFileIO::loadNiftiFile(vvVolDesc* vd)
+{
+#if VV_HAVE_NIFTI
+  try
+  {
+    virvo::nifti::load(vd);
+    return OK;
+  }
+  catch (std::exception& e)
+  {
+    VV_LOG(0) << e.what();
+    return FILE_ERROR;
+  }
+#endif
+}
+ 
+//----------------------------------------------------------------------------
+/** Loader for voxel file in nrrd (teem volume file) format.
+ */
 vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 {
 #if VV_HAVE_TEEM
@@ -5255,6 +5278,10 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
                                                   // VTC file = BrainVoyager functional data (time series)
   else if (suffix == "vtc")
     err = loadVTCFile(vd);
+
+
+  else if (suffix == "nii")                       // Nifti1 file
+    err = loadNiftiFile(vd);
 
                                                   // NRRD file = Teem nrrd volume file
   else if (suffix == "nrd" || suffix == "nrrd")

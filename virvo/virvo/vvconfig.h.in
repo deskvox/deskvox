@@ -10,6 +10,7 @@
 #cmakedefine01 VV_HAVE_FFMPEG
 #cmakedefine01 VV_HAVE_GLEW
 #cmakedefine01 VV_HAVE_JPEGTURBO
+#cmakedefine01 VV_HAVE_NIFTI
 #cmakedefine01 VV_HAVE_NORM
 #cmakedefine01 VV_HAVE_OPENGL
 #cmakedefine01 VV_HAVE_PNG
@@ -51,6 +52,9 @@
 #endif
 #if VV_HAVE_JPEGTURBO
 #define HAVE_JPEGTURBO
+#endif
+#if VV_HAVE_NIFTI
+#define HAVE_NIFTI
 #endif
 #if VV_HAVE_NORM
 #define HAVE_NORM

@@ -5,6 +5,7 @@ find_package(CUDA)
 find_package(FFMPEG)
 find_package(GLEW REQUIRED)
 find_package(JPEGTURBO)
+find_package(Nifti)
 find_package(NORM)
 find_package(OpenGL REQUIRED)
 find_package(PNG)
@@ -30,6 +31,7 @@ endif(DESKVOX_USE_CUDA)
 deskvox_use_package(FFMPEG)
 deskvox_use_package(GLEW)
 deskvox_use_package(JPEGTURBO)
+deskvox_use_package(Nifti)
 deskvox_use_package(NORM)
 deskvox_use_package(OpenGL)
 deskvox_use_package(PNG)
@@ -91,6 +93,7 @@ set(VIRVO_HEADERS
   cuda/utils.h
 
   fileio/exceptions.h
+  fileio/nifti.h
   fileio/nrrd.h
 
   gl/handle.h
@@ -235,6 +238,7 @@ set(VIRVO_SOURCES
   cuda/host_device_array.cpp
   cuda/utils.cpp
 
+  fileio/nifti.cpp
   fileio/nrrd.cpp
 
   gl/handle.cpp
