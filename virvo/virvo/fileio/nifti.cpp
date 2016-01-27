@@ -24,9 +24,11 @@
 
 #if VV_HAVE_NIFTI
 
-#include <virvo/vvvoldesc.h>
+#include <cassert>
 
 #include <nifti/nifti1_io.h>
+
+#include <virvo/vvvoldesc.h>
 
 #include "exceptions.h"
 #include "nifti.h"
@@ -35,12 +37,17 @@ namespace virvo { namespace nifti {
 
 void load(vvVolDesc* vd)
 {
+    // read nifti header ----------------------------------
+
     nifti_image* header = nifti_image_read(vd->getFilename(), 0);
 
     if (!header)
     {
         throw fileio::exception();
     }
+
+
+    // dimensions
 
     vd->vox[0] = header->nx;
     vd->vox[1] = header->ny;
@@ -50,13 +57,45 @@ void load(vvVolDesc* vd)
     vd->dist[1] = header->dy;
     vd->dist[2] = header->dz;
 
+    // no support for animation
+
     vd->frames = 1;
-    vd->chan = 1;
-    vd->bpc = header->nbyper;
+
+    // bytes per pixel and num channels
+
+    switch (header->datatype)
+    {
+    case NIFTI_TYPE_RGB24:
+        vd->chan = 3;
+        vd->bpc = header->nbyper / 3;
+        break;
+    case NIFTI_TYPE_RGBA32:
+        vd->chan = 4;
+        vd->bpc = header->nbyper / 4;
+        break;
+    case NIFTI_TYPE_INT8:
+    case NIFTI_TYPE_UINT8:
+    case NIFTI_TYPE_INT16:
+    case NIFTI_TYPE_UINT16:
+    case NIFTI_TYPE_INT32:
+    case NIFTI_TYPE_UINT32:
+    case NIFTI_TYPE_FLOAT32:
+        // all: fall through
+    default:
+        vd->chan = 1;
+        vd->bpc = header->nbyper;
+    }
+
+    // data range
+
+    vd->real[0] = header->cal_min;
+    vd->real[1] = header->cal_max;
+
+
+    // read image data ------------------------------------
 
     nifti_image* data_section = nifti_image_read(vd->getFilename(), 1);
 
-std::cerr << header->nbyper << std::endl;
 
     if (!data_section)
     {
