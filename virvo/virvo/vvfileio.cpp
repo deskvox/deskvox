@@ -55,6 +55,7 @@
 #include <cstring>
 #include <algorithm>
 #include <limits>
+#include <map>
 
 #include "vvfileio.h"
 #include "vvtoolshed.h"
@@ -85,6 +86,65 @@ static bool machineBigEndian = true;
 #endif
 
 using namespace std;
+
+
+//----------------------------------------------------------------------------
+/// Assemble a map with supported extensions and file formats
+enum Format
+{
+    WL, RVF, XVF, AVF, XB7, ASC, TGA, TIFF, VTK, VHDCT, VHDMRI, RGB, PGM,
+    VHD, DAT, DCOM, VMR, VTC, NII, NRRD, XIMG, IEEE, HDR, VOLB, DDS, GKENT,
+    SYNTH, Incomplete, Unknown
+};
+
+static std::map<std::string, Format> supported_formats()
+{
+    std::map<std::string, Format> result;
+
+    result.insert(std::make_pair("wl",      WL));
+    result.insert(std::make_pair("rvf",     RVF));
+    result.insert(std::make_pair("xvf",     XVF));
+    result.insert(std::make_pair("avf",     AVF));
+    result.insert(std::make_pair("xb7",     XB7));
+    result.insert(std::make_pair("asc",     ASC));
+    result.insert(std::make_pair("tga",     TGA));
+    result.insert(std::make_pair("tif",     TIFF));
+    result.insert(std::make_pair("tiff",    TIFF));
+    result.insert(std::make_pair("vtk",     VTK));
+    result.insert(std::make_pair("fro",     VHDCT));
+    result.insert(std::make_pair("fre",     VHDCT));
+    result.insert(std::make_pair("pd",      VHDMRI));
+    result.insert(std::make_pair("t1",      VHDMRI));
+    result.insert(std::make_pair("t2",      VHDMRI));
+    result.insert(std::make_pair("loc",     VHDMRI));
+    result.insert(std::make_pair("rgb",     RGB));
+    result.insert(std::make_pair("pgm",     PGM));
+    result.insert(std::make_pair("ppm",     PGM));
+    result.insert(std::make_pair("raw",     VHD));
+    result.insert(std::make_pair("dat",     DAT));
+    result.insert(std::make_pair("dcm",     DCOM));
+    result.insert(std::make_pair("dcom",    DCOM));
+    result.insert(std::make_pair("vmr",     VMR));
+    result.insert(std::make_pair("vtc",     VTC));
+    result.insert(std::make_pair("nii",     NII));
+    result.insert(std::make_pair("nii.gz",  NII));
+    result.insert(std::make_pair("nrd",     NRRD));
+    result.insert(std::make_pair("nrrd",    NRRD));
+    result.insert(std::make_pair("ximg",    XIMG));
+    result.insert(std::make_pair("vis04",   IEEE));
+    result.insert(std::make_pair("hdr",     HDR));
+    result.insert(std::make_pair("volb",    VOLB));
+    result.insert(std::make_pair("dds",     DDS));
+    result.insert(std::make_pair("gkent",   GKENT));
+    result.insert(std::make_pair("synth",   SYNTH));
+
+    // Incomplete, need further extension
+    result.insert(std::make_pair("gz",      Incomplete));
+
+    return result;
+}
+
+
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -5216,6 +5276,8 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   namespace fs = boost::filesystem;
 
+  std::map<std::string, Format> formats = supported_formats();
+
   // Assemble suffix string
   // Also support concatenated extensions (e.g. "nii.gz")
 
@@ -5225,109 +5287,128 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   while (!path.extension().empty())
   {
     fs::path ext = path.extension();
-    suffix = ext.string() + suffix;
-    path = path.stem();
+    std::string temp = ext.string() + suffix;
+    temp.erase(0, 1); // remove leading dot
+
+    // check that we actually found part of a valid extension,
+    // and not just an arbitrarily placed dot
+    if (formats.find(temp) != formats.end())
+    {
+      suffix = ext.string() + suffix;
+      path = path.stem();
+    }
+    else
+    {
+      break;
+    }
   }
 
   std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
-  // Remove leading dot
-  suffix.erase(0, 1);
+  suffix.erase(0, 1); // remove leading dot
+
+  std::map<std::string, Format>::iterator format_found = formats.find(suffix);
+
+  Format format = Unknown;
+
+  if (format_found != formats.end())
+  {
+    format = format_found->second;
+  }
 
   // Load files according to extension:
-  if (suffix == "wl")
+  if (format == WL)
     err = loadWLFile(vd);
 
-  else if (suffix == "rvf")
+  else if (format == RVF)
     err = loadRVFFile(vd);
 
-  else if (suffix == "xvf")
+  else if (format == XVF)
     err = loadXVFFile(vd);
 
-  else if (suffix == "avf")
+  else if (format == AVF)
     err = loadAVFFile(vd);
 
-  else if (suffix == "xb7")
+  else if (format == XB7)
     err = loadXB7File(vd);
 
-  else if (suffix == "asc")
+  else if (format == ASC)
     err = loadASCFile(vd);
 
-  else if (suffix == "tga")
+  else if (format == TGA)
     err = loadTGAFile(vd);
 
-  else if (suffix == "tif" || suffix == "tiff")
+  else if (format == TIFF)
     err = loadTIFFile(vd, addFrame);
 
-  else if (suffix == "vtk")
+  else if (format == VTK)
     err = loadVTKFile(vd);
                                                   // VHD CT data
-  else if (suffix == "fro" || suffix == "fre")
+  else if (format == VHDCT)
     err = loadVHDCTFile(vd);
 
                                                   // VHD MRI data
-  else if (suffix == "pd" || suffix == "t1"
-        || suffix == "t2" || suffix == "loc")
+  else if (format == VHDMRI)
     err = loadVHDMRIFile(vd);
 
                                                   // SGI RGB file
-  else if (suffix == "rgb")
+  else if (format == RGB)
     err = loadRGBFile(vd);
 
                                                   // PGM file
-  else if (suffix == "pgm" || suffix == "ppm")    // PPM file
+  else if (format == PGM)                         // PPM file
     err = loadPXMRawImage(vd);
 
                                                   // VHD anatomic
-  else if (suffix == "raw")
+  else if (format == VHD)
     err = loadVHDAnatomicFile(vd);
 
                                                   // DAT file = raw volume data w/o header information
-  else if (suffix == "dat")
+  else if (format == DAT)
     err = loadRawFile(vd);
 
                                                   // DICOM file
-  else if (suffix == "dcm" || suffix == "dcom")
+  else if (format == DCOM)
     err = loadDicomFile(vd);
 
                                                   // VMR file = BrainVoyager anatomical 3D data
-  else if (suffix == "vmr")
+  else if (format == VMR)
     err = loadVMRFile(vd);
 
                                                   // VTC file = BrainVoyager functional data (time series)
-  else if (suffix == "vtc")
+  else if (format == VTC)
     err = loadVTCFile(vd);
 
-
-  else if (suffix == "nii" || suffix == "nii.gz") // Nifti1 file
+                                                  // Nifti1 file
+  else if (format == NII)
     err = loadNiftiFile(vd);
 
                                                   // NRRD file = Teem nrrd volume file
-  else if (suffix == "nrd" || suffix == "nrrd")
+  else if (format == NRRD)
     err = loadNrrdFile(vd);
 
                                                   // XIMG = General Electric MRI file
-  else if (suffix == "ximg")
+  else if (format == XIMG)
     err = loadXIMGFile(vd);
 
                                                   // IEEE Visualization Contest format
-  else if (suffix == "vis04")
+  else if (format == IEEE)
     err = loadVis04File(vd);
 
                                                   // Meshviewer header file
-  else if (suffix == "hdr")
+  else if (format == HDR)
     err = loadHDRFile(vd);
 
-  else if (suffix == "volb")
+  else if (format == VOLB)
     err = loadVOLBFile(vd);
                                                   // Microsoft DirectDraw Surface file
-  else if (suffix == "dds")
+  else if (format == DDS)
     err = loadDDSFile(vd);
 
                                                   // Graham Kent's seismic data (Scripps Institution)
-  else if (suffix == "gkent")
+  else if (format == GKENT)
     err = loadGKentFile(vd);
 
-  else if (suffix == "synth")
+  else if (format == SYNTH)
     err = loadSynthFile(vd);
 
   // Unknown extension error:
