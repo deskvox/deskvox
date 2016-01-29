@@ -47,6 +47,8 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <boost/filesystem.hpp>
+
 #include <math.h>
 #include <limits.h>
 #include <ctype.h>
@@ -5212,8 +5214,24 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   _sections = sec;
 
-  std::string suffix = vvToolshed::extractExtension(vd->getFilename());
+  namespace fs = boost::filesystem;
+
+  // Assemble suffix string
+  // Also support concatenated extensions (e.g. "nii.gz")
+
+  std::string suffix = "";
+  fs::path path(vd->getFilename());
+
+  while (!path.extension().empty())
+  {
+    fs::path ext = path.extension();
+    suffix = ext.string() + suffix;
+    path = path.stem();
+  }
+
   std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+  // Remove leading dot
+  suffix.erase(0, 1);
 
   // Load files according to extension:
   if (suffix == "wl")
@@ -5280,7 +5298,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
     err = loadVTCFile(vd);
 
 
-  else if (suffix == "nii")                       // Nifti1 file
+  else if (suffix == "nii" || suffix == "nii.gz") // Nifti1 file
     err = loadNiftiFile(vd);
 
                                                   // NRRD file = Teem nrrd volume file
