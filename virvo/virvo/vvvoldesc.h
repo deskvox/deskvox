@@ -133,8 +133,9 @@ class VIRVOEXPORT vvVolDesc
     size_t chan;                                  ///< number of channels (default = 1), each channel contains bpc bytes
     virvo::vec3f dist;                            ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
-    float real[2];                                ///< 1/2 bpc: physical equivalent of min/max scalar value
+    std::vector<virvo::vec2> real;                ///< 1/2 bpc: physical equivalent of min/max scalar value
                                                   ///< 4 bpc:   min and max values for mapping to transfer function space
+                                                  ///<     if more than 1: each channel has its own
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]
     std::vector<vvTransFunc> tf;                  ///< transfer functions (if more than 1: each channel has its own)
@@ -239,7 +240,7 @@ class VIRVOEXPORT vvVolDesc
     void   setDist(virvo::vec3f const& d);
     virvo::vec3f getSize() const;
     size_t getStoredFrames() const;
-    float  getValueRange() const;
+    float  getValueRange(size_t channel = 0) const;
 
     // Conversion routines:
     void   convertBPC(size_t, bool=false);
@@ -315,7 +316,7 @@ class VIRVOEXPORT vvVolDesc
     void   resizeEdgeMax(float);
     float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan);
     void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
-    void   setDefaultRealMinMax();
+    void   setDefaultRealMinMax(size_t channel = 0);
     void   addGradient(size_t srcChan, GradientType);
     void   addVariance(size_t srcChan);
     void   deleteChannelNames();

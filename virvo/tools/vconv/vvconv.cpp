@@ -725,8 +725,8 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     float scalarMin, scalarMax;
     cerr << "Automatically setting physical data value range." << endl;
     v->findMinMax(0, scalarMin, scalarMax);
-    v->real[0] = scalarMin;
-    v->real[1] = scalarMax;
+    v->real[0][0] = scalarMin;
+    v->real[0][1] = scalarMax;
   }
   if (invertVoxelOrder)
   {
@@ -818,8 +818,8 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (setRange)
   {
     cerr << "Setting physical data value range." << endl;
-    v->real[0] = newRange[0];
-    v->real[1] = newRange[1];
+    v->real[0][0] = newRange[0];
+    v->real[0][1] = newRange[1];
   }
   if (zoomData)
   {
@@ -2454,7 +2454,7 @@ int vvConv::run(int argc, char** argv)
         uint8_t* imgData = new uint8_t[imgVD->vox[0] * imgVD->vox[1] * 3];
         size_t size[2] = { static_cast<size_t>(imgVD->vox[0]), static_cast<size_t>(imgVD->vox[1]) };
         vvColor col(1.0f, 1.0f, 1.0f);
-        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0], tmpVD->real[1]);
+        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0][0], tmpVD->real[0][1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
         imgVD->frames = 1;
         imgVD->flip(virvo::cartesian_axis< 3 >::Y);

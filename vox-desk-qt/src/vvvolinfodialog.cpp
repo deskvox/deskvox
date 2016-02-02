@@ -68,8 +68,8 @@ void vvVolInfoDialog::onNewVolDesc(vvVolDesc* vd)
     impl_->ui->distXLabel->setText(QString::number(vd->dist[0]));
     impl_->ui->distYLabel->setText(QString::number(vd->dist[1]));
     impl_->ui->distZLabel->setText(QString::number(vd->dist[2]));
-    impl_->ui->pminLabel->setText(QString::number(vd->real[0]));
-    impl_->ui->pmaxLabel->setText(QString::number(vd->real[1]));
+    impl_->ui->pminLabel->setText(QString::number(vd->real[0][0]));
+    impl_->ui->pmaxLabel->setText(QString::number(vd->real[0][1]));
     float fmin;
     float fmax;
     vd->findMinMax(0, fmin, fmax);

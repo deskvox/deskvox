@@ -920,7 +920,7 @@ void vvRenderer::renderPalette() const
   w = WIDTH;
   h = (int)viewport[3];
   std::vector< float > colors(h * 4);
-  vd->tf[0].computeTFTexture(h, 1, 1, &colors[0], vd->real[0], vd->real[1]);
+  vd->tf[0].computeTFTexture(h, 1, 1, &colors[0], vd->real[0][0], vd->real[0][1]);
   std::vector< uint8_t > image(w * h * 3);
   for (x=0; x<w; ++x)
     for (y=0; y<h; ++y)
@@ -933,8 +933,8 @@ void vvRenderer::renderPalette() const
 
   // Display min and max values:
   vvPrintGL printGL;
-  printGL.print(-0.90f,  0.9f,  "%-9.2f", vd->real[1]);
-  printGL.print(-0.90f, -0.95f, "%-9.2f", vd->real[0]);
+  printGL.print(-0.90f,  0.9f,  "%-9.2f", vd->real[0][1]);
+  printGL.print(-0.90f, -0.95f, "%-9.2f", vd->real[0][0]);
 
   // Restore state:
   glPopAttrib();

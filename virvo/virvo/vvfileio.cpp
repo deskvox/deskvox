@@ -86,6 +86,7 @@ static bool machineBigEndian = true;
 #endif
 
 using namespace std;
+using namespace virvo;
 
 
 //----------------------------------------------------------------------------
@@ -171,8 +172,8 @@ void vvFileIO::setDefaultValues(vvVolDesc* vd)
   vd->dist[1] = 1.0f;
   vd->dist[2] = 1.0f;
   vd->dt      = 1.0f;
-  vd->real[0] = 0.0f;
-  vd->real[1] = 1.0f;
+  vd->real.clear();
+  vd->real.push_back(vec2(0.0f, 1.0f));
 }
 
 //----------------------------------------------------------------------------
@@ -881,7 +882,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "DIST %g %g %g\n", vd->dist[0], vd->dist[1], vd->dist[2]);
   fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
   fprintf(fp, "DTIME %g\n", vd->dt);
-  fprintf(fp, "MINMAX %g %g\n", vd->real[0], vd->real[1]);
+  fprintf(fp, "MINMAX %g %g\n", vd->real[0][0], vd->real[0][1]);
   fprintf(fp, "POS %g %g %g\n", vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Write channel names:
@@ -1126,7 +1127,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->real[i] = tok.nval;
+          vd->real[0][i] = tok.nval;
         }
       }
       else if (strcmp(tok.sval, "POS")==0)
@@ -1663,8 +1664,8 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
   fprintf(fp, "HEIGHT %d\n", static_cast<int32_t>(vd->vox[1]));
   fprintf(fp, "SLICES %d\n", static_cast<int32_t>(vd->vox[2]));
   fprintf(fp, "FRAMES %d\n", static_cast<int32_t>(vd->frames));
-  fprintf(fp, "MIN %g\n", vd->real[0]);
-  fprintf(fp, "MAX %g\n", vd->real[1]);
+  fprintf(fp, "MIN %g\n", vd->real[0][0]);
+  fprintf(fp, "MAX %g\n", vd->real[0][1]);
   fprintf(fp, "XDIST %g\n", vd->dist[0]);
   fprintf(fp, "YDIST %g\n", vd->dist[1]);
   fprintf(fp, "ZDIST %g\n", vd->dist[2]);
@@ -1907,21 +1908,21 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     {
       switch (identifier)
       {
-        case  0: vd->vox[0]  = int(tokenizer.nval); break;
-        case  1: vd->vox[1]  = int(tokenizer.nval); break;
-        case  2: vd->vox[2]  = int(tokenizer.nval); break;
-        case  3: vd->frames  = int(tokenizer.nval); break;
-        case  4: vd->real[0] = tokenizer.nval; break;
-        case  5: vd->real[1] = tokenizer.nval; break;
-        case  6: vd->dist[0] = tokenizer.nval; break;
-        case  7: vd->dist[1] = tokenizer.nval; break;
-        case  8: vd->dist[2] = tokenizer.nval; break;
-        case  9: vd->dt      = tokenizer.nval; break;
-        case 10: vd->bpc     = int(tokenizer.nval); break;
-        case 11: vd->chan    = int(tokenizer.nval); break;
-        case 12: vd->pos[0]  = tokenizer.nval; break;
-        case 13: vd->pos[1]  = tokenizer.nval; break;
-        case 14: vd->pos[2]  = tokenizer.nval; break;
+        case  0: vd->vox[0]     = int(tokenizer.nval); break;
+        case  1: vd->vox[1]     = int(tokenizer.nval); break;
+        case  2: vd->vox[2]     = int(tokenizer.nval); break;
+        case  3: vd->frames     = int(tokenizer.nval); break;
+        case  4: vd->real[0][0] = tokenizer.nval; break;
+        case  5: vd->real[0][1] = tokenizer.nval; break;
+        case  6: vd->dist[0]    = tokenizer.nval; break;
+        case  7: vd->dist[1]    = tokenizer.nval; break;
+        case  8: vd->dist[2]    = tokenizer.nval; break;
+        case  9: vd->dt         = tokenizer.nval; break;
+        case 10: vd->bpc        = int(tokenizer.nval); break;
+        case 11: vd->chan       = int(tokenizer.nval); break;
+        case 12: vd->pos[0]     = tokenizer.nval; break;
+        case 13: vd->pos[1]     = tokenizer.nval; break;
+        case 14: vd->pos[2]     = tokenizer.nval; break;
         case -1:
         default:
           cerr << "No identifier for number" << endl;
@@ -1940,7 +1941,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 
   // Check for consistence:
   if (vd->vox[0]<=0 || vd->vox[1]<=0 || vd->vox[2]<=0 ||
-    vd->frames<=0 || vd->real[0]>=vd->real[1])
+    vd->frames<=0 || vd->real[0][0]>=vd->real[0][1])
   {
     vvDebugMsg::msg(1, "Error: Invalid file information in header");
     return DATA_ERROR;
@@ -2198,8 +2199,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     timesteps.removeAll();
     return DATA_ERROR;
   }
-  vd->real[0] = globalMin;
-  vd->real[1] = globalMax;
+  vd->real[0][0] = globalMin;
+  vd->real[0][1] = globalMax;
 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
@@ -2423,8 +2424,8 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   cerr << numTimesteps << " time steps read" << endl;
   cerr << "Global: scalar min,max: " << globalMin << "," << globalMax << endl;
 
-  vd->real[0] = globalMin;
-  vd->real[1] = globalMax;
+  vd->real[0][0] = globalMin;
+  vd->real[0][1] = globalMax;
 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
@@ -4470,40 +4471,40 @@ vvFileIO::ErrorType vvFileIO::loadVis04File(vvVolDesc* vd)
   if (!machineBigEndian) vd->toggleEndianness();                         // file is big endian
 
   // Set real min and max:
-  vd->real[0] = 0.0f;
-  if (vvToolshed::strCompare(vd->getFilename(), "QCLOUD", 6) == 0)      vd->real[1] = 0.00332f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QGRAUP", 6) == 0) vd->real[1] = 0.01638f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QICE", 4) == 0)   vd->real[1] = 0.00099f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[1] = 0.01132f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QSNOW", 5) == 0)  vd->real[1] = 0.00135f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[1] = 0.01132f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QVAPOR", 6) == 0) vd->real[1] = 0.02368f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "CLOUD", 5) == 0)  vd->real[1] = 0.00332f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "PRECIP", 6) == 0) vd->real[1] = 0.01672f;
+  vd->real[0][0] = 0.0f;
+  if (vvToolshed::strCompare(vd->getFilename(), "QCLOUD", 6) == 0)      vd->real[0][1] = 0.00332f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QGRAUP", 6) == 0) vd->real[0][1] = 0.01638f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QICE", 4) == 0)   vd->real[0][1] = 0.00099f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[0][1] = 0.01132f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QSNOW", 5) == 0)  vd->real[0][1] = 0.00135f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[0][1] = 0.01132f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QVAPOR", 6) == 0) vd->real[0][1] = 0.02368f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "CLOUD", 5) == 0)  vd->real[0][1] = 0.00332f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "PRECIP", 6) == 0) vd->real[0][1] = 0.01672f;
   else if (vvToolshed::strCompare(vd->getFilename(), "Pf", 2) == 0)
   {
-    vd->real[0] = -5471.85791f;
-    vd->real[1] =  3225.42578f;
+    vd->real[0][0] = -5471.85791f;
+    vd->real[0][1] =  3225.42578f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "TCf", 3) == 0)
   {
-    vd->real[0] = -83.00402f;
-    vd->real[1] =  31.51576f;
+    vd->real[0][0] = -83.00402f;
+    vd->real[0][1] =  31.51576f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Uf", 2) == 0)
   {
-    vd->real[0] = -79.47297f;
-    vd->real[1] =  85.17703f;
+    vd->real[0][0] = -79.47297f;
+    vd->real[0][1] =  85.17703f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Vf", 2) == 0)
   {
-    vd->real[0] = -76.03391f;
-    vd->real[1] =  82.95293f;
+    vd->real[0][0] = -76.03391f;
+    vd->real[0][1] =  82.95293f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Wf", 2) == 0)
   {
-    vd->real[0] = -9.06026f;
-    vd->real[1] = 28.61434f;
+    vd->real[0][0] = -9.06026f;
+    vd->real[0][1] = 28.61434f;
   }
 
   return OK;
@@ -4617,14 +4618,14 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
     else if (vvToolshed::strCompare(tokenizer.sval, "MINVAL:")==0)
     {
       ttype = tokenizer.nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0] = tokenizer.nval;
-      cerr << "hdr file: MinVal=" << vd->real[0] << endl;
+      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0][0] = tokenizer.nval;
+      cerr << "hdr file: MinVal=" << vd->real[0][0] << endl;
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "MAXVAL:")==0)
     {
       ttype = tokenizer.nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[1] = tokenizer.nval;
-      cerr << "hdr file: MaxVal=" << vd->real[1] << endl;
+      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0][1] = tokenizer.nval;
+      cerr << "hdr file: MaxVal=" << vd->real[0][1] << endl;
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "BYTEORDER:")==0)
     {

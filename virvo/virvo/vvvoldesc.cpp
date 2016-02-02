@@ -55,9 +55,7 @@
 
 using namespace std;
 
-using virvo::aabb;
-using virvo::vec3f;
-using virvo::vec3;
+using namespace virvo;
 
 const size_t vvVolDesc::DEFAULT_ICON_SIZE = 64;
 const size_t vvVolDesc::NUM_HDR_BINS = 256;
@@ -161,20 +159,22 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
   bpc    = 1;
   chan    = 1;
   frames = f;
-  real[0] =  std::numeric_limits< float >::max();
-  real[1] = -std::numeric_limits< float >::max();
+  real.push_back(virvo::vec2(
+        std::numeric_limits<float>::max(),
+       -std::numeric_limits<float>::max()
+        ));
 
   for (size_t i=0; i<f; ++i)
   {
     vvToolshed::getMinMaxIgnore(d[i], getFrameVoxels(), std::numeric_limits< float >::max(), &frameMin, &frameMax);
-    if (frameMin < real[0]) real[0] = frameMin;
-    if (frameMax > real[1]) real[1] = frameMax;
+    if (frameMin < real[0][0]) real[0][0] = frameMin;
+    if (frameMax > real[0][1]) real[0][1] = frameMax;
   }
   for (size_t i=0; i<f; ++i)
   {
     data = new uint8_t[getFrameBytes()];
     vvToolshed::convertFloat2UCharClampZero(d[i], data, getFrameVoxels(),
-      real[0], real[1], std::numeric_limits< float >::max());
+      real[0][0], real[0][1], std::numeric_limits< float >::max());
     addFrame(data, ARRAY_DELETE);
   }
   if (strcmp("COVISE", fn)==0)                    // convert data if source is COVISE
@@ -267,9 +267,9 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
     vox[i]  = v->vox[i];
     dist[i] = v->dist[i];
   }
-  for (size_t i=0; i<2; ++i)
+  for (std::vector<vec2>::const_iterator it = v->real.begin(); it != v->real.end(); ++it)
   {
-    real[i] = v->real[i];
+    real.push_back(*it);
   }
   dt     = v->dt;
   bpc    = v->bpc;
@@ -377,8 +377,7 @@ void vvVolDesc::setDefaults()
   chan = 0;
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
-  real[0] = 0.0f;
-  real[1] = 1.0f;
+  real.push_back(vec2(0.0f, 1.0f));
   pos = vec3f(0.0f, 0.0f, 0.0f);
 }
 
@@ -516,9 +515,9 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     dt     = src->dt;
     raw.merge(&src->raw);
     for (size_t i=0; i<3; ++i) dist[i] = src->dist[i];
-    for (size_t i=0; i<2; ++i)
+    for (std::vector<vec2>::iterator it = src->real.begin(); it != src->real.end(); ++it)
     {
-      real[i] = src->real[i];
+      real.push_back(*it);
     }
     for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
@@ -1022,12 +1021,12 @@ void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, floa
 
   if (this->chan == 2 && tf.size()==1)
   {
-     tf[0].computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+     tf[0].computeTFTexture(w, h, d, dest, real[0][0], real[0][1], 0.0f, 1.0f); //TODO substitute fixed values!
   }
   else
   {
      //default: act as 1D
-     tf[chan].computeTFTexture(w, h, d, dest, real[0], real[1]);
+     tf[chan].computeTFTexture(w, h, d, dest, real[chan][0], real[chan][1]);
   }
 
   // convert opacity TF if hdr mode:
@@ -1038,7 +1037,7 @@ void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, floa
      for (size_t i=0; i<w; ++i) // go through all bins and non-linearize them
      {
         dataVal = _hdrBinLimits[i];
-        linearBin = size_t((dataVal - real[0]) / (real[1] - real[0]) * float(w));
+        linearBin = size_t((dataVal - real[0][0]) / (real[0][1] - real[0][0]) * float(w));
         linearBin = virvo::clamp(linearBin, size_t(0), w-1);
         dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
      }
@@ -1222,7 +1221,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
     }
 
     // Compute histogram:
-    makeHistogram(-1, m, 1, buckets, hist, real[0], real[1]);
+    makeHistogram(-1, m, 1, buckets, hist, real[m][0], real[m][1]);
 
     // Check if file exists:
     if (!overwrite && vvToolshed::isFile(fileName))
@@ -1301,13 +1300,13 @@ size_t vvVolDesc::getBPV() const
     Useful for creating histograms.
  @return the range of values in each channel; returns 0.0f on error.
 */
-float vvVolDesc::getValueRange() const
+float vvVolDesc::getValueRange(size_t channel) const
 {
   switch(bpc)
   {
     case 1: return 256.0f;
     case 2: return 65536.0f;
-    case 4: return real[1] - real[0];
+    case 4: return real[channel][1] - real[channel][0];
     default: assert(0); return 0.0f;
   }
 }
@@ -1392,14 +1391,14 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
                 break;
               }
               case 4:                             // float source
-                val = ts_clamp(*((float*)src), real[0], real[1]);
+                val = ts_clamp(*((float*)src), real[c][0], real[c][1]);
                 switch (newBPC)                   // switch by destination voxel type
                 {
                   case 1:
-                    *dst = uchar((val - real[0]) / (real[1] - real[0]) * 255.0f);
+                    *dst = uchar((val - real[c][0]) / (real[c][1] - real[c][0]) * 255.0f);
                     break;
                   case 2:
-                    virvo::serialization::write16(dst, uint16_t((val - real[0]) / (real[1] - real[0]) * 65535.0f));
+                    virvo::serialization::write16(dst, uint16_t((val - real[c][0]) / (real[c][1] - real[c][0]) * 65535.0f));
                     break;
                 }
                 break;
@@ -2834,7 +2833,17 @@ void vvVolDesc::printVolumeInfo()
   }
   cerr << "Sample distances:                  " << setprecision(3) << dist[0] << " x " << dist[1] << " x " << dist[2] << endl;
   cerr << "Time step duration [s]:            " << setprecision(3) << dt << endl;
-  cerr << "Physical data range:               " << real[0] << " to " << real[1] << endl;
+  if (chan == 1)
+  {
+    cerr << "Physical data range:               " << real[0][0] << " to " << real[0][1] << endl;
+  }
+  else
+  {
+    for (size_t i = 0; i < real.size(); ++i)
+    {
+      cerr << "Physical data range chan[" << i << "]: " << real[i][0] << " to " << real[i][1] << endl;
+    }
+  }
   cerr << "Object location [mm]:              " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
   cerr << "Icon stored:                       " << ((iconSize>0) ? "yes" : "no") << endl;
   if (iconSize>0)
@@ -2884,7 +2893,7 @@ void vvVolDesc::printHistogram(int frame, size_t channel)
   unsigned int buckets[1] = {32};
 
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
+  makeHistogram(frame, channel, 1, buckets, hist, real[channel][0], real[channel][1]);
   for (i=0; i<buckets[0]; ++i)
 
   {
@@ -3396,8 +3405,8 @@ size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
     ptr += virvo::serialization::writeFloat(ptr, dist[1]);
     ptr += virvo::serialization::writeFloat(ptr, dist[2]);
     ptr += virvo::serialization::writeFloat(ptr, dt);
-    ptr += virvo::serialization::writeFloat(ptr, real[0]);
-    ptr += virvo::serialization::writeFloat(ptr, real[1]);
+    ptr += virvo::serialization::writeFloat(ptr, real[0][0]); // TODO: do this for each channel
+    ptr += virvo::serialization::writeFloat(ptr, real[0][1]); // TODO:    ""  ""  ""  ""  ""
     ptr += virvo::serialization::writeFloat(ptr, pos[0]);
     ptr += virvo::serialization::writeFloat(ptr, pos[1]);
     ptr += virvo::serialization::writeFloat(ptr, pos[2]);
@@ -3473,12 +3482,12 @@ void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    real[0] = virvo::serialization::readFloat(ptr);
+    real.push_back(vec2(virvo::serialization::readFloat(ptr), 1.0f));
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    real[1] = virvo::serialization::readFloat(ptr);
+    real[0][1] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
@@ -3626,7 +3635,7 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
 #else
         case 2: voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1])) / 65535.0f; break;
 #endif
-        case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - real[0]) / (real[1] - real[0]); break;
+        case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - real[c][0]) / (real[c][1] - real[c][0]); break;
         default: assert(0); break;
       }
       if (chan==1)
@@ -3762,12 +3771,12 @@ float vvVolDesc::findClampValue(int frame, size_t channel, float threshold)
   threshold = ts_clamp(threshold, 0.0f, 1.0f);
 
   findMinMax(channel, fMin, fMax);
-  real[0] = fMin;
-  real[1] = fMax;
+  real[channel][0] = fMin;
+  real[channel][1] = fMax;
   size_t frameVoxels = getFrameVoxels();
   size_t thresholdVoxelCount = size_t(float(frameVoxels) * threshold);
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
+  makeHistogram(frame, channel, 1, buckets, hist, real[channel][0], real[channel][1]);
   for (i=0; i<buckets[0]; ++i)
   {
     if (voxelCount >= thresholdVoxelCount)
@@ -3918,7 +3927,7 @@ int vvVolDesc::findNumTransparent(int frame)
     rgba = new float[4 * lutEntries];
 
     // Generate arrays from pins:
-    tf[0].computeTFTexture(lutEntries, 1, 1, rgba, real[0], real[1]);
+    tf[0].computeTFTexture(lutEntries, 1, 1, rgba, real[0][0], real[0][1]);
   }
 
   // Search volume:
@@ -4078,8 +4087,8 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
   if (chan==1 || channel==-1)                     // effect on real range undefined if only one channel is zoomed
   {
     int irange = (bpc==2) ? 65535 : 255;
-    real[0] = fmin / float(irange) * (real[1] - real[0]) + real[0];
-    real[1] = fmax / float(irange) * (real[1] - real[0]) + real[0];
+    real[0][0] = fmin / float(irange) * (real[0][1] - real[0][0]) + real[0][0];
+    real[0][1] = fmax / float(irange) * (real[0][1] - real[0][0]) + real[0][0];
   }
 
   // Perform the actual expansion:
@@ -4715,12 +4724,12 @@ std::vector< std::vector< float > >& resArray)
 //----------------------------------------------------------------------------
 /** Find min and max data values and set real[0/1] accordingly.
  */
-void vvVolDesc::setDefaultRealMinMax()
+void vvVolDesc::setDefaultRealMinMax(size_t channel)
 {
   float fMin, fMax;
-  findMinMax(0, fMin, fMax);
-  real[0] = fMin;
-  real[1] = fMax;
+  findMinMax(channel, fMin, fMax);
+  real[channel][0] = fMin;
+  real[channel][1] = fMax;
 }
 
 //----------------------------------------------------------------------------
@@ -4781,7 +4790,7 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
           {
             case 1: height = float(*src) / 255.0f; break;
             case 2: height = (float(*src) * 256.0f + float(*(src+1))) / 65535.0f; break;
-            case 4: height = (*((float*)src) - real[0]) / (real[1] - real[0]); break;
+            case 4: height = (*((float*)src) - real[0][0]) / (real[0][1] - real[0][0]); break;
             default: assert(0); break;
           }
 
@@ -5120,8 +5129,8 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   // Make sure min and max of data range are included in data:
   if (lockRange)
   {
-    sortedData[numVoxels]   = real[0];
-    sortedData[numVoxels+1] = real[1];
+    sortedData[numVoxels]   = real[0][0];
+    sortedData[numVoxels+1] = real[0][1];
     numVoxels += 2;
   }
 
@@ -5137,7 +5146,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 
     // Trim values below realMin:
     size_t i;
-    for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i)
+    for(i=0; i<numVoxels && sortedData[i] < real[0][0]; ++i)
     {
       minIndex = i;  // find index of realMin
     }
@@ -5150,7 +5159,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 
     // Trim values above realMax:
     // find index of realMax
-    for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i)
+    for(i=numVoxels-1; i>0 && sortedData[i] > real[0][1]; --i)
        ;
     maxIndex = ts_clamp(i, size_t(0), numVoxels-1);
     numVoxels -= (numVoxels-1-maxIndex);
@@ -5293,8 +5302,8 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   {
     if (!lockRange)
     {
-      real[0] = sortedData[0];
-      real[1] = sortedData[numVoxels-1];
+      real[0][0] = sortedData[0];
+      real[0][1] = sortedData[numVoxels-1];
     }
   }
 
@@ -5319,8 +5328,8 @@ int vvVolDesc::mapFloat2Int(float fval)
   switch(_binning)
   {
     case LINEAR:
-      fval = ts_clamp(fval, real[0], real[1]);
-      return int((fval - real[0]) / (real[1] - real[0]) * 255.0f);
+      fval = ts_clamp(fval, real[0][0], real[0][1]);
+      return int((fval - real[0][0]) / (real[0][1] - real[0][0]) * 255.0f);
     case ISO_DATA:
     case OPACITY:
       ival = findHDRBin(fval);
@@ -5357,10 +5366,10 @@ void vvVolDesc::makeBinTexture(uint8_t* texture, size_t width)
   memset(texture, 0, width * 4);    // initialize with transparent texels
   if (bpc==4)
   {
-    range = real[1] - real[0];
+    range = real[0][1] - real[0][0];
     for (size_t i=0; i<NUM_HDR_BINS; ++i)
     {
-      size_t index = size_t((_hdrBinLimits[i] - real[0]) / range * float(width-1));
+      size_t index = size_t((_hdrBinLimits[i] - real[0][0]) / range * float(width-1));
       index = ts_clamp(index, size_t(0), size_t(width-1));
       texture[4*index]   = 0;
       texture[4*index+1] = 0;

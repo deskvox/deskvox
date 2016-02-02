@@ -389,10 +389,10 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
     // use default TF if none stored
     if (vd->tf[0].isEmpty())
     {
-      vd->tf[0].setDefaultAlpha(0, vd->real[0], vd->real[1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
     }
-    if (vd->bpc == 4 && vd->real[0] == 0.0f && vd->real[1] == 1.0f)
+    if (vd->bpc == 4 && vd->real[0][0] == 0.0f && vd->real[0][1] == 1.0f)
     {
       vd->setDefaultRealMinMax();
     }
@@ -438,10 +438,10 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
     // use default TF if non stored
     if (vd->tf[0].isEmpty())
     {
-      vd->tf[0].setDefaultAlpha(0, vd->real[0], vd->real[1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0], vd->real[1]);
+      vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
     }
-    if (vd->bpc == 4 && vd->real[0] == 0.0f && vd->real[1] == 1.0f)
+    if (vd->bpc == 4 && vd->real[0][0] == 0.0f && vd->real[0][1] == 1.0f)
     {
       vd->setDefaultRealMinMax();
     }

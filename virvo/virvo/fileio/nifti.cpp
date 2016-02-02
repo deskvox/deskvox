@@ -88,8 +88,11 @@ void load(vvVolDesc* vd)
 
     // data range
 
-    vd->real[0] = header->cal_min;
-    vd->real[1] = header->cal_max;
+    for (size_t c = 0; c < vd->chan; ++c)
+    {
+        vd->real[c][0] = header->cal_min;
+        vd->real[c][1] = header->cal_max;
+    }
 
 
     // read image data ------------------------------------

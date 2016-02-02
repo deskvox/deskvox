@@ -415,8 +415,8 @@ void vvCanvas::init()
   // default transfer function
   if (_vd->tf[0].isEmpty())
   {
-    _vd->tf[0].setDefaultAlpha(0, _vd->real[0], _vd->real[1]);
-    _vd->tf[0].setDefaultColors((_vd->chan == 1) ? 0 : 3, _vd->real[0], _vd->real[1]);
+    _vd->tf[0].setDefaultAlpha(0, _vd->real[0][0], _vd->real[0][1]);
+    _vd->tf[0].setDefaultColors((_vd->chan == 1) ? 0 : 3, _vd->real[0][0], _vd->real[0][1]);
   }
 
   // init renderer
