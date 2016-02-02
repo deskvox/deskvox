@@ -110,6 +110,7 @@ uint8_t** d, vvVolDesc::DeleteType deleteType)
   bpc    = b;
   chan    = m;
   frames = f;
+  real.resize(chan);
 
   if(d)
   {
@@ -210,6 +211,7 @@ float** g, float** b)
   frames = f;
   frameSize = getFrameBytes();
   compSize  = getFrameVoxels();
+  real.resize(chan);
 
   // Convert float to uchar:
   for (size_t k=0; k<f; ++k)
@@ -246,6 +248,7 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
   bpc    = 1;
   chan    = 3;
   frames = 1;
+  real.resize(chan);
   uint8_t* data = new uint8_t[getFrameBytes()];
   memcpy(data, d, getFrameBytes());
   addFrame(data, ARRAY_DELETE);
