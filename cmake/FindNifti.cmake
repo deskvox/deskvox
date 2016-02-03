@@ -21,7 +21,7 @@ find_path(Nifti_INCLUDE_DIR
     include/nifti
 )
 
-find_library(Nifti_LIBRARY
+find_library(NiftiIo_LIBRARY
   NAMES
     niftiio
   HINTS
@@ -33,7 +33,19 @@ find_library(Nifti_LIBRARY
     lib
 )
 
-find_library(Nifti_LIBRARY_DEBUG
+find_library(NiftiZnz_LIBRARY
+  NAMES
+    znz
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+find_library(NiftiIo_LIBRARY_DEBUG
   NAMES
     niftioiod
   HINTS
@@ -45,14 +57,32 @@ find_library(Nifti_LIBRARY_DEBUG
     lib
 )
 
-if(Nifti_LIBRARY_DEBUG)
-  set(Nifti_LIBRARIES optimized ${Nifti_LIBRARY} debug ${Nifti_LIBRARY_DEBUG})
+find_library(NiftiZnz_LIBRARY_DEBUG
+  NAMES
+    znzd
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+if(NiftiIo_LIBRARY_DEBUG)
+  set(Nifti_LIBRARIES optimized ${NiftiIo_LIBRARY} debug ${NiftiIo_LIBRARY_DEBUG})
 else()
-  set(Nifti_LIBRARIES ${Nifti_LIBRARY})
+  set(Nifti_LIBRARIES ${NiftiIo_LIBRARY})
+endif()
+
+if(NiftiZnz_LIBRARY_DEBUG)
+  set(Nifti_LIBRARIES ${Nifti_LIBRARIES} optimized ${NiftiZnz_LIBRARY} debug ${NiftiZnz_LIBRARY_DEBUG})
+else()
+  set(Nifti_LIBRARIES ${Nifti_LIBRARIES} ${NiftiZnz_LIBRARY})
 endif()
 
 find_package_handle_standard_args(Nifti
   DEFAULT_MSG
   Nifti_INCLUDE_DIR
-  Nifti_LIBRARY
+  NiftiIo_LIBRARY
 )

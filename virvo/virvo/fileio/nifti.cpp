@@ -26,7 +26,7 @@
 
 #include <cassert>
 
-#include <nifti/nifti1_io.h>
+#include <nifti1_io.h>
 
 #include <virvo/vvvoldesc.h>
 
