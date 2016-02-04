@@ -1097,6 +1097,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
         vd->chan = static_cast<size_t>(tok.nval);
+        vd->real.resize(vd->chan);
       }
       else if (strcmp(tok.sval, "DIST")==0)
       {
@@ -1127,7 +1128,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->real[0][i] = tok.nval;
+          for (size_t c = 0; c < vd->real.size(); ++c)
+            vd->real[c][i] = tok.nval;
         }
       }
       else if (strcmp(tok.sval, "POS")==0)
