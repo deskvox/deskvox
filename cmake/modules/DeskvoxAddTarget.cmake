@@ -114,11 +114,20 @@ function(deskvox_add_library name)
 
   target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
 
-  install(TARGETS ${name}
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-  )
+
+  if(COVISE_BUILD)
+    install(TARGETS virvo EXPORT covise-targets
+      RUNTIME DESTINATION ${ARCHSUFFIX}/bin${_category_path}
+      LIBRARY DESTINATION ${ARCHSUFFIX}/lib
+      ARCHIVE DESTINATION ${ARCHSUFFIX}/lib COMPONENT modules.${category}
+    )
+  else(COVISE_BUILD)
+    install(TARGETS ${name}
+      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+    )
+  endif(COVISE_BUILD)
 endfunction()
 
 
