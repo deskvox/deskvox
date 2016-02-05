@@ -4169,9 +4169,9 @@ vvFileIO::ErrorType vvFileIO::loadNiftiFile(vvVolDesc* vd)
   catch (std::exception& e)
   {
     VV_LOG(0) << e.what();
-    return FILE_ERROR;
   }
 #endif
+  return FILE_ERROR;
 }
  
 //----------------------------------------------------------------------------
