@@ -89,6 +89,12 @@ private:
   MulticastType _type;
   MulticastApi  _api;
 
+  // Variables for multicasting with Norm
+  NormInstanceHandle _instance;
+  NormSessionHandle  _session;
+  NormObjectHandle   _object;
+  vvUdpSocket*       _normSocket;
+
   // Variables for multicasting with vvSocket
   vvUdpSocket* _socket;
   union bytesToInt32
