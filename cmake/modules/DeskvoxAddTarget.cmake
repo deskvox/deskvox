@@ -116,7 +116,7 @@ function(deskvox_add_library name)
 
 
   if(COVISE_BUILD)
-    install(TARGETS virvo EXPORT covise-targets
+    install(TARGETS ${name} EXPORT covise-targets
       RUNTIME DESTINATION ${ARCHSUFFIX}/bin${_category_path}
       LIBRARY DESTINATION ${ARCHSUFFIX}/lib
       ARCHIVE DESTINATION ${ARCHSUFFIX}/lib COMPONENT modules.${category}
@@ -149,11 +149,19 @@ function(deskvox_add_plugin name)
 
   target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
 
-  install(TARGETS ${name}
-    RUNTIME DESTINATION plugins
-    LIBRARY DESTINATION plugins
-    ARCHIVE DESTINATION plugins
-  )
+  if(COVISE_BUILD)
+    install(TARGETS ${name} EXPORT covise-targets
+      RUNTIME DESTINATION ${ARCHSUFFIX}/bin
+      LIBRARY DESTINATION ${ARCHSUFFIX}/lib
+      ARCHIVE DESTINATION ${ARCHSUFFIX}/lib
+    )
+  else(COVISE_BUILD)
+    install(TARGETS ${name}
+      RUNTIME DESTINATION plugins
+      LIBRARY DESTINATION plugins
+      ARCHIVE DESTINATION plugins
+    )
+  endif(COVISE_BUILD)
 endfunction()
 
 
@@ -175,7 +183,13 @@ function(__deskvox_add_executable folder name)
 
   target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
 
-  install(TARGETS ${name} RUNTIME DESTINATION bin)
+  if(COVISE_BUILD)
+    install(TARGETS ${name} EXPORT covise-targets
+        RUNTIME DESTINATION ${ARCHSUFFIX}/bin
+    )
+  else(COVISE_BUILD)
+    install(TARGETS ${name} RUNTIME DESTINATION bin)
+  endif(COVISE_BUILD)
 endfunction()
 
 
