@@ -167,31 +167,59 @@ endif()
 #
 
 
-# Copy headers
-install(DIRECTORY ${VIRVO_INCLUDE_DIR}/virvo/
-  DESTINATION include/virvo
-  FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "*.hpp"
-    PATTERN "*.hxx"
-    PATTERN "*.inl"
-    PATTERN "*.inc"
-)
+if(COVISE_BUILD)
+  # Copy headers
+  install(DIRECTORY ${VIRVO_INCLUDE_DIR}/virvo/
+    DESTINATION include/covise/virvo
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+      PATTERN "*.hxx"
+      PATTERN "*.inl"
+      PATTERN "*.inc"
+  )
 
-# Copy shaders
-install(DIRECTORY ${VIRVO_SHADER_DIR}/
-  DESTINATION shader
-  FILES_MATCHING
-    PATTERN "*.fsh"
-    PATTERN "*.gsh"
-    PATTERN "*.vsh"
-    PATTERN "*.glsl"
-    PATTERN "*.vert"
-    PATTERN "*.frag"
-    PATTERN "*.geom"
-    PATTERN "*.tess-ctrl"
-    PATTERN "*.tess-eval"
-)
+  # Copy shaders
+  install(DIRECTORY ${VIRVO_SHADER_DIR}/
+    DESTINATION shader
+    FILES_MATCHING
+      PATTERN "*.fsh"
+      PATTERN "*.gsh"
+      PATTERN "*.vsh"
+      PATTERN "*.glsl"
+      PATTERN "*.vert"
+      PATTERN "*.frag"
+      PATTERN "*.geom"
+      PATTERN "*.tess-ctrl"
+      PATTERN "*.tess-eval"
+  )
+else(COVISE_BUILD)
+  # Copy headers
+  install(DIRECTORY ${VIRVO_INCLUDE_DIR}/virvo/
+    DESTINATION include/virvo
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+      PATTERN "*.hxx"
+      PATTERN "*.inl"
+      PATTERN "*.inc"
+  )
+
+  # Copy shaders
+  install(DIRECTORY ${VIRVO_SHADER_DIR}/
+    DESTINATION shader
+    FILES_MATCHING
+      PATTERN "*.fsh"
+      PATTERN "*.gsh"
+      PATTERN "*.vsh"
+      PATTERN "*.glsl"
+      PATTERN "*.vert"
+      PATTERN "*.frag"
+      PATTERN "*.geom"
+      PATTERN "*.tess-ctrl"
+      PATTERN "*.tess-eval"
+  )
+endif(COVISE_BUILD)
 
 
 #---------------------------------------------------------------------------------------------------
