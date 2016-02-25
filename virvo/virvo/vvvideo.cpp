@@ -39,6 +39,28 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 24, 102)
+typedef PixelFormat AVPixelFormat;
+
+#define AV_PIX_FMT_RGB24 PIX_FMT_RGB24
+#define AV_PIX_FMT_YUV420P PIX_FMT_YUV420P
+#define AV_PIX_FMT_YUVJ420P PIX_FMT_YUVJ420P
+
+#define AV_CODEC_ID_RAWVIDEO CODEC_ID_RAWVIDEO
+#define AV_CODEC_ID_FFV1 CODEC_ID_FFV1
+#define AV_CODEC_ID_JPEGLS CODEC_ID_JPEGLS
+#define AV_CODEC_ID_MJPEG CODEC_ID_MJPEG
+#define AV_CODEC_ID_MPEG2VIDEO CODEC_ID_MPEG2VIDEO
+#define AV_CODEC_ID_MPEG4 CODEC_ID_MPEG4
+#define AV_CODEC_ID_FLV1 CODEC_ID_FLV1
+#define AV_CODEC_ID_RAWVIDEO CODEC_ID_RAWVIDEO
+
+#define AV_CODEC_FLAG_QSCALE CODEC_FLAG_QSCALE
+#define AV_CODEC_FLAG_LOW_DELAY CODEC_FLAG_LOW_DELAY
+
+#define av_frame_alloc avcodec_alloc_frame
+#endif
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 39, 101)
 typedef CodecID AVCodecID;
 #endif
@@ -102,46 +124,46 @@ vvVideo::~vvVideo()
 void vvVideo::setCodec(vvVideo::Codec codec)
 {
 #if defined(VV_FFMPEG)
-  pixel_fmt = PIX_FMT_RGB24;
+  pixel_fmt = AV_PIX_FMT_RGB24;
   switch(codec)
   {
   case VV_RAW:
-    codec_id = CODEC_ID_RAWVIDEO;
+    codec_id = AV_CODEC_ID_RAWVIDEO;
     break;
   case VV_FFV1:
-    codec_id = CODEC_ID_FFV1;
+    codec_id = AV_CODEC_ID_FFV1;
     break;
   case VV_JPEGLS:
-    codec_id = CODEC_ID_JPEGLS;
+    codec_id = AV_CODEC_ID_JPEGLS;
     break;
   case VV_MJPEG:
-    codec_id = CODEC_ID_MJPEG;
+    codec_id = AV_CODEC_ID_MJPEG;
     break;
   case VV_MPEG2:
-    codec_id = CODEC_ID_MPEG2VIDEO;
+    codec_id = AV_CODEC_ID_MPEG2VIDEO;
     break;
   case VV_MPEG4:
-    codec_id = CODEC_ID_MPEG4;
+    codec_id = AV_CODEC_ID_MPEG4;
     break;
   case VV_FLV1:
-    codec_id = CODEC_ID_FLV1;
+    codec_id = AV_CODEC_ID_FLV1;
     break;
   default:
-    codec_id = CODEC_ID_RAWVIDEO;
+    codec_id = AV_CODEC_ID_RAWVIDEO;
     break;
   }
 
   /* these did not work:
-     codec_id = CODEC_ID_THEORA;
-     codec_id = CODEC_ID_HUFFYUV;
-     codec_id = CODEC_ID_LJPEG;
-     codec_id = CODEC_ID_PNG;
-     codec_id = CODEC_ID_SVQ3;
-     codec_id = CODEC_ID_VP5;
-     codec_id = CODEC_ID_VP8;
-     codec_id = CODEC_ID_FFH264;
-     codec_id = CODEC_ID_H264;
-     codec_id = CODEC_ID_ROQ;
+     codec_id = AV_CODEC_ID_THEORA;
+     codec_id = AV_CODEC_ID_HUFFYUV;
+     codec_id = AV_CODEC_ID_LJPEG;
+     codec_id = AV_CODEC_ID_PNG;
+     codec_id = AV_CODEC_ID_SVQ3;
+     codec_id = AV_CODEC_ID_VP5;
+     codec_id = AV_CODEC_ID_VP8;
+     codec_id = AV_CODEC_ID_FFH264;
+     codec_id = AV_CODEC_ID_H264;
+     codec_id = AV_CODEC_ID_ROQ;
    */
 #else
   (void)codec;
@@ -153,19 +175,19 @@ vvVideo::Codec vvVideo::getCodec() const
 #if defined(VV_FFMPEG)
   switch(codec_id)
   {
-  case CODEC_ID_RAWVIDEO:
+  case AV_CODEC_ID_RAWVIDEO:
     return VV_RAW;
-  case CODEC_ID_FFV1:
+  case AV_CODEC_ID_FFV1:
     return VV_FFV1;
-  case CODEC_ID_JPEGLS:
+  case AV_CODEC_ID_JPEGLS:
     return VV_JPEGLS;
-  case CODEC_ID_MJPEG:
+  case AV_CODEC_ID_MJPEG:
     return VV_MJPEG;
-  case CODEC_ID_MPEG2VIDEO:
+  case AV_CODEC_ID_MPEG2VIDEO:
     return VV_MPEG2;
-  case CODEC_ID_MPEG4:
+  case AV_CODEC_ID_MPEG4:
     return VV_MPEG4;
-  case CODEC_ID_FLV1:
+  case AV_CODEC_ID_FLV1:
     return VV_FLV1;
   }
 #endif
@@ -179,13 +201,13 @@ void vvVideo::setColorFormat(vvVideo::ColorFormat fmt)
   switch(fmt)
   {
   case VV_RGB24:
-    pixel_fmt = PIX_FMT_RGB24;
+    pixel_fmt = AV_PIX_FMT_RGB24;
     break;
   case VV_YUV420P:
-    pixel_fmt = PIX_FMT_YUV420P;
+    pixel_fmt = AV_PIX_FMT_YUV420P;
     break;
   case VV_YUVJ420P:
-    pixel_fmt = PIX_FMT_YUVJ420P;
+    pixel_fmt = AV_PIX_FMT_YUVJ420P;
     break;
   default:
     vvDebugMsg::msg(0, "vvVideo::setColorFormat: unknown vvVideo color format ", fmt);
@@ -202,11 +224,11 @@ vvVideo::ColorFormat vvVideo::getColorFormat() const
 #if defined(VV_FFMPEG)
   switch(pixel_fmt)
   {
-  case PIX_FMT_RGB24:
+  case AV_PIX_FMT_RGB24:
     return VV_RGB24;
-  case PIX_FMT_YUV420P:
+  case AV_PIX_FMT_YUV420P:
     return VV_YUV420P;
-  case PIX_FMT_YUVJ420P:
+  case AV_PIX_FMT_YUVJ420P:
     return VV_YUVJ420P;
   default:
     vvDebugMsg::msg(0, "vvVideo::getColorFormat: unknown avcodec pixel format ", pixel_fmt);
@@ -237,13 +259,13 @@ int vvVideo::createEncoder(int w, int h)
     return -1;
   }
 
-  PixelFormat fmt = PIX_FMT_YUV420P;
-  const PixelFormat *pix = encoder->pix_fmts;
+  AVPixelFormat fmt = AV_PIX_FMT_YUV420P;
+  const AVPixelFormat *pix = encoder->pix_fmts;
   if(pix)
     fmt = *pix;
   while(pix && *pix != -1)
   {
-    if(*pix == PIX_FMT_RGB24)
+    if(*pix == AV_PIX_FMT_RGB24)
     {
       fmt = *pix;
       break;
@@ -263,7 +285,7 @@ int vvVideo::createEncoder(int w, int h)
   enc_ctx->time_base= avr;
   enc_ctx->max_b_frames = 0;
   enc_ctx->pix_fmt = fmt;
-  enc_ctx->flags |= CODEC_FLAG_QSCALE;
+  enc_ctx->flags |= AV_CODEC_FLAG_QSCALE;
   enc_ctx->gop_size = max_key_interval;
 
   if(bitrate > 0)
@@ -276,14 +298,14 @@ int vvVideo::createEncoder(int w, int h)
 
   switch(codec_id)
   {
-  case CODEC_ID_MJPEG:
-  case CODEC_ID_MPEG1VIDEO:
-  case CODEC_ID_MPEG4:
-  case CODEC_ID_FLV1:
+  case AV_CODEC_ID_MJPEG:
+  case AV_CODEC_ID_MPEG1VIDEO:
+  case AV_CODEC_ID_MPEG4:
+  case AV_CODEC_ID_FLV1:
     break;
-  case CODEC_ID_MPEG2VIDEO:
+  case AV_CODEC_ID_MPEG2VIDEO:
   default:
-    enc_ctx->flags |= CODEC_FLAG_LOW_DELAY;
+    enc_ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;
     break;
   }
 
@@ -293,7 +315,7 @@ int vvVideo::createEncoder(int w, int h)
     return -1;
   }
 
-  enc_picture = avcodec_alloc_frame();
+  enc_picture = av_frame_alloc();
   if(!enc_picture)
   {
     vvDebugMsg::msg(0, "Error: failed to allocate encoding picture");
@@ -304,7 +326,7 @@ int vvVideo::createEncoder(int w, int h)
   pixel_fmt = enc_ctx->pix_fmt;
 
   enc_imgconv_ctx = sws_getContext(w, h,
-      PIX_FMT_RGB24,
+      AV_PIX_FMT_RGB24,
       w, h, enc_ctx->pix_fmt, SWS_POINT,
       NULL, NULL, NULL);
   if(enc_imgconv_ctx == NULL) {
@@ -380,7 +402,7 @@ int vvVideo::createDecoder(int w, int h)
   }
   dec_ctx->width = w;
   dec_ctx->height = h;
-  dec_ctx->pix_fmt = (PixelFormat)pixel_fmt;
+  dec_ctx->pix_fmt = (AVPixelFormat)pixel_fmt;
 
   if(avcodec_open2(dec_ctx, decoder, NULL) < 0)
   {
@@ -388,7 +410,7 @@ int vvVideo::createDecoder(int w, int h)
     return -1;
   }
 
-  dec_picture = avcodec_alloc_frame();
+  dec_picture = av_frame_alloc();
   if(!dec_picture)
   {
     vvDebugMsg::msg(1, "error: failed to allocate decoding picture");
@@ -397,7 +419,7 @@ int vvVideo::createDecoder(int w, int h)
 
   dec_imgconv_ctx = sws_getContext(w, h,
       dec_ctx->pix_fmt, 
-      w, h, PIX_FMT_RGB24, SWS_POINT,
+      w, h, AV_PIX_FMT_RGB24, SWS_POINT,
       NULL, NULL, NULL);
   if(dec_imgconv_ctx == NULL) {
     vvDebugMsg::msg(1, "Error: cannot initialize the conversion context\n");
@@ -467,18 +489,32 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
   *(uint8_t *)dst = getColorFormat();
   dst++;
   AVPicture src_picture;
-  avpicture_fill(&src_picture, (uint8_t *)src, PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
+  avpicture_fill(&src_picture, (uint8_t *)src, AV_PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
 
   sws_scale(enc_imgconv_ctx, src_picture.data, src_picture.linesize, 0,
       enc_ctx->height, enc_picture->data, enc_picture->linesize);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 24, 102)
   *enc_size = avcodec_encode_video(enc_ctx, dst, *enc_size, enc_picture);
+#else
+  AVPacket pkt;
+  av_init_packet(&pkt);
+  pkt.data = (uint8_t*)dst;
+  int got_output=0;
+  int ret = avcodec_encode_video2(enc_ctx, &pkt, enc_picture, &got_output);
+  if (ret < 0)
+  {
+    vvDebugMsg::msg(1, "vvVideo::encodeFrame: encoding failed");
+    return -1;
+  }
+  *enc_size = pkt.size;
+#endif
   if(*enc_size == -1)
   {
     vvDebugMsg::msg(1, "vvVideo::encodeFrame: encoding failed");
     return -1;
   }
-  *enc_size += 2;
+  *enc_size += 2; // for codec & color format
 
   vvDebugMsg::msg(3, "vvVideo::encodeFrame, encoded size is ", *enc_size);
 
@@ -533,7 +569,7 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
   }
 
   AVPicture dst_picture;
-  avpicture_fill(&dst_picture, dst, PIX_FMT_RGB24, dec_ctx->width, dec_ctx->height);
+  avpicture_fill(&dst_picture, dst, AV_PIX_FMT_RGB24, dec_ctx->width, dec_ctx->height);
   int ret = sws_scale(dec_imgconv_ctx, dec_picture->data, dec_picture->linesize, 0, 
       dec_ctx->height, dst_picture.data, dst_picture.linesize);
   (void)ret;
