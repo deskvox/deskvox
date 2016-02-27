@@ -143,7 +143,6 @@ class vvConv
     int* gain;
     int* offset;
     int lasercount;
-    int time;
     float thickness;
     int starttime;
     int endtime;
