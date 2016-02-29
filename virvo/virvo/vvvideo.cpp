@@ -500,6 +500,7 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = (uint8_t*)dst;
+  pkt.size = *enc_size;
   int got_output=0;
   int ret = avcodec_encode_video2(enc_ctx, &pkt, enc_picture, &got_output);
   if (ret < 0)
