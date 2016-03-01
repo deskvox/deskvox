@@ -1,5 +1,5 @@
-#ifndef VSNRAY_MATH_QUAT_H
-#define VSNRAY_MATH_QUAT_H
+#ifndef VV_MATH_QUAT_H
+#define VV_MATH_QUAT_H
 
 #include <stddef.h>
 
@@ -23,10 +23,10 @@ public:
 
 };
 
-} // visionaray
+} // MATH_NAMESPACE
 
 #include "detail/quat.inl"
 
-#endif // VSNRAY_MATH_QUAT_H
+#endif // VV_MATH_QUAT_H
 
 
