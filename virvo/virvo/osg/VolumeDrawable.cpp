@@ -369,6 +369,11 @@ void VolumeDrawable::setInterpolation(bool val)
     //setParameter(vvRenderer::VV_WARPINT, val ? 1.0f : 0.0f);
 }
 
+bool VolumeDrawable::getInterpolation() const
+{
+    return renderState.getParameter(vvRenderState::VV_SLICEINT);
+}
+
 void VolumeDrawable::setBoundaries(bool val)
 {
     setParameter(vvRenderState::VV_BOUNDARIES, val);

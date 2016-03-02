@@ -76,6 +76,7 @@ public:
     void setPreintegration(bool value);
     void setLighting(bool value);
     void setInterpolation(bool value);
+    bool getInterpolation() const;
     void setBoundaries(bool value);
     void setBoundariesActive(bool value);
     void setQuality(float quality);
