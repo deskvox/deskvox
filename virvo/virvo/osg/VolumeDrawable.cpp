@@ -371,7 +371,8 @@ void VolumeDrawable::setInterpolation(bool val)
 
 bool VolumeDrawable::getInterpolation() const
 {
-    return renderState.getParameter(vvRenderState::VV_SLICEINT);
+    int i = renderState.getParameter(vvRenderState::VV_SLICEINT).asInt();
+    return static_cast<virvo::tex_filter_mode>(i) == Linear;
 }
 
 void VolumeDrawable::setBoundaries(bool val)
