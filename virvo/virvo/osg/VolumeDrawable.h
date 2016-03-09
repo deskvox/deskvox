@@ -87,6 +87,9 @@ public:
     void setTransferFunction(const vvTransFunc &tf, int chan = 0);
     void setTransferFunctions(const std::vector<vvTransFunc> &tf);
 
+    void mapTransferFunctionFrom01(int chan = 0);
+    void mapTransferFunctionsFrom01();
+
     void setShader(int num);
     int getShader() const;
 

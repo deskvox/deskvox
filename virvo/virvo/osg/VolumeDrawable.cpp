@@ -423,18 +423,6 @@ void VolumeDrawable::setTransferFunctions(const std::vector<vvTransFunc> &tf)
     if (vd)
     {
         vd->tf = tf;
-        typedef std::vector<vvTFWidget *> Widgets;
-
-        for (size_t chan = 0; chan < vd->tf.size(); ++chan)
-        {
-            for (Widgets::iterator it = vd->tf[chan]._widgets.begin();
-                 it != vd->tf[chan]._widgets.end();
-                 ++it)
-            {
-                vvTFWidget *w = *it;
-                w->mapFrom01(vd->real[chan][0], vd->real[chan][1]);
-            }
-        }
     }
 
     for (unsigned int i = 0; i < contextState.size(); i++)
@@ -450,6 +438,18 @@ void VolumeDrawable::setTransferFunction(const vvTransFunc &tf, int chan)
         if (vd->tf.size() <= chan)
             vd->tf.resize(chan + 1);
         vd->tf[chan] = tf;
+    }
+
+    for (unsigned int i = 0; i < contextState.size(); i++)
+    {
+        contextState[i]->applyTF = true;
+    }
+}
+
+void VolumeDrawable::mapTransferFunctionFrom01(int chan)
+{
+    if (vd)
+    {
         typedef std::vector<vvTFWidget *> Widgets;
         for (Widgets::iterator it = vd->tf[chan]._widgets.begin();
              it != vd->tf[chan]._widgets.end();
@@ -459,10 +459,24 @@ void VolumeDrawable::setTransferFunction(const vvTransFunc &tf, int chan)
             w->mapFrom01(vd->real[chan][0], vd->real[chan][1]);
         }
     }
+}
 
-    for (unsigned int i = 0; i < contextState.size(); i++)
+void VolumeDrawable::mapTransferFunctionsFrom01()
+{
+    if (vd)
     {
-        contextState[i]->applyTF = true;
+        typedef std::vector<vvTFWidget *> Widgets;
+
+        for (size_t chan = 0; chan < vd->tf.size(); ++chan)
+        {
+            for (Widgets::iterator it = vd->tf[chan]._widgets.begin();
+                 it != vd->tf[chan]._widgets.end();
+                 ++it)
+            {
+                vvTFWidget *w = *it;
+                w->mapFrom01(vd->real[chan][0], vd->real[chan][1]);
+            }
+        }
     }
 }
 
