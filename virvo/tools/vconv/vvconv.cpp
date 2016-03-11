@@ -55,8 +55,10 @@ vvConv::vvConv()
     , heightField(false)
     , hfHeight(0)
     , hfMode(0)
+    , showbounds(false)
     , crop(false)
     , croptime(false)
+    , croptodata(false)
     , resize(false)
     , resizeFactor(0.0f)
     , setDist(false)
@@ -664,6 +666,14 @@ void vvConv::modifyInputFile(vvVolDesc* v)
   {
     cerr << "Cropping data." << endl;
     v->crop(cropPos[0], cropPos[1], cropPos[2], cropSize[0], cropSize[1], cropSize[2]);
+  }
+  if (croptodata)
+  {
+    cerr << "Cropping to non-zero area: " << flush;
+    ssize_t min[3], size[3];
+    v->findDataBounds(min[0], min[1], min[2], size[0], size[1], size[2]);
+    v->crop(min[0], min[1], min[2], size[0], size[1], size[2]);
+    cerr << size[0] << "x" << size[1] << "x" << size[2] << "@(" << min[0] << " " << min[1] << " " << min[2] << ")" << endl;
   }
   if (resize)
   {
@@ -1454,6 +1464,11 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       }
     }
 
+    else if (vvToolshed::strCompare(argv[arg], "-showbounds")==0)
+    {
+      showbounds = true;
+    }
+
     else if (vvToolshed::strCompare(argv[arg], "-crop")==0)
     {
       crop = true;
@@ -1504,6 +1519,11 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           return false;
         }
       }
+    }
+
+    else if (vvToolshed::strCompare(argv[arg], "-croptodata")==0)
+    {
+      croptodata = true;
     }
 
     else if (vvToolshed::strCompare(argv[arg], "-drawline")==0)
@@ -2077,6 +2097,9 @@ void vvConv::displayHelpInfo()
   stream << " first_time_step is the index of the first time step to use, with 0 being the" << endl;
   stream << " first time step in the file. num_steps is the number of time steps to crop." << endl;
   stream << endl;
+  stream << "-croptodata" << endl;
+  stream << " Crop the largest non-zero sub-volume from the volume." << endl;
+  stream << endl;
   stream << "-deinterlace" << endl;
   stream << " Corrects a dataset with interlaced slices. The first slice will remain the" << endl;
   stream << " first slice, the second slice will be taken from halfway into the dataset." << endl;
@@ -2259,6 +2282,9 @@ void vvConv::displayHelpInfo()
   stream << " Shift the volume along the coordinate axes by the passed voxel values." << endl;
   stream << " Border values reappear on the opposite side." << endl;
   stream << endl;
+  stream << "-showbounds" << endl;
+  stream << " Show bounds of largest non-zero sub-volume." << endl;
+  stream << endl;
   stream << "-sign" << endl;
   stream << " Toggle the sign of the data. Converts unsigned to signed and vice versa." << endl;
   stream << " Inverts the most significant bit of each scalar value." << endl;
@@ -2334,6 +2360,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-channels <num_ch>                 change the number of channels" << endl;
     cerr << "-crop <x> <y> <z> <w> <h> <s>      crop volume" << endl;
     cerr << "-croptime <first_step> <num_steps> crop a sequence of time steps" << endl;
+    cerr << "-croptodata                        crop non-zero sub-volume" << endl;
     cerr << "-deinterlace                       corrects interlaced slices" << endl;
     cerr << "-dicomrename                       automatically rename dicom files" << endl;
     cerr << "-leicarename                       automatically rename Leica files" << endl;
@@ -2370,6 +2397,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-scale <factor>                    scale volume (change no. of voxels, see -interpolation)" << endl;
     cerr << "-seticon <filename>                set the icon image" << endl;
     cerr << "-shift <x> <y> <z>                 shift parallel to a coordinate axis" << endl;
+    cerr << "-showbounds                        show bounds of largest non-zero sub-volume" << endl;
     cerr << "-stat                              display volume data statistics" << endl;
     cerr << "-sign                              toggle sign" << endl;
     cerr << "-swap                              swap endianness of voxel data bytes" << endl;
@@ -2616,6 +2644,14 @@ int vvConv::run(int argc, char** argv)
 
   cerr << "Reading volume data." << endl;
   if (!readVolumeData()) return 1;
+
+  if (showbounds)
+  {
+    cerr << "Searching bounds: " << flush;
+    ssize_t x, y, z, w, h, s;
+    vd->findDataBounds(x, y, z, w, h, s);
+    cerr << "x=" << x << ", y=" << y << ", z=" << z << ", w=" << w << ", h=" << h << ", s=" << s << "." << endl;
+  }
 
   modifyOutputFile(vd);
 

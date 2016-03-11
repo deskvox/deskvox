@@ -52,11 +52,13 @@ class vvConv
     bool  heightField;  ///< true = calculate height field from slice
     int   hfHeight;     ///< height field height [voxels]
     int   hfMode;       ///< height field computation mode [0|1]
+    bool  showbounds;   ///< true = show boundary of non-zero data
     bool  crop;         ///< true = crop data
     int   cropPos[3];   ///< crop position (x,y,z) [voxels]
     int   cropSize[3];  ///< crop size (width, height, slices) [voxels]
     bool  croptime;     ///< true = crop time steps
     int   cropSteps[2]; ///< first time step and number of time steps to extract
+    bool  croptodata;   ///< true = crop volume to non-zero data
     bool  resize;       ///< true = resize volume
     int   newSize[3];   ///< new volume size (width, height, slices) [voxels]
     float resizeFactor; ///< alternatively to new sizes a factor is accepted

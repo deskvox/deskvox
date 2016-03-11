@@ -308,6 +308,7 @@ class VIRVOEXPORT vvVolDesc
     int    findNumValue(int, float);
     int    findNumUsed(size_t channel);
     int    findNumTransparent(int);
+    void   findDataBounds(ssize_t &x, ssize_t &y, ssize_t &z, ssize_t &w, ssize_t &h, ssize_t &s) const;
     void   calculateDistribution(int frame, size_t chan, float&, float&, float&);
     void   voxelStatistics(size_t frame, size_t c, ssize_t x, ssize_t y, ssize_t z, float&, float&);
     float  calculateMean(int);
