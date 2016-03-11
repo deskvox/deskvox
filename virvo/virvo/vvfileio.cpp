@@ -5425,6 +5425,15 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
     err = PARAM_ERROR;
   }
 
+  if (err == OK)
+  {
+    for (int c=0; c<3; ++c)
+    {
+      if (vd->dist[c] <= 0.f)
+        vd->dist[c] = 1.f;
+    }
+  }
+
   return err;
 }
 
