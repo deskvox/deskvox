@@ -170,8 +170,6 @@ vvConv::~vvConv()
 */
 bool vvConv::readVolumeData()
 {
-  vvFileIO*  fio;
-  vvVolDesc* newVD;
   char* filename;             // currently processed file name
   int   file  = 0;            // index of current file
   bool  done = false;
@@ -181,7 +179,7 @@ bool vvConv::readVolumeData()
 
   filename = new char[strlen(srcFile) + 1];
   strcpy(filename, srcFile);
-  fio = new vvFileIO();
+  vvFileIO* fio = new vvFileIO();
 
   if (leicaRename)
   {
@@ -546,7 +544,7 @@ bool vvConv::readVolumeData()
   {
     // Load current file:
     cerr << "Loading file " << (file+1) << ": " << filename << endl;
-    newVD = new vvVolDesc(filename);
+    vvVolDesc* newVD = new vvVolDesc(filename);
     if (loadRaw)
     {
       error = fio->loadRawFile(newVD, rawWidth, rawHeight, rawSlices, rawBPC, rawCh, rawSkip);
