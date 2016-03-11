@@ -29,6 +29,8 @@
 #include <virvo/vvvecmath.h>
 #include <virvo/vvrenderer.h>
 
+#include "vvosgexport.h"
+
 namespace osg
 {
 class State;
@@ -39,7 +41,7 @@ class vvTransFunc;
 
 namespace virvo {
 
-class VolumeDrawable : public osg::Drawable
+class VIRVOOSGEXPORT VolumeDrawable : public osg::Drawable
 {
 public:
     VolumeDrawable(std::string rendererName = "", std::string voxType = "");
