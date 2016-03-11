@@ -1097,7 +1097,8 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-h")==0 ||
         vvToolshed::strCompare(argv[arg], "-?")==0 ||
         vvToolshed::strCompare(argv[arg], "/?")==0 ||
-        vvToolshed::strCompare(argv[arg], "-help")==0)
+        vvToolshed::strCompare(argv[arg], "-help")==0 ||
+        vvToolshed::strCompare(argv[arg], "--help")==0)
     {
       showHelp = true;
     }
