@@ -24,7 +24,7 @@
 #include "vvcompiler.h"
 
 #ifndef VIRVO_STATIC
-#   ifdef VIRVO_EXPORTS
+#   ifdef virvo_EXPORTS
 #       define VVAPI VV_DLL_EXPORT
 #   else
 #       define VVAPI VV_DLL_IMPORT
@@ -34,5 +34,17 @@
 #endif
 
 #define VIRVOEXPORT VVAPI
+
+#ifndef VIRVO_STATIC
+#   ifdef virvo_osg_EXPORTS
+#       define VV_OSG_API VV_DLL_EXPORT
+#   else
+#       define VV_OSG_API VV_DLL_IMPORT
+# endif
+#else
+#   define VV_OSG_API
+#endif
+
+#define VIRVO_OSGEXPORT VV_OSG_API
 
 #endif
