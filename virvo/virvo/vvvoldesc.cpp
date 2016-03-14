@@ -2844,7 +2844,7 @@ void vvVolDesc::printVolumeInfo()
   {
     for (size_t i = 0; i < real.size(); ++i)
     {
-      cerr << "Physical data range chan[" << i << "]: " << real[i][0] << " to " << real[i][1] << endl;
+      cerr << "Physical data range channel " << i << ":     " << real[i][0] << " to " << real[i][1] << endl;
     }
   }
   cerr << "Object location [mm]:              " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
