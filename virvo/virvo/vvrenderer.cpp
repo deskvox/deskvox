@@ -65,6 +65,7 @@ vvRenderState::vvRenderState()
   , _orientation(false)
   , _palette(false)
   , _qualityDisplay(false)
+  , _useChannelWeights(false)
   , _clipMode(0)
   , clip_plane_point_(vec3f(0.0f, 0.0f, 0.0f))
   , clip_plane_normal_(vec3f(0.0f, 0.0f, 1.0f))
@@ -151,6 +152,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_QUALITY_DISPLAY:
     _qualityDisplay = value;
+    break;
+  case VV_CHANNEL_WEIGHTS:
+    _useChannelWeights = value;
     break;
   case VV_CLIP_MODE:
     _clipMode = value;
@@ -305,6 +309,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _palette;
   case VV_QUALITY_DISPLAY:
     return _qualityDisplay;
+  case VV_CHANNEL_WEIGHTS:
+    return _useChannelWeights;
   case VV_CLIP_MODE:
     return _clipMode;
   case VV_CLIP_SINGLE_SLICE:

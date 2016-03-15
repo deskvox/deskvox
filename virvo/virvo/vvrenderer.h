@@ -71,6 +71,7 @@ public:
     VV_ORIENTATION,
     VV_PALETTE,
     VV_QUALITY_DISPLAY,
+    VV_CHANNEL_WEIGHTS,
     VV_CLIP_MODE,
     VV_CLIP_PLANE_POINT,
     VV_CLIP_PLANE_NORMAL,
@@ -137,6 +138,7 @@ protected:
   bool  _orientation;                           ///< true = display object orientation
   bool  _palette;                               ///< true = display transfer function palette
   bool  _qualityDisplay;                        ///< true = display rendering quality level
+  bool _useChannelWeights;                      ///< true = mind channel weights
   unsigned int _clipMode;                       ///< 0 = clipping disabled, 1 = clipping plane, 2 = clipping sphere
   virvo::vec3f clip_plane_point_;               ///< point on clipping plane
   virvo::vec3f clip_plane_normal_;              ///< clipping plane normal

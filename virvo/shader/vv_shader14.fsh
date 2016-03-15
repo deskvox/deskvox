@@ -5,6 +5,7 @@
 uniform int channels;
 uniform int preintegration;
 uniform int lighting;
+uniform float channelWeights[NUM_CHANNELS];
 
 uniform sampler3D pix3dtex;
 
@@ -27,12 +28,20 @@ void main()
 #endif
 
   vec4 c[NUM_CHANNELS];
+#ifdef CHANNEL_WEIGHTS
+  data.x  *= channelWeights[0];
+  data1.x *= channelWeights[0];
+#endif
   c[0] = classify(pixLUT0, data.x, data1.x, preint);
 #ifdef LIGHTING
   c[0] = light(pix3dtex, c[0], tc);
 #endif
 #if NUM_CHANNELS > 1
   float maxAlpha = c[0].a;
+#ifdef CHANNEL_WEIGHTS
+  data.w  *= channelWeights[1];
+  data1.w *= channelWeights[1];
+#endif
 #if NUM_CHANNELS == 2
   c[1] = classify(pixLUT1, data.w, data1.w, preint);
 #ifdef LIGHTING
@@ -40,11 +49,19 @@ void main()
 #endif
   maxAlpha = max(maxAlpha, c[1].a);
 #elif NUM_CHANNELS >= 3
+#ifdef CHANNEL_WEIGHTS
+  data.y  *= channelWeights[2];
+  data1.y *= channelWeights[2];
+#endif
   c[1] = classify(pixLUT1, data.y, data1.y, preint);
 #ifdef LIGHTING
   c[1] = light(pix3dtex, c[1], tc);
 #endif
   maxAlpha = max(maxAlpha, c[1].a);
+#ifdef CHANNEL_WEIGHTS
+  data.z  *= channelWeights[3];
+  data1.z *= channelWeights[3];
+#endif
   c[2] = classify(pixLUT2, data.z, data1.z, preint);
 #ifdef LIGHTING
   c[2] = light(pix3dtex, c[2], tc);

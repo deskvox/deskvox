@@ -419,6 +419,13 @@ void vvGLSLProgram::setParameterArray1i(const string& parameterName, const int* 
     glUniform1iv(uniform, count, array);
 }
 
+void vvGLSLProgram::setParameterArray1f(const string& parameterName, const float* array, int count)
+{
+  const GLint uniform = getUniform(_data, parameterName, "setParameterArray1f");
+  if(uniform != -1)
+    glUniform1fv(uniform, count, array);
+}
+
 void vvGLSLProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
   const GLint uniform = getUniform(_data, parameterName, "setParameterArray3f");

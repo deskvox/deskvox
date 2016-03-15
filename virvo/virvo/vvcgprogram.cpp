@@ -287,6 +287,13 @@ void vvCgProgram::setParameterArray1i(const string& parameterName, const int* ar
   }
 }
 
+void vvCgProgram::setParameterArray1f(const string& parameterName, const float* array, int count)
+{
+  ParameterIterator it = _data->initParameter(parameterName);
+  if(it->second != 0)
+    cgGLSetParameterArray1f(it->second, 0, count, array);
+}
+
 void vvCgProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
   ParameterIterator it = _data->initParameter(parameterName);

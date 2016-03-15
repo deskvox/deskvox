@@ -136,6 +136,7 @@ class VIRVOEXPORT vvVolDesc
     std::vector<virvo::vec2> real;                ///< 1/2 bpc: physical equivalent of min/max scalar value
                                                   ///< 4 bpc:   min and max values for mapping to transfer function space
                                                   ///<     if more than 1: each channel has its own
+    std::vector<float> channelWeights;            ///< scalar weight for each channel, default: 1.0f
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]
     std::vector<vvTransFunc> tf;                  ///< transfer functions (if more than 1: each channel has its own)

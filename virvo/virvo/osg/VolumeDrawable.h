@@ -67,6 +67,10 @@ public:
     osg::Vec3 getROIPosition() const;
     float getROISize() const;
 
+    void setChannelWeights(std::vector<float> const& cw);
+    void setUseChannelWeights(bool enable);
+    bool getUseChannelWeights() const;
+
     void setPosition(const osg::Vec3 &);
     osg::Vec3 getPosition() const;
     osg::Vec3 getCenter() const;

@@ -84,6 +84,7 @@ public:
 
   void setParameterArray1i(const std::string& parameterName, const int* array, const int& count);
 
+  void setParameterArray1f(const std::string& parameterName, const float* array, int count);
   void setParameterArray3f(const std::string& parameterName, const float* array, const int& count);
 
   void setParameterMatrix4f(const std::string& parameterName, const float* mat);

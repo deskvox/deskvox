@@ -1624,6 +1624,11 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       vvRenderer::setParameter(param, newValue);
       makeTextures(true);
       break;
+    case vvRenderer::VV_CHANNEL_WEIGHTS:
+      vvRenderer::setParameter(param, newValue);
+      disableShader(_shader.get());
+      _shader.reset(initShader());
+      break;
     default:
       vvRenderer::setParameter(param, newValue);
       break;
@@ -1771,6 +1776,11 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
         str << "pixLUT" << chan;
         shader->setParameterTex2D(str.str().c_str(), pixLUTName[chan]);
       }
+
+      if (_useChannelWeights)
+      {
+        shader->setParameterArray1f("channelWeights", &vd->channelWeights[0], vd->channelWeights.size());
+      }
     }
     else
     {
@@ -1845,6 +1855,10 @@ vvShaderProgram* vvTexRend::initShader()
   if (usePreIntegration)
   {
     defines << "#define PREINTEGRATION 1" << std::endl;
+  }
+  if (_useChannelWeights)
+  {
+    defines << "#define CHANNEL_WEIGHTS 1" << std::endl;
   }
 
   _shaderFactory->setDefines(defines.str());
