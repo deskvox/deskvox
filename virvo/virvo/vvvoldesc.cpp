@@ -280,6 +280,9 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   frames = 0;
   currentFrame = (f==-1) ? v->currentFrame : 0;
 
+  real.resize(chan);
+  std::copy(v->real.begin(), v->real.end(), real.begin());
+
   // Copy icon:
   iconSize = v->iconSize;
   if (iconSize > 0)
