@@ -101,6 +101,7 @@ public:
   */
   virtual void setParameterArray1i(const std::string& parameterName, const int* array, const int& count) = 0;
 
+  virtual void setParameterArray1f(const std::string& parameterName, const float* array, int count) = 0;
   /*!
     \brief Set uniform float-array of 3D-vectors
     \param count number of vectors in array

@@ -248,6 +248,21 @@ osg::Vec3 VolumeDrawable::getROIPosition() const
     return osg::Vec3(roiPos[0], roiPos[1], roiPos[2]);
 }
 
+void VolumeDrawable::setChannelWeights(std::vector<float> const& cw)
+{
+    vd->channelWeights = cw;
+}
+
+void VolumeDrawable::setUseChannelWeights(bool enable)
+{
+    setParameter(vvRenderState::VV_CHANNEL_WEIGHTS, enable);
+}
+
+bool VolumeDrawable::getUseChannelWeights() const
+{
+    return renderState.getParameter(vvRenderState::VV_CHANNEL_WEIGHTS);
+}
+
 osg::Vec3 VolumeDrawable::getPosition() const
 {
     if (vd)

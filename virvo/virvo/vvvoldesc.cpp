@@ -111,6 +111,8 @@ uint8_t** d, vvVolDesc::DeleteType deleteType)
   chan    = m;
   frames = f;
   real.resize(chan);
+  channelWeights.resize(chan);
+  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
   if(d)
   {
@@ -164,6 +166,8 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
         std::numeric_limits<float>::max(),
        -std::numeric_limits<float>::max()
         ));
+  channelWeights.resize(chan);
+  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
   for (size_t i=0; i<f; ++i)
   {
@@ -212,6 +216,8 @@ float** g, float** b)
   frameSize = getFrameBytes();
   compSize  = getFrameVoxels();
   real.resize(chan);
+  channelWeights.resize(chan);
+  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
   // Convert float to uchar:
   for (size_t k=0; k<f; ++k)
@@ -249,6 +255,8 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
   chan    = 3;
   frames = 1;
   real.resize(chan);
+  channelWeights.resize(chan);
+  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
   uint8_t* data = new uint8_t[getFrameBytes()];
   memcpy(data, d, getFrameBytes());
   addFrame(data, ARRAY_DELETE);
@@ -281,7 +289,8 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   currentFrame = (f==-1) ? v->currentFrame : 0;
 
   real.resize(chan);
-  std::copy(v->real.begin(), v->real.end(), real.begin());
+  std::copy(v->real.begin(), v->real.end(), std::back_inserter(real));
+  std::copy(v->channelWeights.begin(), v->channelWeights.end(), std::back_inserter(channelWeights));
 
   // Copy icon:
   iconSize = v->iconSize;
