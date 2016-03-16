@@ -49,7 +49,7 @@ namespace cuda
 
 
     template<class T>
-    class VIRVOEXPORT Symbol
+    class Symbol
     {
 #if CUDART_VERSION < 5000
         typedef const char* SymbolPointerType;

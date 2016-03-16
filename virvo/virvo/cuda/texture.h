@@ -33,7 +33,7 @@ namespace cuda
 {
 
 
-    class VIRVOEXPORT Texture
+    class Texture
     {
         textureReference* texPtr;
 
