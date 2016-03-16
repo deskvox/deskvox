@@ -280,6 +280,9 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   frames = 0;
   currentFrame = (f==-1) ? v->currentFrame : 0;
 
+  real.resize(chan);
+  std::copy(v->real.begin(), v->real.end(), real.begin());
+
   // Copy icon:
   iconSize = v->iconSize;
   if (iconSize > 0)
@@ -2844,7 +2847,7 @@ void vvVolDesc::printVolumeInfo()
   {
     for (size_t i = 0; i < real.size(); ++i)
     {
-      cerr << "Physical data range chan[" << i << "]: " << real[i][0] << " to " << real[i][1] << endl;
+      cerr << "Physical data range channel " << i << ":     " << real[i][0] << " to " << real[i][1] << endl;
     }
   }
   cerr << "Object location [mm]:              " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
@@ -3839,6 +3842,91 @@ int vvVolDesc::findNumValue(int frame, float val)
     if (allEqual) ++num;
   }
   return num;
+}
+
+namespace {
+
+template<typename T>
+void searchDataBounds(const virvo::vector<3, ssize_t> vox, const T *raw, ssize_t min[], ssize_t max[], int chan)
+{
+  for (int i=0; i<3; ++i)
+  {
+    min[i] = vox[i];
+    max[i] = 0;
+  }
+
+  for (ssize_t zz=0; zz<vox[2]; ++zz)
+  {
+    for (ssize_t yy=0; yy<vox[1]; ++yy)
+    {
+      for (ssize_t xx=0; xx<vox[0]; ++xx)
+      {
+        size_t idx = (xx + vox[0]*(yy + zz*vox[1]))*chan;
+        for (int c=0; c<chan; ++c)
+        {
+          if (raw[idx++] != T())
+          {
+            if (xx < min[0]) min[0] = xx;
+            if (yy < min[1]) min[1] = yy;
+            if (zz < min[2]) min[2] = zz;
+            if (xx > max[0]) max[0] = xx;
+            if (yy > max[1]) max[1] = yy;
+            if (zz > max[2]) max[2] = zz;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+} // anonymous namespace
+
+//----------------------------------------------------------------------------
+/** Find the smallest sub-volume which retains all non-zero voxels
+*/
+void vvVolDesc::findDataBounds(ssize_t &x, ssize_t &y, ssize_t &z, ssize_t &w, ssize_t &h, ssize_t &s) const
+{
+  vvDebugMsg::msg(2, "vvVolDesc::findDataBounds()");
+
+  ssize_t min[3] = {vox[0], vox[1], vox[2]};
+  ssize_t max[3] = {0, 0, 0};
+
+  for (size_t f=0; f<frames; ++f)
+  {
+    const uint8_t *rRaw = getRaw(f);
+    if (!rRaw)
+      continue;
+    switch (bpc)
+    {
+    case 1:
+      {
+        const uint8_t *raw = rRaw;
+        searchDataBounds(vox, raw, min, max, chan);
+      }
+      break;
+    case 2:
+      {
+        const uint16_t *raw = (uint16_t *)rRaw;
+        searchDataBounds(vox, raw, min, max, chan);
+      }
+      break;
+    case 4:
+      {
+        const float *raw = (float *)rRaw;
+        searchDataBounds(vox, raw, min, max, chan);
+      }
+      break;
+    }
+  }
+
+  x = min[0];
+  y = min[1];
+  z = min[2];
+
+  w = max[0] >= min[0] ? max[0]-min[0]+1 : 0;
+  h = max[1] >= min[1] ? max[1]-min[1]+1 : 0;
+  s = max[2] >= min[2] ? max[2]-min[2]+1 : 0;
 }
 
 //----------------------------------------------------------------------------

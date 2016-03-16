@@ -2576,7 +2576,7 @@ struct vvTifData
             VV_LOG(0) << "unknow unit: " << unit << std::endl;
          } else if (res >= 0.f && resolutionUnit != res && resolutionUnit != 1.f) {
             VV_LOG(0) << "resolution unit mismatch: " << unit << " != " << resolutionUnit << std::endl;
-         } else {
+         } else if (res > 0.f){
             resolutionUnit = res;
          }
       }
@@ -2626,11 +2626,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   if(!addFrames)
   {
     vd->removeSequence();
-    vd->vox[0] = vd->vox[1] = 0;
+    setDefaultValues(vd);
     vd->vox[2] = 1;
-    vd->frames = 0;
-    vd->bpc = 1;
-    vd->chan = 1;
   }
 
   struct vvTifData tifData;
@@ -2648,11 +2645,18 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   fclose(fp);
 
   tifData.parseDescription();
-  vd->dist[0] = tifData.resolutionUnit / tifData.resolutionX;
-  vd->dist[1] = tifData.resolutionUnit / tifData.resolutionY;
-  if (tifData.haveResolutionZ)
+  if (tifData.resolutionUnit > 0.f)
+  {
+      if (tifData.resolutionX > 0.f)
+          vd->dist[0] = tifData.resolutionUnit / tifData.resolutionX;
+      if (tifData.resolutionY > 0.f)
+          vd->dist[1] = tifData.resolutionUnit / tifData.resolutionY;
+  }
+  if (tifData.haveResolutionZ && tifData.resolutionUnit > 0.f && tifData.resolutionZ > 0.f)
   {
     vd->dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
+    if (vd->dist[2] <= 0.)
+        vd->dist[2] = 1.;
   }
   else
   {
@@ -5419,6 +5423,15 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   {
     vvDebugMsg::msg(1, "Cannot load volume: unknown extension. File name:", vd->getFilename());
     err = PARAM_ERROR;
+  }
+
+  if (err == OK)
+  {
+    for (int c=0; c<3; ++c)
+    {
+      if (vd->dist[c] <= 0.f)
+        vd->dist[c] = 1.f;
+    }
   }
 
   return err;

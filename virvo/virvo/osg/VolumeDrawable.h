@@ -24,11 +24,12 @@
 #include <string>
 #include <osg/Drawable>
 #include <osg/Geode>
-#include <virvo/vvexport.h>
 #include <virvo/math/math.h>
 #include <virvo/texture/forward.h>
 #include <virvo/vvvecmath.h>
 #include <virvo/vvrenderer.h>
+
+#include "vvosgexport.h"
 
 namespace osg
 {
@@ -40,7 +41,7 @@ class vvTransFunc;
 
 namespace virvo {
 
-class VIRVO_OSGEXPORT VolumeDrawable : public osg::Drawable
+class VIRVOOSGEXPORT VolumeDrawable : public osg::Drawable
 {
 public:
     VolumeDrawable(std::string rendererName = "", std::string voxType = "");

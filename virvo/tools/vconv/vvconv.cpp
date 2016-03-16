@@ -55,8 +55,10 @@ vvConv::vvConv()
     , heightField(false)
     , hfHeight(0)
     , hfMode(0)
+    , showbounds(false)
     , crop(false)
     , croptime(false)
+    , croptodata(false)
     , resize(false)
     , resizeFactor(0.0f)
     , setDist(false)
@@ -170,8 +172,6 @@ vvConv::~vvConv()
 */
 bool vvConv::readVolumeData()
 {
-  vvFileIO*  fio;
-  vvVolDesc* newVD;
   char* filename;             // currently processed file name
   int   file  = 0;            // index of current file
   bool  done = false;
@@ -181,7 +181,7 @@ bool vvConv::readVolumeData()
 
   filename = new char[strlen(srcFile) + 1];
   strcpy(filename, srcFile);
-  fio = new vvFileIO();
+  vvFileIO* fio = new vvFileIO();
 
   if (leicaRename)
   {
@@ -546,7 +546,7 @@ bool vvConv::readVolumeData()
   {
     // Load current file:
     cerr << "Loading file " << (file+1) << ": " << filename << endl;
-    newVD = new vvVolDesc(filename);
+    vvVolDesc* newVD = new vvVolDesc(filename);
     if (loadRaw)
     {
       error = fio->loadRawFile(newVD, rawWidth, rawHeight, rawSlices, rawBPC, rawCh, rawSkip);
@@ -666,6 +666,14 @@ void vvConv::modifyInputFile(vvVolDesc* v)
   {
     cerr << "Cropping data." << endl;
     v->crop(cropPos[0], cropPos[1], cropPos[2], cropSize[0], cropSize[1], cropSize[2]);
+  }
+  if (croptodata)
+  {
+    cerr << "Cropping to non-zero area: " << flush;
+    ssize_t min[3], size[3];
+    v->findDataBounds(min[0], min[1], min[2], size[0], size[1], size[2]);
+    v->crop(min[0], min[1], min[2], size[0], size[1], size[2]);
+    cerr << size[0] << "x" << size[1] << "x" << size[2] << "@(" << min[0] << " " << min[1] << " " << min[2] << ")" << endl;
   }
   if (resize)
   {
@@ -1099,7 +1107,8 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-h")==0 ||
         vvToolshed::strCompare(argv[arg], "-?")==0 ||
         vvToolshed::strCompare(argv[arg], "/?")==0 ||
-        vvToolshed::strCompare(argv[arg], "-help")==0)
+        vvToolshed::strCompare(argv[arg], "-help")==0 ||
+        vvToolshed::strCompare(argv[arg], "--help")==0)
     {
       showHelp = true;
     }
@@ -1455,6 +1464,11 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       }
     }
 
+    else if (vvToolshed::strCompare(argv[arg], "-showbounds")==0)
+    {
+      showbounds = true;
+    }
+
     else if (vvToolshed::strCompare(argv[arg], "-crop")==0)
     {
       crop = true;
@@ -1505,6 +1519,11 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           return false;
         }
       }
+    }
+
+    else if (vvToolshed::strCompare(argv[arg], "-croptodata")==0)
+    {
+      croptodata = true;
     }
 
     else if (vvToolshed::strCompare(argv[arg], "-drawline")==0)
@@ -1976,327 +1995,335 @@ bool vvConv::parseCommandLine(int argc, char** argv)
 /// Display command usage help on the command line.
 void vvConv::displayHelpInfo()
 {
-  cerr << "VConv is a command line utility to convert volume files between" << endl;
-  cerr << "different file and/or data formats. It is part of the Virvo volume" << endl;
-  cerr << "rendering system, which has been developed at the University of Stuttgart," << endl;
-  cerr << "Brown University, and UCSD." << endl;
-  cerr << "For more information see http://www.calit2.net/~jschulze/" << endl;
-  cerr << endl;
-  cerr << "Syntax:" << endl;
-  cerr << endl;
-  cerr << "vconv <source_file.ext> [<destination_file.ext> [<options>]]" << endl;
-  cerr << endl;
-  cerr << "Parameters:" << endl;
-  cerr << endl;
-  cerr << "<source_file.ext>" << endl;
-  cerr << "Source file name including extension." << endl;
-  cerr << "If this is the only parameter, file information is printed." << endl;
-  cerr << "The following file types are accepted:" << endl;
-  cerr << "rvf                = Raw Volume File (2 x 3 byte header, 8 bit per voxel)" << endl;
-  cerr << "xvf                = Extended Volume File" << endl;
-  cerr << "avf                = ASCII Volume File" << endl;
-  cerr << "tif, tiff          = 2D/3D TIF File" << endl;
-  cerr << "dat                = Raw volume data (no header) - automatic format detection" << endl;
-  cerr << "rgb                = RGB image file (SGI 8 bit grayscale only)" << endl;
-  cerr << "fre, fro           = Visible Human CT data file" << endl;
-  cerr << "hdr                = MeshViewer format" << endl;
-  cerr << "pd, t1, t2, loc    = Visible Human MRI file" << endl;
-  cerr << "raw                = Visible Human RGB file" << endl;
-  cerr << "pgm                = Portable Graymap file (P5 binary only)" << endl;
-  cerr << "ppm                = Portable Pixmap file (P6 binary only)" << endl;
-  cerr << "dcm                = DICOM image file (not all formats)" << endl;
-  cerr << "vmr, vtc           = BrainVoyager volume file" << endl;
-  cerr << "nrd, nrrd          = Gordon Kindlmann's teem volume file" << endl;
-  cerr << "ximg               = General Electric scanner format" << endl;
-  cerr << "vis04              = IEEE Visualization 2004 contest format" << endl;
-  cerr << "dds                = Microsoft DirectDraw Surface file format " << endl;
-  cerr << endl;
-  cerr << "<destination_file.ext>" << endl;
-  cerr << "Destination file name. The extension determines the destination data format." << endl;
-  cerr << "The following file types are accepted:" << endl;
-  cerr << "rvf                = Raw Volume File (2 x 3 byte header, 8 bit per voxel)" << endl;
-  cerr << "xvf                = Extended Raw Volume File" << endl;
-  cerr << "avf                = ASCII Volume File" << endl;
-  cerr << "dat                = Raw volume data (no header)" << endl;
-  cerr << "tif                = 2D TIF File" << endl;
-  cerr << "pgm/ppm            = Density or RGB images (depending on volume data type)" << endl;
-  cerr << "nrd                = Gordon Kindlmann's teem volume file" << endl;
-  cerr << endl;
-  cerr << "<options>" << endl;
-  cerr << "The following command line options are accepted in any order." << endl;
-  cerr << "The commands in brackets can be used as abbreviations." << endl;
-  cerr << endl;
-  cerr << "-addchannel <filename>" << endl;
-  cerr << " Add all data channels from specified volume file. The following volume" << endl;
-  cerr << " parameters must match in both files: width, height, slices, time steps," << endl;
-  cerr << " byte per channel." << endl;
-  cerr << endl;
-  cerr << "-autodetectrealrange" << endl;
-  cerr << " Automatically detect the value range of the data values and set realMin/Max" << endl;
-  cerr << " accordingly. This parameter is only really useful for float voxels." << endl;
-  cerr << " Uses 0..255 for 8 bit and 0..65535 for 16 bit voxels." << endl;
-  cerr << endl;
-  cerr << "-bitshift <bits>" << endl;
-  cerr << " Shift the data of each voxel by <bits> bits, regardless of the data format." << endl;
-  cerr << " Negative values shift to the left, positive values shift to the right." << endl;
-  cerr << endl;
-  cerr << "-blend <filename.xxx> <type>" << endl;
-  cerr << " Blend two volume datasets together. The first dataset is the source file," << endl;
-  cerr << " the second dataset is passed after the -blend parameter." << endl;
-  cerr << " The blending algorithm applies one of the following blending types:" << endl;
-  cerr << " 0=average, 1=maximum, 2=minimum" << endl;
-  cerr << " The components of each voxel are blended with the given type." << endl;
-  cerr << " Both volumes must be of same size and format and have the same voxel" << endl;
-  cerr << " distances. The resulting volume will have the same number of frames as" << endl;
-  cerr << " the source volume." << endl;
-  cerr << " Example: -blend blendfile.xvf 0" << endl;
-  cerr << endl;
-  cerr << "-bpc <bytes>" << endl;
-  cerr << " Set the number of bytes that make up each channel. Supported are:" << endl;
-  cerr << " 1 byte for 8 bit data, 2 bytes for 12 or 16 bit data, 4 bytes for float data." << endl;
-  cerr << " Conversion strategy: 16 bit values are converted to 8 bit by dropping" << endl;
-  cerr << " the least significant bits. Integer values are converted to float by" << endl;
-  cerr << " mapping them to [0..1]. Float values are converted to integer by linearly" << endl;
-  cerr << " mapping them to [0..maxint] bounded by the min and max float values." << endl;
-  cerr << endl;
-  cerr << "-channels <num_channels>" << endl;
-  cerr << " Change the number of channels to <num_channels>." << endl;
-  cerr << " If more than the current number of channels are requested, the new channel" << endl;
-  cerr << " will be set to all 0's. If the number of channels is to be reduced, the " << endl;
-  cerr << " first <num_channels> channels will remain." << endl;
-  cerr << endl;
-  cerr << "-crop <pos_x> <pos_y> <pos_z> <width> <height> <slices>" << endl;
-  cerr << " Crop a sub-volume from the volume. The crop region starts at the volume" << endl;
-  cerr << " position (pos_x|pos_y|pos_z), which is the top-left-front voxel of the" << endl;
-  cerr << " crop region. The voxel counts start with 0 and go to size-1. The size of" << endl;
-  cerr << " the cropped volume is width * height * slices voxels." << endl;
-  cerr << endl;
-  cerr << "-croptime <first_time_step> <num_steps>" << endl;
-  cerr << " Crop a sub-set of time steps from a volume animation." << endl;
-  cerr << " first_time_step is the index of the first time step to use, with 0 being the" << endl;
-  cerr << " first time step in the file. num_steps is the number of time steps to crop." << endl;
-  cerr << endl;
-  cerr << "-deinterlace" << endl;
-  cerr << " Corrects a dataset with interlaced slices. The first slice will remain the" << endl;
-  cerr << " first slice, the second slice will be taken from halfway into the dataset." << endl;
-  cerr << endl;
-  cerr << "-dicomrename" << endl;
-  cerr << " Rename DICOM files to reflect sequence number and slice location." << endl;
-  cerr << " The source files must be named in ascending order, e.g., 'file001.dcm'," << endl;
-  cerr << " 'file002.dcm'..." << endl;
-  cerr << " After processing this command, the files will be called 'seq001-loc000001.dcm'" << endl;
-  cerr << " etc." << endl;
-  cerr << endl;
-  cerr << "-leicarename" << endl;
-  cerr << " Rename Leica files." << endl;
-  cerr << endl;
-  cerr << "-dist <dx> <dy> <dz>" << endl;
-  cerr << " Set the voxel sampling distance [mm]. This affects only the voxel 'shape'," << endl;
-  cerr << " the voxel data remain untouched." << endl;
-  cerr << endl;
-  cerr << "-drawbox <start_x> <start_y> <start_z> <end_x> <end_y> <end_z> <value>" << endl;
-  cerr << " Draw a solid 3D box into all animation steps of the dataset." << endl;
-  cerr << " The box starts at position (start_x|start_y|start_z) and extends to position" << endl;
-  cerr << " (end_x|end_y|end_z) The scalar value of the voxels in the box will be <value>." << endl;
-  cerr << endl;
-  cerr << "-drawline <start_x> <start_y> <start_z> <end_x> <end_y> <end_z> <value>" << endl;
-  cerr << " Draw a 3D line into all animation steps of the dataset." << endl;
-  cerr << " The line starts at position (start_x|start_y|start_z) and extends to position" << endl;
-  cerr << " (end_x|end_y|end_z) The scalar value of the voxels on the line will be <value>." << endl;
-  cerr << endl;
-  cerr << "-extractchannel <r> <g> <b>" << endl;
-  cerr << " Extract a channel from an RGB data set and make it the 4th channel." << endl;
-  cerr << " r,g,b indicate the color component weights that characterize the channel." << endl;
-  cerr << " The affected RGB values that make up the 4th channel are set to zero." << endl;
-  cerr << " Example: -extractchannel 1 0.5 0" << endl;
-  cerr << " The example sets the 4th channel value for all voxels in which green is half" << endl;
-  cerr << " of red and blue is zero. Example: R=100, G=50, B=0 => channel#4=100" << endl;
-  cerr << endl;
-  cerr << "-files <num>" << endl;
-  cerr << " Use <num> files to create a volume from slices or a volume animation" << endl;
-  cerr << " from volume files. Use num=0 to load as many files" << endl;
-  cerr << " as present in continuous order." << endl;
-  cerr << " The source file will be the first animation frame." << endl;
-  cerr << " The filename numbering must be right before the suffix. The numbering" << endl;
-  cerr << " must include leading zeroes." << endl;
-  cerr << " Example: file001.rvf, file002.rvf, ..." << endl;
-  cerr << endl;
-  cerr << "-fillrange" << endl;
-  cerr << " Expand data range to occupy the entire value range. This is useful to take" << endl;
-  cerr << " advantage of the entire possible value range. For example, if the scanned" << endl;
-  cerr << " 16 bit data occupy only values between 50 and 1000, they will be mapped to" << endl;
-  cerr << " a range of 0 to 65535." << endl;
-  cerr << endl;
-  cerr << "-flip <x|y|z>" << endl;
-  cerr << " Flip volume data along a coordinate axis." << endl;
-  cerr << endl;
-  cerr << "-geticon" << endl;
-  cerr << " Write the icon to TIF file of same name as volume." << endl;
-  cerr << endl;
-  cerr << "-heightfield <height> <mode>" << endl;
-  cerr << " Computes height field from 2D image. Source data set must be single slice." << endl;
-  cerr << " Works with any number of bytes per voxel." << endl;
-  cerr << " <height> is number of slices destination volume has." << endl;
-  cerr << " <mode> determines how space below height surface is filled:" << endl;
-  cerr << " 0 for empty (using lowest values in data range), 1 for same values as height." << endl;
-  cerr << endl;
-  cerr << "-help (-h)" << endl;
-  cerr << " Display this help information." << endl;
-  cerr << endl;
-  cerr << "-hist <type>" << endl;
-  cerr << " Creates histogram(s) for the first animation frame. Separate histograms are" << endl;
-  cerr << " created for each channel. <type> determines the histogram type:" << endl;
-  cerr << " 0 = ASCII numbers" << endl;
-  cerr << " 1 = graph as PGM image (image file name = volume file name, logarithmic y axis)" << endl;
-  cerr << " 2 = ASCII numbers in files, one file per channel" << endl;
-  cerr << " The vertical axis is logarithmic." << endl;
-  cerr << endl;
-  cerr << "-increment <num>" << endl;
-  cerr << " Additional paramenter to -files: defines the step size to calculate the" << endl;
-  cerr << " next higher file name. Example: if <num> is 3, then file names will be read" << endl;
-  cerr << " in the following order: file001.tif, file004.tif, file007.tif..." << endl;
-  cerr << endl;
-  cerr << "-info (-i)" << endl;
-  cerr << " Display file information about the first file parameter." << endl;
-  cerr << " No conversion is done, even if according parameters are passed." << endl;
-  cerr << " This command is automatically executed if only one file parameter is passed." << endl;
-  cerr << endl;
-  cerr << "-interpolation <n|t>" << endl;
-  cerr << " Define the type of interpolation to use whenever resampling is necessary." << endl;
-  cerr << " The available types are: n=nearest neighbor (default), t=trilinear." << endl;
-  cerr << " This parameter affects the resize, scale, and sphere operations." << endl;
-  cerr << endl;
-  cerr << "-invertorder" << endl;
-  cerr << " Invert voxel order: order of voxels and slices will be inverted.";
-  cerr << endl;
-  cerr << "-loadraw <width> <height> <slices> <bpc> <ch> <skip>" << endl;
-  cerr << " Load a non-virvo raw volume data file. The parameters are:" << endl;
-  cerr << " <width> <height> <slices> = volume size [voxels]" << endl;
-  cerr << " <bpc>                     = bytes per channel" << endl;
-  cerr << " <ch>                      = number of channels" << endl;
-  cerr << " <skip>                    = number of bytes to skip (to ignore header)" << endl;
-  cerr << endl;
-  cerr << "-signed" << endl;
-  cerr << " Interpret raw volume as signed data (add half of integer data range (128 or 32768))" << endl;
-  cerr << endl;
-  cerr << "-loadcpt <size> <param> <minmax>" << endl;
-  cerr << " Load a checkpoint particles file. The parameters are:" << endl;
-  cerr << " <size    = volume edge length [voxels]" << endl;
-  cerr << " <param>  = index of parameter to use (0=first parameter, -1=speed)" << endl;
-  cerr << " <minmax> = 1 to use global min/max values, 0 to use min/max values per frame" << endl;
-  cerr << endl;
-  cerr << "-loadxb7 <size> <param> <minmax>" << endl;
-  cerr << " Load an XB7 particles file. The parameters are:" << endl;
-  cerr << " <size    = volume edge length [voxels]" << endl;
-  cerr << " <param>  = index of parameter to use (0=x, 1=y, 2=z, 3=vx, 4=vy, 5=vz, 6=r, 7=i, 8=speed" << endl;
-  cerr << " <minmax> = 1 to use global min/max values, 0 to use min/max values per frame" << endl;
-  cerr << endl;
-  cerr << "-makeicon <size>" << endl;
-  cerr << " Create an icon from the data set. The icon is created by blending all slices" << endl;
-  cerr << " of the data set together with maximum intensity projection (MIP)." << endl;
-  cerr << endl;
-  cerr << "-makesphere <outer_diameter> <inner_diameter>" << endl;
-  cerr << " Make a sphere from a volume by projecting it onto a sphere." << endl;
-  cerr << " The z=0 plane will be projected to a sphere of diameter <outer_diameter>" << endl;
-  cerr << " voxels, the z=z_max plane will be projected to a sphere of diameter" << endl;
-  cerr << " <inner_diameter> voxels." << endl;
-  cerr << " The area between the spheres will be filled with the source volume data, the" << endl;
-  cerr << " height information is mapped linearly to the area between the two bounding" << endl;
-  cerr << " spheres. The area inside of the inner sphere will be zero filled." << endl;
-  cerr << " The resulting volume is a cube with an edge length of <outer_diameter> voxels." << endl;
-  cerr << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
-  cerr << " the '-interpolation' parameter." << endl;
-  cerr << endl;
-  cerr << "-makevolume <algorithm> <width> <height> <slices>" << endl;
-  cerr << " Create a volume algorithmically. Algorithm is one of:" << endl;
-  cerr << " 0: default Virvo volume, 8 frames" << endl;
-  cerr << " 1: top=red, bottom=green, 1 channel, 1 bpc" << endl;
-  cerr << " 2: 4 channel test data set" << endl;
-  cerr << endl;
-  cerr << "-mergetype <type>" << endl;
-  cerr << " Merge type for -files parameter:" << endl;
-  cerr << " 'volume': make a volume (each file is a slice)" << endl;
-  cerr << " 'anim':   make an animation (each file is a time step)" << endl;
-  cerr << endl;
-  cerr << "-nocompress" << endl;
-  cerr << " Suppress data compression when writing xvf files." << endl;
-  cerr << endl;
-  cerr << "-over (-o)" << endl;
-  cerr << " Overwrite destination files." << endl;
-  cerr << endl;
-  cerr << "-pos <x> <y> <z>" << endl;
-  cerr << " Set 3D position of volume origin in object space." << endl;
-  cerr << endl;
-  cerr << "-removetf" << endl;
-  cerr << " Remove all transfer functions from the volume." << endl;
-  cerr << endl;
-  cerr << "-realrange <min> <max>" << endl;
-  cerr << " Set the physical scalar value range as floating point numbers. This only has" << endl;
-  cerr << " a meaning for scalar value volumes (8 and 16 bit per voxel)." << endl;
-  cerr << " It affects just the display of range information and does not modify the data." << endl;
-  cerr << endl;
-  cerr << "-resize <width> <height> <slices>" << endl;
-  cerr << " Resize the volume to the new size of width * height * slices voxels." << endl;
-  cerr << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
-  cerr << " the '-interpolation' parameter." << endl;
-  cerr << endl;
-  cerr << "-rotate <[+|-][x|y|z]>" << endl;
-  cerr << " Rotate volume data by 90 degrees about a coordinate axis." << endl;
-  cerr << " Example: '-rot +y' rotates the data about the y (vertical) axis by 90" << endl;
-  cerr << " degrees to the right (looking at the origin from an arbitrary point on" << endl;
-  cerr << " the positive half of the rotation axis)." << endl;
-  cerr << endl;
-  cerr << "-scale <factor>" << endl;
-  cerr << " Scale all edges by <factor>." << endl;
-  cerr << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
-  cerr << " the '-interpolation' parameter." << endl;
-  cerr << endl;
-  cerr << "-seticon <filename>" << endl;
-  cerr << " Set the icon to the image in <filename>. Alpha channels are used if present." << endl;
-  cerr << endl;
-  cerr << "-shift <x> <y> <z>" << endl;
-  cerr << " Shift the volume along the coordinate axes by the passed voxel values." << endl;
-  cerr << " Border values reappear on the opposite side." << endl;
-  cerr << endl;
-  cerr << "-sign" << endl;
-  cerr << " Toggle the sign of the data. Converts unsigned to signed and vice versa." << endl;
-  cerr << " Inverts the most significant bit of each scalar value." << endl;
-  cerr << endl;
-  cerr << "-stat" << endl;
-  cerr << " Displays the same as '-info', plus some statistics about the volume data." << endl;
-  cerr << endl;
-  cerr << "-swap" << endl;
-  cerr << " Swap endianness of data bytes. The result depends on the data format:" << endl;
-  cerr << " 8 bit scalar values are not affected, for 16 bit voxels high and low byte" << endl;
-  cerr << " are swapped, RGB volumes become BGR, RGBA volumes become ABGR." << endl;
-  cerr << endl;
-  cerr << "-swapchannels <channel1> <channel2>" << endl;
-  cerr << " Swap two data channels. <channel1> and <channel2> must be in" << endl;
-  cerr << " [1..num_channels]. This command does not work on data sets with only" << endl;
-  cerr << " one channel." << endl;
-  cerr << endl;
-  cerr << "-time <sec>" << endl;
-  cerr << " Set the time [seconds] that each animation frame takes to display." << endl;
-  cerr << endl;
-  cerr << "-transfunc <filename.xvf>" << endl;
-  cerr << " Import the transfer functions from a file." << endl;
-  cerr << endl;
-  cerr << "-zoomdata <channel> <low> <high>" << endl;
-  cerr << " Zoom the data of <channel> to the range between the <low> and <high> data" << endl;
-  cerr << " values. Example: -zoomdata 1 10 80" << endl;
-  cerr << " In the example, the data values from 10 to 80 will be expanded to the" << endl;
-  cerr << " full range of 256 (or 65536 for 16 bit channels) values." << endl;
-  cerr << " Channel 1 is the first channel, data value 0 is the lowest, 255 the" << endl;
-  cerr << " highest value for 8 bit per channel data (65535 for 16 bit)." << endl;
-  cerr << endl;
-  cerr << "Examples:" << endl;
-  cerr << "Display file information:              vconv skull.tiff" << endl;
-  cerr << "Convert file type from 3DTIFF to XVF:  vconv skull.tiff skull.xvf" << endl;
-  cerr << "Create a volume from 30 image files:   vconv slc001.tif skull.xvf -files 30" << endl;
-  cerr << "Create 9 time steps of transient data: vconv step001.tiff anim.xvf -files 9" << endl;
-  cerr << "Scale volume down to half edge size:   vconv large.xvf small.xvf -scale 0.5" << endl;
+  std::ostream &stream = std::cout;
+
+  stream << "VConv is a command line utility to convert volume files between" << endl;
+  stream << "different file and/or data formats. It is part of the Virvo volume" << endl;
+  stream << "rendering system, which has been developed at the University of Stuttgart," << endl;
+  stream << "Brown University, and UCSD." << endl;
+  stream << "For more information see http://www.calit2.net/~jschulze/" << endl;
+  stream << endl;
+  stream << "Syntax:" << endl;
+  stream << endl;
+  stream << "vconv <source_file.ext> [<destination_file.ext> [<options>]]" << endl;
+  stream << endl;
+  stream << "Parameters:" << endl;
+  stream << endl;
+  stream << "<source_file.ext>" << endl;
+  stream << "Source file name including extension." << endl;
+  stream << "If this is the only parameter, file information is printed." << endl;
+  stream << "The following file types are accepted:" << endl;
+  stream << "rvf                = Raw Volume File (2 x 3 byte header, 8 bit per voxel)" << endl;
+  stream << "xvf                = Extended Volume File" << endl;
+  stream << "avf                = ASCII Volume File" << endl;
+  stream << "tif, tiff          = 2D/3D TIF File" << endl;
+  stream << "dat                = Raw volume data (no header) - automatic format detection" << endl;
+  stream << "rgb                = RGB image file (SGI 8 bit grayscale only)" << endl;
+  stream << "fre, fro           = Visible Human CT data file" << endl;
+  stream << "hdr                = MeshViewer format" << endl;
+  stream << "pd, t1, t2, loc    = Visible Human MRI file" << endl;
+  stream << "raw                = Visible Human RGB file" << endl;
+  stream << "pgm                = Portable Graymap file (P5 binary only)" << endl;
+  stream << "ppm                = Portable Pixmap file (P6 binary only)" << endl;
+  stream << "dcm                = DICOM image file (not all formats)" << endl;
+  stream << "vmr, vtc           = BrainVoyager volume file" << endl;
+  stream << "nrd, nrrd          = Gordon Kindlmann's teem volume file" << endl;
+  stream << "ximg               = General Electric scanner format" << endl;
+  stream << "vis04              = IEEE Visualization 2004 contest format" << endl;
+  stream << "dds                = Microsoft DirectDraw Surface file format " << endl;
+  stream << endl;
+  stream << "<destination_file.ext>" << endl;
+  stream << "Destination file name. The extension determines the destination data format." << endl;
+  stream << "The following file types are accepted:" << endl;
+  stream << "rvf                = Raw Volume File (2 x 3 byte header, 8 bit per voxel)" << endl;
+  stream << "xvf                = Extended Raw Volume File" << endl;
+  stream << "avf                = ASCII Volume File" << endl;
+  stream << "dat                = Raw volume data (no header)" << endl;
+  stream << "tif                = 2D TIF File" << endl;
+  stream << "pgm/ppm            = Density or RGB images (depending on volume data type)" << endl;
+  stream << "nrd                = Gordon Kindlmann's teem volume file" << endl;
+  stream << endl;
+  stream << "<options>" << endl;
+  stream << "The following command line options are accepted in any order." << endl;
+  stream << "The commands in brackets can be used as abbreviations." << endl;
+  stream << endl;
+  stream << "-addchannel <filename>" << endl;
+  stream << " Add all data channels from specified volume file. The following volume" << endl;
+  stream << " parameters must match in both files: width, height, slices, time steps," << endl;
+  stream << " byte per channel." << endl;
+  stream << endl;
+  stream << "-autodetectrealrange" << endl;
+  stream << " Automatically detect the value range of the data values and set realMin/Max" << endl;
+  stream << " accordingly. This parameter is only really useful for float voxels." << endl;
+  stream << " Uses 0..255 for 8 bit and 0..65535 for 16 bit voxels." << endl;
+  stream << endl;
+  stream << "-bitshift <bits>" << endl;
+  stream << " Shift the data of each voxel by <bits> bits, regardless of the data format." << endl;
+  stream << " Negative values shift to the left, positive values shift to the right." << endl;
+  stream << endl;
+  stream << "-blend <filename.xxx> <type>" << endl;
+  stream << " Blend two volume datasets together. The first dataset is the source file," << endl;
+  stream << " the second dataset is passed after the -blend parameter." << endl;
+  stream << " The blending algorithm applies one of the following blending types:" << endl;
+  stream << " 0=average, 1=maximum, 2=minimum" << endl;
+  stream << " The components of each voxel are blended with the given type." << endl;
+  stream << " Both volumes must be of same size and format and have the same voxel" << endl;
+  stream << " distances. The resulting volume will have the same number of frames as" << endl;
+  stream << " the source volume." << endl;
+  stream << " Example: -blend blendfile.xvf 0" << endl;
+  stream << endl;
+  stream << "-bpc <bytes>" << endl;
+  stream << " Set the number of bytes that make up each channel. Supported are:" << endl;
+  stream << " 1 byte for 8 bit data, 2 bytes for 12 or 16 bit data, 4 bytes for float data." << endl;
+  stream << " Conversion strategy: 16 bit values are converted to 8 bit by dropping" << endl;
+  stream << " the least significant bits. Integer values are converted to float by" << endl;
+  stream << " mapping them to [0..1]. Float values are converted to integer by linearly" << endl;
+  stream << " mapping them to [0..maxint] bounded by the min and max float values." << endl;
+  stream << endl;
+  stream << "-channels <num_channels>" << endl;
+  stream << " Change the number of channels to <num_channels>." << endl;
+  stream << " If more than the current number of channels are requested, the new channel" << endl;
+  stream << " will be set to all 0's. If the number of channels is to be reduced, the " << endl;
+  stream << " first <num_channels> channels will remain." << endl;
+  stream << endl;
+  stream << "-crop <pos_x> <pos_y> <pos_z> <width> <height> <slices>" << endl;
+  stream << " Crop a sub-volume from the volume. The crop region starts at the volume" << endl;
+  stream << " position (pos_x|pos_y|pos_z), which is the top-left-front voxel of the" << endl;
+  stream << " crop region. The voxel counts start with 0 and go to size-1. The size of" << endl;
+  stream << " the cropped volume is width * height * slices voxels." << endl;
+  stream << endl;
+  stream << "-croptime <first_time_step> <num_steps>" << endl;
+  stream << " Crop a sub-set of time steps from a volume animation." << endl;
+  stream << " first_time_step is the index of the first time step to use, with 0 being the" << endl;
+  stream << " first time step in the file. num_steps is the number of time steps to crop." << endl;
+  stream << endl;
+  stream << "-croptodata" << endl;
+  stream << " Crop the largest non-zero sub-volume from the volume." << endl;
+  stream << endl;
+  stream << "-deinterlace" << endl;
+  stream << " Corrects a dataset with interlaced slices. The first slice will remain the" << endl;
+  stream << " first slice, the second slice will be taken from halfway into the dataset." << endl;
+  stream << endl;
+  stream << "-dicomrename" << endl;
+  stream << " Rename DICOM files to reflect sequence number and slice location." << endl;
+  stream << " The source files must be named in ascending order, e.g., 'file001.dcm'," << endl;
+  stream << " 'file002.dcm'..." << endl;
+  stream << " After processing this command, the files will be called 'seq001-loc000001.dcm'" << endl;
+  stream << " etc." << endl;
+  stream << endl;
+  stream << "-leicarename" << endl;
+  stream << " Rename Leica files." << endl;
+  stream << endl;
+  stream << "-dist <dx> <dy> <dz>" << endl;
+  stream << " Set the voxel sampling distance [mm]. This affects only the voxel 'shape'," << endl;
+  stream << " the voxel data remain untouched." << endl;
+  stream << endl;
+  stream << "-drawbox <start_x> <start_y> <start_z> <end_x> <end_y> <end_z> <value>" << endl;
+  stream << " Draw a solid 3D box into all animation steps of the dataset." << endl;
+  stream << " The box starts at position (start_x|start_y|start_z) and extends to position" << endl;
+  stream << " (end_x|end_y|end_z) The scalar value of the voxels in the box will be <value>." << endl;
+  stream << endl;
+  stream << "-drawline <start_x> <start_y> <start_z> <end_x> <end_y> <end_z> <value>" << endl;
+  stream << " Draw a 3D line into all animation steps of the dataset." << endl;
+  stream << " The line starts at position (start_x|start_y|start_z) and extends to position" << endl;
+  stream << " (end_x|end_y|end_z) The scalar value of the voxels on the line will be <value>." << endl;
+  stream << endl;
+  stream << "-extractchannel <r> <g> <b>" << endl;
+  stream << " Extract a channel from an RGB data set and make it the 4th channel." << endl;
+  stream << " r,g,b indicate the color component weights that characterize the channel." << endl;
+  stream << " The affected RGB values that make up the 4th channel are set to zero." << endl;
+  stream << " Example: -extractchannel 1 0.5 0" << endl;
+  stream << " The example sets the 4th channel value for all voxels in which green is half" << endl;
+  stream << " of red and blue is zero. Example: R=100, G=50, B=0 => channel#4=100" << endl;
+  stream << endl;
+  stream << "-files <num>" << endl;
+  stream << " Use <num> files to create a volume from slices or a volume animation" << endl;
+  stream << " from volume files. Use num=0 to load as many files" << endl;
+  stream << " as present in continuous order." << endl;
+  stream << " The source file will be the first animation frame." << endl;
+  stream << " The filename numbering must be right before the suffix. The numbering" << endl;
+  stream << " must include leading zeroes." << endl;
+  stream << " Example: file001.rvf, file002.rvf, ..." << endl;
+  stream << endl;
+  stream << "-fillrange" << endl;
+  stream << " Expand data range to occupy the entire value range. This is useful to take" << endl;
+  stream << " advantage of the entire possible value range. For example, if the scanned" << endl;
+  stream << " 16 bit data occupy only values between 50 and 1000, they will be mapped to" << endl;
+  stream << " a range of 0 to 65535." << endl;
+  stream << endl;
+  stream << "-flip <x|y|z>" << endl;
+  stream << " Flip volume data along a coordinate axis." << endl;
+  stream << endl;
+  stream << "-geticon" << endl;
+  stream << " Write the icon to TIF file of same name as volume." << endl;
+  stream << endl;
+  stream << "-heightfield <height> <mode>" << endl;
+  stream << " Computes height field from 2D image. Source data set must be single slice." << endl;
+  stream << " Works with any number of bytes per voxel." << endl;
+  stream << " <height> is number of slices destination volume has." << endl;
+  stream << " <mode> determines how space below height surface is filled:" << endl;
+  stream << " 0 for empty (using lowest values in data range), 1 for same values as height." << endl;
+  stream << endl;
+  stream << "-help (-h)" << endl;
+  stream << " Display this help information." << endl;
+  stream << endl;
+  stream << "-hist <type>" << endl;
+  stream << " Creates histogram(s) for the first animation frame. Separate histograms are" << endl;
+  stream << " created for each channel. <type> determines the histogram type:" << endl;
+  stream << " 0 = ASCII numbers" << endl;
+  stream << " 1 = graph as PGM image (image file name = volume file name, logarithmic y axis)" << endl;
+  stream << " 2 = ASCII numbers in files, one file per channel" << endl;
+  stream << " The vertical axis is logarithmic." << endl;
+  stream << endl;
+  stream << "-increment <num>" << endl;
+  stream << " Additional paramenter to -files: defines the step size to calculate the" << endl;
+  stream << " next higher file name. Example: if <num> is 3, then file names will be read" << endl;
+  stream << " in the following order: file001.tif, file004.tif, file007.tif..." << endl;
+  stream << endl;
+  stream << "-info (-i)" << endl;
+  stream << " Display file information about the first file parameter." << endl;
+  stream << " No conversion is done, even if according parameters are passed." << endl;
+  stream << " This command is automatically executed if only one file parameter is passed." << endl;
+  stream << endl;
+  stream << "-interpolation <n|t>" << endl;
+  stream << " Define the type of interpolation to use whenever resampling is necessary." << endl;
+  stream << " The available types are: n=nearest neighbor (default), t=trilinear." << endl;
+  stream << " This parameter affects the resize, scale, and sphere operations." << endl;
+  stream << endl;
+  stream << "-invertorder" << endl;
+  stream << " Invert voxel order: order of voxels and slices will be inverted." << endl;
+  stream << endl;
+  stream << "-loadraw <width> <height> <slices> <bpc> <ch> <skip>" << endl;
+  stream << " Load a non-virvo raw volume data file. The parameters are:" << endl;
+  stream << " <width> <height> <slices> = volume size [voxels]" << endl;
+  stream << " <bpc>                     = bytes per channel" << endl;
+  stream << " <ch>                      = number of channels" << endl;
+  stream << " <skip>                    = number of bytes to skip (to ignore header)" << endl;
+  stream << endl;
+  stream << "-signed" << endl;
+  stream << " Interpret raw volume as signed data (add half of integer data range (128 or 32768))" << endl;
+  stream << endl;
+  stream << "-loadcpt <size> <param> <minmax>" << endl;
+  stream << " Load a checkpoint particles file. The parameters are:" << endl;
+  stream << " <size    = volume edge length [voxels]" << endl;
+  stream << " <param>  = index of parameter to use (0=first parameter, -1=speed)" << endl;
+  stream << " <minmax> = 1 to use global min/max values, 0 to use min/max values per frame" << endl;
+  stream << endl;
+  stream << "-loadxb7 <size> <param> <minmax>" << endl;
+  stream << " Load an XB7 particles file. The parameters are:" << endl;
+  stream << " <size    = volume edge length [voxels]" << endl;
+  stream << " <param>  = index of parameter to use (0=x, 1=y, 2=z, 3=vx, 4=vy, 5=vz, 6=r, 7=i, 8=speed" << endl;
+  stream << " <minmax> = 1 to use global min/max values, 0 to use min/max values per frame" << endl;
+  stream << endl;
+  stream << "-makeicon <size>" << endl;
+  stream << " Create an icon from the data set. The icon is created by blending all slices" << endl;
+  stream << " of the data set together with maximum intensity projection (MIP)." << endl;
+  stream << endl;
+  stream << "-makesphere <outer_diameter> <inner_diameter>" << endl;
+  stream << " Make a sphere from a volume by projecting it onto a sphere." << endl;
+  stream << " The z=0 plane will be projected to a sphere of diameter <outer_diameter>" << endl;
+  stream << " voxels, the z=z_max plane will be projected to a sphere of diameter" << endl;
+  stream << " <inner_diameter> voxels." << endl;
+  stream << " The area between the spheres will be filled with the source volume data, the" << endl;
+  stream << " height information is mapped linearly to the area between the two bounding" << endl;
+  stream << " spheres. The area inside of the inner sphere will be zero filled." << endl;
+  stream << " The resulting volume is a cube with an edge length of <outer_diameter> voxels." << endl;
+  stream << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
+  stream << " the '-interpolation' parameter." << endl;
+  stream << endl;
+  stream << "-makevolume <algorithm> <width> <height> <slices>" << endl;
+  stream << " Create a volume algorithmically. Algorithm is one of:" << endl;
+  stream << " 0: default Virvo volume, 8 frames" << endl;
+  stream << " 1: top=red, bottom=green, 1 channel, 1 bpc" << endl;
+  stream << " 2: 4 channel test data set" << endl;
+  stream << endl;
+  stream << "-mergetype <type>" << endl;
+  stream << " Merge type for -files parameter:" << endl;
+  stream << " 'volume': make a volume (each file is a slice)" << endl;
+  stream << " 'anim':   make an animation (each file is a time step)" << endl;
+  stream << endl;
+  stream << "-nocompress" << endl;
+  stream << " Suppress data compression when writing xvf files." << endl;
+  stream << endl;
+  stream << "-over (-o)" << endl;
+  stream << " Overwrite destination files." << endl;
+  stream << endl;
+  stream << "-pos <x> <y> <z>" << endl;
+  stream << " Set 3D position of volume origin in object space." << endl;
+  stream << endl;
+  stream << "-removetf" << endl;
+  stream << " Remove all transfer functions from the volume." << endl;
+  stream << endl;
+  stream << "-realrange <min> <max>" << endl;
+  stream << " Set the physical scalar value range as floating point numbers. This only has" << endl;
+  stream << " a meaning for scalar value volumes (8 and 16 bit per voxel)." << endl;
+  stream << " It affects just the display of range information and does not modify the data." << endl;
+  stream << endl;
+  stream << "-resize <width> <height> <slices>" << endl;
+  stream << " Resize the volume to the new size of width * height * slices voxels." << endl;
+  stream << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
+  stream << " the '-interpolation' parameter." << endl;
+  stream << endl;
+  stream << "-rotate <[+|-][x|y|z]>" << endl;
+  stream << " Rotate volume data by 90 degrees about a coordinate axis." << endl;
+  stream << " Example: '-rot +y' rotates the data about the y (vertical) axis by 90" << endl;
+  stream << " degrees to the right (looking at the origin from an arbitrary point on" << endl;
+  stream << " the positive half of the rotation axis)." << endl;
+  stream << endl;
+  stream << "-scale <factor>" << endl;
+  stream << " Scale all edges by <factor>." << endl;
+  stream << " The default interpolation method is nearest neighbor. It can be changed with" << endl;
+  stream << " the '-interpolation' parameter." << endl;
+  stream << endl;
+  stream << "-seticon <filename>" << endl;
+  stream << " Set the icon to the image in <filename>. Alpha channels are used if present." << endl;
+  stream << endl;
+  stream << "-shift <x> <y> <z>" << endl;
+  stream << " Shift the volume along the coordinate axes by the passed voxel values." << endl;
+  stream << " Border values reappear on the opposite side." << endl;
+  stream << endl;
+  stream << "-showbounds" << endl;
+  stream << " Show bounds of largest non-zero sub-volume." << endl;
+  stream << endl;
+  stream << "-sign" << endl;
+  stream << " Toggle the sign of the data. Converts unsigned to signed and vice versa." << endl;
+  stream << " Inverts the most significant bit of each scalar value." << endl;
+  stream << endl;
+  stream << "-stat" << endl;
+  stream << " Displays the same as '-info', plus some statistics about the volume data." << endl;
+  stream << endl;
+  stream << "-swap" << endl;
+  stream << " Swap endianness of data bytes. The result depends on the data format:" << endl;
+  stream << " 8 bit scalar values are not affected, for 16 bit voxels high and low byte" << endl;
+  stream << " are swapped, RGB volumes become BGR, RGBA volumes become ABGR." << endl;
+  stream << endl;
+  stream << "-swapchannels <channel1> <channel2>" << endl;
+  stream << " Swap two data channels. <channel1> and <channel2> must be in" << endl;
+  stream << " [1..num_channels]. This command does not work on data sets with only" << endl;
+  stream << " one channel." << endl;
+  stream << endl;
+  stream << "-time <sec>" << endl;
+  stream << " Set the time [seconds] that each animation frame takes to display." << endl;
+  stream << endl;
+  stream << "-transfunc <filename.xvf>" << endl;
+  stream << " Import the transfer functions from a file." << endl;
+  stream << endl;
+  stream << "-zoomdata <channel> <low> <high>" << endl;
+  stream << " Zoom the data of <channel> to the range between the <low> and <high> data" << endl;
+  stream << " values. Example: -zoomdata 1 10 80" << endl;
+  stream << " In the example, the data values from 10 to 80 will be expanded to the" << endl;
+  stream << " full range of 256 (or 65536 for 16 bit channels) values." << endl;
+  stream << " Channel 1 is the first channel, data value 0 is the lowest, 255 the" << endl;
+  stream << " highest value for 8 bit per channel data (65535 for 16 bit)." << endl;
+  stream << endl;
+  stream << "Examples:" << endl;
+  stream << "Display file information:              vconv skull.tiff" << endl;
+  stream << "Convert file type from 3DTIFF to XVF:  vconv skull.tiff skull.xvf" << endl;
+  stream << "Create a volume from 30 image files:   vconv slc001.tif skull.xvf -files 30" << endl;
+  stream << "Create 9 time steps of transient data: vconv step001.tiff anim.xvf -files 9" << endl;
+  stream << "Scale volume down to half edge size:   vconv large.xvf small.xvf -scale 0.5" << endl;
 #ifndef WIN32
-  cerr << endl;
+  stream << endl;
 #endif
 }
 
@@ -2333,6 +2360,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-channels <num_ch>                 change the number of channels" << endl;
     cerr << "-crop <x> <y> <z> <w> <h> <s>      crop volume" << endl;
     cerr << "-croptime <first_step> <num_steps> crop a sequence of time steps" << endl;
+    cerr << "-croptodata                        crop non-zero sub-volume" << endl;
     cerr << "-deinterlace                       corrects interlaced slices" << endl;
     cerr << "-dicomrename                       automatically rename dicom files" << endl;
     cerr << "-leicarename                       automatically rename Leica files" << endl;
@@ -2369,6 +2397,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-scale <factor>                    scale volume (change no. of voxels, see -interpolation)" << endl;
     cerr << "-seticon <filename>                set the icon image" << endl;
     cerr << "-shift <x> <y> <z>                 shift parallel to a coordinate axis" << endl;
+    cerr << "-showbounds                        show bounds of largest non-zero sub-volume" << endl;
     cerr << "-stat                              display volume data statistics" << endl;
     cerr << "-sign                              toggle sign" << endl;
     cerr << "-swap                              swap endianness of voxel data bytes" << endl;
@@ -2615,6 +2644,14 @@ int vvConv::run(int argc, char** argv)
 
   cerr << "Reading volume data." << endl;
   if (!readVolumeData()) return 1;
+
+  if (showbounds)
+  {
+    cerr << "Searching bounds: " << flush;
+    ssize_t x, y, z, w, h, s;
+    vd->findDataBounds(x, y, z, w, h, s);
+    cerr << "x=" << x << ", y=" << y << ", z=" << z << ", w=" << w << ", h=" << h << ", s=" << s << "." << endl;
+  }
 
   modifyOutputFile(vd);
 
