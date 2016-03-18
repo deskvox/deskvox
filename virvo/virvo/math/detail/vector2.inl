@@ -12,14 +12,14 @@ VV_FORCE_INLINE vector< 2, T >::vector()
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 2, T >::vector(T x, T y)
+VV_FORCE_INLINE vector< 2, T >::vector(const T &x, const T &y)
     : x(x)
     , y(y)
 {
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 2, T >::vector(T s)
+VV_FORCE_INLINE vector< 2, T >::vector(const T &s)
     : x(s)
     , y(s)
 {

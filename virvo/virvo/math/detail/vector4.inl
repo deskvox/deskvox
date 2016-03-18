@@ -12,7 +12,7 @@ VV_FORCE_INLINE vector< 4, T >::vector()
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 4, T >::vector(T x, T y, T z, T w)
+VV_FORCE_INLINE vector< 4, T >::vector(const T &x, const T &y, const T &z, const T &w)
     : x(x)
     , y(y)
     , z(z)
@@ -21,7 +21,7 @@ VV_FORCE_INLINE vector< 4, T >::vector(T x, T y, T z, T w)
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 4, T >::vector(T s)
+VV_FORCE_INLINE vector< 4, T >::vector(const T &s)
     : x(s)
     , y(s)
     , z(s)
@@ -40,7 +40,7 @@ VV_FORCE_INLINE vector< 4, T >::vector(T const data[4])
 
 template < typename T >
 template < typename U >
-VV_FORCE_INLINE vector< 4, T >::vector(vector< 2, U > const& rhs, U z, U w)
+VV_FORCE_INLINE vector< 4, T >::vector(vector< 2, U > const& rhs, const U &z, const U &w)
     : x(rhs.x)
     , y(rhs.y)
     , z(z)
@@ -50,7 +50,7 @@ VV_FORCE_INLINE vector< 4, T >::vector(vector< 2, U > const& rhs, U z, U w)
 
 template < typename T >
 template < typename U >
-VV_FORCE_INLINE vector< 4, T >::vector(vector< 3, U > const& rhs, U w)
+VV_FORCE_INLINE vector< 4, T >::vector(vector< 3, U > const& rhs, const U &w)
     : x(rhs.x)
     , y(rhs.y)
     , z(rhs.z)

@@ -27,9 +27,9 @@ public:
     T y;
 
     vector();
-    vector(T x, T y);
+    vector(const T &x, const T &y);
 
-    explicit vector(T s);
+    explicit vector(const T &s);
     explicit vector(T const data[2]);
 
     template < typename U >
@@ -69,13 +69,13 @@ public:
     T z;
 
     vector();
-    vector(T x, T y, T z);
+    vector(const T &x, const T &y, const T &z);
 
-    explicit vector(T s);
+    explicit vector(const T &s);
     explicit vector(T const data[3]);
 
     template < typename U >
-    explicit vector(vector< 2, U > const& rhs, U z);
+    explicit vector(vector< 2, U > const& rhs, const U &z);
 
     template < typename U >
     explicit vector(vector< 3, U > const& rhs);
@@ -115,16 +115,16 @@ public:
     T w;
 
     vector();
-    vector(T x, T y, T z, T w);
+    vector(const T &x, const T &y, const T &z, const T &w);
 
-    explicit vector(T s);
+    explicit vector(const T &s);
     explicit vector(T const data[4]);
 
     template < typename U >
-    explicit vector(vector< 2, U > const& rhs, U z, U w);
+    explicit vector(vector< 2, U > const& rhs, const U &z, const U &w);
 
     template < typename U >
-    explicit vector(vector< 3, U > const& rhs, U w);
+    explicit vector(vector< 3, U > const& rhs, const U &w);
 
     template < typename U >
     explicit vector(vector< 4, U > const& rhs);

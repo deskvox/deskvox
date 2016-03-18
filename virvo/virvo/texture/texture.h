@@ -30,7 +30,7 @@ VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, ElementType, 1 > const& tex, Float
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE vector< 4, simd::float4 > tex1D(texture< VoxelT, ElementType, 1 > const& tex, simd::float4 coord)
+VV_FORCE_INLINE vector< 4, simd::float4 > tex1D(texture< VoxelT, ElementType, 1 > const& tex, const simd::float4 &coord)
 {
 
     // special case for AoS rgba colors
@@ -46,7 +46,7 @@ VV_FORCE_INLINE vector< 4, simd::float4 > tex1D(texture< VoxelT, ElementType, 1 
 //
 
 template < typename VoxelT, typename FloatT >
-VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, ElementType, 3 > const& tex, vector< 3, FloatT > coord)
+VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, ElementType, 3 > const& tex, const vector< 3, FloatT > &coord)
 {
 
     // general case: return type equals voxel type
@@ -58,7 +58,7 @@ VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, ElementType, 3 > const& tex, vecto
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE simd::float4 tex3D(texture< VoxelT, ElementType, 3 > const& tex, vector< 3, simd::float4 > coord)
+VV_FORCE_INLINE simd::float4 tex3D(texture< VoxelT, ElementType, 3 > const& tex, const vector< 3, simd::float4 > &coord)
 {
 
     // special case: lookup four voxels at once and return as 32-bit float vector

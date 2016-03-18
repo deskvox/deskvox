@@ -22,7 +22,7 @@ namespace detail
 // detail::frexp and detail::scalbn do not handle subnormals!
 //
 
-inline float4 frexp(float4 x, int4* exp)
+inline float4 frexp(const float4 &x, int4* exp)
 {
     static const int4 exp_mask(0x7f800000);
     static const int4 inv_exp_mask(~0x7f800000);
@@ -37,7 +37,7 @@ inline float4 frexp(float4 x, int4* exp)
     return reinterpret_as_float(ptr);
 }
 
-inline float4 scalbn(float4 x, int4 exp)
+inline float4 scalbn(const float4 &x, const int4 &exp)
 {
     static const int4 exp_mask(0x7f800000);
     static const float4 huge_val = reinterpret_as_float(int4(0x7f800000));
@@ -67,7 +67,7 @@ struct poly_t
 {
 
     template < typename T >
-    static T eval(T x, T const* p)
+    static T eval(const T &x, T const* p)
     {
 
         T result(0.0);
@@ -91,7 +91,7 @@ template < >
 struct pow2_t< 1 > : public poly_t< 1 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -106,7 +106,7 @@ template < >
 struct pow2_t< 2 > : public poly_t< 2 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -123,7 +123,7 @@ template < >
 struct pow2_t< 3 > : public poly_t< 3 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -141,7 +141,7 @@ template < >
 struct pow2_t< 4 > : public poly_t< 4 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -160,7 +160,7 @@ template < >
 struct pow2_t< 5 > : public poly_t< 5 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -180,7 +180,7 @@ template < >
 struct pow2_t< 6 > : public poly_t< 6 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -201,7 +201,7 @@ template < >
 struct pow2_t< 7 > : public poly_t< 7 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -220,7 +220,7 @@ struct pow2_t< 7 > : public poly_t< 7 >
 };
 
 
-inline float4 pow2(float4 x)
+inline float4 pow2(const float4 &x)
 {
     float4 xi = floor(x);
     float4 xf = x - xi;
@@ -239,7 +239,7 @@ template < >
 struct log2_t< 1 > : public poly_t< 1 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -254,7 +254,7 @@ template < >
 struct log2_t< 7 > : public poly_t< 7 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -276,7 +276,7 @@ template < >
 struct log2_t< 8 > : public poly_t< 8 >
 {
     template < typename T >
-    static T value(T x)
+    static T value(const T &x)
     {
         static const T p[] =
         {
@@ -297,7 +297,7 @@ struct log2_t< 8 > : public poly_t< 8 >
 
 
 template < typename T >
-inline T log2(T x)
+inline T log2(const T &x)
 {
     return log2_t< 8 >::value(x);
 }
@@ -309,28 +309,28 @@ inline T log2(T x)
 // API
 //
 
-float4 exp(float4 x);
-float4 log(float4 x);
-float4 log2(float4 x);
-float4 pow(float4 x, float4 y);
+float4 exp(const float4 &x);
+float4 log(const float4 &x);
+float4 log2(const float4 &x);
+float4 pow(const float4 &x, const float4 &y);
 
 
 //-------------------------------------------------------------------------------------------------
 // impl
 //
 
-inline float4 exp(float4 x)
+inline float4 exp(const float4 &x)
 {
     float4 y = x * constants::log2_e< float4 >();
     return detail::pow2(y);
 }
 
-inline float4 log(float4 x)
+inline float4 log(const float4 &x)
 {
     return log2(x) / constants::log2_e< float4 >();
 }
 
-inline float4 log2(float4 x)
+inline float4 log2(const float4 &x)
 {
     int4 n = 0;
     float4 m = detail::frexp(x, &n);
@@ -338,7 +338,7 @@ inline float4 log2(float4 x)
     return float4(n - 1) + detail::log2(m - 1.0f);
 }
 
-inline float4 pow(float4 x, float4 y)
+inline float4 pow(const float4 &x, const float4 &y)
 {
 #if VV_SIMD_HAS_SVML
     return _mm_pow_ps(x, y);

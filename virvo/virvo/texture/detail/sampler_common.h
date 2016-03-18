@@ -12,7 +12,7 @@ namespace virvo
 
 
 template < typename T, typename FloatT >
-VV_FORCE_INLINE T lerp(T a, T b, FloatT x)
+VV_FORCE_INLINE T lerp(const T &a, const T &b, FloatT x)
 {
     return a + x * (b - a);
 }
@@ -30,7 +30,7 @@ VV_FORCE_INLINE T point(T const* tex, ssize_t idx)
 
 
 template < typename T >
-VV_FORCE_INLINE simd::float4 point(T const* tex, simd::float4 idx)
+VV_FORCE_INLINE simd::float4 point(T const* tex, const simd::float4 &idx)
 {
 
     VV_ALIGN(16) int indices[4];
@@ -46,7 +46,7 @@ VV_FORCE_INLINE simd::float4 point(T const* tex, simd::float4 idx)
 }
 
 
-VV_FORCE_INLINE vector< 4, simd::float4 > point(vector< 4, float > const* tex, simd::float4 idx)
+VV_FORCE_INLINE vector< 4, simd::float4 > point(vector< 4, float > const* tex, const simd::float4 &idx)
 {
 
     // Special case: colors are AoS. Those can be obtained
