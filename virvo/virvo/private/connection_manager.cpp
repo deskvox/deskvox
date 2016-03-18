@@ -18,6 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef DESKVOX_USE_ASIO
+
 #include "connection_manager.h"
 
 #include "private/vvtimer.h"
@@ -473,3 +475,5 @@ void ConnectionManager::remove_connection(ConnectionPointer conn)
     // Delete the connection
     connections_.erase(conn);
 }
+
+#endif // DESKVOX_USE_ASIO

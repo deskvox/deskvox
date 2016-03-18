@@ -18,6 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef DESKVOX_USE_ASIO
+
 #include "connection.h"
 #include "connection_manager.h"
 
@@ -81,3 +83,5 @@ void Connection::write(MessagePointer message)
 {
     manager_.write(message, shared_from_this());
 }
+
+#endif // DESKVOX_USE_ASIO
