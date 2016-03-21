@@ -21,8 +21,14 @@
 #ifndef VV_RESOURCEMANAGER_H
 #define VV_RESOURCEMANAGER_H
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <virvo/vvrequestmanagement.h>
+#if VV_HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
+#endif
 #include <pthread.h>
 #include <set>
 
@@ -31,7 +37,9 @@
 // forward declarations
 class vvSimpleServer;
 class vvTcpSocket;
+#if VV_HAVE_BONJOUR
 class vvBonjourBrowser;
+#endif
 
 /**
  * Class for resouce manager
@@ -67,7 +75,9 @@ private:
   std::vector<vvResource*> getFreeResources(uint amount) const;
 
   vvSimpleServer *_simpleServer;
+#if VV_HAVE_BONJOUR
   vvBonjourBrowser *_browser;
+#endif
   std::multiset<vvRequest*, vvRequest::Compare> _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;

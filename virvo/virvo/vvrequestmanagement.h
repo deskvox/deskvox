@@ -21,10 +21,16 @@
 #ifndef VV_REQUESTMANAGEMENT_H
 #define VV_REQUESTMANAGEMENT_H
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <string>
 #include <vector>
 
+#if VV_HAVE_BONJOUR
 #include "vvbonjour/vvbonjourentry.h"
+#endif
 #include "vvinttypes.h"
 #include "vvrenderer.h"
 #include "vvtcpsocket.h"
@@ -99,7 +105,9 @@ public:
   bool           local;
   std::string    hostname;
   ushort         port;
+#if VV_HAVE_BONJOUR
   vvBonjourEntry bonjourEntry;
+#endif
   std::vector<vvGpu::vvGpuInfo> ginfos;
 
   // vars for future use

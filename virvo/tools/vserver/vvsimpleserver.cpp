@@ -51,15 +51,19 @@ vvSimpleServer::vvSimpleServer(bool useBonjour)
   : vvServer(useBonjour)
 {
   _instance = this;
+#if VV_HAVE_BONJOUR
   if (_useBonjour)
   {
     registerToBonjour();
   }
+#endif
 }
 
 vvSimpleServer::~vvSimpleServer()
 {
+#if VV_HAVE_BONJOUR
   if(_useBonjour) unregisterFromBonjour();
+#endif
 }
 
 bool vvSimpleServer::handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io)
@@ -128,6 +132,7 @@ void * vvSimpleServer::handleClientThread(void *param)
 #endif
 }
 
+#if VV_HAVE_BONJOUR
 bool vvSimpleServer::registerToBonjour()
 {
   vvDebugMsg::msg(3, "vvSimpleServer::registerToBonjour()");
@@ -140,6 +145,7 @@ void vvSimpleServer::unregisterFromBonjour()
   vvDebugMsg::msg(3, "vvSimpleServer::unregisterFromBonjour()");
   _registrar.unregisterService();
 }
+#endif
 
 bool vvSimpleServer::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
 {

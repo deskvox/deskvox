@@ -22,6 +22,8 @@
 #include "vvconfig.h"
 #endif
 
+#if VV_HAVE_BONJOUR
+
 #include "vvbonjourresolver.h"
 
 #include "../vvdebugmsg.h"
@@ -137,5 +139,7 @@ vvTcpSocket* vvBonjourResolver::getBonjourSocket() const
     return NULL;
   }
 }
+
+#endif // VV_HAVE_BONJOUR
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

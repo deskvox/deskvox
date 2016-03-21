@@ -18,6 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include "vvresourcemanager.h"
 #include "vvserver.h"
 #include "vvsimpleserver.h"
@@ -26,9 +30,11 @@
 #include <sstream>
 #include <fstream>
 
+#if VV_HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <virvo/vvbonjour/vvbonjourbrowser.h>
 #include <virvo/vvbonjour/vvbonjourresolver.h>
+#endif
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
@@ -102,7 +108,9 @@ namespace
 
 vvResourceManager::vvResourceManager()
   : vvServer(false)
+#if VV_HAVE_BONJOUR
   , _browser(NULL)
+#endif
 {
   _simpleServer = NULL;
 
@@ -126,7 +134,9 @@ vvResourceManager::~vvResourceManager()
   }
 
   delete _simpleServer;
+#if VV_HAVE_BONJOUR
   delete _browser;
+#endif
 
   pthread_mutex_destroy(&_requestsMutex);
   pthread_cond_destroy (&_requestsCondition);
@@ -406,6 +416,7 @@ void * vvResourceManager::handleClientThread(void *param)
 
 void vvResourceManager::updateResources(void * param)
 {
+#if VV_HAVE_BONJOUR
   if (virvo::hasFeature("bonjour"))
   {
   vvDebugMsg::msg(3, "vvResourceManager::updateResources() Enter");
@@ -484,8 +495,11 @@ void vvResourceManager::updateResources(void * param)
   }
   else
   {
+#endif
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
+#if VV_HAVE_BONJOUR
   }
+#endif
 }
 
 void vvResourceManager::pairNextJobs()
@@ -573,12 +587,14 @@ bool vvResourceManager::serverLoop()
     // ...via bonjour
     if (virvo::hasFeature("bonjour") && _useBonjour)
     {
+#if VV_HAVE_BONJOUR
       if(_sm != vvServer::SERVER)
       {
         _browser = new vvBonjourBrowser(updateResources, this);
         _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
         vvDebugMsg::msg(3, "vvResourceManager::serverLoop() browsing bonjour");
       }
+#endif
     }
     // ...via config file
     else
@@ -676,6 +692,7 @@ uint vvResourceManager::getFreeResourceCount() const
     }
     else
     {
+#if VV_HAVE_BONJOUR
       if (virvo::hasFeature("bonjour"))
       {
       std::ostringstream msg;
@@ -684,6 +701,7 @@ uint vvResourceManager::getFreeResourceCount() const
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
       }
+#endif
     }
   }
 
@@ -716,6 +734,7 @@ std::vector<vvResource*> vvResourceManager::getFreeResources(uint amount) const
     }
     else
     {
+#if VV_HAVE_BONJOUR
       freeRes++;
       if (virvo::hasFeature("bonjour"))
       {
@@ -725,6 +744,7 @@ std::vector<vvResource*> vvResourceManager::getFreeResources(uint amount) const
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
       }
+#endif
     }
   }
 

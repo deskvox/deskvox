@@ -22,6 +22,8 @@
 #include "vvconfig.h"
 #endif
 
+#if VV_HAVE_BONJOUR
+
 #include "vvbonjourbrowser.h"
 
 #include "../vvdebugmsg.h"
@@ -146,5 +148,7 @@ std::vector<vvBonjourEntry> vvBonjourBrowser::getBonjourEntries() const
 {
   return _bonjourEntries;
 }
+
+#endif // VV_HAVE_BONJOUR
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

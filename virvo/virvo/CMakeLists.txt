@@ -1,4 +1,6 @@
-find_package(Bonjour)
+if(DESKVOX_USE_ZEROCONF)
+  find_package(Bonjour)
+endif()
 find_package(Boost COMPONENTS chrono date_time filesystem serialization system thread REQUIRED)
 find_package(Cg)
 find_package(CUDA)
@@ -138,13 +140,6 @@ set(VIRVO_HEADERS
   texture/forward.h
   texture/texture.h
 
-  vvbonjour/vvbonjour.h
-  vvbonjour/vvbonjourbrowser.h
-  vvbonjour/vvbonjourentry.h
-  vvbonjour/vvbonjoureventloop.h
-  vvbonjour/vvbonjourregistrar.h
-  vvbonjour/vvbonjourresolver.h
-
   vvbrickrend.h
   vvbsptree.h
   vvbsptreevisitors.h
@@ -244,13 +239,6 @@ set(VIRVO_SOURCES
   gl/handle.cpp
   gl/util.cpp
 
-  vvbonjour/vvbonjour.cpp
-  vvbonjour/vvbonjourbrowser.cpp
-  vvbonjour/vvbonjourentry.cpp
-  vvbonjour/vvbonjoureventloop.cpp
-  vvbonjour/vvbonjourregistrar.cpp
-  vvbonjour/vvbonjourresolver.cpp
-
   vvbrickrend.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
@@ -320,6 +308,28 @@ deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
   vvcudatransfunc.cu
 )
 endif(DESKVOX_USE_CUDA)
+
+if(DESKVOX_USE_ZEROCONF)
+  set(VIRVO_HEADERS
+    ${VIRVO_HEADERS}
+    vvbonjour/vvbonjour.h
+    vvbonjour/vvbonjourbrowser.h
+    vvbonjour/vvbonjourentry.h
+    vvbonjour/vvbonjoureventloop.h
+    vvbonjour/vvbonjourregistrar.h
+    vvbonjour/vvbonjourresolver.h
+  )
+
+  set(VIRVO_SOURCES
+    ${VIRVO_SOURCES}
+    vvbonjour/vvbonjour.cpp
+    vvbonjour/vvbonjourbrowser.cpp
+    vvbonjour/vvbonjourentry.cpp
+    vvbonjour/vvbonjoureventloop.cpp
+    vvbonjour/vvbonjourregistrar.cpp
+    vvbonjour/vvbonjourresolver.cpp
+  )
+endif()
 
 set(VIRVO_SHADERS
   ../shader/vv_ibr.fsh

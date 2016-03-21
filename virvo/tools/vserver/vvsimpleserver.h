@@ -21,7 +21,13 @@
 #ifndef VV_SIMPLESERVER_H
 #define VV_SIMPLESERVER_H
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#if VV_HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourregistrar.h>
+#endif
 
 #include <string>
 
@@ -35,15 +41,19 @@ public:
   ~vvSimpleServer();
 
 private:
+#if VV_HAVE_BONJOUR
   vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
+#endif
 
   static vvSimpleServer* _instance;
 
   void handleNextConnection(vvTcpSocket *sock);
   bool handleEvent(ThreadData *tData, virvo::RemoteEvent, const vvSocketIO& io);
   static void * handleClientThread(void *param);
+#if VV_HAVE_BONJOUR
   bool registerToBonjour();
   void unregisterFromBonjour();
+#endif
 
   bool createRemoteServer(ThreadData *tData, vvTcpSocket *sock);
 };
