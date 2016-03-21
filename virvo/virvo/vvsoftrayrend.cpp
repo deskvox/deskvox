@@ -12,6 +12,12 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#if VV_HAVE_PTHREADS
+
 #include "vvdebugmsg.h"
 #include "vvmacros.h"
 #include "vvpthread.h"
@@ -24,10 +30,6 @@
 #include "private/project.h"
 #include "texture/texture.h"
 
-
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
 
 #ifdef HAVE_OPENGL
 #include "gl/util.h"
@@ -732,3 +734,4 @@ vvRenderer* createRayRend(vvVolDesc* vd, vvRenderState const& rs)
   return new vvSoftRayRend(vd, rs);
 }
 
+#endif // VV_HAVE_PTHREADS
