@@ -22,6 +22,4 @@
 
 #ifdef DESKVOX_USE_ASIO
 #include "remote/v2/vvremoteclient.cpp"
-#else
-#include "remote/v1/vvremoteclient.cpp"
 #endif

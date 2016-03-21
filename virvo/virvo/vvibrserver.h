@@ -24,6 +24,4 @@
 
 #ifdef DESKVOX_USE_ASIO
 #include "remote/v2/vvibrserver.h"
-#else
-#include "remote/v1/vvibrserver.h"
 #endif

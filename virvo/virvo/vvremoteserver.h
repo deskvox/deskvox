@@ -24,6 +24,4 @@
 
 #ifdef DESKVOX_USE_ASIO
 #include "remote/v2/vvremoteserver.h"
-#else
-#include "remote/v1/vvremoteserver.h"
 #endif

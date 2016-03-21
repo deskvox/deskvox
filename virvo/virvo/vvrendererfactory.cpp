@@ -568,16 +568,12 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
     {
 #ifdef DESKVOX_USE_ASIO
     return new vvImageClient(vd, rs, GetConnection(options.options), filename);
-#else
-    return new vvImageClient(vd, rs, sock, filename.c_str());
 #endif
     }
   case vvRenderer::REMOTE_IBR:
     {
 #ifdef DESKVOX_USE_ASIO
     return new vvIbrClient(vd, rs, GetConnection(options.options), filename);
-#else
-    return new vvIbrClient(vd, rs, sock, filename.c_str());
 #endif
     }
   case vvRenderer::SOFTSW:
