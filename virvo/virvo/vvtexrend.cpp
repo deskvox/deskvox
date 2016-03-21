@@ -48,7 +48,6 @@
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvvoldesc.h"
-#include "vvpthread.h"
 #include "vvvecmath.h"
 
 #include "gl/util.h"
