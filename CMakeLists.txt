@@ -89,6 +89,7 @@ option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable fo
 option(DESKVOX_GROUP_SOURCES_BY_TYPE "Group source files by type." ON)
 
 option(DESKVOX_BUILD_OSG   "Build virvo_osg" ON)
+option(DESKVOX_BUILD_RAYREND "Build ray casting plugins" ON)
 option(DESKVOX_BUILD_TESTS "Build tests" OFF)
 option(DESKVOX_BUILD_TOOLS "Build tools" ON)
 if (NOT DEFINED DESKVOX_BUILD_VOX_DESK)
