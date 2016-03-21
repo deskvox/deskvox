@@ -17,7 +17,7 @@
 #include "vvconfig.h"
 #endif
 
-#if VV_HAVE_PTHREAD
+#if VV_HAVE_PTHREADS
 
 #include "vvpthread.h"
 
@@ -64,6 +64,6 @@ int pthread_barrier_wait(pthread_barrier_t* barrier)
 }
 #endif
 
-#endif // VV_HAVE_PTHREAD
+#endif // VV_HAVE_PTHREADS
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
