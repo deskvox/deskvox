@@ -101,14 +101,15 @@ function(deskvox_add_library name)
 
   __deskvox_process_sources(${ARGN})
 
-  # Hide all symbols by default
-  if(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-  endif()
-
   add_library(${name} ${__DESKVOX_PROCESSED_SOURCES})
 
   set_target_properties(${name} PROPERTIES FOLDER "Libraries")
+
+  # Hide all symbols by default
+  if(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
+    get_property(COMPILE_FLAGS_OLD TARGET ${name} PROPERTY COMPILE_FLAGS)
+    set_target_properties(${name} PROPERTIES "COMPILE_FLAGS" "${COMPILE_FLAGS_OLD} -fvisibility=hidden")
+  endif()
 
   __deskvox_set_target_postfixes(${name})
 
