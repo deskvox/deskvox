@@ -332,7 +332,6 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->hostEdit, SIGNAL(textChanged(const QString&)), this, SLOT(onHostChanged(const QString&)));
   connect(ui->portBox, SIGNAL(valueChanged(int)), this, SLOT(onPortChanged(int)));
   connect(ui->getInfoButton, SIGNAL(clicked()), this, SLOT(onGetInfoClicked()));
-  connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
   connect(ui->connectButton, SIGNAL(clicked()), this, SLOT(onConnectClicked()));
   connect(ui->ibrBox, SIGNAL(toggled(bool)), this, SLOT(onIbrToggled(bool)));
   connect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
@@ -784,20 +783,6 @@ void vvPrefDialog::onGetInfoClicked()
     delete sock;
   }
 #endif
-}
-
-void vvPrefDialog::onBrowseClicked()
-{
-  if (virvo::hasFeature("bonjour"))
-  {
-    vvBonjour bonjour;
-    std::vector<std::string> servers = bonjour.getConnectionStringsFor("_vserver._tcp");
-    for (std::vector<std::string>::const_iterator it = servers.begin();
-         it != servers.end(); ++it)
-    {
-      std::cerr << *it << std::endl;
-    }
-  }
 }
 
 void vvPrefDialog::onConnectClicked()

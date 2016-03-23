@@ -66,7 +66,6 @@ private slots:
   void onHostChanged(const QString& text);
   void onPortChanged(int i);
   void onGetInfoClicked();
-  void onBrowseClicked();
   void onConnectClicked();
   void onIbrToggled(bool checked);
   void onInterpolationChanged(int index);
