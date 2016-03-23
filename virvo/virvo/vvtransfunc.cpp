@@ -18,6 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <float.h>
 #include <string.h>
 #include <stdlib.h>
@@ -871,7 +875,7 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
   rgba[width*4+2] = rgba[(width-1)*4+2];
   rgba[width*4+3] = rgba[(width-1)*4+3];
 
-#ifdef HAVE_CUDA
+#if VV_HAVE_CUDA
   if(!makePreintLUTCorrectCuda(width, preIntTable, thickness, min, max, rgba))
 #endif
   {

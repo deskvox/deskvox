@@ -1,4 +1,5 @@
 find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
+find_package(CUDA)
 find_package(GDCM)
 find_package(Nifti)
 find_package(Teem)
@@ -9,6 +10,9 @@ if (GDCM_FOUND)
 endif()
 
 deskvox_use_package(Boost)
+if(DESKVOX_USE_CUDA)
+deskvox_use_package(CUDA)
+endif()
 deskvox_use_package(GDCM)
 deskvox_use_package(Nifti)
 deskvox_use_package(Teem)
@@ -29,6 +33,13 @@ set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/vvvoldesc.cpp
 )
 
+if(DESKVOX_USE_CUDA)
+deskvox_cuda_compiles(VIRVO_FILEIO_CUDA_SOURCES
+    ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cu
+)
+endif()
+
 deskvox_add_library(virvo_fileio
     ${VIRVO_FILEIO_SOURCES}
+    ${VIRVO_FILEIO_CUDA_SOURCES}
 )
