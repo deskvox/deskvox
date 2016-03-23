@@ -39,6 +39,10 @@ deskvox_cuda_compiles(VIRVO_FILEIO_CUDA_SOURCES
 )
 endif()
 
+if(GDCM_FOUND)
+   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon gdcmuuid)
+endif()
+
 deskvox_add_library(virvo_fileio
     ${VIRVO_FILEIO_SOURCES}
     ${VIRVO_FILEIO_CUDA_SOURCES}
