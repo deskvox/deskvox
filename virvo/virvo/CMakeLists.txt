@@ -245,7 +245,6 @@ set(VIRVO_SOURCES
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
-  vvclock.cpp
   vvcolor.cpp
   vvcudaimg.cpp
   vvcudarendertarget.cpp
@@ -295,7 +294,6 @@ set(VIRVO_SOURCES
   vvvideo.cpp
   vvvirvo.cpp
   vvvisitor.cpp
-  vvvoldesc.cpp
 )
 
 if(DESKVOX_USE_CUDA)
