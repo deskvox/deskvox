@@ -22,8 +22,6 @@
 #include "vvconfig.h"
 #endif
 
-#if VV_HAVE_PTHREADS
-
 #include <GL/glew.h>
 
 #include "vvbsptree.h"
@@ -50,6 +48,7 @@ using virvo::vec3f;
 using virvo::vec3;
 
 
+#if VV_HAVE_PTHREADS
 struct vvParBrickRend::Thread
 {
   Thread()
@@ -89,6 +88,7 @@ struct vvParBrickRend::Thread
   std::queue<Event> events;
   std::queue<vvRenderState::ParameterType> newParams;
 };
+#endif // VV_HAVE_PTHREADS
 
 vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
                                const std::vector<vvParBrickRend::Param>& params,
@@ -96,6 +96,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   : vvBrickRend(vd, rs, params.size(), type, options)
   , _thread(NULL)
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(1, "vvParBrickRend::vvParBrickRend()");
 
   glewInit();
@@ -204,10 +205,12 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   _sortLastVisitor->setTextures(_textures);
 
   pthread_barrier_wait(barrier);
+#endif // VV_HAVE_PTHREADS
 }
 
 vvParBrickRend::~vvParBrickRend()
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(1, "vvParBrickRend::~vvParBrickRend()");
 
   if (_thread != NULL)
@@ -245,10 +248,12 @@ vvParBrickRend::~vvParBrickRend()
   }
 
   delete _sortLastVisitor;
+#endif
 }
 
 void vvParBrickRend::renderVolumeGL()
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(4, "vvParBrickRend::renderVolumeGL()");
 
   if (!_showBricks)
@@ -321,10 +326,12 @@ void vvParBrickRend::renderVolumeGL()
   }
 
   vvBrickRend::renderVolumeGL();
+#endif // VV_HAVE_PTHREADS
 }
 
 void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(3, "vvParBrickRend::setParameter()");
 
   if (_thread != NULL && _thread->renderer != NULL)
@@ -342,6 +349,10 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
   }
 
   vvBrickRend::setParameter(param, newValue);
+#else
+    (void)param;
+    (void)newValue;
+#endif
 }
 
 vvParam vvParBrickRend::getParameter(ParameterType param) const
@@ -353,6 +364,7 @@ vvParam vvParBrickRend::getParameter(ParameterType param) const
 
 void vvParBrickRend::updateTransferFunction()
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(3, "vvParBrickRend::updateTransferFunction()");
 
   if (_thread != NULL && _thread->renderer != NULL)
@@ -366,10 +378,12 @@ void vvParBrickRend::updateTransferFunction()
     (*it)->events.push(Thread::VV_TRANS_FUNC);
     pthread_mutex_unlock((*it)->mutex);
   }
+#endif
 }
 
 void* vvParBrickRend::renderFunc(void* args)
 {
+#if VV_HAVE_PTHREADS
   vvDebugMsg::msg(3, "vvParBrickRend::renderFunc()");
 
   Thread* thread = static_cast<Thread*>(args);
@@ -464,10 +478,15 @@ cleanup:
   delete ctx;
   pthread_exit(NULL);
   return NULL;
+#else
+    (void)args;
+    return NULL;
+#endif
 }
 
 void vvParBrickRend::render(Thread* thread)
 {
+#if VV_HAVE_PTHREADS
   pthread_barrier_wait(thread->barrier);
 
   // TODO: check if these are necessary anymore
@@ -492,8 +511,9 @@ void vvParBrickRend::render(Thread* thread)
                (*thread->texture.rect)[2], (*thread->texture.rect)[3],
                GL_RGBA, GL_FLOAT, &(*thread->texture.pixels)[0]);
   pthread_barrier_wait(thread->barrier);
+#else
+    (void)thread;
+#endif
 }
-
-#endif // VV_HAVE_PTHREADS
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
