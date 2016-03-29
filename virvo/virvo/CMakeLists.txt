@@ -46,6 +46,12 @@ deskvox_use_package(VolPack)
 deskvox_use_package(X11)
 
 
+if(MSVC)
+    # Disable Boost autolinking when compiling w/ msvc
+    add_definitions(-DBOOST_ALL_NO_LIB)
+endif()
+
+
 #---------------------------------------------------------------------------------------------------
 # Create config file
 #
