@@ -28,7 +28,9 @@
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
 #include "vvparbrickrend.h"
+#if VV_HAVE_PTHREADS
 #include "vvpthread.h"
+#endif
 #include "vvrendercontext.h"
 #include "vvsocketmap.h"
 #include "vvtcpsocket.h"
