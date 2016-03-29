@@ -7,6 +7,7 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
 
 add_subdirectory(vvbonjour)
 add_subdirectory(vvmulticast)

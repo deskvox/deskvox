@@ -23,16 +23,37 @@
 
 #include "vvcompiler.h"
 
+//-------------------------------------------------------------------------------------------------
+// virvo
+//
+
 #ifndef VIRVO_STATIC
 #   ifdef virvo_EXPORTS
 #       define VVAPI VV_DLL_EXPORT
 #   else
 #       define VVAPI VV_DLL_IMPORT
-# endif
+#   endif
 #else
 #   define VVAPI
 #endif
 
 #define VIRVOEXPORT VVAPI
 
+
+//-------------------------------------------------------------------------------------------------
+// virvo_fileio
+//
+
+#ifndef VIRVO_STATIC
+#   ifdef virvo_fileio_EXPORTS
+#       define VVFILEIOAPI VV_DLL_EXPORT
+#   else
+#       define VVFILEIOAPI VV_DLL_IMPORT
+#   endif
+#else
+#   define VVFILEIOAPI
 #endif
+
+#define VIRVO_FILEIOEXPORT VVFILEIOAPI
+
+#endif // VV_EXPORT_H

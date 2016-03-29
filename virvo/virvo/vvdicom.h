@@ -27,7 +27,7 @@
 /** Dicom properties.
   This is a storage class for value read from a DICOM file.
 */
-class VIRVOEXPORT vvDicomProperties
+class VIRVO_FILEIOEXPORT vvDicomProperties
 {
   public:
     uchar* raw;                                   // data value array

@@ -11,6 +11,7 @@ deskvox_use_package(Pthreads)
 deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
 
 deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
 
 set(RAYREND_HEADERS
   ../../vvrayrend.h

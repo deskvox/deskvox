@@ -35,13 +35,13 @@ namespace logging
 
 
 // Returns the current logging level.
-VVAPI int getLevel();
+VVFILEIOAPI int getLevel();
 
 // Sets the new logging level.
-VVAPI int setLevel(int level);
+VVFILEIOAPI int setLevel(int level);
 
 // Returns whether the given logging level is active.
-VVAPI int isActive(int level);
+VVFILEIOAPI int isActive(int level);
 
 
 class Output
@@ -53,7 +53,7 @@ public:
 
 // Sets the new output function.
 // Use setOutput(nullptr) to log to std::clog.
-VVAPI int setOutput(Output* func);
+VVFILEIOAPI int setOutput(Output* func);
 
 
 class Stream
@@ -62,8 +62,8 @@ class Stream
     int level_;
 
 public:
-    VVAPI Stream(int level, char const* file, int line);
-    VVAPI ~Stream();
+    VVFILEIOAPI Stream(int level, char const* file, int line);
+    VVFILEIOAPI ~Stream();
 
     inline std::ostream& stream() {
         return stream_;
@@ -75,8 +75,8 @@ class ErrorStream
     std::ostringstream stream_;
 
 public:
-    VVAPI ErrorStream(int level, char const* file, int line);
-    VVAPI ~ErrorStream();
+    VVFILEIOAPI ErrorStream(int level, char const* file, int line);
+    VVFILEIOAPI ~ErrorStream();
 
     inline std::ostream& stream() {
         return stream_;

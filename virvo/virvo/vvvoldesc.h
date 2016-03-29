@@ -49,7 +49,7 @@
   @author Juergen Schulze-Doebold (schulze@hlrs.de)
 */
 
-class VIRVOEXPORT vvVolDesc
+class VIRVO_FILEIOEXPORT vvVolDesc
 {
   public:
     struct line

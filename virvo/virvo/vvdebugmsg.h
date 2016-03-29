@@ -30,7 +30,7 @@
     Can be overridden by setting the environment variable VV_DEBUG to an integer value.
     @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
-class VIRVOEXPORT vvDebugMsg
+class VIRVO_FILEIOEXPORT vvDebugMsg
 {
   public:
     enum LevelType                                /// Valid level types

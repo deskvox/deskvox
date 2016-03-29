@@ -7,6 +7,7 @@ deskvox_use_package(GLEW)
 deskvox_use_package(Pthreads)
 
 deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
 
 set(RAYREND_HEADERS
   ../../vvsoftrayrend.h

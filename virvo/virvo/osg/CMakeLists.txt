@@ -8,6 +8,7 @@ endif()
 deskvox_use_package(OpenSceneGraph)
 
 deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
 
 deskvox_add_library(virvo_osg
     VolumeDrawable.cpp

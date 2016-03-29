@@ -28,7 +28,7 @@
 /** static clock function returning current time in seconds
   @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
   */
-class VIRVOEXPORT vvClock
+class VIRVO_FILEIOEXPORT vvClock
 {
 public:
   static double getTime();

@@ -32,7 +32,7 @@
   @author Jurgen P. Schulze (jschulze@ucsd.edu)
   @see vvTFWidget
 */
-class VIRVOEXPORT vvTransFunc
+class VIRVO_FILEIOEXPORT vvTransFunc
 {
   private:
     enum                                           /// number of elements in ring buffer

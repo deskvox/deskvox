@@ -35,7 +35,7 @@
 
 struct vvTifData;
 
-class VIRVOEXPORT vvFileIO
+class VIRVO_FILEIOEXPORT vvFileIO
 {
   public:
     class ParticleTimestep

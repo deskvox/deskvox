@@ -25,7 +25,7 @@
 
 /** Creates a general color class for RGB colors.
  */
-class VIRVOEXPORT vvColor
+class VIRVO_FILEIOEXPORT vvColor
 {
   public:
     vvColor();

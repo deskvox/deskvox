@@ -66,7 +66,7 @@
  * </PRE>
  * @author Juergen Schulze
  */
-class VIRVOEXPORT vvTokenizer
+class VIRVO_FILEIOEXPORT vvTokenizer
 {
   public:
     enum TokenType                                /// token types

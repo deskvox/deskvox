@@ -231,16 +231,12 @@ set(VIRVO_SOURCES
   private/vvgltools.cpp
   private/vvibrimage.cpp
   private/vvimage.cpp
-  private/vvlog.cpp
   private/vvmessage.cpp
 
   cuda/debug.cpp
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
   cuda/utils.cpp
-
-  fileio/nifti.cpp
-  fileio/nrrd.cpp
 
   gl/handle.cpp
   gl/util.cpp
@@ -256,10 +252,7 @@ set(VIRVO_SOURCES
 # vvcudarendertarget.inc
 # vvcudarendertarget-null.inc
   vvcudatransfunc.cpp
-  vvdebugmsg.cpp
-  vvdicom.cpp
   vvdynlib.cpp
-  vvfileio.cpp
   vvglslprogram.cpp
   vvibr.cpp
   vvibrclient.cpp
@@ -296,10 +289,6 @@ set(VIRVO_SOURCES
   vvtcpserver.cpp
   vvtcpsocket.cpp
   vvtexrend.cpp
-  vvtfwidget.cpp
-  vvtokenizer.cpp
-  vvtoolshed.cpp
-  vvtransfunc.cpp
   vvudpsocket.cpp
   vvvecmath.cpp
   vvvffile.cpp
@@ -408,6 +397,7 @@ if(GDCM_FOUND)
    deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon gdcmuuid)
 endif()
 
+deskvox_link_libraries(virvo_fileio)
 
 deskvox_add_library(virvo
   ${VIRVO_HEADERS}

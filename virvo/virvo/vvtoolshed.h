@@ -138,7 +138,7 @@ template <class C> inline C ts_sqr(C a)
 <LI>Basename  = vfview
 </UL>
 */
-class VIRVOEXPORT vvToolshed
+class VIRVO_FILEIOEXPORT vvToolshed
 {
   private:
     static int progressSteps;                     ///< total number of progress steps
