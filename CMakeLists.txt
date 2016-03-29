@@ -142,8 +142,6 @@ include(DeskvoxHandleOptions)
 
 if(NOT BUILD_SHARED_LIBS)
   add_definitions(-DVIRVO_STATIC)
-else()
-  add_definitions(-DVIRVO_EXPORTS)
 endif()
 
 
