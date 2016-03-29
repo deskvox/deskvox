@@ -22,6 +22,7 @@
 #define VV_VIRVO_H
 
 #include "vvexport.h"
+#include "vvversion.h"
 
 /** \mainpage Virvo
   <DL>

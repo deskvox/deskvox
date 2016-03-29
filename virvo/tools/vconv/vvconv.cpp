@@ -26,6 +26,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <virvo/fileio/feature.h>
 #include <virvo/math/math.h>
 #include "vvvirvo.h"
 #include "vvconv.h"
@@ -2336,7 +2337,7 @@ int vvConv::run(int argc, char** argv)
 {
   int error = 0;
 
-  cerr << "VConv Version " << virvo::version() << endl;
+  cerr << "VConv Version " << virvo::fileio::version() << endl;
   cerr << "(C) " << VV_VERSION_YEAR << " Brown University" << endl;
   cerr << "Author: Jurgen P. Schulze (jschulze@ucsd.edu)" << endl;
   cerr << "VConv comes with ABSOLUTELY NO WARRANTY." << endl;

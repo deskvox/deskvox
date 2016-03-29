@@ -94,14 +94,6 @@ bool virvo::hasFeature(const char* name)
     return false;
 #endif
   }
-  else if (str == "nifti")
-  {
-#if VV_HAVE_NIFTI
-    return true;
-#else
-    return false;
-#endif
-  }
   else if (str == "snappy")
   {
 #ifdef HAVE_SNAPPY

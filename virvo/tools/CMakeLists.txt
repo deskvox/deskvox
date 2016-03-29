@@ -6,9 +6,6 @@ if(NOT BUILD_SHARED_LIBS)
   add_definitions(-DVIRVO_STATIC)
 endif()
 
-deskvox_link_libraries(virvo)
-deskvox_link_libraries(virvo_fileio)
-
 ADD_SUBDIRECTORY(vconv)
 if(DESKVOX_USE_ASIO)
   ADD_SUBDIRECTORY(vserver_asio)

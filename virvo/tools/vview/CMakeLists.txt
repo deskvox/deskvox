@@ -10,6 +10,9 @@ endif()
 deskvox_use_package(Boost)
 deskvox_use_package(GLUT)
 
+deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
+
 deskvox_add_tool(vview
   vvobjview.cpp
   vvobjview.h

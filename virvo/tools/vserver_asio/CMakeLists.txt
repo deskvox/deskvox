@@ -6,6 +6,9 @@ deskvox_use_package(Pthreads)
 
 add_definitions(-DHAVE_CONFIG_H)
 
+deskvox_link_libraries(virvo)
+deskvox_link_libraries(virvo_fileio)
+
 deskvox_add_tool(vserver_asio
   main.cpp
   resource_manager.cpp
