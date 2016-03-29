@@ -106,7 +106,7 @@ photometric interpretation (28,4)
 @author George J. Grevera
 @author Jurgen Schulze
 */
-class VIRVOEXPORT vvDicom
+class VIRVO_FILEIOEXPORT vvDicom
 {
   private:
 
