@@ -245,7 +245,6 @@ set(VIRVO_SOURCES
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
-  vvcolor.cpp
   vvcudaimg.cpp
   vvcudarendertarget.cpp
 # vvcudarendertarget.inc
