@@ -16,7 +16,7 @@ Welcome to DeskVOX Volume Explorer (DeskVOX)
 Download a zip archive from [Github](https://github.com/deskvox/deskvox)
 or check out DeskVOX via Git:
 
-    $ git clone git@github.com:deskvox/deskvox.git
+    $ git clone https://github.com/deskvox/deskvox.git
 
 
 2. Additional dependencies
@@ -54,9 +54,7 @@ project specific to your platform to be built from. Obtain CMake from
 [http://www.cmake.org](http://www.cmake.org/) or by means
 provided by your operating system.
 
-Switch to the topmost folder of the DeskVOX package you downloaded or the
-topmost folder of the branch you wish to build if you checked out DeskVOX via
-Subversion (i.e. the folder this document is located in).
+Switch to the topmost folder of the DeskVOX package.
 
 CMake encourages you to do so called out-of-source builds, i.e. all files, e.g.
 object files, executables or auto-generated headers will be located in a folder
