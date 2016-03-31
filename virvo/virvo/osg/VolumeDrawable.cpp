@@ -284,7 +284,8 @@ void VolumeDrawable::setPosition(const osg::Vec3 &pos)
 void VolumeDrawable::getBoundingBox(osg::Vec3 *min, osg::Vec3 *max) const
 {
 #if OSG_VERSION_GREATER_OR_EQUAL(3, 3, 2)
-    const BoundingBox &bb = computeBoundingBox();
+    BoundingBox bb;
+    bb.expandBy(computeBound());
 #else
     const BoundingBox &bb = getBound();
 #endif
