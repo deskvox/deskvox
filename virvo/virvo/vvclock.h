@@ -68,7 +68,7 @@ delete sw;                          // remove stop watch from memory
 
 @author Jurgen Schulze (jschulze@ucsd.edu)
 */
-class VIRVOEXPORT vvStopwatch
+class VIRVO_FILEIOEXPORT vvStopwatch
 {
   private:
 
@@ -82,7 +82,7 @@ class VIRVOEXPORT vvStopwatch
     float getDiff();
 };
 
-class VIRVOEXPORT vvTimer
+class VIRVO_FILEIOEXPORT vvTimer
 {
   public:
     vvTimer(const char *label = 0);
