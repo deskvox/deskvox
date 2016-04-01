@@ -7,6 +7,8 @@
 
 #include <cmath>
 
+#undef min
+#undef max
 
 namespace MATH_NAMESPACE
 {
