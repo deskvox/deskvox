@@ -17,6 +17,25 @@ deskvox_use_package(GDCM)
 deskvox_use_package(Nifti)
 deskvox_use_package(Teem)
 
+set(VIRVO_FILEIO_HEADERS
+    ${VIRVO_SOURCE_DIR}/private/vvlog.h
+    ${VIRVO_SOURCE_DIR}/vvclock.h
+    ${VIRVO_SOURCE_DIR}/vvcolor.h
+    ${VIRVO_SOURCE_DIR}/vvdebugmsg.h
+    ${VIRVO_SOURCE_DIR}/vvdicom.h
+    ${VIRVO_SOURCE_DIR}/vvfileio.h
+    ${VIRVO_SOURCE_DIR}/vvtokenizer.h
+    ${VIRVO_SOURCE_DIR}/vvtfwidget.h
+    ${VIRVO_SOURCE_DIR}/vvtoolshed.h
+    ${VIRVO_SOURCE_DIR}/vvtransfunc.h
+    ${VIRVO_SOURCE_DIR}/vvvoldesc.h
+
+    feature.h
+    nifti.h
+    nrrd.h
+)
+
+
 set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/private/vvlog.cpp
     ${VIRVO_SOURCE_DIR}/vvclock.cpp
@@ -46,6 +65,7 @@ if(GDCM_FOUND)
 endif()
 
 deskvox_add_library(virvo_fileio
+    ${VIRVO_FILEIO_HEADERS}
     ${VIRVO_FILEIO_SOURCES}
     ${VIRVO_FILEIO_CUDA_SOURCES}
 )
