@@ -4579,6 +4579,24 @@ void vvVolDesc::setDist(vec3f const& d)
   dist = d;
 }
 
+void vvVolDesc::setRealRange(virvo::vec2 range)
+{
+    for (std::vector<virvo::vec2>::iterator it = real.begin();
+                    it != real.end();
+                    ++it)
+    {
+        *it = range;
+    }
+}
+
+void vvVolDesc::setRealRange(size_t channel, virvo::vec2 range)
+{
+    assert( channel < real.size() );
+
+    real[channel] = range;
+}
+
+
 //----------------------------------------------------------------------------
 /** Resize volume so that the longest edge becomes the length of len.
   This operation does not change the aspect ratio.

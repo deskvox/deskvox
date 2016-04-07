@@ -239,6 +239,8 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     size_t getBPV() const;
     void   setDist(float, float, float);
     void   setDist(virvo::vec3f const& d);
+    void   setRealRange(virvo::vec2 range);
+    void   setRealRange(size_t channel, virvo::vec2 range);
     virvo::vec3f getSize() const;
     size_t getStoredFrames() const;
     float  getValueRange(size_t channel = 0) const;
