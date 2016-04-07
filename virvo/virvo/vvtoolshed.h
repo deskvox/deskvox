@@ -120,6 +120,21 @@ template <class C> inline C ts_sqr(C a)
   return a * a;
 }
 
+
+namespace virvo { namespace toolshed { namespace serialization {
+
+enum EndianType                               /// endianness
+{
+  VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
+  VV_BIG_END                                  ///< big endian: hight-order byte is stored first
+};
+
+EndianType getEndianness();
+
+}}}
+
+
+
 //============================================================================
 // Class Definitions
 //============================================================================
@@ -200,7 +215,8 @@ class VIRVO_FILEIOEXPORT vvToolshed
     static void    convertUChar2Float(const uchar*, float*, int);
     static void    convertFloat2UChar(const float*, uchar*, int);
     static void    convertFloat2UCharClamp(const float*, uchar*, int, float, float);
-    static void    convertFloat2ShortClamp(const float*, uchar*, int, float, float);
+    static void    convertFloat2ShortClamp(const float*, uchar*, int, float, float,
+                       virvo::toolshed::serialization::EndianType = virvo::toolshed::serialization::getEndianness());
     static void    convertFloat2UCharClampZero(const float*, uchar*, int, float, float, float);
     static int     getLargestPrimeFactor(const int);
     // Rounds x to the nearest integer
@@ -272,14 +288,6 @@ VIRVO_FILEIOEXPORT bool endsWith(std::string const& string, std::string const& s
 
 namespace serialization
 {
-enum EndianType                               /// endianness
-{
-  VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
-  VV_BIG_END                                  ///< big endian: hight-order byte is stored first
-};
-
-EndianType getEndianness();
-
 VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint8_t* val);
 VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint16_t* val, EndianType end = VV_BIG_END);
 VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint32_t* val, EndianType end = VV_BIG_END);

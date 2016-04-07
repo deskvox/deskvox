@@ -70,6 +70,25 @@ using namespace std;
 int vvToolshed::progressSteps = 0;
 
 //============================================================================
+//
+//============================================================================
+
+
+virvo::serialization::EndianType virvo::serialization::getEndianness()
+{
+  const float one = 1.0f;                          // memory representation of 1.0 on big endian machines: 3F 80 00 00
+
+  const uchar* ptr = (uchar*)&one;
+  if (*ptr == 0x3f) return VV_BIG_END;
+  else
+  {
+    assert(*ptr == 0);
+    return VV_LITTLE_END;
+  }
+}
+
+
+//============================================================================
 // method definitions
 //============================================================================
 
@@ -1216,7 +1235,8 @@ uchar* ucharArray, int elements, float min, float max)
     @return result in ucharArray
 */
 void vvToolshed::convertFloat2ShortClamp(const float* floatArray,
-uchar* ucharArray, int elements, float min, float max)
+uchar* ucharArray, int elements, float min, float max,
+virvo::toolshed::serialization::EndianType endianness)
 {
   int i;
   int shortValue;
@@ -1230,8 +1250,16 @@ uchar* ucharArray, int elements, float min, float max)
     for (i=0; i<elements; ++i)
     {
       shortValue = int(65535.0f * (floatArray[i] - min) / (max - min));
-      ucharArray[2*i]   = (uchar)((shortValue >> 8) & 255);
-      ucharArray[2*i+1] = (uchar)(shortValue & 255);
+      if (endianness == virvo::toolshed::serialization::VV_BIG_END)
+      {
+        ucharArray[2*i]   = (uchar)((shortValue >> 8) & 255);
+        ucharArray[2*i+1] = (uchar)(shortValue & 255);
+      }
+      else
+      {
+        ucharArray[2*i+1] = (uchar)(shortValue & 255);
+        ucharArray[2*i]   = (uchar)((shortValue >> 8) & 255);
+      }
     }
   }
 }
@@ -2524,19 +2552,6 @@ bool virvo::toolshed::endsWith(std::string const& string, std::string const& suf
 //============================================================================
 // serialization namespace
 //============================================================================
-
-virvo::serialization::EndianType virvo::serialization::getEndianness()
-{
-  const float one = 1.0f;                          // memory representation of 1.0 on big endian machines: 3F 80 00 00
-
-  const uchar* ptr = (uchar*)&one;
-  if (*ptr == 0x3f) return VV_BIG_END;
-  else
-  {
-    assert(*ptr == 0);
-    return VV_LITTLE_END;
-  }
-}
 
 size_t virvo::serialization::read(uint8_t* src, uint8_t* val)
 {
