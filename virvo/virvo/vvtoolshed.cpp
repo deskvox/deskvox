@@ -1257,8 +1257,8 @@ virvo::toolshed::serialization::EndianType endianness)
       }
       else
       {
-        ucharArray[2*i+1] = (uchar)(shortValue & 255);
-        ucharArray[2*i]   = (uchar)((shortValue >> 8) & 255);
+        ucharArray[2*i] = (uchar)(shortValue & 255);
+        ucharArray[2*i+1]   = (uchar)((shortValue >> 8) & 255);
       }
     }
   }
