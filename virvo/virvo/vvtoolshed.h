@@ -129,7 +129,7 @@ enum EndianType                               /// endianness
   VV_BIG_END                                  ///< big endian: hight-order byte is stored first
 };
 
-EndianType getEndianness();
+VIRVO_FILEIOEXPORT EndianType getEndianness();
 
 }}}
 
