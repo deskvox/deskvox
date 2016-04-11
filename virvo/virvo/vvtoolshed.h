@@ -131,7 +131,11 @@ enum EndianType                               /// endianness
 
 VIRVO_FILEIOEXPORT EndianType getEndianness();
 
-}}}
+}}
+
+namespace serialization = toolshed::serialization;
+
+}
 
 
 
@@ -216,7 +220,7 @@ class VIRVO_FILEIOEXPORT vvToolshed
     static void    convertFloat2UChar(const float*, uchar*, int);
     static void    convertFloat2UCharClamp(const float*, uchar*, int, float, float);
     static void    convertFloat2ShortClamp(const float*, uchar*, int, float, float,
-                       virvo::toolshed::serialization::EndianType = virvo::toolshed::serialization::getEndianness());
+                       virvo::serialization::EndianType = virvo::serialization::VV_BIG_END);
     static void    convertFloat2UCharClampZero(const float*, uchar*, int, float, float, float);
     static int     getLargestPrimeFactor(const int);
     // Rounds x to the nearest integer
