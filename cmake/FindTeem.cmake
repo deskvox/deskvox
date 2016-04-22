@@ -11,7 +11,7 @@ set(paths
 
 find_path(TEEM_INCLUDE_DIR
   NAMES
-    nrrd.h
+    teem/nrrd.h
   HINTS
     ${hints}
   PATHS
