@@ -55,6 +55,9 @@ set(VIRVO_FILEIO_SOURCES
 )
 
 if(DESKVOX_USE_CUDA)
+    set(VIRVO_FILEIO_SOURCES ${VIRVO_FILEIO_SOURCES}
+        ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cpp
+    )
 deskvox_cuda_compiles(VIRVO_FILEIO_CUDA_SOURCES
     ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cu
 )
