@@ -55,6 +55,9 @@
 
 #include <boost/lexical_cast.hpp>
 
+#define VV_STRINGIFY(X) VV_STRINGIFY2(X)
+#define VV_STRINGIFY2(X) #X
+
 //--------------------------------------------------------------------------------------------------
 
 namespace
@@ -301,6 +304,7 @@ std::string findRayRendPlugin(std::string const& plugindir, std::string const& a
   {
     namestr << arch;
   }
+  namestr << VV_STRINGIFY(VV_SHARED_LIB_POSTFIX);
   namestr << ".";
 #if defined(_WIN32) // TODO: resolve issues with cross compilation etc.
   namestr << "dll";
