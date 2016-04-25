@@ -10,15 +10,19 @@ set(RAYREND_SOURCES
 )
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    add_definitions(-D__SSE4_1__)
+    add_definitions(-D__AVX__)
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
+endif()
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
 endif()
 
 add_definitions(-DHAVE_CONFIG_H)
-add_definitions(-DVV_ARCH_SSE4_1=1)
+add_definitions(-DVV_ARCH_AVX=1)
 
-deskvox_add_library(rayrendsse4_1
+deskvox_add_library(rayrendavx
     ${RAYREND_HEADERS}
     ${RAYREND_SOURCES}
 )

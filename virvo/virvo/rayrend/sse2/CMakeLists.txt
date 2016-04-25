@@ -1,28 +1,19 @@
-find_package(Boost REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(Pthreads REQUIRED)
-
-deskvox_use_package(Boost)
-deskvox_use_package(GLEW)
-deskvox_use_package(Pthreads)
-
 deskvox_link_libraries(virvo)
 deskvox_link_libraries(virvo_fileio)
 
 set(RAYREND_HEADERS
-  ../../vvsoftrayrend.h
+    ../../vvraycaster.h
 )
 
 set(RAYREND_SOURCES
-  ../../vvsoftrayrend.cpp
+    ../../vvraycaster.cpp
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
 add_definitions(-DHAVE_CONFIG_H)
-add_definitions(-DVV_USE_SSE=1)
+add_definitions(-DVV_ARCH_SSE2=1)
 
 deskvox_add_library(rayrendsse2
-  ${RAYREND_HEADERS}
-  ${RAYREND_SOURCES}
+    ${RAYREND_HEADERS}
+    ${RAYREND_SOURCES}
 )
-

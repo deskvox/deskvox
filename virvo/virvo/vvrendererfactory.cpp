@@ -196,6 +196,8 @@ void init()
   rendererAliasMap["10"] = "rayrendfpu";
   rendererAliasMap["11"] = "rayrendsse2";
   rendererAliasMap["12"] = "rayrendsse4_1";
+  rendererAliasMap["13"] = "rayrendavx";
+  rendererAliasMap["14"] = "rayrendavx2";
   rendererAliasMap["20"] = "serbrick";
   rendererAliasMap["21"] = "parbrick";
   rendererAliasMap["30"] = "ibr";
@@ -228,6 +230,8 @@ void init()
   rendererTypeMap["rayrendfpu"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendsse2"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendsse4_1"] = vvRenderer::RAYREND;
+  rendererTypeMap["rayrendavx"] = vvRenderer::RAYREND;
+  rendererTypeMap["rayrendavx2"] = vvRenderer::RAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
@@ -239,6 +243,8 @@ void init()
   rayRendArchs.push_back("fpu");
   rayRendArchs.push_back("sse2");
   rayRendArchs.push_back("sse4_1");
+  rayRendArchs.push_back("avx");
+  rayRendArchs.push_back("avx2");
 }
 
 static bool test_bit(int value, int bit)
@@ -423,7 +429,7 @@ struct ParsedOptions
   vvRendererFactory::Options options;
   std::string voxeltype;
   std::vector<vvTcpSocket*> sockets;
-  std::string arch; // fpu|sse2|sse4_1|best (default)
+  std::string arch; // fpu|sse2|sse4_1|avx|avx2|best (default)
   std::vector<std::string> filenames;
   size_t bricks;
   std::vector<std::string> displays;
@@ -655,7 +661,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
     {
       VV_SHLIB_HANDLE handle = vvDynLib::open(path.c_str(), 1 /* RTLD_LAZY */);
       vvRenderer* (*create)(vvVolDesc*, vvRenderState const&);
-      *(void**)(&create) = vvDynLib::sym(handle, "createRayRend");
+      *(void**)(&create) = vvDynLib::sym(handle, "createRayCaster");
       if (create != NULL)
       {
         return (*create)(vd, rs);

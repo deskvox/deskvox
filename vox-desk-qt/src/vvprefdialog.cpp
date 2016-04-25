@@ -281,6 +281,20 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  if (vvRendererFactory::hasRenderer("rayrend", "avx"))
+  {
+    ui->rayRendArchBox->addItem("AVX - optimized CPU ray casting");
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "avx"));
+    ++idx;
+  }
+
+  if (vvRendererFactory::hasRenderer("rayrend", "avx2"))
+  {
+    ui->rayRendArchBox->addItem("AVX 2 - optimized CPU ray casting");
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "avx2"));
+    ++idx;
+  }
+
   // stereo mode combo box
   idx = 0;
 

@@ -18,38 +18,35 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_SOFTRAYREND_H
-#define VV_SOFTRAYREND_H
-
-#include "vvmacros.h"
-#include "vvrenderer.h"
+#ifndef VV_RAYCASTER_H
+#define VV_RAYCASTER_H 1
 
 #include <memory>
-#include <vector>
 
+#include "vvrenderer.h"
 
-class vvSoftRayRend : public vvRenderer
+class vvRayCaster : public vvRenderer
 {
 public:
-  VVAPI vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState);
-  VVAPI ~vvSoftRayRend();
+    VVAPI vvRayCaster(vvVolDesc* vd, vvRenderState renderState);
+    VVAPI ~vvRayCaster();
 
-  VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
-  VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
-  VVAPI bool checkParameter(ParameterType param, vvParam const& value) const VV_OVERRIDE;
-  VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
-  VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
+    VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
+    VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
+    VVAPI virtual void updateVolumeData() VV_OVERRIDE;
+    VVAPI bool checkParameter(ParameterType param, vvParam const& value) const VV_OVERRIDE;
+    VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
+    /*VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;*/
 private:
-  struct Impl;
-  std::auto_ptr<Impl> impl_;
+    struct Impl;
+    std::auto_ptr<Impl> impl_;
 
 private:
 
-  VV_NOT_COPYABLE(vvSoftRayRend)
+    VV_NOT_COPYABLE(vvRayCaster)
 
 };
 
-#include "vvrayrendfactory.h"
+extern "C" VVAPI vvRenderer* createRayCaster(vvVolDesc* vd, vvRenderState const& rs);
 
-#endif
-
+#endif // VV_RAYCASTER_H

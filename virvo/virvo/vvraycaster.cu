@@ -18,43 +18,4 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_RAYREND_COMMON_H
-#define VV_RAYREND_COMMON_H
-
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-struct matrix4x4
-{
-  float m[4][4];
-};
-
-enum IbrMode
-{
-  VV_ENTRANCE = 0,
-  VV_EXIT,
-  VV_MIDPOINT,
-  VV_THRESHOLD,
-  VV_PEAK,
-  VV_GRADIENT,
-
-  VV_REL_THRESHOLD,
-  VV_EN_EX_MEAN,
-  VV_NONE
-};
-
-struct RayRendKernelParams
-{
-  int blockDimX;
-  int blockDimY;
-  int bpc;
-  bool illumination;
-  bool opacityCorrection;
-  bool earlyRayTermination;
-  unsigned int clipMode;
-  int mipMode;
-  bool useIbr;
-};
-
-#endif
+#include "vvraycaster.cpp"
