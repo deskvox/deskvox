@@ -1484,6 +1484,8 @@ float vvRenderer::getOpacityWeight(BasicColorType color)
 
 bool vvRenderer::beginFrame(unsigned clearMask)
 {
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
   if (renderTarget_->beginFrame(clearMask))
   {
     renderOpaqueGeometry();
@@ -1504,6 +1506,8 @@ bool vvRenderer::endFrame()
   {
     _lastRenderTime = stopwatch_->getTime();
   }
+
+  glPopAttrib();
 
   return renderTarget_->endFrame();
 }
