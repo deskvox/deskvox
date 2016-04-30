@@ -342,6 +342,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual bool present() const;
 
     void renderBoundingBox() const;
+    void renderROI() const;
+    void renderClipPlane() const;
     void renderHUD() const;
     void renderOpaqueGeometry() const;
 

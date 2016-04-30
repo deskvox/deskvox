@@ -1204,17 +1204,6 @@ void vvTexRend::renderVolumeGL()
 
   vec3f size = vd->getSize();                  // volume size [world coordinates]
 
-  // Draw boundary lines (must be done before setGLenvironment()):
-  if (_isROIUsed)
-  {
-    vec3f probeSizeObj = size * roi_size_;
-    drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
-  }
-  if (_clipMode == 1 && _clipPlanePerimeter)
-  {
-    drawPlanePerimeter(size, vd->pos, clip_plane_point_, clip_plane_normal_, _clipPlaneColor);
-  }
-
   setGLenvironment();
 
   // Determine texture object extensions:

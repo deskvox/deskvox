@@ -660,6 +660,8 @@ void vvRenderer::renderVolumeGL()
 void vvRenderer::renderOpaqueGeometry() const
 {
   renderBoundingBox();
+  renderROI();
+  renderClipPlane();
 }
 
 void vvRenderer::renderHUD() const
@@ -1556,6 +1558,33 @@ void vvRenderer::renderBoundingBox() const
   aabb bb = vd->getBoundingBox();
 
   drawBoundingBox(bb.max - bb.min, vd->pos, _boundColor);
+}
+
+void vvRenderer::renderROI() const
+{
+  if (!_isROIUsed)
+    return;
+
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+
+  vec3f size = vd->getSize();
+  vec3f probeSizeObj = size * roi_size_;
+
+  drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
+}
+
+void vvRenderer::renderClipPlane() const
+{
+  if (_clipMode != 1 || !_clipPlanePerimeter)
+    return;
+
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+
+  vec3f size = vd->getSize();
+
+  drawPlanePerimeter(size, vd->pos, clip_plane_point_, clip_plane_normal_, _clipPlaneColor);
 }
 
 //============================================================================
