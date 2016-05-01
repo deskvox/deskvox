@@ -45,6 +45,10 @@ find_library(NiftiZnz_LIBRARY
     lib
 )
 
+if(NiftiZnz_LIBRARY)
+  find_package(ZLIB)
+endif()
+
 find_library(NiftiIo_LIBRARY_DEBUG
   NAMES
     niftioiod
@@ -79,6 +83,9 @@ if(NiftiZnz_LIBRARY_DEBUG)
   set(Nifti_LIBRARIES ${Nifti_LIBRARIES} optimized ${NiftiZnz_LIBRARY} debug ${NiftiZnz_LIBRARY_DEBUG})
 else()
   set(Nifti_LIBRARIES ${Nifti_LIBRARIES} ${NiftiZnz_LIBRARY})
+  if (ZLIB_LIBRARY)
+    set(Nifti_LIBRARIES ${Nifti_LIBRARIES} ${ZLIB_LIBRARY})
+  endif()
 endif()
 
 find_package_handle_standard_args(Nifti
