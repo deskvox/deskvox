@@ -952,17 +952,25 @@ void vvRenderer::renderPalette() const
 /// Display rendering quality.
 void vvRenderer::renderQualityDisplay() const
 {
+  glPushAttrib(GL_CURRENT_BIT | GL_LIGHTING_BIT);
+  glDisable(GL_LIGHTING);
+
   vvPrintGL printGL;
   vec4f clearColor = vvGLTools::queryClearColor();
   vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
   printGL.setFontColor(fontColor);
   printGL.print(-0.9f, 0.9f, "Quality: %-9.2f", _quality);
+
+  glPopAttrib();
 }
 
 //----------------------------------------------------------------------------
 /// Display frame rate.
 void vvRenderer::renderFPSDisplay() const
 {
+  glPushAttrib(GL_CURRENT_BIT | GL_LIGHTING_BIT);
+  glDisable(GL_LIGHTING);
+
   float fps = getLastRenderTime();
   if (fps > 0.0f) fps = 1.0f / fps;
   else fps = -1.0f;
@@ -971,6 +979,8 @@ void vvRenderer::renderFPSDisplay() const
   vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
   printGL.setFontColor(fontColor);
   printGL.print(0.3f, 0.9f, "fps: %-9.1f", fps);
+
+  glPopAttrib();
 }
 
 //----------------------------------------------------------------------------
