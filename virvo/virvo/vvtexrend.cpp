@@ -1202,8 +1202,6 @@ void vvTexRend::renderVolumeGL()
   if (vox[0] * vox[1] * vox[2] == 0)
     return;
 
-  vec3f size = vd->getSize();                  // volume size [world coordinates]
-
   setGLenvironment();
 
   // Determine texture object extensions:
