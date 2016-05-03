@@ -56,10 +56,7 @@ void vvLightInteractor::render() const
 
 
   // store GL state
-  GLboolean lighting;
-  GLboolean depthtest;
-  glGetBooleanv(GL_LIGHTING, &lighting);
-  glGetBooleanv(GL_DEPTH_TEST, &depthtest);
+  glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT | GL_CURRENT_BIT);
 
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
@@ -122,17 +119,7 @@ void vvLightInteractor::render() const
 
   glPopMatrix();
 
-  // reset previous GL state
-  if (lighting)
-  {
-    glEnable(GL_LIGHTING);
-  }
-
-  if (depthtest)
-  {
-    glEnable(GL_DEPTH_TEST);
-  }
-
+  glPopAttrib();
 
 // Qt 4 unfortunately overrides MAC_OS_X_VERSION_MIN_REQUIRED:
 // http://comments.gmane.org/gmane.comp.lib.qt.user/10220
