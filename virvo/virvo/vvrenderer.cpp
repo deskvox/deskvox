@@ -418,6 +418,7 @@ void vvRenderer::setVolDesc(vvVolDesc* voldesc)
   vvDebugMsg::msg(2, "vvRenderer::setVolDesc()");
   assert(voldesc != NULL);
   vd = voldesc;
+  updateVolumeData();
 }
 
 vvVolDesc* vvRenderer::getVolDesc()
