@@ -146,7 +146,7 @@ static virvo::ConnectionPointer GetConnection(vvRendererFactory::Options const& 
 
 static void get_cpuid(int reg[4], int type)
 {
-  __cpuid(reg, type);
+  __cpuidex(reg, type, 0);
 }
 
 #else
@@ -156,9 +156,9 @@ static void get_cpuid(int reg[4], int type)
   __asm__ __volatile__
   (
 #ifdef __i386__
-   "xchgl %%ebx, %k1; cpuid; xchgl %%ebx, %k1": "=a" (reg[EAX]), "=&r" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type)
+   "xchgl %%ebx, %k1; cpuid; xchgl %%ebx, %k1": "=a" (reg[EAX]), "=&r" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type), "c" (0)
 #else
-    "cpuid": "=a" (reg[EAX]), "=b" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type)
+    "cpuid": "=a" (reg[EAX]), "=b" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type), "c" (0)
 #endif
   );
 }
@@ -264,24 +264,56 @@ static bool archSupported(std::string const& arch)
   }
 
   int reg[4];
-  get_cpuid(reg, 1);
+  get_cpuid(reg, 0);
+  int nids = reg[EAX];
 
-  if (arch == "mmx")
-    return test_bit(reg[EDX], 23);
-  if (arch == "sse")
-    return test_bit(reg[EDX], 25);
-  if (arch == "sse2")
-    return test_bit(reg[EDX], 26);
-  if (arch == "sse3")
-    return test_bit(reg[ECX], 0);
-  if (arch == "ssse3")
-    return test_bit(reg[ECX], 9);
-  if (arch == "sse4_1")
-    return test_bit(reg[ECX], 19);
-  if (arch == "sse4_2")
-    return test_bit(reg[ECX], 20);
-  if (arch == "avx")
-    return test_bit(reg[ECX], 28);
+  if (nids >= 1)
+  {
+    get_cpuid(reg, 1);
+
+    if (arch == "mmx")
+      return test_bit(reg[EDX], 23);
+    if (arch == "sse")
+      return test_bit(reg[EDX], 25);
+    if (arch == "sse2")
+      return test_bit(reg[EDX], 26);
+    if (arch == "sse3")
+      return test_bit(reg[ECX], 0);
+    if (arch == "ssse3")
+      return test_bit(reg[ECX], 9);
+    if (arch == "sse4_1")
+      return test_bit(reg[ECX], 19);
+    if (arch == "sse4_2")
+      return test_bit(reg[ECX], 20);
+    if (arch == "avx")
+      return test_bit(reg[ECX], 28);
+  }
+
+  if (nids >= 7)
+  {
+    get_cpuid(reg, 7);
+
+    if (arch == "avx2")
+      return test_bit(reg[EBX], 5);
+    if (arch == "avx512f")
+      return test_bit(reg[EBX], 16);
+    if (arch == "avx512pf")
+      return test_bit(reg[EBX], 26);
+    if (arch == "avx512er")
+      return test_bit(reg[EBX], 27);
+    if (arch == "avx512cd")
+      return test_bit(reg[EBX], 28);
+    if (arch == "avx512vl")
+      return test_bit(reg[EBX], 31);
+    if (arch == "avx512bw")
+      return test_bit(reg[EBX], 30);
+    if (arch == "avx512dq")
+      return test_bit(reg[EBX], 17);
+    if (arch == "avx512ifma")
+      return test_bit(reg[EBX], 21);
+    if (arch == "avx512vbmi")
+      return test_bit(reg[ECX], 1);
+  }
 
   return false;
 }
