@@ -196,10 +196,10 @@ void init()
   rendererAliasMap["10"] = "rayrendfpu";
   rendererAliasMap["11"] = "rayrendsse2";
   rendererAliasMap["12"] = "rayrendsse4_1";
-  rendererAliasMap["13"] = "ibr";
-  rendererAliasMap["14"] = "image";
-  rendererAliasMap["15"] = "serbrick";
-  rendererAliasMap["16"] = "parbrick";
+  rendererAliasMap["20"] = "serbrick";
+  rendererAliasMap["21"] = "parbrick";
+  rendererAliasMap["30"] = "ibr";
+  rendererAliasMap["31"] = "image";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";
