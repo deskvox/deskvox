@@ -37,10 +37,13 @@
 #include <visionaray/aligned_vector.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
+#include <visionaray/pixel_format.h>
+#include <visionaray/pixel_traits.h>
 #include <visionaray/point_light.h>
 #include <visionaray/render_target.h>
 #include <visionaray/scheduler.h>
 #include <visionaray/shade_record.h>
+#include <visionaray/swizzle.h>
 
 #undef MATH_NAMESPACE
 
@@ -88,6 +91,19 @@ inline vector<3, T> gradient(Tex const& tex, vector<3, T> tex_coord)
     s2.z = tex3D(tex, tex_coord + vector<3, T>(0.0f, 0.0f, DELTA));
 
     return s2 - s1;
+}
+
+template <typename F, typename I>
+VSNRAY_FUNC
+inline F normalize_depth(I const& depth, pixel_format depth_format, F /* */)
+{
+    if (depth_format == PF_DEPTH24_STENCIL8)
+    {
+        auto d = (depth & 0xFFFFFF00) >> 8;
+        return F(d) / 16777216.0f;
+    }
+
+    return F(depth);
 }
 
 VSNRAY_FUNC
@@ -391,14 +407,16 @@ struct volume_kernel
         if (params.depth_test)
         {
             // unproject (win to obj)
-            S depth;
+            I depth_raw;
             detail::pixel_access::get( // detail (TODO?)!
                     x,
                     y,
                     params.viewport,
-                    depth,
+                    depth_raw,
                     params.depth_buffer
                     );
+
+            S depth = normalize_depth(depth_raw, params.depth_format, S{});
 
             vector<3, S> win(expand_pixel<S>().x(x), expand_pixel<S>().y(y), depth);
             vector<4, S> u(
@@ -622,7 +640,8 @@ struct volume_kernel_params
     float               delta;
     VolumeTex           volume;
     TransfuncTex        transfunc;
-    float const*        depth_buffer;
+    unsigned const*     depth_buffer;
+    pixel_format        depth_format;
     projection_mode     mode;
     bool                depth_test;
     bool                opacity_correction;
@@ -819,19 +838,45 @@ void vvRayCaster::renderVolumeGL()
     auto bbox = vd->getBoundingBox();
 
     // Get OpenGL depth buffer to clip against
-    aligned_vector<float> depth_buffer;
+    aligned_vector<unsigned> depth_buffer;
+    pixel_format depth_format = PF_UNSPECIFIED;
 
     if (glIsEnabled(GL_DEPTH_TEST))
     {
         // TODO: use CUDA/GL interop
+
+
+        GLint depth_bits = 0;
+        glGetFramebufferAttachmentParameteriv(
+                GL_FRAMEBUFFER,
+                GL_DEPTH,
+                GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE,
+                &depth_bits
+                );
+
+        GLint stencil_bits = 0;
+        glGetFramebufferAttachmentParameteriv(
+                GL_FRAMEBUFFER,
+                GL_STENCIL,
+                GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE,
+                &stencil_bits
+                );
+
+
+        // TODO: make this more general
+        // 24-bit depth buffer and 8-bit stencil buffer
+        // is however a quite common case
+        depth_format = (depth_bits == 24 && stencil_bits == 8) ? PF_DEPTH24_STENCIL8 : PF_DEPTH32F;
+        auto info = map_pixel_format(depth_format);
+
         depth_buffer.resize((viewport.w - viewport.x) * (viewport.h - viewport.y));
         glReadPixels(
                 viewport.x,
                 viewport.y,
                 viewport.w,
                 viewport.h,
-                GL_DEPTH_COMPONENT,
-                GL_FLOAT,
+                info.format,
+                info.type,
                 depth_buffer.data()
                 );
     }
@@ -895,7 +940,7 @@ void vvRayCaster::renderVolumeGL()
 
 #ifdef VV_ARCH_CUDA
     // TODO: consolidate!
-    thrust::device_vector<float> device_buffer(depth_buffer);
+    thrust::device_vector<unsigned> device_buffer(depth_buffer);
     auto depth_pointer = [&]()
     {
         return thrust::raw_pointer_cast(device_buffer.data());
@@ -937,6 +982,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params8.volume                   = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame()]);
         impl_->params8.transfunc                = Impl::params8_type::transfunc_type(impl_->transfunc);
         impl_->params8.depth_buffer             = depth_pointer();
+        impl_->params8.depth_format             = depth_format;
         impl_->params8.mode                     = Impl::params8_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params8.depth_test               = depth_buffer.size() > 0;
         impl_->params8.opacity_correction       = getParameter(VV_OPCORR);
@@ -958,6 +1004,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params16.volume                  = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame()]);
         impl_->params16.transfunc               = Impl::params16_type::transfunc_type(impl_->transfunc);
         impl_->params16.depth_buffer            = depth_pointer();
+        impl_->params16.depth_format            = depth_format;
         impl_->params16.mode                    = Impl::params16_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params16.depth_test              = depth_buffer.size() > 0;
         impl_->params16.opacity_correction      = getParameter(VV_OPCORR);
@@ -979,6 +1026,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params32.volume                  = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame()]);
         impl_->params32.transfunc               = Impl::params32_type::transfunc_type(impl_->transfunc);
         impl_->params32.depth_buffer            = depth_pointer();
+        impl_->params32.depth_format            = depth_format;
         impl_->params32.mode                    = Impl::params32_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params32.depth_test              = depth_buffer.size() > 0;
         impl_->params32.opacity_correction      = getParameter(VV_OPCORR);
