@@ -103,7 +103,7 @@ inline F normalize_depth(I const& depth, pixel_format depth_format, F /* */)
         return F(d) / 16777216.0f;
     }
 
-    return F(depth);
+    return reinterpret_as_float(depth);
 }
 
 VSNRAY_FUNC
