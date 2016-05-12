@@ -27,14 +27,17 @@
 
 #include "math/math.h"
 
+#include "vvclipobj.h"
 #include "vvinttypes.h"
 #include "vvcolor.h"
 
 #include <cassert>
 #include <stdexcept>
 
-#include <boost/any.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/any.hpp>
+#include <boost/pointer_cast.hpp>
+#include <boost/shared_ptr.hpp>
 
 class vvParam
 {
@@ -74,7 +77,8 @@ public:
     VV_AABBL,
     VV_AABBUL,
     VV_AABBLL,
-    VV_AABBULL
+    VV_AABBULL,
+    VV_CLIP_OBJ
   };
 
 private:
@@ -164,6 +168,7 @@ public:
     case VV_AABBUL:   save_as< virvo::basic_aabb< unsigned long >       >(a); return;
     case VV_AABBLL:   save_as< virvo::basic_aabb< long long >           >(a); return;
     case VV_AABBULL:  save_as< virvo::basic_aabb< unsigned long long >  >(a); return;
+    case VV_CLIP_OBJ: save_as< boost::shared_ptr< vvClipObj >           >(a); return;
     //
     // NOTE:
     //
@@ -225,6 +230,7 @@ public:
     case VV_AABBUL:   load_as< virvo::basic_aabb< unsigned long >       >(a); return;
     case VV_AABBLL:   load_as< virvo::basic_aabb< long long >           >(a); return;
     case VV_AABBULL:  load_as< virvo::basic_aabb< unsigned long long >  >(a); return;
+    case VV_CLIP_OBJ: load_as< boost::shared_ptr< vvClipObj >           >(a); return;
     //
     // NOTE:
     //
@@ -451,6 +457,30 @@ public:
   {
   }
 
+  vvParam(boost::shared_ptr< vvClipObj > const& val)
+    : type(VV_CLIP_OBJ)
+    , value(val)
+  {
+  }
+
+  vvParam(boost::shared_ptr< vvClipPlane > const& val)
+    : type(VV_CLIP_OBJ)
+    , value(boost::static_pointer_cast<vvClipObj>(val))
+  {
+  }
+
+  vvParam(boost::shared_ptr< vvClipSphere > const& val)
+    : type(VV_CLIP_OBJ)
+    , value(boost::static_pointer_cast<vvClipObj>(val))
+  {
+  }
+
+  vvParam(boost::shared_ptr< vvClipTriangleList > const& val)
+    : type(VV_CLIP_OBJ)
+    , value(boost::static_pointer_cast<vvClipObj>(val))
+  {
+  }
+
   bool asBool() const {
     return boost::any_cast<bool>(value);
   }
@@ -591,6 +621,10 @@ public:
     return boost::any_cast< virvo::basic_aabb< unsigned long long > >(value);
   }
 
+  boost::shared_ptr< vvClipObj > asClipObj() const {
+    return boost::any_cast< boost::shared_ptr< vvClipObj > >(value);
+  }
+
   operator bool() const {
     return asBool();
   }
@@ -729,6 +763,10 @@ public:
 
   operator virvo::basic_aabb< unsigned long long >() const {
     return asAABBull();
+  }
+
+  operator boost::shared_ptr< vvClipObj >() const {
+    return asClipObj();
   }
 
   // Returns the type of this parameter

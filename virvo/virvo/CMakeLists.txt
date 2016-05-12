@@ -150,6 +150,7 @@ set(VIRVO_HEADERS
   vvbsptree.h
   vvbsptreevisitors.h
   vvcgprogram.h
+  vvclipobj.h
   vvclock.h
   vvcolor.h
   vvcompiler.h
@@ -245,6 +246,7 @@ set(VIRVO_SOURCES
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
+  vvclipobj.cpp
   vvcudaimg.cpp
   vvcudarendertarget.cpp
 # vvcudarendertarget.inc

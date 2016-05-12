@@ -20,7 +20,10 @@
 
 #include <GL/glew.h>
 
+#include <boost/pointer_cast.hpp>
+
 #include <stdlib.h>
+#include "vvclipobj.h"
 #include "vvclock.h"
 #include "vvplatform.h"
 #include "vvopengl.h"
@@ -107,9 +110,20 @@ vvRenderState::vvRenderState()
   , _depthPrecision(8)
   , depth_range_(0.0f, 0.0f)
 {
-  
-}
+  // initialize clip objects
+  typedef ParameterType PT;
+  for (PT id = VV_CLIP_OBJ0; id != VV_CLIP_OBJ_LAST; id = PT(id + 1))
+  {
+    // default to planes
+    boost::shared_ptr<vvClipObj> obj = vvClipObj::create(vvClipObj::VV_PLANE);
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(obj);
+    plane->normal = virvo::vec3(0, 0, 1);
+    plane->offset = 0.0f;
+    setParameter(id, plane);
+  }
 
+  memset(_clipObjsActive, 0, sizeof(_clipObjsActive));  
+}
 
 bool vvRenderState::checkParameter(ParameterType param, vvParam const& value) const
 {
@@ -280,6 +294,28 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_IBR_DEPTH_RANGE:
     depth_range_ = value;
     break;
+  case VV_CLIP_OBJ0:
+  case VV_CLIP_OBJ1:
+  case VV_CLIP_OBJ2:
+  case VV_CLIP_OBJ3:
+  case VV_CLIP_OBJ4:
+  case VV_CLIP_OBJ5:
+  case VV_CLIP_OBJ6:
+  case VV_CLIP_OBJ7:
+    assert( param - VV_CLIP_OBJ0 < NUM_CLIP_OBJS );
+    _clipObjs[param - VV_CLIP_OBJ0] = value;
+    break;
+  case VV_CLIP_OBJ_ACTIVE0:
+  case VV_CLIP_OBJ_ACTIVE1:
+  case VV_CLIP_OBJ_ACTIVE2:
+  case VV_CLIP_OBJ_ACTIVE3:
+  case VV_CLIP_OBJ_ACTIVE4:
+  case VV_CLIP_OBJ_ACTIVE5:
+  case VV_CLIP_OBJ_ACTIVE6:
+  case VV_CLIP_OBJ_ACTIVE7:
+    assert( param - VV_CLIP_OBJ_ACTIVE0 < NUM_CLIP_OBJS );
+    _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0] = value;
+    break;
   default:
     break;
   }
@@ -385,10 +421,31 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _depthPrecision;
   case VV_IBR_DEPTH_RANGE:
     return depth_range_;
+  case VV_CLIP_OBJ0:
+  case VV_CLIP_OBJ1:
+  case VV_CLIP_OBJ2:
+  case VV_CLIP_OBJ3:
+  case VV_CLIP_OBJ4:
+  case VV_CLIP_OBJ5:
+  case VV_CLIP_OBJ6:
+  case VV_CLIP_OBJ7:
+    assert( param - VV_CLIP_OBJ0 < NUM_CLIP_OBJS );
+    return _clipObjs[param - VV_CLIP_OBJ0];
+  case VV_CLIP_OBJ_ACTIVE0:
+  case VV_CLIP_OBJ_ACTIVE1:
+  case VV_CLIP_OBJ_ACTIVE2:
+  case VV_CLIP_OBJ_ACTIVE3:
+  case VV_CLIP_OBJ_ACTIVE4:
+  case VV_CLIP_OBJ_ACTIVE5:
+  case VV_CLIP_OBJ_ACTIVE6:
+  case VV_CLIP_OBJ_ACTIVE7:
+    assert( param - VV_CLIP_OBJ_ACTIVE0 < NUM_CLIP_OBJS );
+    return _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0];
   default:
     return vvParam();
   }
 }
+
 
 //----------------------------------------------------------------------------
 

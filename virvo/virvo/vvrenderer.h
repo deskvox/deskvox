@@ -29,8 +29,11 @@
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
 
+#include <boost/shared_ptr.hpp>
+
 #include <memory>
 
+class vvClipObj;
 class vvStopwatch;
 class vvVolDesc;
 
@@ -41,6 +44,8 @@ class vvVolDesc;
 class VIRVOEXPORT vvRenderState
 {
 public:
+  enum { NUM_CLIP_OBJS = 8 };
+
   enum IbrMode                                  ///< how to determine ibr depth per pixel values
   {
     // single-pass
@@ -122,7 +127,27 @@ public:
     VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]
     VV_IMG_PRECISION,                           ///< render to high-res target to minimize slicing rounding error
     VV_LIGHTING,
-    VV_PIX_SHADER
+    VV_PIX_SHADER,
+
+    VV_CLIP_OBJ0,
+    VV_CLIP_OBJ1,
+    VV_CLIP_OBJ2,
+    VV_CLIP_OBJ3,
+    VV_CLIP_OBJ4,
+    VV_CLIP_OBJ5,
+    VV_CLIP_OBJ6,
+    VV_CLIP_OBJ7,
+    VV_CLIP_OBJ_LAST,
+
+    VV_CLIP_OBJ_ACTIVE0,
+    VV_CLIP_OBJ_ACTIVE1,
+    VV_CLIP_OBJ_ACTIVE2,
+    VV_CLIP_OBJ_ACTIVE3,
+    VV_CLIP_OBJ_ACTIVE4,
+    VV_CLIP_OBJ_ACTIVE5,
+    VV_CLIP_OBJ_ACTIVE6,
+    VV_CLIP_OBJ_ACTIVE7,
+    VV_CLIP_OBJ_ACTIVE_LAST
   };
 
   virtual bool checkParameter(ParameterType param, vvParam const& value) const;
@@ -183,6 +208,9 @@ protected:
   bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
   int _depthPrecision;                          ///< number of bits in depth buffer for image based rendering
   virvo::vec2f depth_range_;
+
+  boost::shared_ptr<vvClipObj> _clipObjs[NUM_CLIP_OBJS];
+  bool _clipObjsActive[NUM_CLIP_OBJS];
 public:
   vvRenderState();
 };
