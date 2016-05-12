@@ -265,9 +265,12 @@ struct clip_object_visitor
 {
 public:
 
+    enum { MAX_INTERVALS = 64 };
+
     struct RT
     {
-        vector<2, T> interval;
+        int num_intervals;
+        vector<2, T> intervals[MAX_INTERVALS];
         vector<3, T> normal;
     };
 
@@ -292,8 +295,9 @@ public:
         auto ndotd = dot(ray_.dir, vector<3, T>(ref.normal));
 
         return_type result;
-        result.interval.x = select(ndotd >  0.0f, hit_rec.t, tnear_);
-        result.interval.y = select(ndotd <= 0.0f, hit_rec.t, tfar_);
+        result.num_intervals = 1;
+        result.intervals[0].x = select(ndotd >  0.0f, hit_rec.t, tnear_);
+        result.intervals[0].y = select(ndotd <= 0.0f, hit_rec.t, tfar_);
         result.normal     = ref.normal;
         return result;
     }
@@ -307,11 +311,12 @@ public:
         auto hit_rec = intersect(ray_, ref);
 
         return_type result;
-        result.interval.x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
-        result.interval.y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
+        result.num_intervals = 1;
+        result.intervals[0].x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
+        result.intervals[0].y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
 
         // normal at tfar, pointing inwards
-        V isect_pos = ray_.ori + result.interval.y * ray_.dir;
+        V isect_pos = ray_.ori + result.intervals[0].y * ray_.dir;
         result.normal = -(isect_pos - V(ref.center)) / T(ref.radius);
 
         return result;
@@ -439,12 +444,12 @@ struct volume_kernel
 
         // calculate intervals clipped by planes, spheres, etc., along with the
         // normals of the farthest intersection in view direction
-        const int MaxClipObjects = 32;
-        vector<2, S> clip_intervals[MaxClipObjects];
-        vector<3, S> clip_normals[MaxClipObjects];
+        const int MaxClipIntervals = 64;
+        vector<2, S> clip_intervals[MaxClipIntervals];
+        vector<3, S> clip_normals[MaxClipIntervals];
 
         auto num_clip_objects = min(
-                MaxClipObjects - 1, // room for bbox normal, which is the last clip object
+                MaxClipIntervals - 1, // room for bbox normal, which is the last clip object
                 static_cast<int>(params.clip_objects.end - params.clip_objects.begin)
                 );
 
@@ -453,7 +458,7 @@ struct volume_kernel
             clip_object_visitor<S> visitor(ray, t, tmax);
             auto clip_data = apply_visitor(visitor, *it);
 
-            clip_intervals[it - params.clip_objects.begin] = clip_data.interval;
+            clip_intervals[it - params.clip_objects.begin] = clip_data.intervals[0];
             clip_normals[it - params.clip_objects.begin] = clip_data.normal;
         }
 
@@ -901,22 +906,41 @@ void vvRayCaster::renderVolumeGL()
         clip_objects.push_back(pl);
     }
 #else
-    if (getParameter(VV_CLIP_MODE).asUint() == 1)
-    {
-        virvo::vec3 n = getParameter(VV_CLIP_PLANE_NORMAL);
-        virvo::vec3 p = getParameter(VV_CLIP_PLANE_POINT);
+/*    auto c0 = vvClipObj::create(vvClipObj::VV_SPHERE);
+    auto s0 = boost::dynamic_pointer_cast<vvClipSphere>(c0);
+    s0->center = virvo::vec3(0, 0, 50);
+    s0->radius = 50.0f;
+    setParameter(VV_CLIP_OBJ0, s0);
+    setParameter(VV_CLIP_OBJ_ACTIVE0, true);*/
 
-        clip_plane pl;
-        pl.normal = vec3(n.x, n.y, n.z);
-        pl.offset = dot(n, p);
-        clip_objects.push_back(pl);
+    typedef vvRenderState::ParameterType PT;
+    PT act_id = VV_CLIP_OBJ_ACTIVE0;
+    PT obj_id = VV_CLIP_OBJ0;
+
+    for ( ; act_id != VV_CLIP_OBJ_ACTIVE_LAST && obj_id != VV_CLIP_OBJ_LAST
+          ; act_id = PT(act_id + 1), obj_id = PT(obj_id + 1))
+    {
+        if (getParameter(act_id))
+        {
+            auto obj = getParameter(obj_id).asClipObj();
+
+            if (auto plane = boost::dynamic_pointer_cast<vvClipPlane>(obj))
+            {
+                clip_plane pl;
+                pl.normal = vec3(plane->normal.x, plane->normal.y, plane->normal.z);
+                pl.offset = plane->offset;
+                clip_objects.push_back(pl);
+            }
+            else if (auto sphere = boost::dynamic_pointer_cast<vvClipSphere>(obj))
+            {
+                clip_sphere sp;
+                sp.center = vec3(sphere->center.x, sphere->center.y, sphere->center.z);
+                sp.radius = sphere->radius;
+                clip_objects.push_back(sp);
+            }
+        }
     }
 #endif
-
-/*    clip_sphere SSS;
-    SSS.center = vec3(0, 0, 50);
-    SSS.radius = 50;
-    clip_objects.push_back(SSS);*/
 
 
     // Lights
