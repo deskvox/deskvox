@@ -43,7 +43,6 @@
 #include <visionaray/render_target.h>
 #include <visionaray/scheduler.h>
 #include <visionaray/shade_record.h>
-#include <visionaray/swizzle.h>
 
 #undef MATH_NAMESPACE
 
