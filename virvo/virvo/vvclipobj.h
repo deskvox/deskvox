@@ -38,18 +38,13 @@ class VIRVOEXPORT vvClipObj
 {
 public:
 
-  enum Type
-  {
-    VV_PLANE,
-    VV_SPHERE,
-    VV_TRIANGLE_LIST
-  };
-
-  static boost::shared_ptr<vvClipObj> create(Type t);
-
-public:
-
   virtual ~vvClipObj() {}
+
+protected:
+
+  vvClipObj() {}
+  vvClipObj(vvClipObj const&);
+  vvClipObj& operator=(vvClipObj const&);
 
 };
 
@@ -62,6 +57,16 @@ class VIRVOEXPORT vvClipPlane
     : public vvClipObj
     , public virvo::basic_plane<3, float>
 {
+public:
+
+  static boost::shared_ptr<vvClipPlane> create();
+
+protected:
+
+  vvClipPlane() {}
+  vvClipPlane(vvClipPlane const&);
+  vvClipPlane& operator=(vvClipPlane const&);
+
 };
 
 
@@ -72,8 +77,20 @@ class VIRVOEXPORT vvClipPlane
 class VIRVOEXPORT vvClipSphere : public vvClipObj
 {
 public:
+
+  static boost::shared_ptr<vvClipSphere> create();
+
+public:
+
   virvo::vec3 center;
   float radius;
+
+protected:
+
+  vvClipSphere() {}
+  vvClipSphere(vvClipSphere const&);
+  vvClipSphere& operator=(vvClipSphere const&);
+
 };
 
 
@@ -84,6 +101,11 @@ public:
 class VIRVOEXPORT vvClipTriangleList : public vvClipObj
 {
 public:
+
+  static boost::shared_ptr<vvClipTriangleList> create();
+
+public:
+
   typedef struct { virvo::vec3 v1, v2, v3; } Triangle;
   typedef std::vector<Triangle, virvo::mem::aligned_allocator<Triangle, 32> > Triangles;
   typedef virvo::mat4 Matrix;
@@ -98,6 +120,12 @@ public:
 
   const Matrix& transform() const;
         Matrix& transform();
+
+protected:
+
+  vvClipTriangleList() {}
+  vvClipTriangleList(vvClipTriangleList const&);
+  vvClipTriangleList& operator=(vvClipTriangleList const&);
 
 private:
 

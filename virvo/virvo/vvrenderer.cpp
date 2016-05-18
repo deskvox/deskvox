@@ -20,8 +20,6 @@
 
 #include <GL/glew.h>
 
-#include <boost/pointer_cast.hpp>
-
 #include <stdlib.h>
 #include "vvclipobj.h"
 #include "vvclock.h"
@@ -115,8 +113,7 @@ vvRenderState::vvRenderState()
   for (PT id = VV_CLIP_OBJ0; id != VV_CLIP_OBJ_LAST; id = PT(id + 1))
   {
     // default to planes
-    boost::shared_ptr<vvClipObj> obj = vvClipObj::create(vvClipObj::VV_PLANE);
-    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(obj);
+    boost::shared_ptr<vvClipPlane> plane = vvClipPlane::create();
     plane->normal = virvo::vec3(0, 0, 1);
     plane->offset = 0.0f;
     setParameter(id, plane);

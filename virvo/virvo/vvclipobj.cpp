@@ -24,28 +24,41 @@
 
 
 //============================================================================
-// Clip object base
+// Provide access to private default constructor
 //============================================================================
 
-boost::shared_ptr<vvClipObj> vvClipObj::create(vvClipObj::Type t)
-{
-  switch (t)
-  {
-  case VV_PLANE:
-    return boost::make_shared<vvClipPlane>();
-  case VV_SPHERE:
-    return boost::make_shared<vvClipSphere>();
-  case VV_TRIANGLE_LIST:
-    return boost::make_shared<vvClipTriangleList>();
-  }
+template <typename Base>
+struct access_private : Base {};
 
-  return 0;
+
+//============================================================================
+// Clip plane
+//============================================================================
+
+boost::shared_ptr<vvClipPlane> vvClipPlane::create()
+{
+  return boost::make_shared<access_private<vvClipPlane> >();
+}
+
+
+//============================================================================
+// Clip sphere
+//============================================================================
+
+boost::shared_ptr<vvClipSphere> vvClipSphere::create()
+{
+  return boost::make_shared<access_private<vvClipSphere> >();
 }
 
 
 //============================================================================
 // Clip triangle list
 //============================================================================
+
+boost::shared_ptr<vvClipTriangleList> vvClipTriangleList::create()
+{
+  return boost::make_shared<access_private<vvClipTriangleList> >();
+}
 
 void vvClipTriangleList::resize(size_t size)
 {

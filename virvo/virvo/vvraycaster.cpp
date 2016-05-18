@@ -906,8 +906,7 @@ void vvRayCaster::renderVolumeGL()
         clip_objects.push_back(pl);
     }
 #else
-/*    auto c0 = vvClipObj::create(vvClipObj::VV_SPHERE);
-    auto s0 = boost::dynamic_pointer_cast<vvClipSphere>(c0);
+/*    auto s0 = vvClipSphere::create();
     s0->center = virvo::vec3(0, 0, 50);
     s0->radius = 50.0f;
     setParameter(VV_CLIP_OBJ0, s0);

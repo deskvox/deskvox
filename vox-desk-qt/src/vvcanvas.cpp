@@ -855,8 +855,7 @@ void vvCanvas::setClipNormal(vec3f const& n)
 
   if (plane == 0)
   {
-    auto new_obj = vvClipObj::create(vvClipObj::VV_PLANE);
-    plane = boost::static_pointer_cast<vvClipPlane>(new_obj);
+    plane = vvClipPlane::create();
   }
   plane->normal = n;
 
@@ -870,8 +869,7 @@ void vvCanvas::setClipOrigin(vec3f const& o)
 
   if (plane == 0)
   {
-    auto new_obj = vvClipObj::create(vvClipObj::VV_PLANE);
-    plane = boost::static_pointer_cast<vvClipPlane>(new_obj);
+    plane = vvClipPlane::create();
   }
   plane->offset = dot(o, plane->normal);
 
