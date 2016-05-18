@@ -20,6 +20,8 @@
 
 #include <GL/glew.h>
 
+#include <boost/pointer_cast.hpp>
+
 #include "vvcanvas.h"
 #include "vvlightinteractor.h"
 
@@ -843,17 +845,37 @@ void vvCanvas::lastTimeStep()
 
 void vvCanvas::enableClipping(bool enabled)
 {
-  setParameter(vvRenderState::VV_CLIP_MODE, static_cast< unsigned >(enabled));
+  setParameter(vvRenderState::VV_CLIP_OBJ_ACTIVE0, enabled);
 }
 
 void vvCanvas::setClipNormal(vec3f const& n)
 {
-  setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, n);
+  boost::shared_ptr<vvClipObj> clip_obj = getParameter(vvRenderState::VV_CLIP_OBJ0).asClipObj();
+  boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(clip_obj);
+
+  if (plane == 0)
+  {
+    auto new_obj = vvClipObj::create(vvClipObj::VV_PLANE);
+    plane = boost::static_pointer_cast<vvClipPlane>(new_obj);
+  }
+  plane->normal = n;
+
+  setParameter(vvRenderState::VV_CLIP_OBJ0, plane);
 }
 
 void vvCanvas::setClipOrigin(vec3f const& o)
 {
-  setParameter(vvRenderState::VV_CLIP_PLANE_POINT, o);
+  boost::shared_ptr<vvClipObj> clip_obj = getParameter(vvRenderState::VV_CLIP_OBJ0).asClipObj();
+  boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(clip_obj);
+
+  if (plane == 0)
+  {
+    auto new_obj = vvClipObj::create(vvClipObj::VV_PLANE);
+    plane = boost::static_pointer_cast<vvClipPlane>(new_obj);
+  }
+  plane->offset = dot(o, plane->normal);
+
+  setParameter(vvRenderState::VV_CLIP_OBJ0, plane);
 }
 
 void vvCanvas::setClipSingleSlice(bool active)
