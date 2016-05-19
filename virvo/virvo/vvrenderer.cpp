@@ -21,7 +21,9 @@
 #include <GL/glew.h>
 
 #include <boost/pointer_cast.hpp>
+#include <boost/range.hpp>
 
+#include <algorithm>
 #include <stdlib.h>
 #include "vvclipobj.h"
 #include "vvclock.h"
@@ -121,8 +123,8 @@ vvRenderState::vvRenderState()
     setParameter(id, plane);
   }
 
-  memset(_clipObjsActive, 0, sizeof(_clipObjsActive));  
-  memset(_clipOutlines, 1, sizeof(_clipOutlines));
+  std::fill(boost::begin(_clipObjsActive), boost::end(_clipObjsActive), false);
+  std::fill(boost::begin(_clipOutlines), boost::end(_clipOutlines), true);
 }
 
 bool vvRenderState::checkParameter(ParameterType param, vvParam const& value) const
