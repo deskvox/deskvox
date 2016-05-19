@@ -20,6 +20,8 @@
 
 #include <GL/glew.h>
 
+#include <boost/pointer_cast.hpp>
+
 #include <stdlib.h>
 #include "vvclipobj.h"
 #include "vvclock.h"
@@ -120,6 +122,7 @@ vvRenderState::vvRenderState()
   }
 
   memset(_clipObjsActive, 0, sizeof(_clipObjsActive));  
+  memset(_clipOutlines, 1, sizeof(_clipOutlines));
 }
 
 bool vvRenderState::checkParameter(ParameterType param, vvParam const& value) const
@@ -311,6 +314,16 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_CLIP_OBJ_ACTIVE7:
     _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0] = value;
     break;
+  case VV_CLIP_OUTLINE0:
+  case VV_CLIP_OUTLINE1:
+  case VV_CLIP_OUTLINE2:
+  case VV_CLIP_OUTLINE3:
+  case VV_CLIP_OUTLINE4:
+  case VV_CLIP_OUTLINE5:
+  case VV_CLIP_OUTLINE6:
+  case VV_CLIP_OUTLINE7:
+    _clipOutlines[param - VV_CLIP_OUTLINE0] = value;
+    break;
   default:
     break;
   }
@@ -434,6 +447,15 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_CLIP_OBJ_ACTIVE6:
   case VV_CLIP_OBJ_ACTIVE7:
     return _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0];
+  case VV_CLIP_OUTLINE0:
+  case VV_CLIP_OUTLINE1:
+  case VV_CLIP_OUTLINE2:
+  case VV_CLIP_OUTLINE3:
+  case VV_CLIP_OUTLINE4:
+  case VV_CLIP_OUTLINE5:
+  case VV_CLIP_OUTLINE6:
+  case VV_CLIP_OUTLINE7:
+    return _clipOutlines[param - VV_CLIP_OUTLINE0];
   default:
     return vvParam();
   }
@@ -712,7 +734,7 @@ void vvRenderer::renderOpaqueGeometry() const
 {
   renderBoundingBox();
   renderROI();
-  renderClipPlane();
+  renderClipObjs();
 }
 
 void vvRenderer::renderHUD() const
@@ -1635,17 +1657,30 @@ void vvRenderer::renderROI() const
   drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
 }
 
-void vvRenderer::renderClipPlane() const
+void vvRenderer::renderClipObjs() const
 {
-  if (_clipMode != 1 || !_clipPlanePerimeter)
-    return;
+  typedef vvRenderState::ParameterType PT;
+  PT act_id = VV_CLIP_OBJ_ACTIVE0;
+  PT obj_id = VV_CLIP_OBJ0;
+  PT out_id = VV_CLIP_OUTLINE0;
 
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LEQUAL);
+  for ( ; act_id != VV_CLIP_OBJ_ACTIVE_LAST && obj_id != VV_CLIP_OBJ_LAST && out_id != VV_CLIP_OUTLINE_LAST
+        ; act_id  = PT(act_id + 1), obj_id = PT(obj_id + 1), out_id = PT(out_id + 1))
+  {
+    if (getParameter(act_id) && getParameter(out_id))
+    {
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LEQUAL);
 
-  vec3f size = vd->getSize();
+      vec3f size = vd->getSize();
 
-  drawPlanePerimeter(size, vd->pos, clip_plane_point_, clip_plane_normal_, _clipPlaneColor);
+      boost::shared_ptr<vvClipObj> obj = getParameter(obj_id);
+      if (boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(obj))
+      {
+        drawPlanePerimeter(size, vd->pos, plane->normal * plane->offset, plane->normal, _clipPlaneColor);
+      }
+    }
+  }
 }
 
 //============================================================================

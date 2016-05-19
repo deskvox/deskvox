@@ -888,7 +888,7 @@ void vvCanvas::setClipOpaque(bool active)
 
 void vvCanvas::setClipPerimeter(bool active)
 {
-  setParameter(vvRenderState::VV_CLIP_PERIMETER, active);
+  setParameter(vvRenderState::VV_CLIP_OUTLINE0, active);
 }
 
 void vvCanvas::enableLighting(bool enabled)

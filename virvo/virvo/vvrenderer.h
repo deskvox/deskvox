@@ -148,11 +148,22 @@ public:
     VV_CLIP_OBJ_ACTIVE5,
     VV_CLIP_OBJ_ACTIVE6,
     VV_CLIP_OBJ_ACTIVE7,
-    VV_CLIP_OBJ_ACTIVE_LAST
+    VV_CLIP_OBJ_ACTIVE_LAST,
+
+    VV_CLIP_OUTLINE0,
+    VV_CLIP_OUTLINE1,
+    VV_CLIP_OUTLINE2,
+    VV_CLIP_OUTLINE3,
+    VV_CLIP_OUTLINE4,
+    VV_CLIP_OUTLINE5,
+    VV_CLIP_OUTLINE6,
+    VV_CLIP_OUTLINE7,
+    VV_CLIP_OUTLINE_LAST
   };
 
   BOOST_STATIC_ASSERT( VV_CLIP_OBJ_LAST - VV_CLIP_OBJ0 == NUM_CLIP_OBJS );
   BOOST_STATIC_ASSERT( VV_CLIP_OBJ_ACTIVE_LAST - VV_CLIP_OBJ_ACTIVE0 == NUM_CLIP_OBJS );
+  BOOST_STATIC_ASSERT( VV_CLIP_OUTLINE_LAST - VV_CLIP_OUTLINE0 == NUM_CLIP_OBJS );
 
   virtual bool checkParameter(ParameterType param, vvParam const& value) const;
   virtual void setParameter(ParameterType param, const vvParam& value);
@@ -215,6 +226,7 @@ protected:
 
   boost::shared_ptr<vvClipObj> _clipObjs[NUM_CLIP_OBJS];
   bool _clipObjsActive[NUM_CLIP_OBJS];
+  bool _clipOutlines[NUM_CLIP_OBJS];
 public:
   vvRenderState();
 };
@@ -375,7 +387,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
 
     void renderBoundingBox() const;
     void renderROI() const;
-    void renderClipPlane() const;
+    void renderClipObjs() const;
     void renderHUD() const;
     void renderOpaqueGeometry() const;
 
