@@ -211,7 +211,7 @@ void vvSoftPer::compositeSliceNearest(int slice, int from, int to)
 #endif
          if ((ia<255) &&                          // early ray termination for opaque image pixels
                                                   // skip clipped voxels
-            (_clipMode == 0 || (!isVoxelClipped(vPosX >> 16, vPosY >> 16, slice))))
+            (!getParameter(VV_CLIP_MODE) || (!isVoxelClipped(vPosX >> 16, vPosY >> 16, slice))))
          {
             // Determine voxel color components and scale to [0..1]:
 #ifdef FLOAT_MATH
@@ -357,7 +357,7 @@ void vvSoftPer::compositeSliceBilinear(int slice, int from, int to)
 
          if ((ia<255) &&                          // early ray termination for opaque image pixels
                                                   // skip clipped voxels
-            (_clipMode == 0 || (!isVoxelClipped((int)vPosX, (int)vPosY, slice))))
+            (!getParameter(VV_CLIP_MODE) || (!isVoxelClipped((int)vPosX, (int)vPosY, slice))))
          {
             // Determine voxel color components and scale to [0..1]:
             if (zoomMode)

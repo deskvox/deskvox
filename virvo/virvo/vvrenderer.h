@@ -179,13 +179,9 @@ protected:
   bool  _palette;                               ///< true = display transfer function palette
   bool  _qualityDisplay;                        ///< true = display rendering quality level
   bool _useChannelWeights;                      ///< true = mind channel weights
-  unsigned int _clipMode;                       ///< 0 = clipping disabled, 1 = clipping plane, 2 = clipping sphere
-  virvo::vec3f clip_plane_point_;               ///< point on clipping plane
-  virvo::vec3f clip_plane_normal_;              ///< clipping plane normal
+  bool _clipMode;                               ///< true = use clipping plane 0
   bool      _clipPlanePerimeter;                ///< true = render line around clipping plane
   vvColor   _clipPlaneColor;                    ///< clipping plane boundary color (R,G,B in [0..1])
-  virvo::vec3f clip_sphere_center_;             ///< clipping sphere center
-  float     _clipSphereRadius;                  ///< clipping sphere radius
   bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
   bool  _clipOpaque;                            ///< true = make single slice opaque
   bool  _isROIUsed;                             ///< true = use roi

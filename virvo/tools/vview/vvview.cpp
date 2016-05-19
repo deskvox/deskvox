@@ -163,7 +163,7 @@ vvView::vvView()
   matrixFile            = NULL;
   roiEnabled            = false;
   sphericalROI          = false;
-  clipMode              = 0;
+  clipMode              = false;
   clipPerimeter         = false;
   mvScale               = 1.0f;
   showBt                = true;
@@ -1716,19 +1716,15 @@ void vvView::clipMenuCallback(const int item)
   switch (item)
   {
   case 0:
-    ds->clipMode++;
-    if(ds->clipMode > 2)
-    {
-      ds->clipMode = 0;
-    }
+    ds->clipMode = !ds->clipMode;
     ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipMode);
-    cerr << "Clipping " << ds->onOff[(ds->clipMode > 0)] << endl;
+    cerr << "Clipping " << ds->onOff[ds->clipMode] << endl;
     break;
   case 1:
     ds->clipEditMode = !ds->clipEditMode;
     if (ds->clipEditMode)
     {
-      ds->clipMode = 1;
+      ds->clipMode = true;
       ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipMode);
       cerr << "Clip edit mode activated" << endl;
       cerr << "x|y|z keys:\t\trotation along (x|y|z) axis" << endl;

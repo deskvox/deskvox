@@ -438,7 +438,7 @@ void vvTexRend::updateTransferFunction()
   {
      _currentShader = ShaderMultiTF;
 
-     if (_preIntegration && arbMltTex && !(_clipMode == 1 && (_clipSingleSlice || _clipOpaque)))
+     if (_preIntegration && arbMltTex && !(getParameter(VV_CLIP_MODE) && (_clipSingleSlice || _clipOpaque)))
        usePreIntegration = true;
      else
        usePreIntegration = false;
@@ -447,7 +447,7 @@ void vvTexRend::updateTransferFunction()
   {
      if (_preIntegration &&
            arbMltTex && 
-           !(_clipMode == 1 && (_clipSingleSlice || _clipOpaque)) &&
+           !(getParameter(VV_CLIP_MODE) && (_clipSingleSlice || _clipOpaque)) &&
            (voxelType==VV_PIX_SHD && (_currentShader==Shader1Chan || _currentShader==ShaderPreInt)))
      {
         usePreIntegration = true;
@@ -943,7 +943,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   farthest *= vec3f((float)(numSlices - 1) * -0.5f);
   farthest += probePosObj; // will be vd->pos if no probe present
 
-  if (_clipMode == 1)                     // clipping plane present?
+  if (getParameter(VV_CLIP_MODE))                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -952,7 +952,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     // to clipping plane and which traverses the origin:
     vec3 temp = delta * vec3(-0.5f);
     farthest += temp;                          // add a half delta to farthest
-    clipPosObj = clip_plane_point_;
+    clipPosObj = getParameter(VV_CLIP_PLANE_POINT);
     clipPosObj -= pos;
     temp = probePosObj;
     temp += normal;
@@ -1260,12 +1260,15 @@ void vvTexRend::activateClippingPlane()
 
   vvDebugMsg::msg(3, "vvTexRend::activateClippingPlane()");
 
+  boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+  assert(plane);
+
   // Generate OpenGL compatible clipping plane parameters:
   // normal points into oppisite direction
-  planeEq[0] = -clip_plane_normal_[0];
-  planeEq[1] = -clip_plane_normal_[1];
-  planeEq[2] = -clip_plane_normal_[2];
-  planeEq[3] = dot( clip_plane_normal_, clip_plane_point_ );
+  planeEq[0] = -plane->normal.x;
+  planeEq[1] = -plane->normal.y;
+  planeEq[2] = -plane->normal.z;
+  planeEq[3] =  plane->offset;
   glClipPlane(GL_CLIP_PLANE0, planeEq);
   glEnable(GL_CLIP_PLANE0);
 
@@ -1273,11 +1276,10 @@ void vvTexRend::activateClippingPlane()
   if (_clipSingleSlice)
   {
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-    clipNormal2 = -clip_plane_normal_;
-    planeEq[0] = -clipNormal2.x;
-    planeEq[1] = -clipNormal2.y;
-    planeEq[2] = -clipNormal2.z;
-    planeEq[3] = dot(clipNormal2, clip_plane_point_) + thickness;
+    planeEq[0] =  plane->normal.x;
+    planeEq[1] =  plane->normal.y;
+    planeEq[2] =  plane->normal.z;
+    planeEq[3] = -plane->offset + thickness;
     glClipPlane(GL_CLIP_PLANE1, planeEq);
     glEnable(GL_CLIP_PLANE1);
   }
@@ -1438,7 +1440,7 @@ void vvTexRend::updateLUT(const float dist)
 
         // Opacity correction:
         // for 0 distance draw opaque slices
-        if (dist<=0.0 || (_clipMode == 1 && _clipOpaque)) corr[3] = 1.0f;
+        if (dist<=0.0 || (getParameter(VV_CLIP_MODE) && _clipOpaque)) corr[3] = 1.0f;
         else if (_opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
         // Convert float to uint8_t and copy to rgbaLUT array:

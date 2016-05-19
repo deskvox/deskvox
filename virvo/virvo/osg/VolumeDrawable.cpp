@@ -207,7 +207,7 @@ void VolumeDrawable::setClipPoint(const osg::Vec3 &point)
 
 void VolumeDrawable::setClipping(bool enable)
 {
-    setParameter(vvRenderState::VV_CLIP_MODE, static_cast<unsigned int>(enable));
+    setParameter(vvRenderState::VV_CLIP_MODE, enable);
 }
 
 bool VolumeDrawable::getClipping() const

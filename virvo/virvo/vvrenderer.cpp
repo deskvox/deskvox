@@ -71,13 +71,8 @@ vvRenderState::vvRenderState()
   , _palette(false)
   , _qualityDisplay(false)
   , _useChannelWeights(false)
-  , _clipMode(0)
-  , clip_plane_point_(vec3f(0.0f, 0.0f, 0.0f))
-  , clip_plane_normal_(vec3f(0.0f, 0.0f, 1.0f))
   , _clipPlanePerimeter(true)
   , _clipPlaneColor(vvColor(1.0f, 1.0f, 1.0f))
-  , clip_sphere_center_(vec3f(0.0f, 0.0f, 0.0f))
-  , _clipSphereRadius(100.0f)
   , _clipSingleSlice(false)
   , _clipOpaque(false)
   , _isROIUsed(false)
@@ -173,7 +168,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _useChannelWeights = value;
     break;
   case VV_CLIP_MODE:
-    _clipMode = value;
+    setParameter(VV_CLIP_OBJ_ACTIVE0, value);
     break;
   case VV_CLIP_SINGLE_SLICE:
     _clipSingleSlice = value;
@@ -235,20 +230,19 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _paddingRegion = value;
     break;
   case VV_CLIP_PLANE_POINT:
-    clip_plane_point_ = value;
+  {
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    assert(plane);
+    plane->offset = dot(plane->normal, value.asVec3f());
     break;
+  }
   case VV_CLIP_PLANE_NORMAL:
-    clip_plane_normal_ = value;
-    if ( length(clip_plane_normal_) < 1e-20 )
-    {
-        clip_plane_normal_ = vec3f(0.0f, 0.0f, 1.0f);
-    }
-    clip_plane_normal_ = normalize( clip_plane_normal_ );
-    if ( length(clip_plane_normal_) < 0.5f )
-    {
-        clip_plane_normal_ = vec3f(0.0f, 0.0f, 1.0f);
-    }
+  {
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    assert(plane);
+    plane->normal = value;
     break;
+  }
   case VV_CLIP_COLOR:
     _clipPlaneColor = value;
     break;
@@ -358,7 +352,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_CHANNEL_WEIGHTS:
     return _useChannelWeights;
   case VV_CLIP_MODE:
-    return _clipMode;
+    return getParameter(VV_CLIP_OBJ_ACTIVE0);
   case VV_CLIP_SINGLE_SLICE:
     return _clipSingleSlice;
   case VV_CLIP_OPAQUE:
@@ -394,9 +388,17 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_PADDING_REGION:
     return _paddingRegion;
   case VV_CLIP_PLANE_POINT:
-    return clip_plane_point_;
+  {
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    assert(plane);
+    return plane->normal * plane->offset;
+  }
   case VV_CLIP_PLANE_NORMAL:
-    return clip_plane_normal_;
+  {
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    assert(plane);
+    return plane->normal;
+  }
   case VV_CLIP_COLOR:
     return _clipPlaneColor;
   case VV_ROI_SIZE:
@@ -555,9 +557,9 @@ void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 
   // Otherwise use objDir as the normal.
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
-  if (_clipMode == 1)
+  if (getParameter(VV_CLIP_MODE))
   {
-    normal = clip_plane_normal_;
+    normal = getParameter(VV_CLIP_PLANE_POINT);
   }
   else if ( isOrtho || viewDir == vec3f(0.0f) )
   {
