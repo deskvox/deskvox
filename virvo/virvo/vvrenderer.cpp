@@ -299,7 +299,6 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_CLIP_OBJ5:
   case VV_CLIP_OBJ6:
   case VV_CLIP_OBJ7:
-    assert( param - VV_CLIP_OBJ0 < NUM_CLIP_OBJS );
     _clipObjs[param - VV_CLIP_OBJ0] = value;
     break;
   case VV_CLIP_OBJ_ACTIVE0:
@@ -310,7 +309,6 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_CLIP_OBJ_ACTIVE5:
   case VV_CLIP_OBJ_ACTIVE6:
   case VV_CLIP_OBJ_ACTIVE7:
-    assert( param - VV_CLIP_OBJ_ACTIVE0 < NUM_CLIP_OBJS );
     _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0] = value;
     break;
   default:
@@ -426,7 +424,6 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_CLIP_OBJ5:
   case VV_CLIP_OBJ6:
   case VV_CLIP_OBJ7:
-    assert( param - VV_CLIP_OBJ0 < NUM_CLIP_OBJS );
     return _clipObjs[param - VV_CLIP_OBJ0];
   case VV_CLIP_OBJ_ACTIVE0:
   case VV_CLIP_OBJ_ACTIVE1:
@@ -436,7 +433,6 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_CLIP_OBJ_ACTIVE5:
   case VV_CLIP_OBJ_ACTIVE6:
   case VV_CLIP_OBJ_ACTIVE7:
-    assert( param - VV_CLIP_OBJ_ACTIVE0 < NUM_CLIP_OBJS );
     return _clipObjsActive[param - VV_CLIP_OBJ_ACTIVE0];
   default:
     return vvParam();

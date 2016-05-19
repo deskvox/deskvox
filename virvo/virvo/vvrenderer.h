@@ -30,6 +30,7 @@
 #include "vvrendertarget.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/static_assert.hpp>
 
 #include <memory>
 
@@ -149,6 +150,9 @@ public:
     VV_CLIP_OBJ_ACTIVE7,
     VV_CLIP_OBJ_ACTIVE_LAST
   };
+
+  BOOST_STATIC_ASSERT( VV_CLIP_OBJ_LAST - VV_CLIP_OBJ0 == NUM_CLIP_OBJS );
+  BOOST_STATIC_ASSERT( VV_CLIP_OBJ_ACTIVE_LAST - VV_CLIP_OBJ_ACTIVE0 == NUM_CLIP_OBJS );
 
   virtual bool checkParameter(ParameterType param, vvParam const& value) const;
   virtual void setParameter(ParameterType param, const vvParam& value);
