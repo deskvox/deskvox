@@ -37,6 +37,7 @@ public:
     VVAPI bool checkParameter(ParameterType param, vvParam const& value) const VV_OVERRIDE;
     VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
     /*VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;*/
+    VVAPI virtual bool instantClassification() const VV_OVERRIDE;
 private:
     struct Impl;
     std::auto_ptr<Impl> impl_;

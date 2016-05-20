@@ -1130,6 +1130,11 @@ void vvRayCaster::setParameter(ParameterType param, vvParam const& value)
     }
 }
 
+bool vvRayCaster::instantClassification() const
+{
+    return true;
+}
+
 vvRenderer* createRayCaster(vvVolDesc* vd, vvRenderState const& rs)
 {
     return new vvRayCaster(vd, rs);
