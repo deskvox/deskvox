@@ -16,7 +16,7 @@ deskvox_use_package(VISIONARAY)
 # Visionaray requires modern C++ language features
 # Try to compile a tiny program that includes some
 # Visionaray headers and see if we can compile them
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${VISIONARAY_INCLUDE_DIR}")
+set(CMAKE_REQUIRED_INCLUDES "${VISIONARAY_INCLUDE_DIR}")
 check_cxx_source_compiles(
     "
     #include <visionaray/texture/texture.h>
