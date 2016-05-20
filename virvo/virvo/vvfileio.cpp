@@ -58,6 +58,7 @@
 #include <map>
 
 #include "vvfileio.h"
+#include "vvmacros.h"
 #include "vvtoolshed.h"
 #include "vvdebugmsg.h"
 #include "vvtokenizer.h"
@@ -4174,6 +4175,8 @@ vvFileIO::ErrorType vvFileIO::loadNiftiFile(vvVolDesc* vd)
   {
     VV_LOG(0) << e.what();
   }
+#else
+  VV_UNUSED(vd);
 #endif
   return FILE_ERROR;
 }

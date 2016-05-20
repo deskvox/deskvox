@@ -2076,7 +2076,6 @@ void vvVolDesc::toggleSign(int /* frame */)
 void vvVolDesc::makeUnsigned(int /* frame */)
 {
   uint8_t* rd;
-  float  val;
 
   vvDebugMsg::msg(2, "vvVolDesc::makeUnsigned()");
 
