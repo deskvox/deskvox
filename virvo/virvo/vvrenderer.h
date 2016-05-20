@@ -323,6 +323,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void  drawBoundingBox( virvo::vec3f const& oSize, virvo::vec3f const& oPos, const vvColor& color ) const;
     virtual void  drawPlanePerimeter( virvo::vec3f const& oSize, virvo::vec3f const& oPos,
         virvo::vec3f const& oPlane, virvo::vec3f const& oNorm, const vvColor& ) const;
+    virtual void  drawSpherePerimeter( virvo::vec3 const& oSize, virvo::vec3 const& oPos,
+        virvo::vec3 const& oCenter, float radius, const vvColor& color ) const;
     virtual bool  instantClassification() const;
     virtual void  setViewingDirection( virvo::vec3f const& vd );
     virtual void  setObjectDirection( virvo::vec3f const& od );

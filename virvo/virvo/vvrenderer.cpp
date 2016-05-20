@@ -1233,6 +1233,151 @@ void vvRenderer::drawPlanePerimeter(vec3f const& oSize, vec3f const& oPos,
 }
 
 //----------------------------------------------------------------------------
+/** Render the intersection of a sphere and an axis aligned box.
+  @param oSize   box size [object coordinates]
+  @param oPos    box center [object coordinates]
+  @param oCenter center of the sphere [object coordinates]
+  @param oRadius radius of the sphere [object coordinates]
+  @param color   box color (R,G,B) [0..1], array of 3 floats expected
+*/
+void vvRenderer::drawSpherePerimeter(vec3 const& oSize, vec3 const& oPos,
+                                     vec3 const& oCenter, float radius, const vvColor& color) const
+{
+  GLboolean glsLighting;                          // stores GL_LIGHTING
+  GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
+  GLfloat   glsLineWidth;                         // stores GL_LINE_WIDTH
+
+  vvDebugMsg::msg(3, "vvRenderer::drawSpherePerimeter()");
+
+  // Save lighting state:
+  glGetBooleanv(GL_LIGHTING, &glsLighting);
+
+  // Save color:
+  glGetFloatv(GL_CURRENT_COLOR, glsColor);
+
+  // Save line width:
+  glGetFloatv(GL_LINE_WIDTH, &glsLineWidth);
+
+  // Translate by volume position:
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();                                 // save modelview matrix
+  glTranslatef(oPos[0], oPos[1], oPos[2]);
+
+  // Set color:
+  glColor4f(color[0], color[1], color[2], 1.0);
+
+  // Disable lighting:
+  glDisable(GL_LIGHTING);
+
+  glLineWidth(3.0f);
+
+
+  // Some local helpers
+
+  typedef struct { vec3 center; float radius; } sphere_t;
+  typedef struct { vec3 center; float radius; } circle_t;
+  typedef struct { bool hit; circle_t circle; } isect_t;
+  struct intersect_plane_sphere
+  {
+    isect_t operator()(virvo::plane3 const& plane, sphere_t const& sphere)
+    {
+      isect_t result;
+
+      float dist = plane.offset - dot(sphere.center, plane.normal);
+
+      bool hit = std::abs(dist) <= sphere.radius;
+
+      result.hit           = hit;
+      result.circle.center = hit ? sphere.center + plane.normal * dist : vec3();
+      result.circle.radius = hit ? sqrt(sphere.radius * sphere.radius - dist * dist) : float(0.0);
+
+      return result;
+    }
+  };
+
+  struct draw_clip_circle
+  {
+    void operator()(circle_t c, vec3 vx, vec3 vy, virvo::aabb box)
+    {
+      int inc = 1;
+      for (int i = 0; i < 360; i += inc)
+      {
+        float rad1 = i * virvo::constants::degrees_to_radians<float>();
+        vec3 v1 = c.center + std::cos(rad1) * vx * c.radius + std::sin(rad1) * vy * c.radius;
+
+        float rad2 = (i + inc) * virvo::constants::degrees_to_radians<float>();
+        vec3 v2 = c.center + std::cos(rad2) * vx * c.radius + std::sin(rad2) * vy * c.radius;
+
+        if (!box.contains(v1) && !box.contains(v2))
+        {
+          continue;
+        }
+
+        glBegin(GL_LINES);
+        glVertex3f(v1.x, v1.y, v1.z);
+        glVertex3f(v2.x, v2.y, v2.z);
+        glEnd();
+      }
+    }
+  };
+
+
+  // Define geometric primitives
+
+  vec3 boxMin(oPos[0] - oSize[0] * 0.5f, oPos[1] - oSize[1] * 0.5f, oPos[2] - oSize[2] * 0.5f);
+  vec3 boxMax(oPos[0] + oSize[0] * 0.5f, oPos[1] + oSize[1] * 0.5f, oPos[2] + oSize[2] * 0.5f);
+
+  vec3 nxneg(-1,  0,  0);
+  vec3 nxpos( 1,  0,  0);
+  vec3 nyneg( 0, -1,  0);
+  vec3 nypos( 0,  1,  0);
+  vec3 nzneg( 0,  0, -1);
+  vec3 nzpos( 0,  0,  1);
+
+  virvo::plane3 pxneg(nxneg, dot(nxneg, boxMin));
+  virvo::plane3 pxpos(nxpos,  dot(nxpos,  boxMax));
+  virvo::plane3 pyneg(nyneg, dot(nyneg, boxMin));
+  virvo::plane3 pypos(nypos,  dot(nypos,  boxMax));
+  virvo::plane3 pzneg(nzneg, dot(nzneg, boxMin));
+  virvo::plane3 pzpos(nzpos,  dot(nzpos,  boxMax));
+
+  intersect_plane_sphere intersect;
+
+  sphere_t sphere;
+  sphere.center = oCenter;
+  sphere.radius = radius;
+
+  virvo::aabb box(boxMin, boxMax);
+
+  isect_t isect = intersect(pxneg, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nyneg, nzneg, box);
+  isect = intersect(pxpos, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nypos, nzpos, box);
+
+  isect = intersect(pyneg, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nxneg, nzneg, box);
+  isect = intersect(pypos, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nxpos, nzpos, box);
+
+  isect = intersect(pzneg, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nxneg, nyneg, box);
+  isect = intersect(pzpos, sphere);
+  if (isect.hit) draw_clip_circle()(isect.circle, nxpos, nypos, box);
+
+
+  glLineWidth(glsLineWidth);                      // restore line width
+
+  glPopMatrix();                                  // restore modelview matrix
+
+  // Restore lighting state:
+  if (glsLighting==(uchar)true) glEnable(GL_LIGHTING);
+  else glDisable(GL_LIGHTING);
+
+  // Restore draw color:
+  glColor4fv(glsColor);
+}
+
+//----------------------------------------------------------------------------
 /** Find out if classification can be done in real time.
   @return true if updateTransferFunction() can be processed immediately
           (eg. for color indexed textures), otherwise false is returned.
@@ -1682,6 +1827,10 @@ void vvRenderer::renderClipObjs() const
       if (boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(obj))
       {
         drawPlanePerimeter(size, vd->pos, plane->normal * plane->offset, plane->normal, _clipPlaneColor);
+      }
+      else if (boost::shared_ptr<vvClipSphere> sphere = boost::dynamic_pointer_cast<vvClipSphere>(obj))
+      {
+        drawSpherePerimeter(size, vd->pos, sphere->center, sphere->radius, _clipPlaneColor);
       }
     }
   }
