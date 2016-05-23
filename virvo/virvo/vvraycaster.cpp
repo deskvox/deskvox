@@ -926,6 +926,13 @@ void vvRayCaster::renderVolumeGL()
         // is however a quite common case
         depth_format = (depth_bits == 24 && stencil_bits == 8) ? PF_DEPTH24_STENCIL8 : PF_DEPTH32F;
 
+#ifdef __APPLE__
+        // PIXEL_PACK_BUFFER with unsigned does not work
+        // on Mac OS X, default to 32-bit floating point
+        // depth buffer
+        depth_format = PF_DEPTH32F;
+#endif
+
         depth_buffer.map(viewport, depth_format);
         depth_test = true;
     }
