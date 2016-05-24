@@ -1253,7 +1253,6 @@ void vvTexRend::renderVolumeGL()
 
 //----------------------------------------------------------------------------
 /** Activate the previously set clipping plane.
-    Clipping plane parameters have to be set with setClippingPlane().
 */
 void vvTexRend::activateClippingPlane()
 {
@@ -1263,21 +1262,41 @@ void vvTexRend::activateClippingPlane()
 
   vvDebugMsg::msg(3, "vvTexRend::activateClippingPlane()");
 
-  boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
-  assert(plane);
+  typedef vvRenderState::ParameterType PT;
+  PT act_id = VV_CLIP_OBJ_ACTIVE0;
+  PT obj_id = VV_CLIP_OBJ0;
 
-  // Generate OpenGL compatible clipping plane parameters:
-  // normal points into oppisite direction
-  planeEq[0] = -plane->normal.x;
-  planeEq[1] = -plane->normal.y;
-  planeEq[2] = -plane->normal.z;
-  planeEq[3] =  plane->offset;
-  glClipPlane(GL_CLIP_PLANE0, planeEq);
-  glEnable(GL_CLIP_PLANE0);
+  int i = 0;
+  for ( ; act_id != VV_CLIP_OBJ_ACTIVE_LAST && obj_id != VV_CLIP_OBJ_LAST
+        ; act_id = PT(act_id + 1), obj_id = PT(obj_id + 1))
+  {
+    if (getParameter(act_id))
+    {
+      if (boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(obj_id).asClipObj()))
+      {
+        if (i < maxClipPlanes)
+        {
+          // Generate OpenGL compatible clipping plane parameters:
+          // normal points into opposite direction
+          GLdouble planeEq[4];
+          planeEq[0] = -plane->normal.x;
+          planeEq[1] = -plane->normal.y;
+          planeEq[2] = -plane->normal.z;
+          planeEq[3] =  plane->offset;
+          glClipPlane(GL_CLIP_PLANE0 + i, planeEq);
+          glEnable(GL_CLIP_PLANE0 + i);
+          ++i;
+        }
+      }
+    }
+  }
 
+  // TODO: won't work with more than one clip plane enabled
   // Generate second clipping plane in single slice mode:
   if (_clipSingleSlice)
   {
+    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    assert(plane);
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
     planeEq[0] =  plane->normal.x;
     planeEq[1] =  plane->normal.y;
