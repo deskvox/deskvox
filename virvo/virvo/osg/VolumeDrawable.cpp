@@ -25,6 +25,7 @@
 #endif
 
 #include "VolumeDrawable.h"
+#include <virvo/vvclipobj.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvvoldesc.h>
 #include <virvo/vvdebugmsg.h>
@@ -527,6 +528,32 @@ void VolumeDrawable::setBlendMode(BlendMode mode)
 VolumeDrawable::BlendMode VolumeDrawable::getBlendMode() const
 {
     return blendMode;
+}
+
+int VolumeDrawable::getMaxClipPlanes() const
+{
+    int result = 0;
+
+    if (contextState.size() > 0)
+    {
+        vvRenderer *&renderer = contextState[0]->renderer;
+
+        boost::shared_ptr<vvClipPlane> plane = vvClipPlane::create();
+
+        typedef vvRenderState::ParameterType PT;
+
+        for (PT i = vvRenderState::VV_CLIP_OBJ0;
+                i != vvRenderState::VV_CLIP_OBJ_LAST;
+                i = PT(i + 1))
+        {
+            if (renderer->checkParameter(i, plane))
+            {
+                ++result;
+            }
+        }
+    }
+
+    return result;
 }
 
 } // namespace virvo

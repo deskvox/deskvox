@@ -229,6 +229,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
+  // Store number of supported OpenGL clip planes
+  glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
+
   // Determine best rendering algorithm for current hardware:
   setVoxelType(findBestVoxelType(vox));
 
@@ -1512,7 +1515,28 @@ bool vvTexRend::checkParameter(ParameterType param, vvParam const& value) const
       }
     }
 
-    return false;;
+    return false;
+
+  case VV_CLIP_OBJ0:
+  case VV_CLIP_OBJ1:
+  case VV_CLIP_OBJ2:
+  case VV_CLIP_OBJ3:
+  case VV_CLIP_OBJ4:
+  case VV_CLIP_OBJ5:
+  case VV_CLIP_OBJ6:
+  case VV_CLIP_OBJ7:
+  {
+    boost::shared_ptr<vvClipObj> obj = value.asClipObj();
+    if (!boost::dynamic_pointer_cast<vvClipPlane>(obj))
+      return false;
+
+    int i = static_cast<int>(param) - static_cast<int>(VV_CLIP_OBJ0);
+
+    if (i >= maxClipPlanes)
+      return false;
+
+    return true;
+  }
 
   default:
 

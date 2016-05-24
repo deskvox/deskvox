@@ -105,6 +105,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool extBlendEquation;                        ///< true = support for blend equation extension
     bool arbMltTex;                               ///< true = ARB multitexture support
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
+    int maxClipPlanes;                            ///< maximum number of OpenGL clip planes
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     size_t _lastFrame;                            ///< last frame rendered

@@ -109,6 +109,8 @@ public:
     void setBlendMode(BlendMode mode);
     BlendMode getBlendMode() const;
 
+    int getMaxClipPlanes() const;
+
 private:
     virtual osg::Object *cloneType() const
     {

@@ -1136,6 +1136,16 @@ bool vvRayCaster::checkParameter(ParameterType param, vvParam const& value) cons
         }
         return false;
 
+    case VV_CLIP_OBJ0:
+    case VV_CLIP_OBJ1:
+    case VV_CLIP_OBJ2:
+    case VV_CLIP_OBJ3:
+    case VV_CLIP_OBJ4:
+    case VV_CLIP_OBJ5:
+    case VV_CLIP_OBJ6:
+    case VV_CLIP_OBJ7:
+        return true;
+
     default:
         return vvRenderer::checkParameter(param, value);
     }
