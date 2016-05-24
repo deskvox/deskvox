@@ -152,8 +152,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  updateTransferFunction();
     void  updateVolumeData();
     void  updateVolumeData(size_t, size_t, size_t, size_t, size_t, size_t);
-    void  activateClippingPlane();
-    void  deactivateClippingPlane();
+    void  activateClippingPlanes();
+    void  deactivateClippingPlanes();
     void  setNumLights(int);
     bool  instantClassification() const;
     void  setViewingDirection(virvo::vec3f const& vd);

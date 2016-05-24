@@ -1189,6 +1189,8 @@ void vvTexRend::renderVolumeGL()
 
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
+  activateClippingPlanes();
+
   virvo::vector< 3, ssize_t > vox = _paddingRegion.max - _paddingRegion.min;
   for (size_t i = 0; i < 3; ++i)
   {
@@ -1248,19 +1250,21 @@ void vvTexRend::renderVolumeGL()
     glFinish();
   }
 
+  deactivateClippingPlanes();
+
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL() done");
 }
 
 //----------------------------------------------------------------------------
-/** Activate the previously set clipping plane.
+/** Activate the previously set clipping planes.
 */
-void vvTexRend::activateClippingPlane()
+void vvTexRend::activateClippingPlanes()
 {
   GLdouble planeEq[4];                            // plane equation
   vec3 clipNormal2;                               // clipping normal pointing to opposite direction
   float thickness;                                // thickness of single slice clipping plane
 
-  vvDebugMsg::msg(3, "vvTexRend::activateClippingPlane()");
+  vvDebugMsg::msg(3, "vvTexRend::activateClippingPlanes()");
 
   typedef vvRenderState::ParameterType PT;
   PT act_id = VV_CLIP_OBJ_ACTIVE0;
@@ -1286,35 +1290,33 @@ void vvTexRend::activateClippingPlane()
           glClipPlane(GL_CLIP_PLANE0 + i, planeEq);
           glEnable(GL_CLIP_PLANE0 + i);
           ++i;
+
+          if (_clipSingleSlice)
+          {
+            thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
+            planeEq[0] =  plane->normal.x;
+            planeEq[1] =  plane->normal.y;
+            planeEq[2] =  plane->normal.z;
+            planeEq[3] = -plane->offset + thickness;
+            glClipPlane(GL_CLIP_PLANE1 + i, planeEq);
+            glEnable(GL_CLIP_PLANE1 + i);
+            ++i;
+          }
         }
       }
     }
   }
 
-  // TODO: won't work with more than one clip plane enabled
-  // Generate second clipping plane in single slice mode:
-  if (_clipSingleSlice)
-  {
-    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
-    assert(plane);
-    thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-    planeEq[0] =  plane->normal.x;
-    planeEq[1] =  plane->normal.y;
-    planeEq[2] =  plane->normal.z;
-    planeEq[3] = -plane->offset + thickness;
-    glClipPlane(GL_CLIP_PLANE1, planeEq);
-    glEnable(GL_CLIP_PLANE1);
-  }
 }
 
 //----------------------------------------------------------------------------
-/** Deactivate the clipping plane.
+/** Deactivate the clipping planes.
  */
-void vvTexRend::deactivateClippingPlane()
+void vvTexRend::deactivateClippingPlanes()
 {
-  vvDebugMsg::msg(3, "vvTexRend::deactivateClippingPlane()");
-  glDisable(GL_CLIP_PLANE0);
-  if (_clipSingleSlice) glDisable(GL_CLIP_PLANE1);
+  vvDebugMsg::msg(3, "vvTexRend::deactivateClippingPlanes()");
+  for (int i = 0; i < maxClipPlanes; ++i)
+    glDisable(GL_CLIP_PLANE0 + i);
 }
 
 //----------------------------------------------------------------------------
