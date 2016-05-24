@@ -49,6 +49,8 @@ public:
 
     virtual void drawImplementation(osg::RenderInfo &renderInfo) const;
 
+    void setParameter(vvRenderState::ParameterType param, const vvParam &newValue);
+
     void setCurrentFrame(int);
     int getCurrentFrame() const;
     int getNumFrames() const;
@@ -123,8 +125,6 @@ private:
 
     VolumeDrawable(const VolumeDrawable &, const osg::CopyOp &copyop = osg::CopyOp::SHALLOW_COPY);
     void init(std::string rendererName = "", std::string voxType = "");
-
-    void setParameter(vvRenderState::ParameterType param, const vvParam &newValue);
 
     mutable vvVolDesc *vd;
     struct ContextState
