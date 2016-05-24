@@ -15,10 +15,6 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
-endif()
-
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_ARCH_AVX2=1)
 

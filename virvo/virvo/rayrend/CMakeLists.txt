@@ -13,6 +13,10 @@ deskvox_use_package(Boost)
 deskvox_use_package(GLEW)
 deskvox_use_package(VISIONARAY)
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
+endif()
+
 # Visionaray requires modern C++ language features
 # Try to compile a tiny program that includes some
 # Visionaray headers and see if we can compile them
