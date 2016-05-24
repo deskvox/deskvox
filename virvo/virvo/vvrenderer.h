@@ -130,6 +130,8 @@ public:
     VV_LIGHTING,
     VV_PIX_SHADER,
 
+    VV_FOCUS_CLIP_OBJ,                          ///< clip object that is currently manipulated
+
     VV_CLIP_OBJ0,
     VV_CLIP_OBJ1,
     VV_CLIP_OBJ2,
@@ -221,6 +223,7 @@ protected:
   virvo::vec2f depth_range_;
 
   boost::shared_ptr<vvClipObj> _clipObjs[NUM_CLIP_OBJS];
+  int _focusClipObj;                            ///< clip object that is currently manipulated
   bool _clipObjsActive[NUM_CLIP_OBJS];
   bool _clipOutlines[NUM_CLIP_OBJS];
 public:

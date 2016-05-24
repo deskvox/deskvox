@@ -106,6 +106,7 @@ vvRenderState::vvRenderState()
   , _preIntegration(false)
   , _depthPrecision(8)
   , depth_range_(0.0f, 0.0f)
+  , _focusClipObj(0)
 {
   // initialize clip objects
   typedef ParameterType PT;
@@ -290,6 +291,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_IBR_DEPTH_RANGE:
     depth_range_ = value;
     break;
+  case VV_FOCUS_CLIP_OBJ:
+    _focusClipObj = value;
+    break;
   case VV_CLIP_OBJ0:
   case VV_CLIP_OBJ1:
   case VV_CLIP_OBJ2:
@@ -389,13 +393,15 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _paddingRegion;
   case VV_CLIP_PLANE_POINT:
   {
-    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    boost::shared_ptr<vvClipPlane> plane
+        = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(ParameterType(VV_CLIP_OBJ0 + _focusClipObj)).asClipObj());
     assert(plane);
     return plane->normal * plane->offset;
   }
   case VV_CLIP_PLANE_NORMAL:
   {
-    boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(VV_CLIP_OBJ0).asClipObj());
+    boost::shared_ptr<vvClipPlane> plane
+        = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(ParameterType(VV_CLIP_OBJ0 + _focusClipObj)).asClipObj());
     assert(plane);
     return plane->normal;
   }
@@ -433,6 +439,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _depthPrecision;
   case VV_IBR_DEPTH_RANGE:
     return depth_range_;
+  case VV_FOCUS_CLIP_OBJ:
+    return _focusClipObj;
   case VV_CLIP_OBJ0:
   case VV_CLIP_OBJ1:
   case VV_CLIP_OBJ2:
