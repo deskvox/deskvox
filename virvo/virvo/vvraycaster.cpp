@@ -761,6 +761,7 @@ struct vvRayCaster::Impl
     std::vector<volume16_type>      volume16;
     std::vector<volume32_type>      volume32;
     transfunc_type                  transfunc;
+    depth_buffer_type               depth_buffer;
 
     void updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer);
     void updateTransfuncTexture(vvVolDesc* vd, vvRenderer* renderer);
@@ -896,8 +897,6 @@ void vvRayCaster::renderVolumeGL()
     auto bbox = vd->getBoundingBox();
 
     // Get OpenGL depth buffer to clip against
-    depth_buffer_type depth_buffer;
-
     pixel_format depth_format = PF_UNSPECIFIED;
 
     bool depth_test = glIsEnabled(GL_DEPTH_TEST);
@@ -933,7 +932,7 @@ void vvRayCaster::renderVolumeGL()
         depth_format = PF_DEPTH32F;
 #endif
 
-        depth_buffer.map(viewport, depth_format);
+        impl_->depth_buffer.map(viewport, depth_format);
         depth_test = true;
     }
 
@@ -1044,7 +1043,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params8.delta                    = delta;
         impl_->params8.volume                   = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame()]);
         impl_->params8.transfunc                = Impl::params8_type::transfunc_type(impl_->transfunc);
-        impl_->params8.depth_buffer             = depth_buffer.data();
+        impl_->params8.depth_buffer             = impl_->depth_buffer.data();
         impl_->params8.depth_format             = depth_format;
         impl_->params8.mode                     = Impl::params8_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params8.depth_test               = depth_test;
@@ -1066,7 +1065,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params16.delta                   = delta;
         impl_->params16.volume                  = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame()]);
         impl_->params16.transfunc               = Impl::params16_type::transfunc_type(impl_->transfunc);
-        impl_->params16.depth_buffer            = depth_buffer.data();
+        impl_->params16.depth_buffer            = impl_->depth_buffer.data();
         impl_->params16.depth_format            = depth_format;
         impl_->params16.mode                    = Impl::params16_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params16.depth_test              = depth_test;
@@ -1088,7 +1087,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params32.delta                   = delta;
         impl_->params32.volume                  = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame()]);
         impl_->params32.transfunc               = Impl::params32_type::transfunc_type(impl_->transfunc);
-        impl_->params32.depth_buffer            = depth_buffer.data();
+        impl_->params32.depth_buffer            = impl_->depth_buffer.data();
         impl_->params32.depth_format            = depth_format;
         impl_->params32.mode                    = Impl::params32_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
         impl_->params32.depth_test              = depth_test;
@@ -1107,7 +1106,7 @@ void vvRayCaster::renderVolumeGL()
 
     if (depth_test)
     {
-        depth_buffer.unmap();
+        impl_->depth_buffer.unmap();
     }
 }
 
