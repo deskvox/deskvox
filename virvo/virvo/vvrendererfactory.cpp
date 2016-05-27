@@ -342,7 +342,12 @@ std::string findRayRendPlugin(std::string const& plugindir, std::string const& a
   {
     namestr << arch;
   }
+#define DO_EXPAND(VAL)  VAL ## 1
+#define EXPAND(VAL)     DO_EXPAND(VAL)
+
+#if defined(VV_SHARED_LIB_POSTFIX) && (EXPAND(VV_SHARED_LIB_POSTFIX) != 1)
   namestr << VV_STRINGIFY(VV_SHARED_LIB_POSTFIX);
+#endif
   namestr << ".";
 #if defined(_WIN32) // TODO: resolve issues with cross compilation etc.
   namestr << "dll";
