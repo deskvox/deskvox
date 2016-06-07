@@ -35,6 +35,7 @@
 #include <visionaray/detail/pixel_access.h> // detail (TODO?)!
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
+#include <visionaray/bvh.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
 #include <visionaray/pixel_format.h>
@@ -43,6 +44,7 @@
 #include <visionaray/render_target.h>
 #include <visionaray/scheduler.h>
 #include <visionaray/shade_record.h>
+#include <visionaray/traverse.h>
 
 #ifdef VV_ARCH_CUDA
 #include <visionaray/cuda/pixel_pack_buffer.h>
@@ -291,6 +293,13 @@ using clip_plane = basic_plane<3, float>;
 
 
 //-------------------------------------------------------------------------------------------------
+//
+//
+
+using clip_triangle_bvh = index_bvh_ref_t<basic_triangle<3, float>>;
+
+
+//-------------------------------------------------------------------------------------------------
 // Create clip intervals and deduce clip normals from primitive list
 //
 
@@ -305,7 +314,7 @@ public:
     {
         int num_intervals;
         vector<2, T> intervals[MAX_INTERVALS];
-        vector<3, T> normal;
+        vector<3, T> normals[MAX_INTERVALS];
     };
 
     using return_type = RT;
@@ -329,10 +338,10 @@ public:
         auto ndotd = dot(ray_.dir, vector<3, T>(ref.normal));
 
         return_type result;
-        result.num_intervals = 1;
+        result.num_intervals  = 1;
         result.intervals[0].x = select(ndotd >  0.0f, hit_rec.t, tnear_);
         result.intervals[0].y = select(ndotd <= 0.0f, hit_rec.t, tfar_);
-        result.normal     = ref.normal;
+        result.normals[0]     = ref.normal;
         return result;
     }
 
@@ -345,14 +354,69 @@ public:
         auto hit_rec = intersect(ray_, ref);
 
         return_type result;
-        result.num_intervals = 1;
+        result.num_intervals  = 1;
         result.intervals[0].x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
         result.intervals[0].y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
 
         // normal at tfar, pointing inwards
         V isect_pos = ray_.ori + result.intervals[0].y * ray_.dir;
-        result.normal = -(isect_pos - V(ref.center)) / T(ref.radius);
+        result.normals[0]     = -(isect_pos - V(ref.center)) / T(ref.radius);
 
+        return result;
+    }
+
+    // Clip triangles in a BVH
+    VSNRAY_FUNC
+    return_type operator()(clip_triangle_bvh const& ref) const
+    {
+        auto hit_rec = multi_hit<8>(ray_, &ref, &ref + 1);
+
+        return_type result;
+        T t = tnear_;
+
+        result.num_intervals = 0;
+
+        for (size_t i = 0; i < hit_rec.size(); i += 2)
+        {
+            auto hr1 = hit_rec[i];
+            auto hr2 = hit_rec[i + 1];
+
+            if (!any(hr1.hit) && !any(hr2.hit))
+            {
+                break;
+            }
+
+            auto n1 = get_normal(hit_rec[i], ref);
+            auto n2 = get_normal(hit_rec[i + 1], ref);
+
+            result.intervals[i / 2].x = select(
+                    hr1.hit && hr2.hit,
+                    hr1.t,
+                    t
+                    );
+            result.intervals[i / 2].y = select(
+                    hr1.hit && hr2.hit,
+                    hr2.t,
+                    hr1.t
+                    );
+
+            // Invalidate intervals where single rays
+            // in a packet did not hit
+            result.intervals[i / 2].x = select(
+                    hr1.hit,
+                    result.intervals[i / 2].x,
+                    tfar_
+                    );
+            result.intervals[i / 2].y = select(
+                    hr1.hit,
+                    result.intervals[i / 2].y,
+                    tnear_
+                    );
+
+
+            t = hr1.t;
+            ++result.num_intervals;
+        }
         return result;
     }
 
@@ -525,23 +589,31 @@ struct volume_kernel
         vector<2, S> clip_intervals[MaxClipIntervals];
         vector<3, S> clip_normals[MaxClipIntervals];
 
-        auto num_clip_objects = min(
-                MaxClipIntervals - 1, // room for bbox normal, which is the last clip object
-                static_cast<int>(params.clip_objects.end - params.clip_objects.begin)
-                );
-
+        int i = 0;
         for (auto it = params.clip_objects.begin; it != params.clip_objects.end; ++it)
         {
             clip_object_visitor<S> visitor(ray, t, tmax);
             auto clip_data = apply_visitor(visitor, *it);
 
-            clip_intervals[it - params.clip_objects.begin] = clip_data.intervals[0];
-            clip_normals[it - params.clip_objects.begin] = clip_data.normal;
+            for (int j = 0; j < clip_data.num_intervals; ++j)
+            {
+                clip_intervals[i + j] = clip_data.intervals[j];
+                clip_normals[i + j]   = clip_data.normals[j];
+            }
+            i += clip_data.num_intervals;
+
+            if (i >= MaxClipIntervals)
+            {
+                // TODO: some error handling
+                break;
+            }
         }
+
+        int num_clip_intervals = i;
 
         // treat the bbox entry plane as a clip
         // object that contributes a shading normal
-        clip_normals[num_clip_objects] = hit_rec.normal;
+        clip_normals[num_clip_intervals] = hit_rec.normal;
 
 
         // calculate the volume rendering integral
@@ -550,7 +622,7 @@ struct volume_kernel
             Mask clipped(false);
 
             S tnext = t + params.delta;
-            for (int i = 0; i < num_clip_objects; ++i)
+            for (int i = 0; i < num_clip_intervals; ++i)
             {
                 clipped |= t >= clip_intervals[i].x && t <= clip_intervals[i].y;
                 tnext = select(
@@ -596,11 +668,11 @@ struct volume_kernel
                     Mask at_boundary = float_eq(t, hit_rec.tnear);
                     I clip_normal_index = select(
                             at_boundary,
-                            I(num_clip_objects), // bbox normal is stored at last position in the list
+                            I(num_clip_intervals), // bbox normal is stored at last position in the list
                             I(0)
                             );
 
-                    for (int i = 0; i < num_clip_objects; ++i)
+                    for (int i = 0; i < num_clip_intervals; ++i)
                     {
                         Mask hit = float_eq(t, clip_intervals[i].y + params.delta); // TODO: understand why +delta
                         clip_normal_index = select(hit, I(i), clip_normal_index);
@@ -715,7 +787,7 @@ struct volume_kernel_params
 
     using volume_type    = VolumeTex;
     using transfunc_type = TransfuncTex;
-    using clip_object    = variant<clip_plane, clip_sphere>;
+    using clip_object    = variant<clip_plane, clip_sphere, clip_triangle_bvh>;
 
     clip_box            bbox;
     float               delta;
@@ -980,11 +1052,32 @@ void vvRayCaster::renderVolumeGL()
         clip_objects.push_back(pl);
     }
 #else
-/*    auto s0 = vvClipSphere::create();
-    s0->center = virvo::vec3(0, 0, 50);
-    s0->radius = 50.0f;
-    setParameter(VV_CLIP_OBJ0, s0);
-    setParameter(VV_CLIP_OBJ_ACTIVE0, true);*/
+
+    // Uncomment to test clipping with sphere
+#if 0
+    auto sphere = vvClipSphere::create();
+    sphere->center = virvo::vec3(0, 0, 50);
+    sphere->radius = 50.0f;
+    setParameter(VV_CLIP_OBJ6, sphere);
+    setParameter(VV_CLIP_OBJ_ACTIVE6, true);
+#endif
+
+    // Uncomment to test clipping with a simple triangle mesh
+#if 1
+    using TT = vvClipTriangleList::Triangle;
+    auto mesh = vvClipTriangleList::create();
+    mesh->resize(4);
+    (*mesh)[0] = TT{{ -1.0f,  0.0f,  1.0f }, {  1.0f,  0.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }};
+    (*mesh)[1] = TT{{  1.0f,  0.0f,  1.0f }, {  0.0f,  0.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }};
+    (*mesh)[2] = TT{{  0.0f,  0.0f, -1.0f }, { -1.0f,  0.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }};
+    (*mesh)[3] = TT{{  1.0f,  0.0f,  1.0f }, { -1.0f,  0.0f,  1.0f }, {  0.0f,  0.0f, -1.0f }};
+    setParameter(VV_CLIP_OBJ7, mesh);
+    setParameter(VV_CLIP_OBJ_ACTIVE7, true);
+#endif
+
+
+    using Triangle = basic_triangle<3, float>;
+    index_bvh<Triangle> bvhs[NUM_CLIP_OBJS];
 
     typedef vvRenderState::ParameterType PT;
     PT act_id = VV_CLIP_OBJ_ACTIVE0;
@@ -1010,6 +1103,31 @@ void vvRayCaster::renderVolumeGL()
                 sp.center = vec3(sphere->center.x, sphere->center.y, sphere->center.z);
                 sp.radius = sphere->radius;
                 clip_objects.push_back(sp);
+            }
+            else if (auto mesh = boost::dynamic_pointer_cast<vvClipTriangleList>(obj))
+            {
+                using Triangle = basic_triangle<3, float>;
+
+                auto bvh_id = VV_CLIP_OBJ_LAST - obj_id;
+
+                aligned_vector<Triangle> tris;
+
+                // Convert to Visionaray layout and assign IDs
+                int prim_id = 0;
+                for (auto t : *mesh)
+                {
+                    Triangle vt;
+                    vt.v1 = vec3(t.v1.x, t.v1.y, t.v1.z) * 50.0f;
+                    vt.e1 = vec3(t.v2.x, t.v2.y, t.v2.z) * 50.0f- vt.v1;
+                    vt.e2 = vec3(t.v3.x, t.v3.y, t.v3.z) * 50.0f- vt.v1;
+                    vt.prim_id = prim_id++;
+                    vt.geom_id = 0;
+                    tris.push_back(vt);
+                }
+
+                // Build up the BVH
+                bvhs[bvh_id] = build<index_bvh<Triangle>>(tris.data(), tris.size());
+                clip_objects.push_back(bvhs[bvh_id].ref());
             }
         }
     }
