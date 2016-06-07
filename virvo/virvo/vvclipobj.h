@@ -110,7 +110,11 @@ public:
   typedef std::vector<Triangle, virvo::mem::aligned_allocator<Triangle, 32> > Triangles;
   typedef virvo::mat4 Matrix;
 
-  void resize(size_t size);
+  typedef Triangles::iterator       iterator;
+  typedef Triangles::const_iterator const_iterator;
+
+  void            resize(size_t size);
+  size_t          size() const;
 
   const Triangle* data() const;
         Triangle* data();
@@ -118,8 +122,14 @@ public:
   const Triangle& operator[](size_t i) const;
         Triangle& operator[](size_t i);
 
-  const Matrix& transform() const;
-        Matrix& transform();
+  const_iterator  begin() const;
+        iterator  begin();
+
+  const_iterator  end() const;
+        iterator  end();
+
+  const Matrix&   transform() const;
+        Matrix&   transform();
 
 protected:
 

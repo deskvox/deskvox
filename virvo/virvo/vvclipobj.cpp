@@ -65,6 +65,11 @@ void vvClipTriangleList::resize(size_t size)
   triangles_.resize(size);
 }
 
+size_t vvClipTriangleList::size() const
+{
+  return triangles_.size();
+}
+
 const vvClipTriangleList::Triangle* vvClipTriangleList::data() const
 {
   return triangles_.data();
@@ -83,6 +88,27 @@ const vvClipTriangleList::Triangle& vvClipTriangleList::operator[](size_t i) con
 vvClipTriangleList::Triangle& vvClipTriangleList::operator[](size_t i)
 {
   return triangles_[i];
+}
+
+
+vvClipTriangleList::const_iterator vvClipTriangleList::begin() const
+{
+  return triangles_.begin();
+}
+
+vvClipTriangleList::iterator vvClipTriangleList::begin()
+{
+  return triangles_.begin();
+}
+
+vvClipTriangleList::const_iterator vvClipTriangleList::end() const
+{
+  return triangles_.end();
+}
+
+vvClipTriangleList::iterator vvClipTriangleList::end()
+{
+  return triangles_.end();
 }
 
 const vvClipTriangleList::Matrix& vvClipTriangleList::transform() const
