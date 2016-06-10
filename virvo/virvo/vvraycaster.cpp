@@ -106,7 +106,37 @@ inline F normalize_depth(I const& depth, pixel_format depth_format, F /* */)
         return F(d) / 16777216.0f;
     }
 
+    // Assume PF_DEPTH32F
     return reinterpret_as_float(depth);
+}
+
+template <typename I1, typename I2, typename Params>
+VSNRAY_FUNC
+inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
+{
+    if (params.depth_format == PF_DEPTH24_STENCIL8)
+    {
+        detail::pixel_access::get( // detail (TODO?)!
+                pixel_format_constant<PF_DEPTH24_STENCIL8>{},
+                x,
+                y,
+                params.viewport,
+                depth_raw,
+                params.depth_buffer
+                );
+    }
+    else
+    {
+        // Assume PF_DEPTH32F
+        detail::pixel_access::get( // detail (TODO?)!
+                pixel_format_constant<PF_DEPTH32F>{},
+                x,
+                y,
+                params.viewport,
+                depth_raw,
+                params.depth_buffer
+                );
+    }
 }
 
 VSNRAY_FUNC
@@ -465,15 +495,8 @@ struct volume_kernel
         if (params.depth_test)
         {
             // unproject (win to obj)
-            I depth_raw;
-            detail::pixel_access::get( // detail (TODO?)!
-                    x,
-                    y,
-                    params.viewport,
-                    depth_raw,
-                    params.depth_buffer
-                    );
-
+            I depth_raw(0);
+            get_depth(x, y, depth_raw, params);
             S depth = normalize_depth(depth_raw, params.depth_format, S{});
 
             vector<3, S> win(expand_pixel<S>().x(x), expand_pixel<S>().y(y), depth);
