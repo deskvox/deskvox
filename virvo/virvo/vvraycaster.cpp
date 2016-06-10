@@ -103,7 +103,7 @@ inline F normalize_depth(I const& depth, pixel_format depth_format, F /* */)
     if (depth_format == PF_DEPTH24_STENCIL8)
     {
         auto d = (depth & 0xFFFFFF00) >> 8;
-        return F(d) / 16777216.0f;
+        return F(d) / 16777215.0f;
     }
 
     // Assume PF_DEPTH32F
