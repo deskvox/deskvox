@@ -1260,25 +1260,20 @@ void vvTexRend::renderVolumeGL()
 */
 void vvTexRend::activateClippingPlanes()
 {
-  GLdouble planeEq[4];                            // plane equation
-  vec3 clipNormal2;                               // clipping normal pointing to opposite direction
-  float thickness;                                // thickness of single slice clipping plane
-
   vvDebugMsg::msg(3, "vvTexRend::activateClippingPlanes()");
 
   typedef vvRenderState::ParameterType PT;
-  PT act_id = VV_CLIP_OBJ_ACTIVE0;
-  PT obj_id = VV_CLIP_OBJ0;
 
-  int i = 0;
-  for ( ; act_id != VV_CLIP_OBJ_ACTIVE_LAST && obj_id != VV_CLIP_OBJ_LAST
-        ; act_id = PT(act_id + 1), obj_id = PT(obj_id + 1))
+  for ( PT act_id = VV_CLIP_OBJ_ACTIVE0, obj_id = VV_CLIP_OBJ0;
+        act_id != VV_CLIP_OBJ_ACTIVE_LAST && obj_id != VV_CLIP_OBJ_LAST;
+        act_id = PT(act_id + 1), obj_id = PT(obj_id + 1))
   {
+    int i = act_id - VV_CLIP_OBJ_ACTIVE0;
     if (getParameter(act_id))
     {
       if (boost::shared_ptr<vvClipPlane> plane = boost::dynamic_pointer_cast<vvClipPlane>(getParameter(obj_id).asClipObj()))
       {
-        if (i < maxClipPlanes)
+        if (i < maxClipPlanes && i != getParameter(VV_FOCUS_CLIP_OBJ).asInt())
         {
           // Generate OpenGL compatible clipping plane parameters:
           // normal points into opposite direction
@@ -1289,24 +1284,10 @@ void vvTexRend::activateClippingPlanes()
           planeEq[3] =  plane->offset;
           glClipPlane(GL_CLIP_PLANE0 + i, planeEq);
           glEnable(GL_CLIP_PLANE0 + i);
-          ++i;
-
-          if (_clipSingleSlice)
-          {
-            thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-            planeEq[0] =  plane->normal.x;
-            planeEq[1] =  plane->normal.y;
-            planeEq[2] =  plane->normal.z;
-            planeEq[3] = -plane->offset + thickness;
-            glClipPlane(GL_CLIP_PLANE1 + i, planeEq);
-            glEnable(GL_CLIP_PLANE1 + i);
-            ++i;
-          }
         }
       }
     }
   }
-
 }
 
 //----------------------------------------------------------------------------
