@@ -114,10 +114,14 @@ template <typename I1, typename I2, typename Params>
 VSNRAY_FUNC
 inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
 {
+    // Get depth value from visionaray buffer
+    // dst format equals src format because our implementation
+    // takes care of the conversion itself in the rendering kernel
     if (params.depth_format == PF_DEPTH24_STENCIL8)
     {
         detail::pixel_access::get( // detail (TODO?)!
-                pixel_format_constant<PF_DEPTH24_STENCIL8>{},
+                pixel_format_constant<PF_DEPTH24_STENCIL8>{},   // dst format
+                pixel_format_constant<PF_DEPTH24_STENCIL8>{},   // src format
                 x,
                 y,
                 params.viewport,
@@ -129,7 +133,8 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
     {
         // Assume PF_DEPTH32F
         detail::pixel_access::get( // detail (TODO?)!
-                pixel_format_constant<PF_DEPTH32F>{},
+                pixel_format_constant<PF_DEPTH32F>{},           // dst format
+                pixel_format_constant<PF_DEPTH32F>{},           // src format
                 x,
                 y,
                 params.viewport,
