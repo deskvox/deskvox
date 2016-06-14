@@ -124,7 +124,8 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
                 pixel_format_constant<PF_DEPTH24_STENCIL8>{},   // src format
                 x,
                 y,
-                params.viewport,
+                params.viewport.w,
+                params.viewport.h,
                 depth_raw,
                 params.depth_buffer
                 );
@@ -137,7 +138,8 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
                 pixel_format_constant<PF_DEPTH32F>{},           // src format
                 x,
                 y,
-                params.viewport,
+                params.viewport.w,
+                params.viewport.h,
                 depth_raw,
                 params.depth_buffer
                 );
@@ -454,7 +456,7 @@ public:
     color_type const* color() const { return color_; }
     depth_type const* depth() const { return depth_; }
 
-    ref_type ref() { return ref_type(color(), depth()); }
+    ref_type ref() { return ref_type(color(), depth(), width(), height()); }
 
     void begin_frame() {}
     void end_frame() {}
@@ -905,7 +907,6 @@ void vvRayCaster::renderVolumeGL()
     auto sparams = make_sched_params(
         view_matrix,
         proj_matrix,
-        viewport,
         virvo_rt
         );
 
