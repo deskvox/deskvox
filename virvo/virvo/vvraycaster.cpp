@@ -859,11 +859,11 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
         if (vd->chan > 1)
         {
             tmp.resize(vd->getFrameBytes());
-            for (size_t z = 0; z < vd->vox[2]; ++z)
+            for (ssize_t z = 0; z < vd->vox[2]; ++z)
             {
-                for (size_t y = 0; y < vd->vox[1]; ++y)
+                for (ssize_t y = 0; y < vd->vox[1]; ++y)
                 {
-                    for (size_t x = 0; x < vd->vox[0]; ++x)
+                    for (ssize_t x = 0; x < vd->vox[0]; ++x)
                     {
                         const uint8_t* voxel = (*vd)(f, x, y, z);
                         for (size_t c = 0; c < vd->chan; ++c)
