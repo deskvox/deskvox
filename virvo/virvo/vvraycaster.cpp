@@ -576,121 +576,129 @@ struct volume_kernel
                         (-pos.z + (params.bbox.size().z / 2) ) / params.bbox.size().z
                         );
 
-                S voxel = tex3D(params.volume, tex_coord);
-                C color = tex1D(params.transfunc, voxel);
+                C color(0.0);
 
-                auto do_shade = params.local_shading && color.w >= 0.1f;
-
-                if (visionaray::any(do_shade))
+                for (int i = 0; i < params.num_channels; ++i)
                 {
-                    // TODO: make this modifiable
-                    plastic<S> mat;
-                    mat.set_ca( from_rgb(vector<3, S>(0.3f, 0.3f, 0.3f)) );
-                    mat.set_cd( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
-                    mat.set_cs( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
-                    mat.set_ka( 1.0f );
-                    mat.set_kd( 1.0f );
-                    mat.set_ks( 1.0f );
-                    mat.set_specular_exp( 1000.0f );
+                    S voxel  = tex3D(params.volumes[i], tex_coord);
+                    C colori = tex1D(params.transfuncs[i], voxel);
 
+                    auto do_shade = params.local_shading && colori.w >= 0.1f;
 
-                    // calculate shading
-                    auto grad = gradient(params.volume, tex_coord);
-                    auto normal = normalize(grad);
-
-                    auto float_eq = [&](S const& a, S const& b) { return abs(a - b) < params.delta * S(0.5); };
-
-                    Mask at_boundary = float_eq(t, hit_rec.tnear);
-                    I clip_normal_index = select(
-                            at_boundary,
-                            I(num_clip_objects), // bbox normal is stored at last position in the list
-                            I(0)
-                            );
-
-                    for (int i = 0; i < num_clip_objects; ++i)
+                    if (visionaray::any(do_shade))
                     {
-                        Mask hit = float_eq(t, clip_intervals[i].y + params.delta); // TODO: understand why +delta
-                        clip_normal_index = select(hit, I(i), clip_normal_index);
-                        at_boundary |= hit;
-                    }
+                        // TODO: make this modifiable
+                        plastic<S> mat;
+                        mat.set_ca( from_rgb(vector<3, S>(0.3f, 0.3f, 0.3f)) );
+                        mat.set_cd( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
+                        mat.set_cs( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
+                        mat.set_ka( 1.0f );
+                        mat.set_kd( 1.0f );
+                        mat.set_ks( 1.0f );
+                        mat.set_specular_exp( 1000.0f );
 
-                    if (visionaray::any(at_boundary))
-                    {
-                        auto boundary_normal = gatherv(clip_normals, clip_normal_index);
-                        normal = select(
+
+                        // calculate shading
+                        auto grad = gradient(params.volumes[i], tex_coord);
+                        auto normal = normalize(grad);
+
+                        auto float_eq = [&](S const& a, S const& b) { return abs(a - b) < params.delta * S(0.5); };
+
+                        Mask at_boundary = float_eq(t, hit_rec.tnear);
+                        I clip_normal_index = select(
                                 at_boundary,
-                                boundary_normal * color.w + normal * (S(1.0) - color.w),
-                                normal
+                                I(num_clip_objects), // bbox normal is stored at last position in the list
+                                I(0)
+                                );
+
+                        for (int i = 0; i < num_clip_objects; ++i)
+                        {
+                            Mask hit = float_eq(t, clip_intervals[i].y + params.delta); // TODO: understand why +delta
+                            clip_normal_index = select(hit, I(i), clip_normal_index);
+                            at_boundary |= hit;
+                        }
+
+                        if (visionaray::any(at_boundary))
+                        {
+                            auto boundary_normal = gatherv(clip_normals, clip_normal_index);
+                            normal = select(
+                                    at_boundary,
+                                    boundary_normal * colori.w + normal * (S(1.0) - colori.w),
+                                    normal
+                                    );
+                        }
+
+                        do_shade &= length(grad) != 0.0f;
+
+                        shade_record<point_light<float>, S> sr;
+                        sr.isect_pos = pos;
+                        sr.light = params.light;
+                        sr.normal = normal;
+                        sr.view_dir = -ray.dir;
+                        sr.light_dir = normalize(sr.light.position());
+
+                        auto shaded_clr = mat.shade(sr);
+
+                        colori.xyz() = mul(
+                                colori.xyz(),
+                                to_rgb(shaded_clr),
+                                do_shade,
+                                colori.xyz()
                                 );
                     }
 
-                    do_shade &= length(grad) != 0.0f;
-
-                    shade_record<point_light<float>, S> sr;
-                    sr.isect_pos = pos;
-                    sr.light = params.light;
-                    sr.normal = normal;
-                    sr.view_dir = -ray.dir;
-                    sr.light_dir = normalize(sr.light.position());
-
-                    auto shaded_clr = mat.shade(sr);
-
-                    color.xyz() = mul(
-                            color.xyz(),
-                            to_rgb(shaded_clr),
-                            do_shade,
-                            color.xyz()
-                            );
-                }
-
-                if (params.opacity_correction)
-                {
-                    color.w = 1.0f - pow(1.0f - color.w, params.delta);
-                }
-
-                // compositing
-                if (params.mode == Params::AlphaCompositing)
-                {
-                    // premultiplied alpha
-                    auto premult = color.xyz() * color.w;
-                    color = C(premult, color.w);
-
-                    result.color += select(
-                            t < tmax && !clipped,
-                            color * (1.0f - result.color.w),
-                            C(0.0)
-                            );
-
-                    // early-ray termination - don't traverse w/o a contribution
-                    if (params.early_ray_termination && visionaray::all(result.color.w >= 0.999f))
+                    if (params.opacity_correction)
                     {
-                        break;
+                        colori.w = 1.0f - pow(1.0f - colori.w, params.delta);
                     }
+
+                    // compositing
+                    if (params.mode == Params::AlphaCompositing)
+                    {
+                        // premultiplied alpha
+                        auto premult = colori.xyz() * colori.w;
+                        colori = C(premult, colori.w);
+
+                        result.color += select(
+                                t < tmax && !clipped,
+                                colori * (1.0f - result.color.w),
+                                C(0.0)
+                                );
+
+                    }
+                    else if (params.mode == Params::MaxIntensity)
+                    {
+                        result.color = select(
+                                t < tmax && !clipped,
+                                max(colori, result.color),
+                                result.color
+                                );
+                    }
+                    else if (params.mode == Params::MinIntensity)
+                    {
+                        result.color = select(
+                                t < tmax && !clipped,
+                                min(colori, result.color),
+                                result.color
+                                );
+                    }
+                    else if (params.mode == Params::DRR)
+                    {
+                        result.color += select(
+                                t < tmax && !clipped,
+                                colori,
+                                C(0.0)
+                                );
+                    }
+
+                    color += colori;
                 }
-                else if (params.mode == Params::MaxIntensity)
-                {
-                    result.color = select(
-                            t < tmax && !clipped,
-                            max(color, result.color),
-                            result.color
-                            );
-                }
-                else if (params.mode == Params::MinIntensity)
-                {
-                    result.color = select(
-                            t < tmax && !clipped,
-                            min(color, result.color),
-                            result.color
-                            );
-                }
-                else if (params.mode == Params::DRR)
-                {
-                    result.color += select(
-                            t < tmax && !clipped,
-                            color,
-                            C(0.0)
-                            );
-                }
+            }
+
+            // early-ray termination - don't traverse w/o a contribution
+            if (params.mode == Params::AlphaCompositing && params.early_ray_termination && visionaray::all(result.color.w >= 0.999f))
+            {
+                break;
             }
 
             // step on
@@ -726,8 +734,9 @@ struct volume_kernel_params
 
     clip_box            bbox;
     float               delta;
-    VolumeTex           volume;
-    TransfuncTex        transfunc;
+    int                 num_channels;
+    VolumeTex const*    volumes;
+    TransfuncTex const* transfuncs;
     unsigned const*     depth_buffer;
     pixel_format        depth_format;
     projection_mode     mode;
@@ -790,63 +799,94 @@ struct vvRayCaster::Impl
     std::vector<volume8_type>       volume8;
     std::vector<volume16_type>      volume16;
     std::vector<volume32_type>      volume32;
-    transfunc_type                  transfunc;
+    std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
 
     void updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer);
     void updateTransfuncTexture(vvVolDesc* vd, vvRenderer* renderer);
+
+    template <typename Volumes>
+    void updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* renderer, Volumes& volume);
 };
 
 
 void vvRayCaster::Impl::updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer)
 {
-    tex_filter_mode filter_mode = renderer->getParameter(vvRenderer::VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
-    tex_address_mode address_mode = Clamp;
-
     if (vd->bpc == 1)
     {
-        volume8.resize(vd->frames);
-        for (size_t f = 0; f < vd->frames; ++f)
-        {
-            volume8[f].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volume8[f].set_data(reinterpret_cast<unorm<8> const*>(vd->getRaw(f)));
-            volume8[f].set_address_mode(address_mode);
-            volume8[f].set_filter_mode(filter_mode);
-        }
+        updateVolumeTexturesImpl(vd, renderer, volume8);
     }
     else if (vd->bpc == 2)
     {
-        volume16.resize(vd->frames);
-        for (size_t f = 0; f < vd->frames; ++f)
-        {
-            volume16[f].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volume16[f].set_data(reinterpret_cast<unorm<16> const*>(vd->getRaw(f)));
-            volume16[f].set_address_mode(address_mode);
-            volume16[f].set_filter_mode(filter_mode);
-        }
+        updateVolumeTexturesImpl(vd, renderer, volume16);
     }
     else if (vd->bpc == 4)
     {
-        volume32.resize(vd->frames);
-        for (size_t f = 0; f < vd->frames; ++f)
-        {
-            volume32[f].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volume32[f].set_data(reinterpret_cast<float const*>(vd->getRaw(f)));
-            volume32[f].set_address_mode(address_mode);
-            volume32[f].set_filter_mode(filter_mode);
-        }
+        updateVolumeTexturesImpl(vd, renderer, volume32);
     }
 }
 
 void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*renderer*/)
 {
-    aligned_vector<vec4> tf(256 * 1 * 1);
-    vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
+    transfuncs.resize(vd->tf.size());
+    for (size_t i = 0; i < vd->tf.size(); ++i)
+    {
+        aligned_vector<vec4> tf(256 * 1 * 1);
+        vd->computeTFTexture(i, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
-    transfunc.resize(tf.size());
-    transfunc.set_data(tf.data());
-    transfunc.set_address_mode(Clamp);
-    transfunc.set_filter_mode(Nearest);
+        transfuncs[i].resize(tf.size());
+        transfuncs[i].set_data(tf.data());
+        transfuncs[i].set_address_mode(Clamp);
+        transfuncs[i].set_filter_mode(Nearest);
+    }
+}
+
+template <typename Volumes>
+void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* renderer, Volumes& volumes)
+{
+    using Volume = typename Volumes::value_type;
+
+    tex_filter_mode filter_mode = renderer->getParameter(vvRenderer::VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
+    tex_address_mode address_mode = Clamp;
+
+    volumes.resize(vd->frames * vd->chan);
+    for (size_t f = 0; f < vd->frames; ++f)
+    {
+        uint8_t* raw = vd->getRaw(f);
+        aligned_vector<uint8_t> tmp;
+
+        // Swizzle from AoS to SoA
+        if (vd->chan > 1)
+        {
+            tmp.resize(vd->getFrameBytes());
+            for (size_t z = 0; z < vd->vox[2]; ++z)
+            {
+                for (size_t y = 0; y < vd->vox[1]; ++y)
+                {
+                    for (size_t x = 0; x < vd->vox[0]; ++x)
+                    {
+                        const uint8_t* voxel = (*vd)(f, x, y, z);
+                        for (size_t c = 0; c < vd->chan; ++c)
+                        {
+                            size_t index = z * vd->getSliceVoxels() + y * vd->vox[1] + x;
+                            tmp[c * vd->getFrameVoxels() + index] = voxel[c];
+                        }
+                    }
+                }
+            }
+            raw = tmp.data();
+        }
+
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            size_t index = f * vd->chan + c;
+
+            volumes[index].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
+            volumes[index].set_data(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
+            volumes[index].set_address_mode(address_mode);
+            volumes[index].set_filter_mode(filter_mode);
+        }
+    }
 }
 
 
@@ -1042,6 +1082,45 @@ void vvRayCaster::renderVolumeGL()
 
 #ifdef VV_ARCH_CUDA
     // TODO: consolidate!
+    thrust::device_vector<typename Impl::params8_type::volume_type> device_volumes8;
+    auto volumes8_data = [&]()
+    {
+        device_volumes8.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            device_volumes8[c] = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame() + c]);
+        }
+        return thrust::raw_pointer_cast(device_volumes8.data());
+    };
+
+    thrust::device_vector<typename Impl::params16_type::volume_type> device_volumes16;
+    auto volumes16_data = [&]()
+    {
+        device_volumes16.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            device_volumes16[c] = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame() + c]);
+        }
+        return thrust::raw_pointer_cast(device_volumes16.data());
+    };
+
+    thrust::device_vector<typename Impl::params32_type::volume_type> device_volumes32;
+    auto volumes32_data = [&]()
+    {
+        device_volumes32.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            device_volumes32[c] = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame() + c]);
+        }
+        return thrust::raw_pointer_cast(device_volumes32.data());
+    };
+
+    thrust::device_vector<typename Impl::params8_type::transfunc_type> device_transfuncs(impl_->transfuncs);
+    auto transfuncs_data = [&]()
+    {
+        return thrust::raw_pointer_cast(device_transfuncs.data());
+    };
+
     thrust::device_vector<typename Impl::params8_type::clip_object> device_objects(clip_objects);
     auto clip_objects_begin = [&]()
     {
@@ -1053,6 +1132,49 @@ void vvRayCaster::renderVolumeGL()
         return clip_objects_begin() + device_objects.size();
     };
 #else
+    aligned_vector<typename Impl::params8_type::volume_type> host_volumes8;
+    auto volumes8_data = [&]()
+    {
+        host_volumes8.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            host_volumes8[c] = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame() + c]);
+        }
+        return host_volumes8.data();
+    };
+
+    aligned_vector<typename Impl::params16_type::volume_type> host_volumes16;
+    auto volumes16_data = [&]()
+    {
+        host_volumes16.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            host_volumes16[c] = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame() + c]);
+        }
+        return host_volumes16.data();
+    };
+
+    aligned_vector<typename Impl::params32_type::volume_type> host_volumes32;
+    auto volumes32_data = [&]()
+    {
+        host_volumes32.resize(vd->chan);
+        for (size_t c = 0; c < vd->chan; ++c)
+        {
+            host_volumes32[c] = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame() + c]);
+        }
+        return host_volumes32.data();
+    };
+
+    aligned_vector<typename Impl::params8_type::transfunc_type> host_transfuncs(impl_->transfuncs.size());
+    auto transfuncs_data = [&]()
+    {
+        for (size_t i = 0; i < impl_->transfuncs.size(); ++i)
+        {
+            host_transfuncs[i] = typename Impl::params8_type::transfunc_type(impl_->transfuncs[i]);
+        }
+        return host_transfuncs.data();
+    };
+
     auto clip_objects_begin = [&]()
     {
         return clip_objects.data();
@@ -1070,8 +1192,9 @@ void vvRayCaster::renderVolumeGL()
     {
         impl_->params8.bbox                     = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
         impl_->params8.delta                    = delta;
-        impl_->params8.volume                   = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame()]);
-        impl_->params8.transfunc                = Impl::params8_type::transfunc_type(impl_->transfunc);
+        impl_->params8.num_channels             = static_cast<int>(vd->chan);
+        impl_->params8.volumes                  = volumes8_data();
+        impl_->params8.transfuncs               = transfuncs_data();
         impl_->params8.depth_buffer             = impl_->depth_buffer.data();
         impl_->params8.depth_format             = depth_format;
         impl_->params8.mode                     = Impl::params8_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
@@ -1092,8 +1215,9 @@ void vvRayCaster::renderVolumeGL()
     {
         impl_->params16.bbox                    = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
         impl_->params16.delta                   = delta;
-        impl_->params16.volume                  = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame()]);
-        impl_->params16.transfunc               = Impl::params16_type::transfunc_type(impl_->transfunc);
+        impl_->params16.num_channels            = static_cast<int>(vd->chan);
+        impl_->params16.volumes                 = volumes16_data();
+        impl_->params16.transfuncs              = transfuncs_data();
         impl_->params16.depth_buffer            = impl_->depth_buffer.data();
         impl_->params16.depth_format            = depth_format;
         impl_->params16.mode                    = Impl::params16_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
@@ -1114,8 +1238,9 @@ void vvRayCaster::renderVolumeGL()
     {
         impl_->params32.bbox                    = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
         impl_->params32.delta                   = delta;
-        impl_->params32.volume                  = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame()]);
-        impl_->params32.transfunc               = Impl::params32_type::transfunc_type(impl_->transfunc);
+        impl_->params32.num_channels            = static_cast<int>(vd->chan);
+        impl_->params32.volumes                 = volumes32_data();
+        impl_->params32.transfuncs              = transfuncs_data();
         impl_->params32.depth_buffer            = impl_->depth_buffer.data();
         impl_->params32.depth_format            = depth_format;
         impl_->params32.mode                    = Impl::params32_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
