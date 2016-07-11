@@ -652,53 +652,53 @@ struct volume_kernel
                         colori.w = 1.0f - pow(1.0f - colori.w, params.delta);
                     }
 
-                    // compositing
-                    if (params.mode == Params::AlphaCompositing)
-                    {
-                        // premultiplied alpha
-                        auto premult = colori.xyz() * colori.w;
-                        colori = C(premult, colori.w);
-
-                        result.color += select(
-                                t < tmax && !clipped,
-                                colori * (1.0f - result.color.w),
-                                C(0.0)
-                                );
-
-                    }
-                    else if (params.mode == Params::MaxIntensity)
-                    {
-                        result.color = select(
-                                t < tmax && !clipped,
-                                max(colori, result.color),
-                                result.color
-                                );
-                    }
-                    else if (params.mode == Params::MinIntensity)
-                    {
-                        result.color = select(
-                                t < tmax && !clipped,
-                                min(colori, result.color),
-                                result.color
-                                );
-                    }
-                    else if (params.mode == Params::DRR)
-                    {
-                        result.color += select(
-                                t < tmax && !clipped,
-                                colori,
-                                C(0.0)
-                                );
-                    }
-
                     color += colori;
                 }
-            }
 
-            // early-ray termination - don't traverse w/o a contribution
-            if (params.mode == Params::AlphaCompositing && params.early_ray_termination && visionaray::all(result.color.w >= 0.999f))
-            {
-                break;
+
+                // compositing
+                if (params.mode == Params::AlphaCompositing)
+                {
+                    // premultiplied alpha
+                    auto premult = color.xyz() * color.w;
+                    color = C(premult, color.w);
+
+                    result.color += select(
+                            t < tmax && !clipped,
+                            color * (1.0f - result.color.w),
+                            C(0.0)
+                            );
+
+                    // early-ray termination - don't traverse w/o a contribution
+                    if (params.early_ray_termination && visionaray::all(result.color.w >= 0.999f))
+                    {
+                        break;
+                    }
+                }
+                else if (params.mode == Params::MaxIntensity)
+                {
+                    result.color = select(
+                            t < tmax && !clipped,
+                            max(color, result.color),
+                            result.color
+                            );
+                }
+                else if (params.mode == Params::MinIntensity)
+                {
+                    result.color = select(
+                            t < tmax && !clipped,
+                            min(color, result.color),
+                            result.color
+                            );
+                }
+                else if (params.mode == Params::DRR)
+                {
+                    result.color += select(
+                            t < tmax && !clipped,
+                            color,
+                            C(0.0)
+                            );
+                }
             }
 
             // step on
