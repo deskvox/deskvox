@@ -660,8 +660,7 @@ struct volume_kernel
                 if (params.mode == Params::AlphaCompositing)
                 {
                     // premultiplied alpha
-                    auto premult = color.xyz() * color.w;
-                    color = C(premult, color.w);
+                    color.xyz() *= color.w;
 
                     result.color += select(
                             t < tmax && !clipped,
@@ -768,6 +767,11 @@ struct vvRayCaster::Impl
     using volume16_type     = cuda_texture<unorm<16>, NormalizedFloat, 3>;
     using volume32_type     = cuda_texture<float,     ElementType,     3>;
     using transfunc_type    = cuda_texture<vec4,      ElementType,     1>;
+
+    Impl()
+        : sched(8, 8)
+    {
+    }
 #else
     using sched_type        = tiled_sched<ray_type>;
     using volume8_type      = texture<unorm< 8>, NormalizedFloat, 3>;
