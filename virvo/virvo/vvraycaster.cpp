@@ -763,10 +763,10 @@ struct vvRayCaster::Impl
 {
 #if defined(VV_ARCH_CUDA)
     using sched_type        = cuda_sched<ray_type>;
-    using volume8_type      = cuda_texture<unorm< 8>, NormalizedFloat, 3>;
-    using volume16_type     = cuda_texture<unorm<16>, NormalizedFloat, 3>;
-    using volume32_type     = cuda_texture<float,     ElementType,     3>;
-    using transfunc_type    = cuda_texture<vec4,      ElementType,     1>;
+    using volume8_type      = cuda_texture<unorm< 8>, 3>;
+    using volume16_type     = cuda_texture<unorm<16>, 3>;
+    using volume32_type     = cuda_texture<float,     3>;
+    using transfunc_type    = cuda_texture<vec4,      1>;
 
     Impl()
         : sched(8, 8)
@@ -774,10 +774,10 @@ struct vvRayCaster::Impl
     }
 #else
     using sched_type        = tiled_sched<ray_type>;
-    using volume8_type      = texture<unorm< 8>, NormalizedFloat, 3>;
-    using volume16_type     = texture<unorm<16>, NormalizedFloat, 3>;
-    using volume32_type     = texture<float,     ElementType,     3>;
-    using transfunc_type    = texture<vec4,      ElementType,     1>;
+    using volume8_type      = texture<unorm< 8>, 3>;
+    using volume16_type     = texture<unorm<16>, 3>;
+    using volume32_type     = texture<float,     3>;
+    using transfunc_type    = texture<vec4,      1>;
 
     Impl()
         : sched(vvToolshed::getNumProcessors())
