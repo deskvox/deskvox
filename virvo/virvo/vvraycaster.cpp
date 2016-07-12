@@ -800,9 +800,9 @@ struct vvRayCaster::Impl
     params8_type                    params8;
     params16_type                   params16;
     params32_type                   params32;
-    std::vector<volume8_type>       volume8;
-    std::vector<volume16_type>      volume16;
-    std::vector<volume32_type>      volume32;
+    std::vector<volume8_type>       volumes8;
+    std::vector<volume16_type>      volumes16;
+    std::vector<volume32_type>      volumes32;
     std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
 
@@ -818,15 +818,15 @@ void vvRayCaster::Impl::updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer
 {
     if (vd->bpc == 1)
     {
-        updateVolumeTexturesImpl(vd, renderer, volume8);
+        updateVolumeTexturesImpl(vd, renderer, volumes8);
     }
     else if (vd->bpc == 2)
     {
-        updateVolumeTexturesImpl(vd, renderer, volume16);
+        updateVolumeTexturesImpl(vd, renderer, volumes16);
     }
     else if (vd->bpc == 4)
     {
-        updateVolumeTexturesImpl(vd, renderer, volume32);
+        updateVolumeTexturesImpl(vd, renderer, volumes32);
     }
 }
 
@@ -1092,7 +1092,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes8.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            device_volumes8[c] = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame() + c]);
+            device_volumes8[c] = Impl::params8_type::volume_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
         return thrust::raw_pointer_cast(device_volumes8.data());
     };
@@ -1103,7 +1103,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes16.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            device_volumes16[c] = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame() + c]);
+            device_volumes16[c] = Impl::params16_type::volume_type(impl_->volumes16[vd->getCurrentFrame() + c]);
         }
         return thrust::raw_pointer_cast(device_volumes16.data());
     };
@@ -1114,7 +1114,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes32.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            device_volumes32[c] = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame() + c]);
+            device_volumes32[c] = Impl::params32_type::volume_type(impl_->volumes32[vd->getCurrentFrame() + c]);
         }
         return thrust::raw_pointer_cast(device_volumes32.data());
     };
@@ -1142,7 +1142,7 @@ void vvRayCaster::renderVolumeGL()
         host_volumes8.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            host_volumes8[c] = Impl::params8_type::volume_type(impl_->volume8[vd->getCurrentFrame() + c]);
+            host_volumes8[c] = Impl::params8_type::volume_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
         return host_volumes8.data();
     };
@@ -1153,7 +1153,7 @@ void vvRayCaster::renderVolumeGL()
         host_volumes16.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            host_volumes16[c] = Impl::params16_type::volume_type(impl_->volume16[vd->getCurrentFrame() + c]);
+            host_volumes16[c] = Impl::params16_type::volume_type(impl_->volumes16[vd->getCurrentFrame() + c]);
         }
         return host_volumes16.data();
     };
@@ -1164,7 +1164,7 @@ void vvRayCaster::renderVolumeGL()
         host_volumes32.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            host_volumes32[c] = Impl::params32_type::volume_type(impl_->volume32[vd->getCurrentFrame() + c]);
+            host_volumes32[c] = Impl::params32_type::volume_type(impl_->volumes32[vd->getCurrentFrame() + c]);
         }
         return host_volumes32.data();
     };
@@ -1319,17 +1319,17 @@ void vvRayCaster::setParameter(ParameterType param, vvParam const& value)
                 _interpolation = static_cast< virvo::tex_filter_mode >(value.asInt());
                 tex_filter_mode filter_mode = _interpolation == virvo::Linear ? Linear : Nearest;
 
-                for (auto& tex : impl_->volume8)
+                for (auto& tex : impl_->volumes8)
                 {
                     tex.set_filter_mode(filter_mode);
                 }
 
-                for (auto& tex : impl_->volume16)
+                for (auto& tex : impl_->volumes16)
                 {
                     tex.set_filter_mode(filter_mode);
                 }
 
-                for (auto& tex : impl_->volume32)
+                for (auto& tex : impl_->volumes32)
                 {
                     tex.set_filter_mode(filter_mode);
                 }
