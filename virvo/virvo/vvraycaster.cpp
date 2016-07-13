@@ -43,6 +43,7 @@
 #include <visionaray/render_target.h>
 #include <visionaray/scheduler.h>
 #include <visionaray/shade_record.h>
+#include <visionaray/variant.h>
 
 #ifdef VV_ARCH_CUDA
 #include <visionaray/cuda/pixel_pack_buffer.h>
@@ -175,6 +176,79 @@ inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
     }
 
     return simd::pack(arr);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Supported volume types
+//
+
+#if defined(VV_ARCH_CUDA)
+using volume8_type  = cuda_texture< unorm< 8>, 3>;
+using volume16_type = cuda_texture< unorm<16>, 3>;
+using volume32_type = cuda_texture< float,     3>;
+#else
+using volume8_type  = texture<      unorm< 8>, 3>;
+using volume16_type = texture<      unorm<16>, 3>;
+using volume32_type = texture<      float,     3>;
+#endif
+
+
+//-------------------------------------------------------------------------------------------------
+// Volume texture reference (a variant managing various 3D texture types)
+//
+
+using generic_volume_ref = variant<
+    typename volume8_type::ref_type,
+    typename volume16_type::ref_type,
+    typename volume32_type::ref_type
+    >;
+
+struct volume_texture_ref : generic_volume_ref
+{
+    volume_texture_ref() = default;
+
+    template <typename Other>
+    volume_texture_ref(Other const& other)
+        : generic_volume_ref(other)
+    {
+    }
+};
+
+template <typename Coord>
+class tex3D_visitor
+{
+public:
+
+    using return_type = decltype(tex3D(typename volume8_type::ref_type{}, Coord{}));
+
+public:
+
+    VSNRAY_FUNC
+    tex3D_visitor(Coord coord)
+        : coord_(coord)
+    {
+    }
+
+    template <typename X>
+    VSNRAY_FUNC
+    return_type operator()(X const& ref) const
+    {
+        return tex3D(ref, coord_);
+    }
+
+private:
+
+    Coord coord_;
+
+};
+
+template <typename Coord>
+VSNRAY_FUNC
+auto tex3D(volume_texture_ref const& tex, Coord const& coord)
+    -> decltype(tex3D(typename volume8_type::ref_type{}, coord))
+{
+    return apply_visitor(tex3D_visitor<Coord>(coord), tex);
 }
 
 
@@ -763,9 +837,6 @@ struct vvRayCaster::Impl
 {
 #if defined(VV_ARCH_CUDA)
     using sched_type        = cuda_sched<ray_type>;
-    using volume8_type      = cuda_texture<unorm< 8>, 3>;
-    using volume16_type     = cuda_texture<unorm<16>, 3>;
-    using volume32_type     = cuda_texture<float,     3>;
     using transfunc_type    = cuda_texture<vec4,      1>;
 
     Impl()
@@ -774,9 +845,6 @@ struct vvRayCaster::Impl
     }
 #else
     using sched_type        = tiled_sched<ray_type>;
-    using volume8_type      = texture<unorm< 8>, 3>;
-    using volume16_type     = texture<unorm<16>, 3>;
-    using volume32_type     = texture<float,     3>;
     using transfunc_type    = texture<vec4,      1>;
 
     Impl()
@@ -791,15 +859,10 @@ struct vvRayCaster::Impl
     }
 #endif
 
-    using params8_type      = volume_kernel_params<typename volume8_type::ref_type,  typename transfunc_type::ref_type>;
-    using params16_type     = volume_kernel_params<typename volume16_type::ref_type, typename transfunc_type::ref_type>;
-    using params32_type     = volume_kernel_params<typename volume32_type::ref_type, typename transfunc_type::ref_type>;
-
+    using params_type = volume_kernel_params<volume_texture_ref, typename transfunc_type::ref_type>;
 
     sched_type                      sched;
-    params8_type                    params8;
-    params16_type                   params16;
-    params32_type                   params32;
+    params_type                     params;
     std::vector<volume8_type>       volumes8;
     std::vector<volume16_type>      volumes16;
     std::vector<volume32_type>      volumes32;
@@ -1010,7 +1073,7 @@ void vvRayCaster::renderVolumeGL()
     }
 
     // assemble clip objects
-    aligned_vector<typename Impl::params8_type::clip_object> clip_objects;
+    aligned_vector<typename Impl::params_type::clip_object> clip_objects;
 
 #if 0
     // OpenGL clip planes
@@ -1086,46 +1149,35 @@ void vvRayCaster::renderVolumeGL()
 
 #ifdef VV_ARCH_CUDA
     // TODO: consolidate!
-    thrust::device_vector<typename Impl::params8_type::volume_type> device_volumes8;
-    auto volumes8_data = [&]()
+    thrust::device_vector<typename Impl::params_type::volume_type> device_volumes;
+    auto volumes_data = [&]()
     {
-        device_volumes8.resize(vd->chan);
+        device_volumes.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            device_volumes8[c] = Impl::params8_type::volume_type(impl_->volumes8[vd->getCurrentFrame() + c]);
+            if (vd->bpc == 1)
+            {
+                device_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
+            }
+            else if (vd->bpc == 2)
+            {
+                device_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
+            }
+            else if (vd->bpc == 4)
+            {
+                device_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
+            }
         }
-        return thrust::raw_pointer_cast(device_volumes8.data());
+        return thrust::raw_pointer_cast(device_volumes.data());
     };
 
-    thrust::device_vector<typename Impl::params16_type::volume_type> device_volumes16;
-    auto volumes16_data = [&]()
-    {
-        device_volumes16.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
-        {
-            device_volumes16[c] = Impl::params16_type::volume_type(impl_->volumes16[vd->getCurrentFrame() + c]);
-        }
-        return thrust::raw_pointer_cast(device_volumes16.data());
-    };
-
-    thrust::device_vector<typename Impl::params32_type::volume_type> device_volumes32;
-    auto volumes32_data = [&]()
-    {
-        device_volumes32.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
-        {
-            device_volumes32[c] = Impl::params32_type::volume_type(impl_->volumes32[vd->getCurrentFrame() + c]);
-        }
-        return thrust::raw_pointer_cast(device_volumes32.data());
-    };
-
-    thrust::device_vector<typename Impl::params8_type::transfunc_type> device_transfuncs(impl_->transfuncs);
+    thrust::device_vector<typename Impl::params_type::transfunc_type> device_transfuncs(impl_->transfuncs);
     auto transfuncs_data = [&]()
     {
         return thrust::raw_pointer_cast(device_transfuncs.data());
     };
 
-    thrust::device_vector<typename Impl::params8_type::clip_object> device_objects(clip_objects);
+    thrust::device_vector<typename Impl::params_type::clip_object> device_objects(clip_objects);
     auto clip_objects_begin = [&]()
     {
         return thrust::raw_pointer_cast(device_objects.data());
@@ -1136,45 +1188,34 @@ void vvRayCaster::renderVolumeGL()
         return clip_objects_begin() + device_objects.size();
     };
 #else
-    aligned_vector<typename Impl::params8_type::volume_type> host_volumes8;
-    auto volumes8_data = [&]()
+    aligned_vector<typename Impl::params_type::volume_type> host_volumes;
+    auto volumes_data = [&]()
     {
-        host_volumes8.resize(vd->chan);
+        host_volumes.resize(vd->chan);
         for (size_t c = 0; c < vd->chan; ++c)
         {
-            host_volumes8[c] = Impl::params8_type::volume_type(impl_->volumes8[vd->getCurrentFrame() + c]);
+            if (vd->bpc == 1)
+            {
+                host_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
+            }
+            else if (vd->bpc == 2)
+            {
+                host_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
+            }
+            else if (vd->bpc == 4)
+            {
+                host_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
+            }
         }
-        return host_volumes8.data();
+        return host_volumes.data();
     };
 
-    aligned_vector<typename Impl::params16_type::volume_type> host_volumes16;
-    auto volumes16_data = [&]()
-    {
-        host_volumes16.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
-        {
-            host_volumes16[c] = Impl::params16_type::volume_type(impl_->volumes16[vd->getCurrentFrame() + c]);
-        }
-        return host_volumes16.data();
-    };
-
-    aligned_vector<typename Impl::params32_type::volume_type> host_volumes32;
-    auto volumes32_data = [&]()
-    {
-        host_volumes32.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
-        {
-            host_volumes32[c] = Impl::params32_type::volume_type(impl_->volumes32[vd->getCurrentFrame() + c]);
-        }
-        return host_volumes32.data();
-    };
-
-    aligned_vector<typename Impl::params8_type::transfunc_type> host_transfuncs(impl_->transfuncs.size());
+    aligned_vector<typename Impl::params_type::transfunc_type> host_transfuncs(impl_->transfuncs.size());
     auto transfuncs_data = [&]()
     {
         for (size_t i = 0; i < impl_->transfuncs.size(); ++i)
         {
-            host_transfuncs[i] = typename Impl::params8_type::transfunc_type(impl_->transfuncs[i]);
+            host_transfuncs[i] = typename Impl::params_type::transfunc_type(impl_->transfuncs[i]);
         }
         return host_transfuncs.data();
     };
@@ -1192,75 +1233,26 @@ void vvRayCaster::renderVolumeGL()
 
 
     // assemble volume kernel params and call kernel
-    if (vd->bpc == 1)
-    {
-        impl_->params8.bbox                     = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
-        impl_->params8.delta                    = delta;
-        impl_->params8.num_channels             = static_cast<int>(vd->chan);
-        impl_->params8.volumes                  = volumes8_data();
-        impl_->params8.transfuncs               = transfuncs_data();
-        impl_->params8.depth_buffer             = impl_->depth_buffer.data();
-        impl_->params8.depth_format             = depth_format;
-        impl_->params8.mode                     = Impl::params8_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
-        impl_->params8.depth_test               = depth_test;
-        impl_->params8.opacity_correction       = getParameter(VV_OPCORR);
-        impl_->params8.early_ray_termination    = getParameter(VV_TERMINATEEARLY);
-        impl_->params8.local_shading            = getParameter(VV_LIGHTING);
-        impl_->params8.camera_matrix_inv        = inverse(proj_matrix * view_matrix);
-        impl_->params8.viewport                 = viewport;
-        impl_->params8.light                    = light;
-        impl_->params8.clip_objects.begin       = clip_objects_begin();
-        impl_->params8.clip_objects.end         = clip_objects_end();
+    impl_->params.bbox                      = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
+    impl_->params.delta                     = delta;
+    impl_->params.num_channels              = static_cast<int>(vd->chan);
+    impl_->params.volumes                   = volumes_data();
+    impl_->params.transfuncs                = transfuncs_data();
+    impl_->params.depth_buffer              = impl_->depth_buffer.data();
+    impl_->params.depth_format              = depth_format;
+    impl_->params.mode                      = Impl::params_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
+    impl_->params.depth_test                = depth_test;
+    impl_->params.opacity_correction        = getParameter(VV_OPCORR);
+    impl_->params.early_ray_termination     = getParameter(VV_TERMINATEEARLY);
+    impl_->params.local_shading             = getParameter(VV_LIGHTING);
+    impl_->params.camera_matrix_inv         = inverse(proj_matrix * view_matrix);
+    impl_->params.viewport                  = viewport;
+    impl_->params.light                     = light;
+    impl_->params.clip_objects.begin        = clip_objects_begin();
+    impl_->params.clip_objects.end          = clip_objects_end();
 
-        volume_kernel<Impl::params8_type> kernel(impl_->params8);
-        impl_->sched.frame(kernel, sparams);
-    }
-    else if (vd->bpc == 2)
-    {
-        impl_->params16.bbox                    = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
-        impl_->params16.delta                   = delta;
-        impl_->params16.num_channels            = static_cast<int>(vd->chan);
-        impl_->params16.volumes                 = volumes16_data();
-        impl_->params16.transfuncs              = transfuncs_data();
-        impl_->params16.depth_buffer            = impl_->depth_buffer.data();
-        impl_->params16.depth_format            = depth_format;
-        impl_->params16.mode                    = Impl::params16_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
-        impl_->params16.depth_test              = depth_test;
-        impl_->params16.opacity_correction      = getParameter(VV_OPCORR);
-        impl_->params16.early_ray_termination   = getParameter(VV_TERMINATEEARLY);
-        impl_->params16.local_shading           = getParameter(VV_LIGHTING);
-        impl_->params16.camera_matrix_inv       = inverse(proj_matrix * view_matrix);
-        impl_->params16.viewport                = viewport;
-        impl_->params16.light                   = light;
-        impl_->params16.clip_objects.begin      = clip_objects_begin();
-        impl_->params16.clip_objects.end        = clip_objects_end();
-
-        volume_kernel<Impl::params16_type> kernel(impl_->params16);
-        impl_->sched.frame(kernel, sparams);
-    }
-    else if (vd->bpc == 4)
-    {
-        impl_->params32.bbox                    = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
-        impl_->params32.delta                   = delta;
-        impl_->params32.num_channels            = static_cast<int>(vd->chan);
-        impl_->params32.volumes                 = volumes32_data();
-        impl_->params32.transfuncs              = transfuncs_data();
-        impl_->params32.depth_buffer            = impl_->depth_buffer.data();
-        impl_->params32.depth_format            = depth_format;
-        impl_->params32.mode                    = Impl::params32_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
-        impl_->params32.depth_test              = depth_test;
-        impl_->params32.opacity_correction      = getParameter(VV_OPCORR);
-        impl_->params32.early_ray_termination   = getParameter(VV_TERMINATEEARLY);
-        impl_->params32.local_shading           = getParameter(VV_LIGHTING);
-        impl_->params32.camera_matrix_inv       = inverse(proj_matrix * view_matrix);
-        impl_->params32.viewport                = viewport;
-        impl_->params32.light                   = light;
-        impl_->params32.clip_objects.begin      = clip_objects_begin();
-        impl_->params32.clip_objects.end        = clip_objects_end();
-
-        volume_kernel<Impl::params32_type> kernel(impl_->params32);
-        impl_->sched.frame(kernel, sparams);
-    }
+    volume_kernel<Impl::params_type> kernel(impl_->params);
+    impl_->sched.frame(kernel, sparams);
 
     if (depth_test)
     {
