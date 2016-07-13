@@ -61,9 +61,17 @@ using namespace visionaray;
 
 
 //-------------------------------------------------------------------------------------------------
-// Ray type, depends upon target architecture
+// Global typedefs
 //
 
+#if defined(VV_ARCH_CUDA)
+using ray_type          = basic_ray<float>;
+using sched_type        = cuda_sched<ray_type>;
+using transfunc_type    = cuda_texture<vec4,      1>;
+using volume8_type      = cuda_texture< unorm< 8>, 3>;
+using volume16_type     = cuda_texture< unorm<16>, 3>;
+using volume32_type     = cuda_texture< float,     3>;
+#else
 #if defined(VV_ARCH_SSE2) || defined(VV_ARCH_SSE4_1)
 using ray_type = basic_ray<simd::float4>;
 #elif defined(VV_ARCH_AVX) || defined(VV_ARCH_AVX2)
@@ -71,6 +79,17 @@ using ray_type = basic_ray<simd::float8>;
 #else
 using ray_type = basic_ray<float>;
 #endif
+using sched_type        = tiled_sched<ray_type>;
+using transfunc_type    = texture<      vec4,      1>;
+using volume8_type      = texture<      unorm< 8>, 3>;
+using volume16_type     = texture<      unorm<16>, 3>;
+using volume32_type     = texture<      float,     3>;
+#endif
+
+//-------------------------------------------------------------------------------------------------
+// Ray type, depends upon target architecture
+//
+
 
 
 //-------------------------------------------------------------------------------------------------
@@ -177,21 +196,6 @@ inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
 
     return simd::pack(arr);
 }
-
-
-//-------------------------------------------------------------------------------------------------
-// Supported volume types
-//
-
-#if defined(VV_ARCH_CUDA)
-using volume8_type  = cuda_texture< unorm< 8>, 3>;
-using volume16_type = cuda_texture< unorm<16>, 3>;
-using volume32_type = cuda_texture< float,     3>;
-#else
-using volume8_type  = texture<      unorm< 8>, 3>;
-using volume16_type = texture<      unorm<16>, 3>;
-using volume32_type = texture<      float,     3>;
-#endif
 
 
 //-------------------------------------------------------------------------------------------------
@@ -544,12 +548,54 @@ public:
 
 
 //-------------------------------------------------------------------------------------------------
+// Volume kernel params
+//
+
+struct volume_kernel_params
+{
+    enum projection_mode
+    {
+        AlphaCompositing,
+        MaxIntensity,
+        MinIntensity,
+        DRR
+    };
+
+    using clip_object    = variant<clip_plane, clip_sphere>;
+    using transfunc_ref  = typename transfunc_type::ref_type;
+
+    clip_box                    bbox;
+    float                       delta;
+    int                         num_channels;
+    volume_texture_ref const*   volumes;
+    transfunc_ref const*        transfuncs;
+    unsigned const*             depth_buffer;
+    pixel_format                depth_format;
+    projection_mode             mode;
+    bool                        depth_test;
+    bool                        opacity_correction;
+    bool                        early_ray_termination;
+    bool                        local_shading;
+    mat4                        camera_matrix_inv;
+    recti                       viewport;
+    point_light<float>          light;
+
+    struct
+    {
+        clip_object const*      begin;
+        clip_object const*      end;
+    } clip_objects;
+};
+
+
+//-------------------------------------------------------------------------------------------------
 // Visionaray volume rendering kernel
 //
 
-template <typename Params>
 struct volume_kernel
 {
+    using Params = volume_kernel_params;
+
     VSNRAY_FUNC
     explicit volume_kernel(Params const& p)
         : params(p)
@@ -787,66 +833,17 @@ struct volume_kernel
 
 
 //-------------------------------------------------------------------------------------------------
-// Volume kernel params
-//
-
-template <typename VolumeTex, typename TransfuncTex>
-struct volume_kernel_params
-{
-    enum projection_mode
-    {
-        AlphaCompositing,
-        MaxIntensity,
-        MinIntensity,
-        DRR
-    };
-
-    using volume_type    = VolumeTex;
-    using transfunc_type = TransfuncTex;
-    using clip_object    = variant<clip_plane, clip_sphere>;
-
-    clip_box            bbox;
-    float               delta;
-    int                 num_channels;
-    VolumeTex const*    volumes;
-    TransfuncTex const* transfuncs;
-    unsigned const*     depth_buffer;
-    pixel_format        depth_format;
-    projection_mode     mode;
-    bool                depth_test;
-    bool                opacity_correction;
-    bool                early_ray_termination;
-    bool                local_shading;
-    mat4                camera_matrix_inv;
-    recti               viewport;
-    point_light<float>  light;
-
-    struct
-    {
-        clip_object const* begin;
-        clip_object const* end;
-    } clip_objects;
-};
-
-
-//-------------------------------------------------------------------------------------------------
 // Private implementation
 //
 
 struct vvRayCaster::Impl
 {
 #if defined(VV_ARCH_CUDA)
-    using sched_type        = cuda_sched<ray_type>;
-    using transfunc_type    = cuda_texture<vec4,      1>;
-
     Impl()
         : sched(8, 8)
     {
     }
 #else
-    using sched_type        = tiled_sched<ray_type>;
-    using transfunc_type    = texture<vec4,      1>;
-
     Impl()
         : sched(vvToolshed::getNumProcessors())
     {
@@ -859,7 +856,7 @@ struct vvRayCaster::Impl
     }
 #endif
 
-    using params_type = volume_kernel_params<volume_texture_ref, typename transfunc_type::ref_type>;
+    using params_type = volume_kernel_params;
 
     sched_type                      sched;
     params_type                     params;
@@ -1149,7 +1146,7 @@ void vvRayCaster::renderVolumeGL()
 
 #ifdef VV_ARCH_CUDA
     // TODO: consolidate!
-    thrust::device_vector<typename Impl::params_type::volume_type> device_volumes;
+    thrust::device_vector<volume_texture_ref> device_volumes;
     auto volumes_data = [&]()
     {
         device_volumes.resize(vd->chan);
@@ -1171,7 +1168,7 @@ void vvRayCaster::renderVolumeGL()
         return thrust::raw_pointer_cast(device_volumes.data());
     };
 
-    thrust::device_vector<typename Impl::params_type::transfunc_type> device_transfuncs(impl_->transfuncs);
+    thrust::device_vector<typename transfunc_type::ref_type> device_transfuncs(impl_->transfuncs);
     auto transfuncs_data = [&]()
     {
         return thrust::raw_pointer_cast(device_transfuncs.data());
@@ -1188,7 +1185,7 @@ void vvRayCaster::renderVolumeGL()
         return clip_objects_begin() + device_objects.size();
     };
 #else
-    aligned_vector<typename Impl::params_type::volume_type> host_volumes;
+    aligned_vector<volume_texture_ref> host_volumes;
     auto volumes_data = [&]()
     {
         host_volumes.resize(vd->chan);
@@ -1210,12 +1207,12 @@ void vvRayCaster::renderVolumeGL()
         return host_volumes.data();
     };
 
-    aligned_vector<typename Impl::params_type::transfunc_type> host_transfuncs(impl_->transfuncs.size());
+    aligned_vector<typename transfunc_type::ref_type> host_transfuncs(impl_->transfuncs.size());
     auto transfuncs_data = [&]()
     {
         for (size_t i = 0; i < impl_->transfuncs.size(); ++i)
         {
-            host_transfuncs[i] = typename Impl::params_type::transfunc_type(impl_->transfuncs[i]);
+            host_transfuncs[i] = typename transfunc_type::ref_type(impl_->transfuncs[i]);
         }
         return host_transfuncs.data();
     };
@@ -1251,7 +1248,7 @@ void vvRayCaster::renderVolumeGL()
     impl_->params.clip_objects.begin        = clip_objects_begin();
     impl_->params.clip_objects.end          = clip_objects_end();
 
-    volume_kernel<Impl::params_type> kernel(impl_->params);
+    volume_kernel kernel(impl_->params);
     impl_->sched.frame(kernel, sparams);
 
     if (depth_test)
