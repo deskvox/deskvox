@@ -287,6 +287,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   chan   = v->chan;
   frames = 0;
   currentFrame = (f==-1) ? v->currentFrame : 0;
+  indexChannel = -1;
 
   real.resize(chan);
   std::copy(v->real.begin(), v->real.end(), std::back_inserter(real));
@@ -367,6 +368,7 @@ void vvVolDesc::initialize()
   setDefaults();
   removeSequence();
   currentFrame = 0;
+  indexChannel = -1;
   filename = NULL;
   _mask = NULL;
   _radius = 0;
@@ -537,6 +539,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
+    indexChannel = src->indexChannel;
     if (tf.size() < src->tf.size())
       tf.resize(src->tf.size());
     for (size_t i=0; i<src->tf.size(); ++i)
@@ -1304,11 +1307,27 @@ size_t vvVolDesc::getCurrentFrame() const
 }
 
 //----------------------------------------------------------------------------
+/// Set the index channel
+void vvVolDesc::setIndexChannel(int ic)
+{
+  indexChannel = ic;
+}
+
+//----------------------------------------------------------------------------
+/// Get the index channel
+int vvVolDesc::getIndexChannel() const
+{
+  return indexChannel;
+}
+
+//----------------------------------------------------------------------------
 /// Get number of bytes per voxel.
 size_t vvVolDesc::getBPV() const
 {
   return bpc * chan;
 }
+//----------------------------------------------------------------------------
+/// Get number of bytes per voxel.
 
 //----------------------------------------------------------------------------
 /** Get range of values in each channel. Depends only on setting of bpc.
