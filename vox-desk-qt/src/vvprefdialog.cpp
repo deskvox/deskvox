@@ -378,6 +378,8 @@ void vvPrefDialog::applySettings()
 {
   QSettings settings;
 
+  ui->rendererBox->setCurrentIndex(settings.value("renderer/type").toInt());
+
   ui->rayRendArchBox->setCurrentIndex(settings.value("rayrend/arch").toInt());
 
   ui->hostEdit->setText(settings.value("remote/host").toString());
@@ -661,8 +663,11 @@ void vvPrefDialog::onRendererChanged(int index)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onRendererChanged()");
 
-  VV_UNUSED(index);
   assert(index == ui->rendererBox->currentIndex());
+
+  QSettings settings;
+  settings.setValue("renderer/type", index);
+
   emitRenderer();
 }
 
