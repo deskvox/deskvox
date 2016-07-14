@@ -129,31 +129,31 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   _canvas->makeCurrent();
   glewInit(); // we need glCreateProgram etc. when checking for glsl support
 
-  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("slices", "OpenGL textures"));
-  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "OpenGL textures"));
-  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("planar", "OpenGL textures"));
-  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("spherical", "OpenGL textures"));
-  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "Ray casting"));
+  impl->rendererDescriptions.insert(std::make_pair("slices", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::make_pair("cubic2d", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::make_pair("planar", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::make_pair("spherical", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::make_pair("rayrend", "Ray casting"));
 
-  impl->algoDescriptions.insert(std::pair<std::string, std::string>("default", "Autoselect"));
-  impl->algoDescriptions.insert(std::pair<std::string, std::string>("slices", "2D textures (slices)"));
-  impl->algoDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "2D textures (cubic)"));
-  impl->algoDescriptions.insert(std::pair<std::string, std::string>("planar", "3D textures (viewport aligned)"));
-  impl->algoDescriptions.insert(std::pair<std::string, std::string>("spherical", "3D textures (spherical)"));
+  impl->algoDescriptions.insert(std::make_pair("default", "Autoselect"));
+  impl->algoDescriptions.insert(std::make_pair("slices", "2D textures (slices)"));
+  impl->algoDescriptions.insert(std::make_pair("cubic2d", "2D textures (cubic)"));
+  impl->algoDescriptions.insert(std::make_pair("planar", "3D textures (viewport aligned)"));
+  impl->algoDescriptions.insert(std::make_pair("spherical", "3D textures (spherical)"));
 
   // renderer combo box
   int idx = 0;
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->rendererBox->addItem(impl->rendererDescriptions["slices"].c_str());
-    impl->rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::TEXREND));
+    impl->rendererMap.insert(std::make_pair(idx, vvRenderer::TEXREND));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::RAYREND))
   {
     ui->rendererBox->addItem(impl->rendererDescriptions["rayrend"].c_str());
-    impl->rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::RAYREND));
+    impl->rendererMap.insert(std::make_pair(idx, vvRenderer::RAYREND));
     ++idx;
   }
 
@@ -168,35 +168,35 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->geometryBox->addItem(impl->algoDescriptions["default"].c_str());
-    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "default"));
+    impl->texRendTypeMap.insert(std::make_pair(idx, "default"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("slices"))
   {
     ui->geometryBox->addItem(impl->algoDescriptions["slices"].c_str());
-    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "slices"));
+    impl->texRendTypeMap.insert(std::make_pair(idx, "slices"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("cubic2d"))
   {
     ui->geometryBox->addItem(impl->algoDescriptions["cubic2d"].c_str());
-    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "cubic2d"));
+    impl->texRendTypeMap.insert(std::make_pair(idx, "cubic2d"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("planar"))
   {
     ui->geometryBox->addItem(impl->algoDescriptions["planar"].c_str());
-    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "planar"));
+    impl->texRendTypeMap.insert(std::make_pair(idx, "planar"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("spherical"))
   {
     ui->geometryBox->addItem(impl->algoDescriptions["spherical"].c_str());
-    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "spherical"));
+    impl->texRendTypeMap.insert(std::make_pair(idx, "spherical"));
     ++idx;
   }
 
@@ -206,28 +206,28 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("Autoselect");
-    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "default"));
+    impl->voxTypeMap.insert(std::make_pair(idx, "default"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("RGBA");
-    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "rgba"));
+    impl->voxTypeMap.insert(std::make_pair(idx, "rgba"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("ARB fragment program");
-    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "arb"));
+    impl->voxTypeMap.insert(std::make_pair(idx, "arb"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND) && vvShaderFactory::isSupported("glsl"))
   {
     ui->voxTypeBox->addItem("GLSL fragment program");
-    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "shader"));
+    impl->voxTypeMap.insert(std::make_pair(idx, "shader"));
     ++idx;
   }
 
@@ -235,19 +235,19 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   idx = 0;
 
   ui->fboBox->addItem("None");
-  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 0));
+  impl->fboPrecisionMap.insert(std::make_pair(idx, 0));
   ++idx;
 
   ui->fboBox->addItem("8 bit precision");
-  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 8));
+  impl->fboPrecisionMap.insert(std::make_pair(idx, 8));
   ++idx;
 
   ui->fboBox->addItem("16 bit precision");
-  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 16));
+  impl->fboPrecisionMap.insert(std::make_pair(idx, 16));
   ++idx;
 
   ui->fboBox->addItem("32 bit precision");
-  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 32));
+  impl->fboPrecisionMap.insert(std::make_pair(idx, 32));
   ++idx;
 
   // ray rend architecture combo box
@@ -256,42 +256,42 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   if (vvRendererFactory::hasRenderer("rayrend", "cuda"))
   {
     ui->rayRendArchBox->addItem("CUDA - GPGPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "cuda"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "cuda"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "fpu"))
   {
     ui->rayRendArchBox->addItem("FPU - CPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "fpu"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "fpu"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "sse2"))
   {
     ui->rayRendArchBox->addItem("SSE 2 - optimized CPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse2"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "sse2"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "sse4_1"))
   {
     ui->rayRendArchBox->addItem("SSE 4.1 - optimized CPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse4_1"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "sse4_1"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "avx"))
   {
     ui->rayRendArchBox->addItem("AVX - optimized CPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "avx"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "avx"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "avx2"))
   {
     ui->rayRendArchBox->addItem("AVX 2 - optimized CPU ray casting");
-    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "avx2"));
+    impl->rayRendArchMap.insert(std::make_pair(idx, "avx2"));
     ++idx;
   }
 
@@ -299,29 +299,29 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   idx = 0;
 
   ui->stereoModeBox->addItem("Off (Mono)");
-  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::Mono));
+  impl->stereoModeMap.insert(std::make_pair(idx, vox::Mono));
   ++idx;
 
   if (_canvas->format().stencil())
   {
     ui->stereoModeBox->addItem("Interlaced (Lines)");
-    impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedLines));
+    impl->stereoModeMap.insert(std::make_pair(idx, vox::InterlacedLines));
     ++idx;
   }
 
   if (_canvas->format().stencil())
   {
     ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
-    impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedCheckerboard));
+    impl->stereoModeMap.insert(std::make_pair(idx, vox::InterlacedCheckerboard));
     ++idx;
   }
 
   ui->stereoModeBox->addItem("Red cyan");
-  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::RedCyan));
+  impl->stereoModeMap.insert(std::make_pair(idx, vox::RedCyan));
   ++idx;
 
   ui->stereoModeBox->addItem("Side by side");
-  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::SideBySide));
+  impl->stereoModeMap.insert(std::make_pair(idx, vox::SideBySide));
   ++idx;
 
 
