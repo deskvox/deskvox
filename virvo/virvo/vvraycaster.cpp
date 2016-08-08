@@ -569,6 +569,7 @@ struct volume_kernel_params
     int                         num_channels;
     volume_texture_ref const*   volumes;
     transfunc_ref const*        transfuncs;
+    vec2 const*                 ranges;
     unsigned const*             depth_buffer;
     pixel_format                depth_format;
     projection_mode             mode;
@@ -700,7 +701,7 @@ struct volume_kernel
 
                 for (int i = 0; i < params.num_channels; ++i)
                 {
-                    S voxel  = tex3D(params.volumes[i], tex_coord);
+                    S voxel  = (tex3D(params.volumes[i], tex_coord) - S(params.ranges[i].x)) / S(params.ranges[i].y);
                     C colori = tex1D(params.transfuncs[i], voxel);
 
                     auto do_shade = params.local_shading && colori.w >= 0.1f;
@@ -1174,6 +1175,17 @@ void vvRayCaster::renderVolumeGL()
         return thrust::raw_pointer_cast(device_transfuncs.data());
     };
 
+    thrust::device_vector<vec2> device_ranges;
+    auto ranges_data = [&]()
+    {
+        for (size_t i = 0; i < vd->real.size(); ++i)
+        {
+            device_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+        }
+
+        return thrust::raw_pointer_cast(device_ranges.data());
+    };
+
     thrust::device_vector<typename Impl::params_type::clip_object> device_objects(clip_objects);
     auto clip_objects_begin = [&]()
     {
@@ -1217,6 +1229,17 @@ void vvRayCaster::renderVolumeGL()
         return host_transfuncs.data();
     };
 
+    aligned_vector<vec2> host_ranges;
+    auto ranges_data = [&]()
+    {
+        for (size_t i = 0; i < vd->real.size(); ++i)
+        {
+            host_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+        }
+
+        return host_ranges.data();
+    };
+
     auto clip_objects_begin = [&]()
     {
         return clip_objects.data();
@@ -1235,6 +1258,7 @@ void vvRayCaster::renderVolumeGL()
     impl_->params.num_channels              = static_cast<int>(vd->chan);
     impl_->params.volumes                   = volumes_data();
     impl_->params.transfuncs                = transfuncs_data();
+    impl_->params.ranges                    = ranges_data();
     impl_->params.depth_buffer              = impl_->depth_buffer.data();
     impl_->params.depth_format              = depth_format;
     impl_->params.mode                      = Impl::params_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
