@@ -206,14 +206,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   usePreIntegration = false;
   textures = 0;
 
-  _currentShader = vd->chan - 1;
-  _previousShader = _currentShader;
-
-  if (vd->tf.size() > 1)
-  {
-    _currentShader = ShaderMultiTF; // TF for each channel
-  }
-  _currentShader = ShaderMultiTF; // TF for each channel
+  setCurrentShader(_currentShader);
 
   _lastFrame = std::numeric_limits<size_t>::max();
   lutDistance = -1.0;
@@ -439,8 +432,6 @@ void vvTexRend::updateTransferFunction()
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
   if (voxelType==VV_PIX_SHD /* && vd->tf.size() > 1*/)
   {
-     _currentShader = ShaderMultiTF;
-
      if (_preIntegration && arbMltTex && !(getParameter(VV_CLIP_MODE) && (_clipSingleSlice || _clipOpaque)))
        usePreIntegration = true;
      else
@@ -1729,7 +1720,7 @@ void vvTexRend::setCurrentShader(const int shader)
 {
   vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
   if(shader >= NUM_PIXEL_SHADERS || shader < 0)
-    _currentShader = Shader1Chan;
+    _currentShader = ShaderMultiTF;
   else
     _currentShader = shader;
 

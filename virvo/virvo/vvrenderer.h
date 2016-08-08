@@ -209,6 +209,7 @@ protected:
   float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
   virvo::BufferPrecision _imagePrecision;       /*!  render to high-res offscreen buffer (32 bit float) to minimize rounding error
                                                      caused by adding up contribution of to many slices */
+  int _currentShader;                           ///< ID of currently used fragment shader
   bool _lighting;                               ///< use local illumination
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _useIbr;                                 ///< use ibr in rayrenderer
