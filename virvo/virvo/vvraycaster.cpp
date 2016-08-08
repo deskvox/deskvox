@@ -701,7 +701,7 @@ struct volume_kernel
 
                 for (int i = 0; i < params.num_channels; ++i)
                 {
-                    S voxel  = (tex3D(params.volumes[i], tex_coord) - S(params.ranges[i].x)) / S(params.ranges[i].y);
+                    S voxel  = tex3D(params.volumes[i], tex_coord);
                     C colori = tex1D(params.transfuncs[i], voxel);
 
                     auto do_shade = params.local_shading && colori.w >= 0.1f;
