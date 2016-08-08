@@ -75,12 +75,14 @@ enum {
   Shader1Chan = 0,
   ShaderPreInt = 11,
   ShaderLighting = 12,
-  ShaderMultiTF = 13
+  ShaderMultiTF = 13,
+  ShaderRGB = 14,
+  NumPixelShaders
 };
 
 
 //----------------------------------------------------------------------------
-const int vvTexRend::NUM_PIXEL_SHADERS = ShaderMultiTF+1;
+const int vvTexRend::NUM_PIXEL_SHADERS = NumPixelShaders;
 
 static virvo::BufferPrecision mapBitsToBufferPrecision(int bits)
 {
