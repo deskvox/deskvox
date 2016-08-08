@@ -261,6 +261,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s);
     void   cropTimesteps(size_t start, size_t steps);
     void   resize(ssize_t w, ssize_t h, ssize_t s, InterpolationType, bool=false);
+    void   replaceData(int numChan, const int *oldVal, const int *newVal, bool verbose=false);
     void   shift(int, int, int);
     void   convertVoxelOrder();
     void   convertCoviseToVirvo();
