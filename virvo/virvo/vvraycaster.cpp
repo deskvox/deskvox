@@ -773,6 +773,9 @@ struct volume_kernel
                         colori.w = 1.0f - pow(1.0f - colori.w, params.delta);
                     }
 
+                    // premultiplied alpha
+                    colori.xyz() *= colori.w;
+
                     color += colori;
                 }
 
@@ -780,9 +783,6 @@ struct volume_kernel
                 // compositing
                 if (params.mode == Params::AlphaCompositing)
                 {
-                    // premultiplied alpha
-                    color.xyz() *= color.w;
-
                     result.color += select(
                             t < tmax && !clipped,
                             color * (1.0f - result.color.w),
