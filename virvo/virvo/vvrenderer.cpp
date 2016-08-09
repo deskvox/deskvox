@@ -572,7 +572,7 @@ void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 
   // then use viewDir as the normal.
   if (getParameter(VV_CLIP_MODE))
   {
-    normal = getParameter(VV_CLIP_PLANE_POINT);
+    normal = getParameter(VV_CLIP_PLANE_NORMAL);
   }
   else if ( isOrtho || viewDir == vec3f(0.0f) )
   {
