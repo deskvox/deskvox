@@ -668,6 +668,12 @@ void vvConv::modifyInputFile(vvVolDesc* v)
     cerr << "Cropping data." << endl;
     v->crop(cropPos[0], cropPos[1], cropPos[2], cropSize[0], cropSize[1], cropSize[2]);
   }
+  if (replace)
+  {
+    cerr << "Replacing data: ";
+    v->replaceData(3, replaceOld, replaceNew, true);
+    cerr << endl;
+  }
   if (croptodata)
   {
     cerr << "Cropping to non-zero area: " << flush;
@@ -686,12 +692,6 @@ void vvConv::modifyInputFile(vvVolDesc* v)
       newSize[2] = (int)(resizeFactor * (float)v->vox[2]);
     }
     v->resize(newSize[0], newSize[1], newSize[2], ipt, true);
-    cerr << endl;
-  }
-  if (replace)
-  {
-    cerr << "Replacing data: ";
-    v->replaceData(3, replaceOld, replaceNew, true);
     cerr << endl;
   }
   if (channels>-1)
