@@ -208,8 +208,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   usePreIntegration = false;
   textures = 0;
 
-  setCurrentShader(_currentShader);
-
   _lastFrame = std::numeric_limits<size_t>::max();
   lutDistance = -1.0;
   _isROIChanged = true;
@@ -250,8 +248,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
   {
     makeTextures(true);      // we only have to do this once for non-RGBA textures
   }
+
+  setCurrentShader(_currentShader);
+
   updateTransferFunction();
-  _shader.reset(initShader());
 }
 
 //----------------------------------------------------------------------------
