@@ -1169,7 +1169,11 @@ void vvRayCaster::renderVolumeGL()
         return thrust::raw_pointer_cast(device_volumes.data());
     };
 
-    thrust::device_vector<typename transfunc_type::ref_type> device_transfuncs(impl_->transfuncs);
+    std::vector<typename transfunc_type::ref_type> trefs;
+    for (const auto &tf : impl_->transfuncs)
+        trefs.push_back(tf);
+    thrust::device_vector<typename transfunc_type::ref_type> device_transfuncs(trefs);
+
     auto transfuncs_data = [&]()
     {
         return thrust::raw_pointer_cast(device_transfuncs.data());
