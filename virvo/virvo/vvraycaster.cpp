@@ -899,8 +899,8 @@ void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*rend
         aligned_vector<vec4> tf(256 * 1 * 1);
         vd->computeTFTexture(i, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
-        transfuncs[i].resize(tf.size());
-        transfuncs[i].set_data(tf.data());
+        transfuncs[i] = transfunc_type(tf.size());
+        transfuncs[i].reset(tf.data());
         transfuncs[i].set_address_mode(Clamp);
         transfuncs[i].set_filter_mode(Nearest);
     }
@@ -946,8 +946,8 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
         {
             size_t index = f * vd->chan + c;
 
-            volumes[index].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volumes[index].set_data(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
+            volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
+            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
             volumes[index].set_address_mode(address_mode);
             volumes[index].set_filter_mode(filter_mode);
         }
