@@ -287,6 +287,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   chan   = v->chan;
   frames = 0;
   currentFrame = (f==-1) ? v->currentFrame : 0;
+  indexChannel = -1;
 
   real.resize(chan);
   std::copy(v->real.begin(), v->real.end(), std::back_inserter(real));
@@ -367,6 +368,7 @@ void vvVolDesc::initialize()
   setDefaults();
   removeSequence();
   currentFrame = 0;
+  indexChannel = -1;
   filename = NULL;
   _mask = NULL;
   _radius = 0;
@@ -537,6 +539,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
+    indexChannel = src->indexChannel;
     if (tf.size() < src->tf.size())
       tf.resize(src->tf.size());
     for (size_t i=0; i<src->tf.size(); ++i)
@@ -1304,11 +1307,27 @@ size_t vvVolDesc::getCurrentFrame() const
 }
 
 //----------------------------------------------------------------------------
+/// Set the index channel
+void vvVolDesc::setIndexChannel(int ic)
+{
+  indexChannel = ic;
+}
+
+//----------------------------------------------------------------------------
+/// Get the index channel
+int vvVolDesc::getIndexChannel() const
+{
+  return indexChannel;
+}
+
+//----------------------------------------------------------------------------
 /// Get number of bytes per voxel.
 size_t vvVolDesc::getBPV() const
 {
   return bpc * chan;
 }
+//----------------------------------------------------------------------------
+/// Get number of bytes per voxel.
 
 //----------------------------------------------------------------------------
 /** Get range of values in each channel. Depends only on setting of bpc.
@@ -2311,6 +2330,58 @@ void vvVolDesc::resize(ssize_t w, ssize_t h, ssize_t s, InterpolationType ipt, b
   vox[0] = w;
   vox[1] = h;
   vox[2] = s;
+}
+
+void vvVolDesc::replaceData(int numChan, const int *oldVal, const int *newVal, bool verbose)
+{
+  size_t numReplaced = 0;
+  size_t oldSliceVoxels = getSliceVoxels();
+
+  vvDebugMsg::msg(2, "vvVolDesc::replaceData()");
+
+  if (numChan > chan)
+    numChan = chan;
+
+  if (verbose) vvToolshed::initProgress(vox[2] * frames);
+  raw.first();
+  for (size_t f=0; f<frames; ++f)
+  {
+    uint8_t *rd = raw.getData();
+
+    // Traverse destination data:
+    for (ssize_t z=0; z<vox[2]; ++z)
+    {
+      for (ssize_t y=0; y<vox[1]; ++y)
+      {
+        for (ssize_t x=0; x<vox[0]; ++x)
+        {
+          uint8_t *src = rd + getBPV() * (x + y * vox[0] + z * oldSliceVoxels);
+          bool equal = true;
+          for (int c=0; c<numChan; ++c)
+          {
+            if (src[c] != oldVal[c])
+            {
+              equal = false;
+              break;
+            }
+          }
+          if (equal)
+          {
+            ++numReplaced;
+            for (int c=0; c<numChan; ++c)
+              src[c] = newVal[c];
+          }
+        }
+      }
+      if (verbose) vvToolshed::printProgress(z + vox[2] * f);
+    }
+    raw.next();
+  }
+
+  if (verbose)
+  {
+    vvDebugMsg::msg(1, "vvVolDesc::replaceData(): %d voxels replaced", (int)numReplaced);
+  }
 }
 
 //----------------------------------------------------------------------------

@@ -236,6 +236,8 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   setFilename(const char*);
     void   setCurrentFrame(size_t);
     size_t getCurrentFrame() const;
+    void   setIndexChannel(int ic);
+    int    getIndexChannel() const;
     size_t getBPV() const;
     void   setDist(float, float, float);
     void   setDist(virvo::vec3f const& d);
@@ -259,6 +261,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s);
     void   cropTimesteps(size_t start, size_t steps);
     void   resize(ssize_t w, ssize_t h, ssize_t s, InterpolationType, bool=false);
+    void   replaceData(int numChan, const int *oldVal, const int *newVal, bool verbose=false);
     void   shift(int, int, int);
     void   convertVoxelOrder();
     void   convertCoviseToVirvo();
@@ -342,6 +345,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
     size_t currentFrame;                          ///< current animation frame
+    int indexChannel;                             ///< assign one designated channel to contain an index volume (default: none, indexChannel == -1)
     mutable vvSLList<uint8_t*> raw;               ///< pointer list to raw volume data - mutable because of Java style iterators
     std::vector<int> rawFrameNumber;           ///< frame numbers (if frames do not come in sequence)
     std::vector< std::string > channelNames;      ///< names of data channels

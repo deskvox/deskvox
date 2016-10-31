@@ -94,6 +94,7 @@ vvRenderState::vvRenderState()
   , _useOffscreenBuffer(false)
   , _imageScale(1.0f)
   , _imagePrecision(virvo::Byte)
+  , _currentShader(-1)
   , _lighting(false)
   , _showTexture(true)
   , _useIbr(false)
@@ -324,6 +325,8 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_CLIP_OUTLINE7:
     _clipOutlines[param - VV_CLIP_OUTLINE0] = value;
     break;
+  case VV_PIX_SHADER:
+    _currentShader = value;
   default:
     break;
   }
@@ -468,6 +471,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_CLIP_OUTLINE6:
   case VV_CLIP_OUTLINE7:
     return _clipOutlines[param - VV_CLIP_OUTLINE0];
+  case VV_PIX_SHADER:
+    return _currentShader;
   default:
     return vvParam();
   }
@@ -567,7 +572,7 @@ void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 
   // then use viewDir as the normal.
   if (getParameter(VV_CLIP_MODE))
   {
-    normal = getParameter(VV_CLIP_PLANE_POINT);
+    normal = getParameter(VV_CLIP_PLANE_NORMAL);
   }
   else if ( isOrtho || viewDir == vec3f(0.0f) )
   {

@@ -234,8 +234,9 @@ const string vvShaderFactory::getShaderDir()
   }
   else
   {
+#define STRINGIFY(x) #x
 #ifdef VIRVO_SHADER_DIR
-    result = VIRVO_SHADER_DIR;
+	  result = STRINGIFY(VIRVO_SHADER_DIR);
 #else
     cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
     static char shaderDir[256];

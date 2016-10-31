@@ -569,6 +569,7 @@ struct volume_kernel_params
     int                         num_channels;
     volume_texture_ref const*   volumes;
     transfunc_ref const*        transfuncs;
+    vec2 const*                 ranges;
     unsigned const*             depth_buffer;
     pixel_format                depth_format;
     projection_mode             mode;
@@ -772,6 +773,9 @@ struct volume_kernel
                         colori.w = 1.0f - pow(1.0f - colori.w, params.delta);
                     }
 
+                    // premultiplied alpha
+                    colori.xyz() *= colori.w;
+
                     color += colori;
                 }
 
@@ -779,9 +783,6 @@ struct volume_kernel
                 // compositing
                 if (params.mode == Params::AlphaCompositing)
                 {
-                    // premultiplied alpha
-                    color.xyz() *= color.w;
-
                     result.color += select(
                             t < tmax && !clipped,
                             color * (1.0f - result.color.w),
@@ -898,8 +899,8 @@ void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*rend
         aligned_vector<vec4> tf(256 * 1 * 1);
         vd->computeTFTexture(i, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
-        transfuncs[i].resize(tf.size());
-        transfuncs[i].set_data(tf.data());
+        transfuncs[i] = transfunc_type(tf.size());
+        transfuncs[i].reset(tf.data());
         transfuncs[i].set_address_mode(Clamp);
         transfuncs[i].set_filter_mode(Nearest);
     }
@@ -945,8 +946,8 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
         {
             size_t index = f * vd->chan + c;
 
-            volumes[index].resize(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volumes[index].set_data(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
+            volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
+            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
             volumes[index].set_address_mode(address_mode);
             volumes[index].set_filter_mode(filter_mode);
         }
@@ -1168,10 +1169,25 @@ void vvRayCaster::renderVolumeGL()
         return thrust::raw_pointer_cast(device_volumes.data());
     };
 
-    thrust::device_vector<typename transfunc_type::ref_type> device_transfuncs(impl_->transfuncs);
+    std::vector<typename transfunc_type::ref_type> trefs;
+    for (const auto &tf : impl_->transfuncs)
+        trefs.push_back(tf);
+    thrust::device_vector<typename transfunc_type::ref_type> device_transfuncs(trefs);
+
     auto transfuncs_data = [&]()
     {
         return thrust::raw_pointer_cast(device_transfuncs.data());
+    };
+
+    thrust::device_vector<vec2> device_ranges;
+    auto ranges_data = [&]()
+    {
+        for (size_t i = 0; i < vd->real.size(); ++i)
+        {
+            device_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+        }
+
+        return thrust::raw_pointer_cast(device_ranges.data());
     };
 
     thrust::device_vector<typename Impl::params_type::clip_object> device_objects(clip_objects);
@@ -1217,6 +1233,17 @@ void vvRayCaster::renderVolumeGL()
         return host_transfuncs.data();
     };
 
+    aligned_vector<vec2> host_ranges;
+    auto ranges_data = [&]()
+    {
+        for (size_t i = 0; i < vd->real.size(); ++i)
+        {
+            host_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+        }
+
+        return host_ranges.data();
+    };
+
     auto clip_objects_begin = [&]()
     {
         return clip_objects.data();
@@ -1235,6 +1262,7 @@ void vvRayCaster::renderVolumeGL()
     impl_->params.num_channels              = static_cast<int>(vd->chan);
     impl_->params.volumes                   = volumes_data();
     impl_->params.transfuncs                = transfuncs_data();
+    impl_->params.ranges                    = ranges_data();
     impl_->params.depth_buffer              = impl_->depth_buffer.data();
     impl_->params.depth_format              = depth_format;
     impl_->params.mode                      = Impl::params_type::projection_mode(getParameter(VV_MIP_MODE).asInt());

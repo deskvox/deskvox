@@ -400,10 +400,11 @@ static bool hasRayRenderer(std::string const& arch)
   if (pluginPath) {
     ppath = pluginPath;
   }
+#define STRINGIFY(x) #x
 #ifdef VIRVO_PLUGIN_DIR
   else
   {
-    ppath = VIRVO_PLUGIN_DIR;
+	  ppath = STRINGIFY(VIRVO_PLUGIN_DIR) ;
   }
 #endif
 

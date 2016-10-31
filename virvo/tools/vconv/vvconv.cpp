@@ -668,6 +668,12 @@ void vvConv::modifyInputFile(vvVolDesc* v)
     cerr << "Cropping data." << endl;
     v->crop(cropPos[0], cropPos[1], cropPos[2], cropSize[0], cropSize[1], cropSize[2]);
   }
+  if (replace)
+  {
+    cerr << "Replacing data: ";
+    v->replaceData(3, replaceOld, replaceNew, true);
+    cerr << endl;
+  }
   if (croptodata)
   {
     cerr << "Cropping to non-zero area: " << flush;
@@ -1326,6 +1332,29 @@ bool vvConv::parseCommandLine(int argc, char** argv)
           cerr << "Invalid resize parameter." << endl;
           return false;
         }
+      }
+    }
+
+    else if (vvToolshed::strCompare(argv[arg], "-replace")==0)
+    {
+      replace = true;
+      for (int i=0; i<3; ++i)
+      {
+        if ((++arg)>=argc) 
+        {
+          cerr << "Replace parameter missing." << endl;
+          return false;
+        }
+        replaceOld[i] = atoi(argv[arg]);
+      }
+      for (int i=0; i<3; ++i)
+      {
+        if ((++arg)>=argc) 
+        {
+          cerr << "Replace parameter missing." << endl;
+          return false;
+        }
+        replaceNew[i] = atoi(argv[arg]);
       }
     }
 
@@ -2393,6 +2422,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-pos <x> <y> <z>                   set position" << endl;
     cerr << "-realrange <min> <max>             set physical scalar value range" << endl;
     cerr << "-removetf                          remove all transfer functions" << endl;
+    cerr << "-replace <r> <g> <b> <r> <g> <b>   replace occurences of first RGB triple with second RGB triple" << endl;
     cerr << "-resize <w> <h> <s>                resize volume (change no. of voxels, see -interpolation)" << endl;
     cerr << "-rotate <[+|-][x|y|z]>             rotate volume 90 degrees" << endl;
     cerr << "-scale <factor>                    scale volume (change no. of voxels, see -interpolation)" << endl;
