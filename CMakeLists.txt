@@ -39,8 +39,8 @@ endif()
 set(DESKVOX_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(DESKVOX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(DESKVOX_PREFIX ${CMAKE_INSTALL_PREFIX})
-add_definitions(-DVIRVO_SHADER_DIR=\"${DESKVOX_PREFIX}/shader\")
-add_definitions(-DVIRVO_PLUGIN_DIR=\"${DESKVOX_PREFIX}/lib\")
+add_definitions(-DVIRVO_PLUGIN_DIR=${DESKVOX_PREFIX}/lib) #can't have quotes!!
+add_definitions(-DVIRVO_SHADER_DIR=${DESKVOX_PREFIX}/shader)
 
 
 set(VIRVO_VERSION_MAJOR 1)
