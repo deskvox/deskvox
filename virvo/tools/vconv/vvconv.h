@@ -62,6 +62,8 @@ class vvConv
     bool  resize;       ///< true = resize volume
     int   newSize[3];   ///< new volume size (width, height, slices) [voxels]
     float resizeFactor; ///< alternatively to new sizes a factor is accepted
+    bool  replace;      ///< data replacement mode
+    int   replaceOld[3], replaceNew[3]; ///< data values to be replaced
     bool  setDist;      ///< true = set voxel distance
     float newDist[3];   ///< new voxel distance [mm]
     bool  setRange;     ///< true = set physical scalar value range

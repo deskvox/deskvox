@@ -113,9 +113,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     boost::scoped_ptr<vvShaderFactory> _shaderFactory; ///< Factory for shader-creation
     boost::scoped_ptr<vvShaderProgram> _shader;   ///< shader performing intersection test on gpu
 
-    int _currentShader;                           ///< ID of currently used fragment shader
-    int _previousShader;                          ///< ID of previous shader
-
     virvo::vec3 _eye;                             ///< the current eye position
 
     void setVoxelType(VoxelType vt);
