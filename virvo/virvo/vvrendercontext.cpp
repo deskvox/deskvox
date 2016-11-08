@@ -22,9 +22,9 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef _WIN32
 #include "vvplatform.h"
 
+#ifdef _WIN32
 #include <GL/glew.h>
 #include <GL/wglew.h>
 #endif
