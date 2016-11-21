@@ -37,6 +37,7 @@
 
 #include "ui_vvmainwindow.h"
 
+#include <virvo/fileio/feature.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvmacros.h>
@@ -527,8 +528,10 @@ void vvMainWindow::onLoadVolumeTriggered()
     "3D TIF Files (*.tif,*.tiff);;"
     "ASCII Volume Files (*.avf);;"
     "Extended Volume Files (*.xvf);;"
-    "Raw Volume Files (*.rvf);;"
-    "All Files (*.*)");
+    "Raw Volume Files (*.rvf);;");
+  if (virvo::fileio::hasFeature("nifti"))
+    filter += "NifTI-1 Files (*.nii,*.nii.gz);;";
+  filter += tr("All Files (*.*)");
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
