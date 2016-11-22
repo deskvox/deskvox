@@ -51,14 +51,14 @@ FXDEFMAP(VVSliceViewer) VVSliceViewerMap[]=
 FXIMPLEMENT(VVSliceViewer,FXDialogBox,VVSliceViewerMap,ARRAYNUMBER(VVSliceViewerMap))
 
 // Construct a dialog box
-VVSliceViewer::VVSliceViewer(FXWindow* owner, vvCanvas* c) :
-  FXDialogBox(owner, "Slice Viewer", DECOR_TITLE|DECOR_BORDER, 100, 100)
+VVSliceViewer::VVSliceViewer(FXWindow* owner, vvCanvas* c)
+  : FXDialogBox(owner, "Slice Viewer", DECOR_TITLE|DECOR_BORDER, 100, 100)
+  , _axis(virvo::cartesian_axis<3>::Z)
 {
   vvDebugMsg::msg(1, "VVSliceViewer::VVSliceViewer()");
 
   _canvas = c;
   _shell = (VVShell*)owner;
-  _axis = vvVecmath::Z_AXIS;
 
   FXVerticalFrame* master = new FXVerticalFrame(this, LAYOUT_CENTER_X);
 
@@ -172,7 +172,7 @@ long VVSliceViewer::onCmdEnd(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdXAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVecmath::X_AXIS;
+  _axis = virvo::cartesian_axis<3>::X;
   _yAxisButton->setCheck(false);
   _zAxisButton->setCheck(false);
   updateValues();
@@ -181,7 +181,7 @@ long VVSliceViewer::onCmdXAxis(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdYAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVecmath::Y_AXIS;
+  _axis = virvo::cartesian_axis<3>::Y;
   _xAxisButton->setCheck(false);
   _zAxisButton->setCheck(false);
   updateValues();
@@ -190,7 +190,7 @@ long VVSliceViewer::onCmdYAxis(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdZAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVecmath::Z_AXIS;
+  _axis = virvo::cartesian_axis<3>::Z;
   _xAxisButton->setCheck(false);
   _yAxisButton->setCheck(false);
   updateValues();

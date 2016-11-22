@@ -553,12 +553,12 @@ long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
 long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
 {
   _mouseButton = 1;
-  if(!_canvas || _canvas->_vd->tf._widgets.size() == 0)
+  if(!_canvas || _canvas->_vd->tf[0]._widgets.size() == 0)
   {
     _currentWidget = NULL;
     return 1;
   }
-  _canvas->_vd->tf.putUndoBuffer();
+  _canvas->_vd->tf[0].putUndoBuffer();
   _glCanvas1D->grab();
   FXEvent* ev = (FXEvent*)ptr;
   float normX = float(ev->win_x) / float(_glCanvas1D->getWidth());
@@ -594,7 +594,7 @@ long VVTransferWindow::onMouseRDown1D(FXObject*,FXSelector,void* ptr)
   vvTFCustom* cuw;
   
   _mouseButton = 3;
-  _canvas->_vd->tf.putUndoBuffer();
+  _canvas->_vd->tf[0].putUndoBuffer();
   _glCanvas1D->grab();
   FXEvent* ev = (FXEvent*)ptr;
   if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
@@ -633,7 +633,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
     if (_mouseButton==1)
     {
       if(!_currentWidget || !_canvas) return 1;
-      if(_canvas->_vd->tf._widgets.size() == 0) return 1;
+      if(_canvas->_vd->tf[0]._widgets.size() == 0) return 1;
       _pinPosLabel->setText(FXStringFormat("Pin: %.5g", mousePosVal));
       _currentWidget->_pos[0] = mousePosVal;
     }
@@ -662,12 +662,12 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
 
 long VVTransferWindow::onMouseLDown2D(FXObject*,FXSelector,void* ptr)
 {
-  if(!_canvas || _canvas->_vd->tf._widgets.size() == 0)
+  if(!_canvas || _canvas->_vd->tf[0]._widgets.size() == 0)
   {
     _currentWidget = NULL;
     return 1;
   }
-  _canvas->_vd->tf.putUndoBuffer();
+  _canvas->_vd->tf[0].putUndoBuffer();
   _glCanvas2D->grab();
   FXEvent* ev = (FXEvent*)ptr;
   _currentWidget = closestWidget(float(ev->win_x) / float(_glCanvas1D->getWidth()), 
@@ -688,7 +688,7 @@ long VVTransferWindow::onMouseMove2D(FXObject*, FXSelector, void* ptr)
 {
   if (!_glCanvas2D->grabbed()) return 1;
   if(!_currentWidget || !_canvas) return 1;
-  if(_canvas->_vd->tf._widgets.size() == 0) return 1;
+  if(_canvas->_vd->tf[0]._widgets.size() == 0) return 1;
   FXEvent* ev = (FXEvent*)ptr;
   float xPos = ts_clamp(float(ev->win_x) / float(_glCanvas2D->getWidth()),  0.0f, 1.0f);
   float yPos = ts_clamp(1.0f - float(ev->win_y) / float(_glCanvas2D->getHeight()), 0.0f, 1.0f);
@@ -742,9 +742,9 @@ void VVTransferWindow::updateTransFunc()
 
 long VVTransferWindow::onCmdDelete(FXObject*,FXSelector,void*)
 {
-  if(_canvas->_vd->tf._widgets.size() == 0 || _currentWidget == NULL) return 1;
-  _canvas->_vd->tf.putUndoBuffer();
-  _canvas->_vd->tf._widgets.erase(std::find(_canvas->_vd->tf._widgets.begin(), _canvas->_vd->tf._widgets.end(), _currentWidget));
+  if(_canvas->_vd->tf[0]._widgets.size() == 0 || _currentWidget == NULL) return 1;
+  _canvas->_vd->tf[0].putUndoBuffer();
+  _canvas->_vd->tf[0]._widgets.erase(std::find(_canvas->_vd->tf[0]._widgets.begin(), _canvas->_vd->tf[0]._widgets.end(), _currentWidget));
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -754,7 +754,7 @@ long VVTransferWindow::onCmdDelete(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdUndo(FXObject*,FXSelector,void*)
 {
-  _canvas->_vd->tf.getUndoBuffer();
+  _canvas->_vd->tf[0].getUndoBuffer();
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -764,8 +764,8 @@ long VVTransferWindow::onCmdUndo(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdColorCombo(FXObject*,FXSelector,void*)
 {
-  _canvas->_vd->tf.putUndoBuffer();
-  _canvas->_vd->tf.setDefaultColors(_colorCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
+  _canvas->_vd->tf[0].putUndoBuffer();
+  _canvas->_vd->tf[0].setDefaultColors(_colorCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -775,8 +775,8 @@ long VVTransferWindow::onCmdColorCombo(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdAlphaCombo(FXObject*,FXSelector,void*)
 {
-  _canvas->_vd->tf.putUndoBuffer();
-  _canvas->_vd->tf.setDefaultAlpha(_alphaCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
+  _canvas->_vd->tf[0].putUndoBuffer();
+  _canvas->_vd->tf[0].setDefaultAlpha(_alphaCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -844,7 +844,7 @@ long VVTransferWindow::onCmdSaveTF(FXObject*,FXSelector,void*)
     int over = FXMessageBox::question((FXWindow*)this, MBOX_OK_CANCEL, "Warning", "Overwrite existing file?");
     if(over == FX::MBOX_CLICKED_CANCEL) return 1;
   }
-  _canvas->_vd->tf.save(filename.text());
+  _canvas->_vd->tf[0].save(filename.text());
   return 1;
 }
 
@@ -858,7 +858,7 @@ long VVTransferWindow::onCmdSaveTFBin(FXObject*, FXSelector, void*)
     int over = FXMessageBox::question((FXWindow*)this, MBOX_OK_CANCEL, "Warning", "Overwrite existing file?");
     if(over == FX::MBOX_CLICKED_CANCEL) return 1;
   }
-  _canvas->_vd->tf.saveBinMeshviewer(filename.text());
+  _canvas->_vd->tf[0].saveBinMeshviewer(filename.text());
   return 1;
 }
 
@@ -872,7 +872,7 @@ long VVTransferWindow::onCmdLoadTF(FXObject*,FXSelector,void*)
     FXMessageBox::question((FXWindow*)this, MBOX_OK, "Error", "File does not exist");
     return 1;
   }
-  _canvas->_vd->tf.load(filename.text());
+  _canvas->_vd->tf[0].load(filename.text());
   if(_instantButton->getCheck()) updateTransFunc();
   drawTF();
   return 1;
@@ -891,7 +891,7 @@ void VVTransferWindow::newWidget(WidgetType wt)
   vvTFWidget* widget = NULL;
 
   if(!_canvas) return;
-  _canvas->_vd->tf.putUndoBuffer();
+  _canvas->_vd->tf[0].putUndoBuffer();
   switch(wt)
   {
     case COLOR:
@@ -911,7 +911,7 @@ void VVTransferWindow::newWidget(WidgetType wt)
       break;
     default: return;
   }
-  _canvas->_vd->tf._widgets.push_back(widget);
+  _canvas->_vd->tf[0]._widgets.push_back(widget);
   _currentWidget = widget;
   if(_instantButton->getCheck()) updateTransFunc();
   drawTF();
@@ -1059,8 +1059,8 @@ void VVTransferWindow::draw2DTF()
 
 void VVTransferWindow::draw2DTFWidgets()
 {
-  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
-       it != _canvas->_vd->tf._widgets.end() ; ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf[0]._widgets.begin();
+       it != _canvas->_vd->tf[0]._widgets.end() ; ++it)
   {
     draw2DWidget(*it);
   }
@@ -1119,8 +1119,8 @@ void VVTransferWindow::drawCustomWidgets()
   vvTFCustom* cuw;
   if(!_canvas) return;
 
-  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
-       it != _canvas->_vd->tf._widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf[0]._widgets.begin();
+       it != _canvas->_vd->tf[0]._widgets.end(); ++it)
   {
     vvTFWidget* w = *it;
     if (w==_currentWidget)    // don't render control points when widget not current
@@ -1159,7 +1159,7 @@ void VVTransferWindow::drawBinLimits()
       for (size_t i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
       {
         xmin = data2norm(_canvas->_vd->_hdrBinLimits[i]);
-        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->real[1]);
+        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->real[0][1]);
         else xmax = data2norm(_canvas->_vd->_hdrBinLimits[i+1]);
       
         glBegin(GL_LINES);
@@ -1181,7 +1181,7 @@ void VVTransferWindow::drawBinLimits()
         glBegin(GL_LINES);
           glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
           xmin = data2norm((float(i) / 256.0f) * 
-            (_canvas->_vd->real[1] - _canvas->_vd->real[0]) + _canvas->_vd->real[0]);
+            (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) + _canvas->_vd->real[0][0]);
           glVertex3f(xmin, ymin, 0.0f);
           glVertex3f(xmin, ymax, 0.0f);
         glEnd();
@@ -1248,8 +1248,8 @@ void VVTransferWindow::drawPinLines()
 {
   if(!_canvas) return;
 
-  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
-       it != _canvas->_vd->tf._widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf[0]._widgets.begin();
+       it != _canvas->_vd->tf[0]._widgets.end(); ++it)
   {
     drawPinLine(*it);
   }
@@ -1293,7 +1293,7 @@ float VVTransferWindow::hdr2data(float hdr)
 {
   size_t bin = _canvas->_vd->findHDRBin(hdr);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1304,7 +1304,7 @@ float VVTransferWindow::data2hdr(float data)
 {
   size_t bin = _canvas->_vd->findHDRBin(data);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1314,7 +1314,7 @@ float VVTransferWindow::data2hdr(float data)
 float VVTransferWindow::hdr2realbin(float hdr)
 {    
   size_t bin = _canvas->_vd->findHDRBin(hdr);
-  float realbin = float(bin) * (_canvas->_vd->real[1] - _canvas->_vd->real[0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->real[0];
+  float realbin = float(bin) * (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->real[0][0];
   return realbin;
 }
 
@@ -1322,10 +1322,10 @@ float VVTransferWindow::hdr2realbin(float hdr)
 */
 float VVTransferWindow::realbin2hdr(float realbin)
 {    
-  size_t bin = (realbin - _canvas->_vd->real[0]) / (_canvas->_vd->real[1] - _canvas->_vd->real[0]) * float(vvVolDesc::NUM_HDR_BINS-1);
+  size_t bin = (realbin - _canvas->_vd->real[0][0]) / (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) * float(vvVolDesc::NUM_HDR_BINS-1);
   bin = ts_clamp(bin, size_t(0), vvVolDesc::NUM_HDR_BINS-1);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1379,8 +1379,8 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
   bool isColor;
 
   if (!_canvas) return NULL;
-  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
-       it != _canvas->_vd->tf._widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf[0]._widgets.begin();
+       it != _canvas->_vd->tf[0]._widgets.end(); ++it)
   {
     temp = *it;
     switch (_tfBook->getCurrent())
@@ -1481,7 +1481,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   {
     // Shift colors according to HDR bins:
     tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * RGBA * 3];
-    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1], _invertCheck->getCheck()!=0);
+    _canvas->_vd->tf[0].makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0][0], _canvas->_vd->real[0][1], _invertCheck->getCheck()!=0);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
@@ -1498,7 +1498,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
     if (!_shell->_floatRangeDialog->_opacityCheck->getCheck())
     {
       tmpBar = new uchar[width * RGBA * 3];
-      _canvas->_vd->tf.makeColorBar(width, tmpBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
+      _canvas->_vd->tf[0].makeColorBar(width, tmpBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
       memcpy(colorBar + RGBA * 2 * width, tmpBar + RGBA * 2 * width, RGBA * width); // copy linear opacity to color bar
       memcpy(colorBar + RGBA * width, colorBar, RGBA * width); // copy non-linear color to combined color/opacity bar
       for (i=0; i<width; ++i)
@@ -1510,7 +1510,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   }
   else  // standard iso-range TF mode
   {
-    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
+    _canvas->_vd->tf[0].makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
   }
 }
 
@@ -1527,7 +1527,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck() && _shell->_floatRangeDialog->_opacityCheck->getCheck())
   {   // histogram equalization mode?
     tmpTex = new uchar[vvVolDesc::NUM_HDR_BINS * height * RGBA];
-    _canvas->_vd->tf.makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _canvas->_vd->real[0], _canvas->_vd->real[1]);
+    _canvas->_vd->tf[0].makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _canvas->_vd->real[0][0], _canvas->_vd->real[0][1]);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));
@@ -1542,7 +1542,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
   }
   else  // standard iso-range TF mode
   {
-    _canvas->_vd->tf.makeAlphaTexture(width, height, alphaTex, _dataZoom[0], _dataZoom[1]);
+    _canvas->_vd->tf[0].makeAlphaTexture(width, height, alphaTex, _dataZoom[0], _dataZoom[1]);
   }
 }
 
@@ -1610,7 +1610,7 @@ void VVTransferWindow::draw2DTFTexture()
   {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _canvas->_vd->tf.make2DTFTexture(WIDTH, HEIGHT, tfTexture, 0.0f, 1.0f, 0.0f, 1.0f);
+    _canvas->_vd->tf[0].make2DTFTexture(WIDTH, HEIGHT, tfTexture, 0.0f, 1.0f, 0.0f, 1.0f);
     glRasterPos2f(0.0f, 0.0f); 
     glPixelZoom(float(_glCanvas2D->getWidth()) / float(WIDTH), float(_glCanvas2D->getHeight()) / float(HEIGHT));
     glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
@@ -1622,7 +1622,7 @@ void VVTransferWindow::draw2DTFTexture()
 long VVTransferWindow::onChngDisColors(FXObject*,FXSelector,void*)
 {
   _disColorLabel->setText(FXStringFormat("%d",_disColorSlider->getValue()));
-  _canvas->_vd->tf.setDiscreteColors(_disColorSlider->getValue());
+  _canvas->_vd->tf[0].setDiscreteColors(_disColorSlider->getValue());
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -1713,8 +1713,8 @@ long VVTransferWindow::onCmdZoomLUT(FXObject*,FXSelector,void*)
 
 void VVTransferWindow::zoomLUT()
 {
-  _dataZoom[0] = _canvas->_vd->real[0];
-  _dataZoom[1] = _canvas->_vd->real[1];
+  _dataZoom[0] = _canvas->_vd->real[0][0];
+  _dataZoom[1] = _canvas->_vd->real[0][1];
   setDirtyHistogram();
   updateValues();
 }
@@ -1722,14 +1722,14 @@ void VVTransferWindow::zoomLUT()
 long VVTransferWindow::onCmdDefault(FXObject*,FXSelector,void*)
 {
   float fMin, fMax;
-  _canvas->_vd->tf.putUndoBuffer();
+  _canvas->_vd->tf[0].putUndoBuffer();
   _canvas->_vd->findMinMax(0, fMin, fMax);
-  _canvas->_vd->real[0] = fMin;
-  _canvas->_vd->real[1] = fMax;
-  _dataZoom[0] = _canvas->_vd->real[0];
-  _dataZoom[1] = _canvas->_vd->real[1];
-  _canvas->_vd->tf.setDefaultAlpha(0, _dataZoom[0], _dataZoom[1]);
-  _canvas->_vd->tf.setDefaultColors(0, _dataZoom[0], _dataZoom[1]);
+  _canvas->_vd->real[0][0] = fMin;
+  _canvas->_vd->real[0][1] = fMax;
+  _dataZoom[0] = _canvas->_vd->real[0][0];
+  _dataZoom[1] = _canvas->_vd->real[0][1];
+  _canvas->_vd->tf[0].setDefaultAlpha(0, _dataZoom[0], _dataZoom[1]);
+  _canvas->_vd->tf[0].setDefaultColors(0, _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
   _canvas->_renderer->updateVolumeData();
   setDirtyHistogram();
@@ -1765,10 +1765,10 @@ void VVTransferWindow::updateValues()
   _currentWidget = NULL;
   _zoomMinButton->setText(FXStringFormat("%.5g", _dataZoom[0]));
   _zoomMaxButton->setText(FXStringFormat("%.5g", _dataZoom[1]));
-  _realMinLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0]));
-  _realMaxLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[1]));
+  _realMinLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0][0]));
+  _realMaxLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0][1]));
   updateLabels();
-  _disColorSlider->setValue(_canvas->_vd->tf.getDiscreteColors());
+  _disColorSlider->setValue(_canvas->_vd->tf[0].getDiscreteColors());
   _disColorLabel->setText(FXStringFormat("%d", _disColorSlider->getValue()));
   drawTF();
 }

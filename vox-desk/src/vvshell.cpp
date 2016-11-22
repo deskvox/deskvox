@@ -612,13 +612,13 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
   vvFileIO* fio = new vvFileIO();
   fio->loadVolumeData(vd, vvFileIO::ALL_DATA);    // load default volume
   delete fio;
-  if (vd->tf.isEmpty())
+  if (vd->tf[0].isEmpty())
   {
-    vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
-    vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
+    vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
+    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
   }
-  if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-  setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom);
+  if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
+  setCanvasRenderer(vd, vvRenderer::INVALID);
   _transWindow->setDirtyHistogram();
   _transWindow->zoomLUT();
   cerr << "default" << vd->frames << endl;
@@ -654,13 +654,13 @@ void VVShell::loadVolumeFile(const char* filename)
     case vvFileIO::OK:
       vvDebugMsg::msg(2, "Loaded file: ", filename);
       // Use default TF if none stored:
-      if (vd->tf.isEmpty())
+      if (vd->tf[0].isEmpty())
       {
-        vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
+        vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
+        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
       }
-      if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom);
+      if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
+      setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       vd->printInfoLine();
@@ -735,8 +735,8 @@ long VVShell::onCmdReloadVolume(FXObject*,FXSelector,void*)
     case vvFileIO::OK:
       vvDebugMsg::msg(2, "Loaded file: ", vd->getFilename());
       // Use previous pin list if loaded dataset has no pins:
-      if (vd->tf.isEmpty()) vd->tf.copy(&vd->tf._widgets, &_canvas->_vd->tf._widgets);
-      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom, _canvas->_currentVoxels);
+      if (vd->tf[0].isEmpty()) vd->tf[0].copy(&vd->tf[0]._widgets, &_canvas->_vd->tf[0]._widgets);
+      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentVoxels);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -823,13 +823,13 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
     case vvFileIO::OK:
       vvDebugMsg::msg(2, "Loaded slice sequence: ", vd->getFilename());
       // Use previous pin list if loaded dataset has no pins:
-      if (vd->tf.isEmpty())
+      if (vd->tf[0].isEmpty())
       {
-        vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
+        vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
+        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
       }
-      if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom, _canvas->_currentVoxels);
+      if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
+      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentVoxels);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -1376,7 +1376,7 @@ long VVShell::onAllUpdate(FXObject*,FXSelector,void*)
   @param vd new volume, NULL if no change to volume data
   @param algorithm 0=no change, 1=textures, 2=Stingray, -1=suppress rendering
 */
-void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
+void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm, vvTexRend::VoxelType vt)
 {
   vvDebugMsg::msg(1, "VVShell::setCanvasRenderer()");
 
@@ -1389,14 +1389,7 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorith
     }
     else vd = _canvas->_vd;
   
-    // Override geometry and voxel type if single slice:
-    if (vd->vox[2]==1) 
-    {
-      gt = vvTexRend::VV_SLICES;
-      vt = vvTexRend::VV_RGBA;    // FIXME: all rendering algorithms should be able to handle 1 voxel thick data sets
-    }
-
-    _canvas->setRenderer(algorithm, gt, vt);
+    _canvas->setRenderer(algorithm, vt);
 
     if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
     else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();

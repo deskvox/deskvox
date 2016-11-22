@@ -39,7 +39,7 @@ class VVSliceViewer : public FXDialogBox
   FXDECLARE(VVSliceViewer)
   
   protected:
-    VVSliceViewer(){}
+    VVSliceViewer() : _axis(virvo::cartesian_axis<3>::Z) {}
   
   public:
     const static int SLICE_WIDTH;
@@ -70,7 +70,7 @@ class VVSliceViewer : public FXDialogBox
     FXRadioButton* _xAxisButton;
     FXRadioButton* _yAxisButton;
     FXRadioButton* _zAxisButton;
-    vvVecmath::AxisType _axis;
+    virvo::cartesian_axis<3> _axis;
 
     VVSliceViewer(FXWindow*, vox::vvCanvas*);
     virtual ~VVSliceViewer();

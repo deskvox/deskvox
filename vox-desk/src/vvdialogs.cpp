@@ -221,8 +221,8 @@ void VVVolumeDialog::updateValues()
   _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[0]));
   _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[1]));
   _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[2]));
-  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[0]));
-  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[1]));
+  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[0][0]));
+  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[0][1]));
   _canvas->_vd->findMinMax(0, fMin, fMax);
   _minLabel->setText(FXStringFormat("%.9g",  fMin));
   _maxLabel->setText(FXStringFormat("%.9g",  fMax));
@@ -872,9 +872,6 @@ long VVDimensionDialog::onApplySelect(FXObject*,FXSelector,void*)
   dist.set((float)_xSpinner->getValue(), (float)_ySpinner->getValue(), (float)_zSpinner->getValue());
   _canvas->_vd->setDist(dist);
 
-  if (_canvas->_currentGeom == vvTexRend::VV_BRICKS)
-    dynamic_cast<vvTexRend*>(_canvas->_renderer)->updateBrickGeom();
-
   _shell->_volumeDialog->updateValues();
   _shell->drawScene();
   return 1;
@@ -915,10 +912,6 @@ void VVDimensionDialog::updateValues()
   _xSpinner->setValue(_canvas->_vd->dist[0]);
   _ySpinner->setValue(_canvas->_vd->dist[1]);
   _zSpinner->setValue(_canvas->_vd->dist[2]);
-
-  vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
-  
-  if (texrend) texrend->updateBrickGeom();
 }
 
 /*******************************************************************************/
@@ -2711,14 +2704,14 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
   {
     if(_shell->_glcanvas->makeCurrent())
     {
-      _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
-      _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
-      if (_prevRange[0] != _canvas->_vd->real[0] ||
-          _prevRange[1] != _canvas->_vd->real[1])
+      _canvas->_vd->real[0][0] = FXFloatVal(_minTF->getText());
+      _canvas->_vd->real[0][1] = FXFloatVal(_maxTF->getText());
+      if (_prevRange[0] != _canvas->_vd->real[0][0] ||
+          _prevRange[1] != _canvas->_vd->real[0][1])
       {
         _shell->_transWindow->setDirtyHistogram();
-        _prevRange[0] = _canvas->_vd->real[0];
-        _prevRange[1] = _canvas->_vd->real[1];
+        _prevRange[0] = _canvas->_vd->real[0][0];
+        _prevRange[1] = _canvas->_vd->real[0][1];
       }
       
       _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, (_hdrCheck->getCheck()) ? _algoType : 0);
@@ -2821,8 +2814,8 @@ void VVFloatRangeDialog::updateValues()
 {
   if (_canvas->_renderer)
   {
-    _minTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[0]));
-    _maxTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[1]));
+    _minTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[0][0]));
+    _maxTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[0][1]));
   }
 }
 
@@ -3125,7 +3118,7 @@ long VVEditVoxelsDialog::onResize(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipX(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVecmath::X_AXIS);
+  _canvas->_vd->flip(virvo::cartesian_axis<3>::X);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;
@@ -3133,7 +3126,7 @@ long VVEditVoxelsDialog::onFlipX(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipY(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVecmath::Y_AXIS);
+  _canvas->_vd->flip(virvo::cartesian_axis<3>::Y);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;
@@ -3149,7 +3142,7 @@ long VVEditVoxelsDialog::onInvertOrder(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipZ(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVecmath::Z_AXIS);
+  _canvas->_vd->flip(virvo::cartesian_axis<3>::Z);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;

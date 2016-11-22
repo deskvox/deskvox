@@ -273,13 +273,13 @@ long VVPreferenceWindow::onRTChange(FXObject*,FXSelector,void*)
   case 4: alg = vvRenderer::VOLPACK; break;
 #endif
   }
-  _shell->setCanvasRenderer(NULL, alg, vvTexRend::GeometryType(_gtCombo->getCurrentItem()), _canvas->_currentVoxels);
+  _shell->setCanvasRenderer(NULL, alg, _canvas->_currentVoxels);
   return 1;
 }
 
 long VVPreferenceWindow::onGTChange(FXObject*,FXSelector,void*)
 {
-  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, vvTexRend::GeometryType(_gtCombo->getCurrentItem()), _canvas->_currentVoxels);
+  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, _canvas->_currentVoxels);
   return 1;
 }
 
@@ -291,7 +291,7 @@ long VVPreferenceWindow::onDefaultVolume(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onVTChange(FXObject*,FXSelector,void*)
 {
-  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, _canvas->_currentGeom, vvTexRend::VoxelType(_vtCombo->getCurrentItem()));
+  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, vvTexRend::VoxelType(_vtCombo->getCurrentItem()));
   return 1;
 }
 
@@ -303,7 +303,7 @@ long VVPreferenceWindow::onPSChange(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onBSChange(FXObject*, FXSelector, void*)
 {
-  int size;
+  /*int size;
 
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
 
@@ -332,7 +332,7 @@ long VVPreferenceWindow::onBSChange(FXObject*, FXSelector, void*)
 
     return 1;
   }
-  else
+  else*/
     return 1;
 }
 
@@ -434,7 +434,7 @@ long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void*)
 
 long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void*)
 {
-  vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
+  /*vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
 
   if (texrend)
   {
@@ -452,7 +452,7 @@ long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void*)
       else
         _bsCombo->enable();
     }
-  }
+  }*/
 
   return 1;
 }
@@ -467,10 +467,6 @@ long VVPreferenceWindow::onTexMemoryChange(FXObject*, FXSelector, void*)
     _shell->_glcanvas->makeCurrent();
     texram = FXIntVal(_texMemoryField->getText());
     texrend->setTexMemorySize(texram);
-    if (texrend->getGeomType() == vvTexRend::VV_BRICKS)
-    {
-      setBSCombo(texrend->getBrickSize());
-    }
     _shell->getApp()->reg().writeIntEntry("Settings", "TextureRAM", texram);
     getApp()->reg().write();
     _shell->_glcanvas->makeCurrent();
@@ -502,7 +498,7 @@ void VVPreferenceWindow::setBSCombo(int size)
 long VVPreferenceWindow::onSuppressRendering(FXObject*,FXSelector,void* ptr)
 {
   if (ptr != NULL) _shell->setCanvasRenderer(NULL, vvRenderer::GENERIC);
-  else _shell->setCanvasRenderer(NULL, vvRenderer::TEXREND, _canvas->_currentGeom, _canvas->_currentVoxels);
+  else _shell->setCanvasRenderer(NULL, vvRenderer::TEXREND, _canvas->_currentVoxels);
   return 1;
 }
 
@@ -575,16 +571,13 @@ void VVPreferenceWindow::updateValues()
 
     if (texrend)
     {
-      if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (viewport aligned)");
-      if (texrend->isSupported(vvTexRend::VV_SPHERICAL)) _gtCombo->appendItem("3D textures (spherical)");
-      if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (bricked)");
       _linterpButton->setCheck(texrend->getParameter(vvRenderer::VV_SLICEINT).asInt() > 0);
     }
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
-    if (texrend)
+    /*if (texrend)
     {
       _gtCombo->setCurrentItem(int(texrend->getGeomType()));
-    }
+    }*/
 
     // Voxel type:
     _vtCombo->clearItems();
@@ -594,10 +587,6 @@ void VVPreferenceWindow::updateValues()
     _vtCombo->appendItem("OpenGL paletted textures");
     _vtCombo->appendItem("Nvidia register combiners");
     _vtCombo->appendItem("OpenGL/Cg fragment shader");
-    if (texrend)
-    {
-      if (texrend->isSupported(vvTexRend::VV_FRG_PRG)) _vtCombo->appendItem("ARB fragment program");
-    }
     _vtCombo->setNumVisible(_vtCombo->getNumItems());
     if (texrend) _vtCombo->setCurrentItem(int(texrend->getVoxelType()));
 
@@ -652,7 +641,7 @@ void VVPreferenceWindow::updateValues()
     _texMemoryField->setText(FXStringFormat("%d", texram));
     if (texrend) texrend->setTexMemorySize(texram);
 
-    if ((texrend) && (texrend->getGeomType() == vvTexRend::VV_BRICKS))
+    /*if ((texrend) && (texrend->getGeomType() == vvTexRend::VV_BRICKS))
     {
       _showBricksButton->setCheck(texrend->getParameter(vvRenderState::VV_SHOW_BRICKS).asBool());
       if (texrend->getParameter(vvRenderState::VV_COMPUTE_BRICK_SIZE))
@@ -668,7 +657,7 @@ void VVPreferenceWindow::updateValues()
 
       setBSCombo(texrend->getBrickSize());
     }
-    else
+    else*/
       _bsCombo->setText("");
 
     // MIP button:

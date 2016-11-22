@@ -35,7 +35,6 @@
 #include <vvfileio.h>
 #include <vvstingray.h>
 #include <vvsoftsw.h>
-#include <vvrayrend.h>
 #include <vvimageclient.h>
 #include <vvibrclient.h>
 #ifdef HAVE_VOLPACK
@@ -79,7 +78,6 @@ vvCanvas::vvCanvas()
   _width = _height = 0;
   _vd = NULL;
   _currentAlgorithm = vvRenderer::TEXREND;
-  _currentGeom   = vvTexRend::VV_AUTO;
   _currentVoxels = vvTexRend::VV_BEST;
 
 #ifdef VV_USE_ARTOOLKIT
@@ -119,10 +117,10 @@ void vvCanvas::initCanvas()
   fio = new vvFileIO();
   fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);    // load default volume
   delete fio;
-  if (_vd->tf.isEmpty())
+  if (_vd->tf[0].isEmpty())
   {
-    _vd->tf.setDefaultAlpha(0, _vd->real[0], _vd->real[1]);
-    _vd->tf.setDefaultColors((_vd->chan==1) ? 0 : 3, _vd->real[0], _vd->real[1]);
+    _vd->tf[0].setDefaultAlpha(0, _vd->real[0][0], _vd->real[0][1]);
+    _vd->tf[0].setDefaultColors((_vd->chan==1) ? 0 : 3, _vd->real[0][0], _vd->real[0][1]);
   }
 
  #ifdef USE_STINGRAY
@@ -452,13 +450,12 @@ void vvCanvas::transformObject(const vvMatrix& m)
   @param r  index of renderer
   @param v  volume description
 */
-void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
+void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::VoxelType vt)
 {
   vvRenderState renderState;
 
   vvDebugMsg::msg(1, "vvCanvas::setRenderer()");
 
-  _currentGeom   = gt;
   _currentVoxels = vt;
 
   if (_renderer) 
@@ -477,14 +474,7 @@ void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType
     _renderer = new vvRenderer(_vd, renderState);
     break;
   case vvRenderer::TEXREND:
-    _renderer = new vvTexRend(_vd, renderState, _currentGeom, _currentVoxels);
-    break;
-  case vvRenderer::REMOTE_IMAGE:
-    // TODO
-    _renderer = new vvImageClient(_vd, renderState, NULL);
-    break;
-  case vvRenderer::REMOTE_IBR:
-    _renderer = new vvIbrClient(_vd, renderState, NULL);
+    _renderer = new vvTexRend(_vd, renderState, _currentVoxels);
     break;
   case vvRenderer::SOFTSW:
     _renderer = new vvSoftShearWarp(_vd, renderState);
