@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 // Virvo:
+#include <virvo/fileio/feature.h>
 #include <vvvoldesc.h>
 #include <vvdebugmsg.h>
 #include <vvvirvo.h>
@@ -634,7 +635,10 @@ long VVShell::onCmdLoadVolume(FXObject*, FXSelector, void*)
   std::cerr << "onCmdLoadVolume" << endl;
 
   if(_canvas == NULL) return 1;
-  const FXchar patterns[]="All Volume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr,*.volb)\n3D TIF Files (*.tif,*.tiff)\nASCII Volume Files (*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nAll Files (*.*)";
+  FXString patterns = "All Volume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr,*.volb)\n3D TIF Files (*.tif,*.tiff)\nASCII Volume Files (*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\n";
+  if (virvo::fileio::hasFeature("nifti"))
+    patterns += "NifTI-1 Files (*.nii,*.nii.gz)\n";
+  patterns += "All Files (*.*)";
   FXString filename = getOpenFilename("Load Volume File", patterns);
   if(filename.length() == 0) return 1;
   loadVolumeFile(filename.text());
@@ -686,7 +690,10 @@ long VVShell::onCmdSaveVolume(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdSaveVolume()");
 
-  const FXchar patterns[]="All Volume Files (*.xvf,*.rvf,*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nASCII Volume Files (*.avf)\nAll Files (*.*)";
+  FXString patterns = "All Volume Files (*.xvf,*.rvf,*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nASCII Volume Files (*.avf)\n";
+  if (virvo::fileio::hasFeature("nifti"))
+    patterns += "NifTI-1 Files (*.nii,*.nii.gz)\n";
+  patterns += "All Files (*.*)";
   FXString filename = getSaveFilename("Save Volume", _canvas->_vd->getFilename(), patterns);
   if(filename.length() == 0) return 1;
   if(vvToolshed::isFile(filename.text()))
