@@ -25,8 +25,6 @@
 // Type Declarations
 //============================================================================
 
-#include "vvplatform.h"
-
 #ifdef _WIN32
 /* code copied from Python's pyconfig.h,
  * to avoid different definition of  ssize_t */
