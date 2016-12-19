@@ -27,9 +27,9 @@
 #define VV_SIMD_ISA_AVX_512     70
 
 #ifndef VV_SIMD_ISA
-#if defined(__AVX2__)
+#if defined(__AVX2__)                           && !defined(__CUDACC__) // nvcc does not support AVX intrinsics
 #define VV_SIMD_ISA VV_SIMD_ISA_AVX2
-#elif defined(__AVX__)
+#elif defined(__AVX__)                          && !defined(__CUDACC__)
 #define VV_SIMD_ISA VV_SIMD_ISA_AVX
 #elif defined(__SSE4_2__)
 #define VV_SIMD_ISA VV_SIMD_ISA_SSE4_2
