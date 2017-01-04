@@ -1,3 +1,9 @@
+check_include_file("emmintrin.h" SSE2_SUPPORTED)
+
+if(NOT SSE2_SUPPORTED)
+    return()
+endif()
+
 deskvox_link_libraries(virvo)
 deskvox_link_libraries(virvo_fileio)
 

@@ -11,6 +11,7 @@
 
 #include <stdexcept>
 
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 namespace MATH_NAMESPACE
 {
@@ -934,10 +935,9 @@ VV_FORCE_INLINE float4 floor(float4 const& v)
 #endif
 }
 
-
 } // simd
 } // MATH_NAMESPACE
 
+#endif // VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
+
 #endif // VV_SIMD_SSE_H
-
-

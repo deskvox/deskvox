@@ -44,6 +44,7 @@
 #include "cuda/utils.h"
 #endif
 
+#include "math/simd/intrinsics.h" // VV_ARCH
 #include "private/vvlog.h"
 
 #include <map>
@@ -149,6 +150,8 @@ static void get_cpuid(int reg[4], int type)
   __cpuidex(reg, type, 0);
 }
 
+#elif VV_ARCH == VV_ARCH_ARM
+// TODO
 #else
 
 static void get_cpuid(int reg[4], int type)
@@ -269,6 +272,10 @@ static bool archSupported(std::string const& arch)
 #endif
   }
 
+#if VV_ARCH == VV_ARCH_ARM
+// TODO
+#else
+
   int reg[4];
   get_cpuid(reg, 0);
   int nids = reg[EAX];
@@ -320,6 +327,8 @@ static bool archSupported(std::string const& arch)
     if (arch == "avx512vbmi")
       return test_bit(reg[ECX], 1);
   }
+
+#endif
 
   return false;
 }

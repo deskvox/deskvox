@@ -76,6 +76,8 @@ struct hit_record< basic_ray< T >, basic_aabb< T > >
 
 };
 
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
+
 template < >
 struct hit_record< basic_ray< simd::float4 >, basic_aabb< simd::float4 > >
 {
@@ -85,6 +87,8 @@ struct hit_record< basic_ray< simd::float4 >, basic_aabb< simd::float4 > >
     simd::float4    tfar;
 
 };
+
+#endif
 
 template < typename T >
 inline hit_record< basic_ray< T >, basic_aabb< T > > intersect
@@ -128,6 +132,8 @@ struct hit_record< basic_ray< T >, basic_triangle< 3, U, unsigned > >
 
 };
 
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
+
 template < typename U >
 struct hit_record< simd::ray4, basic_triangle< 3, U, unsigned > >
 {
@@ -143,6 +149,8 @@ struct hit_record< simd::ray4, basic_triangle< 3, U, unsigned > >
     value_type v;
 
 };
+
+#endif
 
 template < typename T, typename U >
 inline hit_record< basic_ray< T >, basic_triangle< 3, U, unsigned > > intersect

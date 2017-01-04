@@ -1,3 +1,9 @@
+check_include_file("smmintrin.h" SSE4_1_SUPPORTED)
+
+if(NOT SSE4_1_SUPPORTED)
+    return()
+endif()
+
 deskvox_link_libraries(virvo)
 deskvox_link_libraries(virvo_fileio)
 

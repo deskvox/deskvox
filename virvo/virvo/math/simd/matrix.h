@@ -1,10 +1,10 @@
 #ifndef VV_SIMD_MATRIX_H
 #define VV_SIMD_MATRIX_H
 
-
+#include "intrinsics.h"
 #include "sse.h"
 
-#include <ostream>
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 namespace MATH_NAMESPACE
 {
@@ -54,10 +54,8 @@ matrix< 4, 4, simd::float4 > transpose(matrix< 4, 4, simd::float4 > const& m);
 
 } // MATH_NAMESPACE
 
-
 #include "../detail/simd/matrix4.inl"
 
+#endif // VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 #endif // VV_SIMD_MATRIX_H
-
-

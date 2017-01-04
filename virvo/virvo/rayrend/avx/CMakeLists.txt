@@ -1,3 +1,9 @@
+check_include_file("immintrin.h" AVX_SUPPORTED)
+
+if(NOT AVX_SUPPORTED)
+    return()
+endif()
+
 deskvox_link_libraries(virvo)
 deskvox_link_libraries(virvo_fileio)
 

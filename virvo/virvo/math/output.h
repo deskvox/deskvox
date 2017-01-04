@@ -13,6 +13,7 @@
 namespace MATH_NAMESPACE
 {
 
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 //-------------------------------------------------------------------------------------------------
 // simd types
@@ -61,6 +62,8 @@ operator<<(std::basic_ostream< CharT, Traits >& out, simd::int4 const& v)
     return out << s.str();
 
 }
+
+#endif // VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 
 //-------------------------------------------------------------------------------------------------

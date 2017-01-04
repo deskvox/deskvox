@@ -10,6 +10,7 @@
 #include "sse.h"
 #include "../detail/math.h"
 
+#if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 
 namespace MATH_NAMESPACE
 {
@@ -350,4 +351,4 @@ inline float4 pow(const float4 &x, const float4 &y)
 } // simd
 } // MATH_NAMESPACE
 
-
+#endif // VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)

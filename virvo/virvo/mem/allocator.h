@@ -5,8 +5,33 @@
 #include <new>
 #include <stddef.h>
 
+#include <virvo/math/simd/intrinsics.h> // VV_ARCH
+
 #if VV_CXX_GCC || VV_CXX_CLANG
+#if VV_ARCH == VV_ARCH_ARM
+
+// TODO:!!!
+
+#include <cstdlib>
+
+namespace virvo
+{
+
+inline void* _mm_malloc(size_t s, size_t aln)
+{
+    return aligned_alloc(aln, s);
+}
+
+inline void _mm_free(void* ptr)
+{
+    free(ptr);
+}
+
+}
+
+#else
 #include <mm_malloc.h>
+#endif
 #else
 #include <malloc.h>
 #endif
