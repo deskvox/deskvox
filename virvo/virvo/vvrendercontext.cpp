@@ -350,7 +350,7 @@ void vvRenderContext::swapBuffers() const
   }
 }
 
-void vvRenderContext::resize(const uint w, const uint h)
+void vvRenderContext::resize(int w, int h)
 {
   vvDebugMsg::msg(3, "vvRenderContext::resize()");
 
@@ -387,7 +387,7 @@ void vvRenderContext::resize(const uint w, const uint h)
 
 #ifdef HAVE_OPENGL
       virvo::recti vp = gl::getViewport();
-      glViewport(vp[0], vp[1], w, h);
+      glViewport(vp[0], vp[1], (GLsizei)w, (GLsizei)h);
 #endif
 
 #ifdef _WIN32
@@ -442,7 +442,7 @@ bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
   uint h;
   glXQueryDrawable(dpy, glXGetCurrentDrawable(), GLX_HEIGHT, &h);
 
-  if (w < co.width || h < co.height)
+  if (w < (uint)co.width || h < (uint)co.height)
   {
     return false;
   }
