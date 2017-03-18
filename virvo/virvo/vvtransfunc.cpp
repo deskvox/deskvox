@@ -278,7 +278,7 @@ int vvTransFunc::getNumDefaultAlpha()
   Currently, only the x coordinate of color widgets is considered,
   so the resulting color field varies only along the x axis.
 */
-vvColor vvTransFunc::computeBGColor(float x, float, float)
+vvColor vvTransFunc::computeBGColor(float x, float, float) const
 {
   vvColor col;
   vvTFColor* wBefore = NULL;
@@ -321,7 +321,7 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
   non-TF_COLOR widget is found, the point is colored according to the
   background color.
 */
-vvColor vvTransFunc::computeColor(float x, float y, float z)
+vvColor vvTransFunc::computeColor(float x, float y, float z) const
 {
   vvColor col;
   vvColor resultCol(0,0,0);
@@ -385,7 +385,7 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
 /** Goes through all widgets and returns the highest opacity value any widget
   has at the point.
 */
-float vvTransFunc::computeOpacity(float x, float y, float z)
+float vvTransFunc::computeOpacity(float x, float y, float z) const
 {
   float opacity = 0.0f;
 

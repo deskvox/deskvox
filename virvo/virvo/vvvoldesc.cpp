@@ -3632,7 +3632,7 @@ void vvVolDesc::setSliceData(uint8_t* newData, int slice, int frame)
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * bpc * chan bytes
 */
-void vvVolDesc::extractSliceData(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst)
+void vvVolDesc::extractSliceData(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst) const
 {
     typedef virvo::cartesian_axis< 3 > axis_type;
 
@@ -3668,7 +3668,7 @@ void vvVolDesc::extractSliceData(int frame, virvo::cartesian_axis< 3 > axis, siz
 /** @return volume size when looking from a specific axis
   @param axis viewing axis
 */
-void vvVolDesc::getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t& width, size_t& height, size_t& slices)
+void vvVolDesc::getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t& width, size_t& height, size_t& slices) const
 {
     typedef virvo::cartesian_axis< 3 > axis_type;
 
@@ -3689,7 +3689,7 @@ void vvVolDesc::getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t& width, si
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
 */
-void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst)
+void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst) const
 {
   uint8_t* sliceData;
   vvColor col;

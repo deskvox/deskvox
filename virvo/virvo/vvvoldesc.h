@@ -306,9 +306,9 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     size_t serializeAttributes(uint8_t* = NULL) const;
     void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uint8_t*, int=0, int=0);
-    void   extractSliceData(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*);
-    void   makeSliceImage(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*);
-    void   getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t&, size_t&, size_t&);
+    void   extractSliceData(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*) const;
+    void   makeSliceImage(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*) const;
+    void   getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t&, size_t&, size_t&) const;
     void   deinterlace();
     void   findMinMax(size_t channel, float&, float&);
     int    findNumValue(int, float);
