@@ -91,7 +91,7 @@ void load(vvVolDesc* vd)
     for (size_t c = 0; c < vd->chan; ++c)
     {
         vd->real[c][0] = header->cal_min;
-        vd->real[c][1] = header->cal_max != 0.f ? header->cal_max : 1.f;
+        vd->real[c][1] = header->cal_max;
     }
 
 
@@ -108,6 +108,15 @@ void load(vvVolDesc* vd)
     uint8_t* raw = new uint8_t[vd->getFrameBytes()];
     memcpy(raw, static_cast<uint8_t*>(data_section->data), vd->getFrameBytes());
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
+
+
+    // find min/max if cal_{min|max} zero
+
+    for (size_t c = 0; c < vd->chan; ++c)
+    {
+        if (vd->real[c][0] == 0.f && vd->real[c][1] == 0.f)
+            vd->findMinMax(c, vd->real[c][0], vd->real[c][1]);
+    }
 }
 
 }} // namespace virvo::nifti
