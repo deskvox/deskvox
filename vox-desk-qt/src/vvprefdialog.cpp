@@ -378,7 +378,10 @@ void vvPrefDialog::applySettings()
 {
   QSettings settings;
 
-  ui->rendererBox->setCurrentIndex(settings.value("renderer/type").toInt());
+  const char* rend = getenv("VV_RENDERER");
+
+  if (!rend)
+    ui->rendererBox->setCurrentIndex(settings.value("renderer/type").toInt());
 
   ui->rayRendArchBox->setCurrentIndex(settings.value("rayrend/arch").toInt());
 
