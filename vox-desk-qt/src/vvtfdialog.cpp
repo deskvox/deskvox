@@ -720,4 +720,4 @@ void vvTFDialog::updateSettingsBox()
     connect(sb, SIGNAL(size(virvo::vec3f const&)), this, SLOT(onSize(virvo::vec3f const&)));
   }
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

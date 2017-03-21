@@ -160,4 +160,4 @@ void vvMergeDialog::onHelpClicked()
     "Example: 'image_z010_ch02.tif'");
   QMessageBox::information(this, tr("File Format"), info, QMessageBox::Ok);
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

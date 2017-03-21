@@ -81,4 +81,4 @@ vec3f vvInteractor::pos() const
 {
   return pos_;
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

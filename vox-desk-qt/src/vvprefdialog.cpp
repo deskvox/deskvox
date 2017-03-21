@@ -1048,4 +1048,4 @@ void vvPrefDialog::onStillDialChanged(int value)
   emit parameterChanged(vvRenderer::VV_QUALITY, static_cast<float>(ui->stillSpinBox->value()));
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
