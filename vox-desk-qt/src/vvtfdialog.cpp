@@ -47,11 +47,11 @@ using virvo::vec3f;
 namespace
 {
 
-float PIN_WIDTH = 2.0f;
-float SELECTED_WIDTH;
-size_t COLORBAR_HEIGHT = 30;
-size_t TF_WIDTH = 768;
-size_t TF_HEIGHT = 256;
+static const float PIN_WIDTH = 2.0f;
+static const float SELECTED_WIDTH = 4.0f;
+static const size_t COLORBAR_HEIGHT = 30;
+static const size_t TF_WIDTH = 768;
+static const size_t TF_HEIGHT = 256;
 
 /** Convert canvas x coordinates to data values.
   @param canvas canvas x coordinate [0..1]
