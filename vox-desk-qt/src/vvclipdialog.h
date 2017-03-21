@@ -18,9 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
-#pragma once
-
+#ifndef VV_CLIP_DIALOG_H
+#define VV_CLIP_DIALOG_H
 
 #include <virvo/math/forward.h>
 
@@ -62,4 +61,6 @@ private slots:
   void emitOrigin() const;
 
 };
+
+#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
