@@ -116,10 +116,8 @@ void load(vvVolDesc* vd)
     {
         if (vd->real[c][0] == 0.f && vd->real[c][1] == 0.f)
         {
-            if (vd->bpc == 1)
-                vd->real[c][1] = 255.f;
-            else if (vd->bpc == 2)
-                vd->real[c][1] = 65535.f;
+            if (vd->bpc == 1 || vd->bpc == 2)
+                vd->real[c][1] = 1.f;
             else if (vd->bpc == 4) // floating point: search for min/max in data
                 vd->findMinMax(c, vd->real[c][0], vd->real[c][1]);
             else
