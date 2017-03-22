@@ -21,6 +21,7 @@
 #include <array>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <type_traits>
 
@@ -68,9 +69,9 @@ using namespace visionaray;
 using ray_type          = basic_ray<float>;
 using sched_type        = cuda_sched<ray_type>;
 using transfunc_type    = cuda_texture<vec4,      1>;
-using volume8_type      = cuda_texture< unorm< 8>, 3>;
-using volume16_type     = cuda_texture< unorm<16>, 3>;
-using volume32_type     = cuda_texture< float,     3>;
+using volume8_type      = cuda_texture<unorm< 8>, 3>;
+using volume16_type     = cuda_texture<unorm<16>, 3>;
+using volume32_type     = cuda_texture<float,     3>;
 #else
 #if defined(VV_ARCH_SSE2) || defined(VV_ARCH_SSE4_1)
 using ray_type = basic_ray<simd::float4>;
@@ -80,10 +81,10 @@ using ray_type = basic_ray<simd::float8>;
 using ray_type = basic_ray<float>;
 #endif
 using sched_type        = tiled_sched<ray_type>;
-using transfunc_type    = texture<      vec4,      1>;
-using volume8_type      = texture<      unorm< 8>, 3>;
-using volume16_type     = texture<      unorm<16>, 3>;
-using volume32_type     = texture<      float,     3>;
+using transfunc_type    = texture<vec4,      1>;
+using volume8_type      = texture<unorm< 8>, 3>;
+using volume16_type     = texture<unorm<16>, 3>;
+using volume32_type     = texture<float,     3>;
 #endif
 
 //-------------------------------------------------------------------------------------------------
@@ -933,8 +934,12 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
                         const uint8_t* voxel = (*vd)(f, x, y, z);
                         for (size_t c = 0; c < vd->chan; ++c)
                         {
-                            size_t index = z * vd->getSliceVoxels() + y * vd->vox[1] + x;
-                            tmp[c * vd->getFrameVoxels() + index] = voxel[c];
+                            size_t index = (z * vd->getSliceBytes() + y * vd->vox[1] + x) * vd->bpc;
+                            memcpy(
+                                &tmp[c * vd->getFrameBytes() + index],
+                                &voxel[c],
+                                vd->bpc
+                                );
                         }
                     }
                 }
@@ -947,7 +952,7 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
             size_t index = f * vd->chan + c;
 
             volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameVoxels()));
+            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameBytes()));
             volumes[index].set_address_mode(address_mode);
             volumes[index].set_filter_mode(filter_mode);
         }
