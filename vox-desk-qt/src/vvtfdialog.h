@@ -54,6 +54,7 @@ private:
   void createPins();
   void createPin(vvTFWidget* w);
   void makeColorBar(std::vector<uchar>* colorBar, int width) const;
+  void makeHistogramTexture(std::vector<uchar>* hist, int width, int height) const;
   void makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const;
   void emitTransFunc();
   void updateSettingsBox();

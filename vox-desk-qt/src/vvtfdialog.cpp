@@ -39,6 +39,8 @@
 
 #include <boost/bimap.hpp>
 
+#include <algorithm>
+#include <vector>
 
 using virvo::vec2f;
 using virvo::vec3f;
@@ -95,21 +97,24 @@ struct vvTFDialog::Impl
   Impl()
     : ui(new Ui::TFDialog)
     , colorscene(new MouseGraphicsScene)
-    , colortex(new QGraphicsPixmapItem)
+    , coloritem(new QGraphicsPixmapItem)
     , alphascene(new MouseGraphicsScene)
-    , alphatex(new QGraphicsPixmapItem)
+    , alphaitem(new QGraphicsPixmapItem)
     , selected(NULL)
     , moving(NULL)
     , zoomRange(vec2f(0.0f, 1.0f))
+    , colorDirty(true)
+    , alphaDirty(true)
+    , histDirty(true)
   {
-    colorscene->addItem(colortex);
-    alphascene->addItem(alphatex);
+    colorscene->addItem(coloritem);
+    alphascene->addItem(alphaitem);
   }
 
   ~Impl()
   {
-    delete colortex;
-    delete alphatex;
+    delete coloritem;
+    delete alphaitem;
     delete colorscene;
     delete alphascene;
   }
@@ -117,11 +122,11 @@ struct vvTFDialog::Impl
   std::auto_ptr<Ui::TFDialog> ui;
 
   MouseGraphicsScene* colorscene;
-  QGraphicsPixmapItem* colortex;
+  QGraphicsPixmapItem* coloritem;
   std::vector<Pin*> colorpins;
 
   MouseGraphicsScene* alphascene;
-  QGraphicsPixmapItem* alphatex;
+  QGraphicsPixmapItem* alphaitem;
   std::vector<Pin*> alphapins;
 
   Pin* selected;
@@ -131,6 +136,15 @@ struct vvTFDialog::Impl
   bm_type pin2widget;
 
   vec2f zoomRange; ///< min/max for zoom area on data range
+
+  // texture data
+  std::vector<uchar> colorTex;
+  std::vector<uchar> alphaTex;
+  std::vector<uchar> histTex;
+
+  bool colorDirty;
+  bool alphaDirty;
+  bool histDirty;
 
 private:
 
@@ -180,8 +194,66 @@ vvTFDialog::~vvTFDialog()
 
 void vvTFDialog::drawTF()
 {
+  // color bar
+  if (impl_->colorDirty)
+  {
+    int w = impl_->ui->color1DView->width();
+    int h = impl_->ui->color1DView->height();
+    impl_->colorTex.resize(w * h * 4);
+    makeColorBar(&impl_->colorTex, w);
+  }
+
+  // histogram
+  if (impl_->histDirty)
+  {
+    int w = impl_->ui->alpha1DView->width();
+    int h = impl_->ui->alpha1DView->height();
+    impl_->histTex.resize(static_cast<size_t>(w) * static_cast<size_t>(h) * 4);
+    makeHistogramTexture(&impl_->histTex, w, h);
+  }
+
+  // alpha widgets
+  if (impl_->alphaDirty)
+  {
+    int w = impl_->ui->alpha1DView->width();
+    int h = impl_->ui->alpha1DView->height();
+    impl_->alphaTex.resize(static_cast<size_t>(w) * static_cast<size_t>(h) * 4);
+    makeAlphaTexture(&impl_->alphaTex, w, h);
+  }
+
+  // blend histogram texture and alpha texture
+  if (impl_->histDirty || impl_->alphaDirty)
+  {
+    // TODO: use hardware for blending
+    int w = impl_->ui->alpha1DView->width();
+    int h = impl_->ui->alpha1DView->height();
+
+    std::vector<uchar> dest(impl_->alphaTex.size());
+
+    for (int y = 0; y < h; ++y)
+    {
+      for (int x = 0; x < w; ++x)
+      {
+        const uchar* histptr = impl_->histTex.data() + ((h - y - 1) * w + x) * 4; // TODO: why only flip hist and not alpha texture?
+        const uchar* alphaptr = impl_->alphaTex.data() + (y * w + x) * 4;
+        uchar* destptr = dest.data() + (y * w + x) * 4;
+
+        destptr[0] = (uchar) ((float)alphaptr[0] * (float)alphaptr[3] + (float)histptr[0] * (1.f - (float)alphaptr[3]));
+        destptr[1] = (uchar) ((float)alphaptr[1] * (float)alphaptr[3] + (float)histptr[1] * (1.f - (float)alphaptr[3]));
+        destptr[2] = (uchar) ((float)alphaptr[2] * (float)alphaptr[3] + (float)histptr[2] * (1.f - (float)alphaptr[3]));
+        destptr[3] = (uchar) ((float)alphaptr[3] * (float)alphaptr[3] + (float)histptr[3] * (1.f - (float)alphaptr[3]));
+      }
+    }
+    std::copy(dest.begin(), dest.end(), impl_->alphaTex.begin());
+  }
+
   drawColorTexture();
   drawAlphaTexture();
+
+  impl_->colorDirty = false;
+  impl_->histDirty = false;
+  impl_->alphaDirty = false;
+
   impl_->colorscene->invalidate();
   impl_->alphascene->invalidate();
 }
@@ -190,34 +262,31 @@ void vvTFDialog::drawColorTexture()
 {
   vvDebugMsg::msg(3, "vvTFDialog::drawColorTexture()");
 
-  size_t w = 768;
-  size_t h = 3;
-  std::vector<uchar> colorBar;
-  colorBar.resize(w * h * 4);
-  makeColorBar(&colorBar, w);
-  QImage img(&colorBar[0], w, 3, QImage::Format_ARGB32);
+  int w = impl_->ui->color1DView->width();
+  int h = impl_->ui->color1DView->height();
+
+  QImage img(&impl_->colorTex[0], w, h, QImage::Format_ARGB32);
   img = img.scaled(QSize(w, h * COLORBAR_HEIGHT / 3));
   if (!img.isNull())
   {
     QPixmap colorpm = QPixmap::fromImage(img);
-    impl_->colortex->setPixmap(colorpm);
+    impl_->coloritem->setPixmap(colorpm);
   }
 }
 
 void vvTFDialog::drawAlphaTexture()
 {
+  vvDebugMsg::msg(3, "vvTFDialog::drawAlphaTexture()");
+
   int w = impl_->ui->alpha1DView->width();
   int h = impl_->ui->alpha1DView->height();
-  assert(w >= 0 && h >= 0);
 
-  std::vector<uchar> alphaTex;
-  alphaTex.resize(static_cast<size_t>(w) * static_cast<size_t>(h) * 4);
-  makeAlphaTexture(&alphaTex, w, h);
-  QImage img(&alphaTex[0], w, h, QImage::Format_ARGB32);
+  QImage img(&impl_->alphaTex[0], w, h, QImage::Format_ARGB32);
+
   if (!img.isNull())
   {
     QPixmap alphapm = QPixmap::fromImage(img);
-    impl_->alphatex->setPixmap(alphapm);
+    impl_->alphaitem->setPixmap(alphapm);
   }
 }
 
@@ -302,6 +371,16 @@ void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
   }
 }
 
+void vvTFDialog::makeHistogramTexture(std::vector<uchar>* hist, int width, int height) const
+{
+  assert(_canvas->getVolDesc());
+
+  size_t size[] = { static_cast<size_t>(width), static_cast<size_t>(height) };
+  vvColor col(0.4f, 0.4f, 0.4f);
+
+  _canvas->getVolDesc()->makeHistogramTexture(0, 0, 1, size, hist->data(), vvVolDesc::VV_LINEAR, &col, impl_->zoomRange[0], impl_->zoomRange[1]);
+}
+
 void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const
 {
   if (!_canvas->getVolDesc())
@@ -323,6 +402,8 @@ void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int h
 
 void vvTFDialog::onUndoClicked()
 {
+  impl_->colorDirty = true;
+  impl_->alphaDirty = true;
   emit undo();
   emit newTransferFunction();
   clearPins();
@@ -337,22 +418,27 @@ void vvTFDialog::onNewWidget()
   if (QObject::sender() == impl_->ui->colorButton)
   {
     widget = new vvTFColor(vvColor(), norm2data(impl_->zoomRange, 0.5f));
+    impl_->colorDirty = true;
   }
   else if (QObject::sender() == impl_->ui->pyramidButton)
   {
     widget = new vvTFPyramid(vvColor(), false, 1.0f, norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.4f), normd2datad(impl_->zoomRange, 0.2f));
+    impl_->alphaDirty = true;
   }
   else if (QObject::sender() == impl_->ui->gaussianButton)
   {
     widget = new vvTFBell(vvColor(), false, 1.0f, norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.2f));
+    impl_->alphaDirty = true;
   }
   else if (QObject::sender() == impl_->ui->customButton)
   {
     widget = new vvTFCustom(norm2data(impl_->zoomRange, 0.5f), norm2data(impl_->zoomRange, 0.5f));
+    impl_->alphaDirty = true;
   }
   else if (QObject::sender() == impl_->ui->skipRangeButton)
   {
     widget = new vvTFSkip(norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.2f));
+    impl_->alphaDirty = true;
   }
 
   emit newWidget(widget);
@@ -377,6 +463,8 @@ void vvTFDialog::onDeleteClicked()
     std::find(_canvas->getVolDesc()->tf[0]._widgets.begin(), _canvas->getVolDesc()->tf[0]._widgets.end(), lit->second)
   );
   impl_->selected = NULL;
+  impl_->colorDirty = true;
+  impl_->alphaDirty = true;
 
   emitTransFunc();
   clearPins();
@@ -389,6 +477,7 @@ void vvTFDialog::onPresetColorsChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetColorsChanged()");
 
+  impl_->colorDirty = true;
   _canvas->getVolDesc()->tf[0].setDefaultColors(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
@@ -400,6 +489,7 @@ void vvTFDialog::onPresetAlphaChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetAlphaChanged()");
 
+  impl_->alphaDirty = true;
   _canvas->getVolDesc()->tf[0].setDefaultAlpha(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
@@ -409,6 +499,7 @@ void vvTFDialog::onPresetAlphaChanged(int index)
 
 void vvTFDialog::onDiscrChanged(int num)
 {
+  impl_->alphaDirty = true;
   impl_->ui->discrLabel->setText(QString::number(num));
   _canvas->getVolDesc()->tf[0].setDiscreteColors(num);
   emitTransFunc();
@@ -422,6 +513,9 @@ void vvTFDialog::onApplyClicked()
 
 void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
 {
+  impl_->colorDirty = true;
+  impl_->histDirty = true;
+  impl_->alphaDirty = true;
   clearPins();
   createPins();
   if (vd != NULL)
@@ -485,6 +579,7 @@ void vvTFDialog::onColor(const QColor& color)
   {
     assert(false);
   }
+  impl_->colorDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -506,6 +601,7 @@ void vvTFDialog::onHasOwnColor(bool hascolor)
   {
     assert(false);
   }
+  impl_->colorDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -527,6 +623,7 @@ void vvTFDialog::onOpacity(float opacity)
   {
     assert(false);
   }
+  impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -548,6 +645,7 @@ void vvTFDialog::onSize(vec3f const& size)
   {
     assert(false);
   }
+  impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -560,6 +658,7 @@ void vvTFDialog::onTop(vec3f const& top)
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setTop(top);
+  impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -572,6 +671,7 @@ void vvTFDialog::onBottom(vec3f const& bottom)
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setBottom(bottom);
+  impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
 }
@@ -601,6 +701,8 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
       vec3f oldpos = w->pos();
       w->setPos(x, oldpos[1], oldpos[2]);
     }
+    impl_->colorDirty = true;
+    impl_->alphaDirty = true;
     emitTransFunc();
     drawTF();
   }
