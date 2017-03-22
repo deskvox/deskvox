@@ -115,7 +115,16 @@ void load(vvVolDesc* vd)
     for (size_t c = 0; c < vd->chan; ++c)
     {
         if (vd->real[c][0] == 0.f && vd->real[c][1] == 0.f)
-            vd->findMinMax(c, vd->real[c][0], vd->real[c][1]);
+        {
+            if (vd->bpc == 1)
+                vd->real[c][1] = 255.f;
+            else if (vd->bpc == 2)
+                vd->real[c][1] = 65535.f;
+            else if (vd->bpc == 4) // floating point: search for min/max in data
+                vd->findMinMax(c, vd->real[c][0], vd->real[c][1]);
+            else
+                assert(0);
+        }
     }
 }
 
