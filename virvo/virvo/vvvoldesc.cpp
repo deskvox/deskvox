@@ -391,6 +391,9 @@ void vvVolDesc::setDefaults()
   vox[0] = vox[1] = vox[2] = frames = 0;
   frames = 0;
   bpc = 1;
+  signedInt = false;
+  voxelScale = 1.0f;
+  voxelOffset = 0.0f;
   chan = 0;
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
@@ -1326,8 +1329,48 @@ size_t vvVolDesc::getBPV() const
 {
   return bpc * chan;
 }
+
 //----------------------------------------------------------------------------
-/// Get number of bytes per voxel.
+/// Set if voxel stores signed integers
+void vvVolDesc::setSignedInt(bool si)
+{
+  signedInt = si;
+}
+
+//----------------------------------------------------------------------------
+/// Get if voxel stores signed integers
+bool vvVolDesc::getSignedInt() const
+{
+  return signedInt;
+}
+
+//----------------------------------------------------------------------------
+/// Set voxel scale
+void vvVolDesc::setVoxelScale(float vs)
+{
+  voxelScale = vs;
+}
+
+//----------------------------------------------------------------------------
+/// Get voxel scale
+float vvVolDesc::getVoxelScale() const
+{
+  return voxelScale;
+}
+
+//----------------------------------------------------------------------------
+/// Set voxel offset
+void vvVolDesc::setVoxelOffset(float vo)
+{
+  voxelOffset = vo;
+}
+
+//----------------------------------------------------------------------------
+/// Get voxel offset
+float vvVolDesc::getVoxelOffset() const
+{
+  return voxelOffset;
+}
 
 //----------------------------------------------------------------------------
 /** Get range of values in each channel. Depends only on setting of bpc.

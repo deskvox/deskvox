@@ -130,6 +130,9 @@ class VIRVO_FILEIOEXPORT vvVolDesc
                                                   ///< <LI>1 = 1 unsigned char</LI>
                                                   ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
                                                   ///< <LI>4 = float</LI>
+    bool signedInt;                               ///< true=integer data is signed (default = false)
+    float voxelScale;                             ///< scaling factor for all voxels, allows to transfer voxels to wider range (default = 1.f)
+    float voxelOffset;                            ///< offset for all voxels (default = 0.f)
     size_t chan;                                  ///< number of channels (default = 1), each channel contains bpc bytes
     virvo::vec3f dist;                            ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
@@ -239,6 +242,12 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   setIndexChannel(int ic);
     int    getIndexChannel() const;
     size_t getBPV() const;
+    void   setSignedInt(bool si);
+    bool   getSignedInt() const;
+    void   setVoxelScale(float vs);
+    float  getVoxelScale() const;
+    void   setVoxelOffset(float vo);
+    float  getVoxelOffset() const;
     void   setDist(float, float, float);
     void   setDist(virvo::vec3f const& d);
     void   setRealRange(virvo::vec2 range);

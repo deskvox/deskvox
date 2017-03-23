@@ -61,6 +61,8 @@ void load(vvVolDesc* vd)
 
     vd->frames = 1;
 
+    bool is_signed_int = false;
+
     // bytes per pixel and num channels
 
     switch (header->datatype)
@@ -74,10 +76,12 @@ void load(vvVolDesc* vd)
         vd->bpc = header->nbyper / 4;
         break;
     case NIFTI_TYPE_INT8:
-    case NIFTI_TYPE_UINT8:
     case NIFTI_TYPE_INT16:
-    case NIFTI_TYPE_UINT16:
     case NIFTI_TYPE_INT32:
+        is_signed_int = true;
+        // fall through
+    case NIFTI_TYPE_UINT8:
+    case NIFTI_TYPE_UINT16:
     case NIFTI_TYPE_UINT32:
     case NIFTI_TYPE_FLOAT32:
         // all: fall through
@@ -85,6 +89,13 @@ void load(vvVolDesc* vd)
         vd->chan = 1;
         vd->bpc = header->nbyper;
     }
+
+    // voxel properties
+
+    vd->setSignedInt(is_signed_int);
+    vd->setVoxelScale(header->scl_slope);
+    vd->setVoxelOffset(header->scl_inter);
+
 
     // data range
 
