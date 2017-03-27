@@ -623,6 +623,7 @@ void vvTFDialog::onOpacity(float opacity)
   {
     assert(false);
   }
+  impl_->colorDirty = true;
   impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
@@ -645,6 +646,7 @@ void vvTFDialog::onSize(vec3f const& size)
   {
     assert(false);
   }
+  impl_->colorDirty = true;
   impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
@@ -658,6 +660,7 @@ void vvTFDialog::onTop(vec3f const& top)
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setTop(top);
+  impl_->colorDirty = true;
   impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
@@ -671,6 +674,7 @@ void vvTFDialog::onBottom(vec3f const& bottom)
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setBottom(bottom);
+  impl_->colorDirty = true;
   impl_->alphaDirty = true;
   emitTransFunc();
   drawTF();
