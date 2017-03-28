@@ -4740,7 +4740,11 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t
   switch(bpc)
   {
     case 1: fval = float(data[index]); break;
-    case 2: ival = data[index] * 256 + data[index+1]; fval = float(ival); break;
+#ifdef BOOST_LITTLE_ENDIAN
+    case 2: ival = ((short)data[index+1] << 8) | data[index]; fval = float(ival); break;
+#else
+    case 2: ival = ((short)data[index] << 8) | data[index+1]; fval = float(ival); break;
+#endif
     case 4: fval = *((float*)(data + index)); break;
     default: assert(0); fval = 0.0f; break;
   }
