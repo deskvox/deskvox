@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
-    <height>460</height>
+    <width>462</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,6 +47,12 @@
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <widget class="QRadioButton" name="xaxisButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>X axis</string>
             </property>
@@ -54,6 +60,12 @@
           </item>
           <item>
            <widget class="QRadioButton" name="yaxisButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Y axis</string>
             </property>
@@ -61,6 +73,12 @@
           </item>
           <item>
            <widget class="QRadioButton" name="zaxisButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Z axis</string>
             </property>
@@ -74,6 +92,12 @@
        </item>
        <item>
         <widget class="QCheckBox" name="horizontalBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string>Flip horizontally</string>
          </property>
@@ -81,6 +105,12 @@
        </item>
        <item>
         <widget class="QCheckBox" name="verticalBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string>Flip vertically</string>
          </property>
@@ -102,27 +132,15 @@
       </layout>
      </item>
      <item>
-      <widget class="QFrame" name="frame">
+      <widget class="QLabel" name="frame">
        <property name="minimumSize">
         <size>
          <width>256</width>
          <height>256</height>
         </size>
        </property>
-       <property name="maximumSize">
-        <size>
-         <width>256</width>
-         <height>256</height>
-        </size>
-       </property>
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>

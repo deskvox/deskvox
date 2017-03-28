@@ -44,6 +44,8 @@ private:
   void paint();
   void updateUi();
 
+  void resizeEvent(QResizeEvent* event);
+
 public slots:
   void onNewVolDesc(vvVolDesc* vd);
   void onNewFrame(int frame);

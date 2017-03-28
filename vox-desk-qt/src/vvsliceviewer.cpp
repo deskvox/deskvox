@@ -104,19 +104,17 @@ void vvSliceViewer::paint()
     return;
 
   std::vector<uchar> texture;
-  QImage img = QImage(getSlice(_vd, &texture, impl_->slice, impl_->axis));
+  QImage img = getSlice(_vd, &texture, impl_->slice, impl_->axis);
   if (!img.isNull())
   {
-    img = img.scaled(impl_->ui->frame->width(), impl_->ui->frame->height());
+    int s = std::min(impl_->ui->frame->width(), impl_->ui->frame->height());
+    img = img.scaled(s, s, Qt::KeepAspectRatioByExpanding);
     if (impl_->ui->horizontalBox->isChecked() || impl_->ui->verticalBox->isChecked())
     {
       img = img.mirrored(impl_->ui->horizontalBox->isChecked(), impl_->ui->verticalBox->isChecked());
     }
     QPixmap pm = QPixmap::fromImage(img);
-    QBrush br(pm);
-    QPalette pal;
-    pal.setBrush(QPalette::Window, br);
-    impl_->ui->frame->setPalette(pal);
+    impl_->ui->frame->setPixmap(pm);
   }
 }
 
@@ -164,6 +162,11 @@ void vvSliceViewer::updateUi()
   impl_->ui->sliceSlider->setMaximum(slices - 1);
   impl_->ui->sliceSlider->setTickInterval(1);
   impl_->ui->sliceSlider->setValue(impl_->slice);
+}
+
+void vvSliceViewer::resizeEvent(QResizeEvent* /*event*/)
+{
+  paint();
 }
 
 void vvSliceViewer::onNewVolDesc(vvVolDesc* vd)
