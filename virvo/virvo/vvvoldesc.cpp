@@ -4734,20 +4734,29 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t
   float fval;
   size_t index;
   size_t bpv = getBPV();
-  int ival;
 
   index = bpv * (x + y * vox[0] + z * vox[0] * vox[1]) + chan * bpc;
   switch(bpc)
   {
     case 1: fval = float(data[index]); break;
+    case 2:
+    {
 #ifdef BOOST_LITTLE_ENDIAN
-    case 2: ival = ((short)data[index+1] << 8) | data[index]; fval = float(ival); break;
+      unsigned short ival = ((unsigned short)data[index+1] << 8) | data[index]; fval = float(ival);
 #else
-    case 2: ival = ((short)data[index] << 8) | data[index+1]; fval = float(ival); break;
+      unsigned short ival = ((unsigned short)data[index] << 8) | data[index+1]; fval = float(ival);
 #endif
+      if (getSignedInt())
+        fval = (float)(*reinterpret_cast<short*>(&ival));
+      else
+        fval = (float)ival;
+      break;
+    }
     case 4: fval = *((float*)(data + index)); break;
     default: assert(0); fval = 0.0f; break;
   }
+  fval *= getVoxelScale();
+  fval += getVoxelOffset();
   return fval;
 }
 
