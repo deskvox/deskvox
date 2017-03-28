@@ -252,6 +252,9 @@ void vvSliceViewer::mousePressEvent(QMouseEvent* event)
 
 void vvSliceViewer::resizeEvent(QResizeEvent* /*event*/)
 {
+  int width = impl_->ui->frame->pixmap()->width();
+  int height = impl_->ui->frame->pixmap()->height();
+  impl_->ui->viewSizeLabel->setText(QString::number(width) + " x " + QString::number(height));
   paint();
 }
 

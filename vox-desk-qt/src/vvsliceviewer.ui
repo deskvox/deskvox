@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>462</width>
-    <height>473</height>
+    <height>494</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Slice Viewer</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
@@ -28,6 +28,27 @@
      </item>
      <item>
       <widget class="QLabel" name="resolutionLabel">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="viewSizeLayout">
+     <item>
+      <widget class="QLabel" name="viewSizeTextLabel">
+       <property name="text">
+        <string>View size:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="viewSizeLabel">
        <property name="text">
         <string/>
        </property>
