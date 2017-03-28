@@ -911,7 +911,11 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
             voxVal[c] = float(raw[srcIndex + chan1 + srcChan]);
             break;
           case 2:
+#ifdef BOOST_LITTLE_ENDIAN
+            voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan) + 1] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan)]));
+#else
             voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan)] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan) + 1]));
+#endif
             break;
           case 4:
             voxVal[c] = *((float*)(raw + srcIndex + 4 * (chan1 + srcChan)));
