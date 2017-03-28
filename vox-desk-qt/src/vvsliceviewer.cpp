@@ -210,7 +210,7 @@ void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
   impl_->ui->yLabel->setText("Y: " + QString::number(y));
   impl_->ui->zLabel->setText("Z: " + QString::number(z));
 
-  float val = _vd->getChannelValue(0, x, y, z, 0);
+  float val = _vd->getChannelValue(0, flipped_x, flipped_y, flipped_z, 0);
 
   impl_->ui->valueLabel->setText("Value: " + QString::number(val));
 }
