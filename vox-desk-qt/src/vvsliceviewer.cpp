@@ -175,24 +175,37 @@ void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
                 / (double)impl_->ui->frame->pixmap()->height();
 
   int x = 0, y = 0, z = 0;
+  int flipped_x = 0, flipped_y = 0, flipped_z = 0;
 
   if (impl_->axis == virvo::cartesian_axis<3>::X)
   {
     x = impl_->slice;
     y = ts_clamp((ssize_t)(xd * _vd->vox[1]), (ssize_t)0, _vd->vox[1] - 1);
     z = ts_clamp((ssize_t)(yd * _vd->vox[2]), (ssize_t)0, _vd->vox[2] - 1);
+
+    flipped_x = x;
+    flipped_y = impl_->ui->horizontalBox->isChecked() ? _vd->vox[1] - y - 1 : y;
+    flipped_z = impl_->ui->verticalBox->isChecked() ? _vd->vox[2] - z - 1 : z;
   }
   else if (impl_->axis == virvo::cartesian_axis<3>::Y)
   {
     x = ts_clamp((ssize_t)(xd * _vd->vox[0]), (ssize_t)0, _vd->vox[0] - 1);
     y = impl_->slice;
     z = ts_clamp((ssize_t)(yd * _vd->vox[2]), (ssize_t)0, _vd->vox[2] - 1);
+
+    flipped_x = impl_->ui->horizontalBox->isChecked() ? _vd->vox[0] - x - 1 : x;
+    flipped_y = y;
+    flipped_z = impl_->ui->verticalBox->isChecked() ? _vd->vox[2] - z - 1 : z;
   }
   else if (impl_->axis == virvo::cartesian_axis<3>::Z)
   {
     x = ts_clamp((ssize_t)(xd * _vd->vox[0]), (ssize_t)0, _vd->vox[0] - 1);
     y = ts_clamp((ssize_t)(yd * _vd->vox[1]), (ssize_t)0, _vd->vox[1] - 1);
     z = impl_->slice;
+
+    flipped_x = impl_->ui->horizontalBox->isChecked() ? _vd->vox[0] - x - 1 : x;
+    flipped_y = impl_->ui->verticalBox->isChecked() ? _vd->vox[1] - y - 1 : y;
+    flipped_z = z;
   }
 
   impl_->ui->xLabel->setText("X: " + QString::number(x));
@@ -200,7 +213,7 @@ void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
   impl_->ui->zLabel->setText("Z: " + QString::number(z));
 
   double val = 0.0;
-  const uint8_t* bytes = (*_vd)(x, y, z);
+  const uint8_t* bytes = (*_vd)(flipped_x, flipped_y, flipped_z);
 
   switch(_vd->getBPV())
   {
