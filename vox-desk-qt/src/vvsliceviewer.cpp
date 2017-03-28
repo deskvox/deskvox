@@ -30,8 +30,6 @@
 #include <QMouseEvent>
 #include <QPixmap>
 
-#include <boost/detail/endian.hpp>
-
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -212,35 +210,7 @@ void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
   impl_->ui->yLabel->setText("Y: " + QString::number(y));
   impl_->ui->zLabel->setText("Z: " + QString::number(z));
 
-  double val = 0.0;
-  const uint8_t* bytes = (*_vd)(flipped_x, flipped_y, flipped_z);
-
-  switch(_vd->getBPV())
-  {
-    case 1: val = double(bytes[0]); break;
-    case 2:
-    {
-#ifdef BOOST_LITTLE_ENDIAN
-      unsigned short us = bytes[1];
-      us <<= 8;
-      us |= bytes[0];
-#else
-      unsigned short us = bytes[0];
-      us <<= 8;
-      us |= bytes[1];
-#endif
-      if (_vd->getSignedInt())
-        val = (double)(*reinterpret_cast<short*>(&us));
-      else
-        val = (double)us;
-      break;
-    }
-    case 4: val = ((*((float*)(bytes))) - _vd->real[0][0]) / (_vd->real[0][1] - _vd->real[0][0]); break;
-    default: assert(0); break;
-  }
-
-  val *= _vd->getVoxelScale();
-  val += _vd->getVoxelOffset();
+  float val = _vd->getChannelValue(0, x, y, z, 0);
 
   impl_->ui->valueLabel->setText("Value: " + QString::number(val));
 }
