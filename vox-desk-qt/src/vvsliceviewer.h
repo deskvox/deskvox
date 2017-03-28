@@ -44,6 +44,8 @@ private:
   void paint();
   void updateUi();
 
+  void mouseMoveEvent(QMouseEvent* event);
+  void mousePressEvent(QMouseEvent* event);
   void resizeEvent(QResizeEvent* event);
 
 public slots:

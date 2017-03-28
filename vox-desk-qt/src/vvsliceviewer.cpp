@@ -27,7 +27,10 @@
 #include <virvo/vvvoldesc.h>
 
 #include <QImage>
+#include <QMouseEvent>
 #include <QPixmap>
+
+#include <boost/detail/endian.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -162,6 +165,76 @@ void vvSliceViewer::updateUi()
   impl_->ui->sliceSlider->setMaximum(slices - 1);
   impl_->ui->sliceSlider->setTickInterval(1);
   impl_->ui->sliceSlider->setValue(impl_->slice);
+}
+
+void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
+{
+  double xd = (event->pos().x() - impl_->ui->frame->pos().x() - 1)
+                / (double)impl_->ui->frame->pixmap()->width();
+  double yd = (event->pos().y() - impl_->ui->frame->pos().y() - 1)
+                / (double)impl_->ui->frame->pixmap()->height();
+
+  int x = 0, y = 0, z = 0;
+
+  if (impl_->axis == virvo::cartesian_axis<3>::X)
+  {
+    x = impl_->slice;
+    y = ts_clamp((ssize_t)(xd * _vd->vox[1]), (ssize_t)0, _vd->vox[1] - 1);
+    z = ts_clamp((ssize_t)(yd * _vd->vox[2]), (ssize_t)0, _vd->vox[2] - 1);
+  }
+  else if (impl_->axis == virvo::cartesian_axis<3>::Y)
+  {
+    x = ts_clamp((ssize_t)(xd * _vd->vox[0]), (ssize_t)0, _vd->vox[0] - 1);
+    y = impl_->slice;
+    z = ts_clamp((ssize_t)(yd * _vd->vox[2]), (ssize_t)0, _vd->vox[2] - 1);
+  }
+  else if (impl_->axis == virvo::cartesian_axis<3>::Z)
+  {
+    x = ts_clamp((ssize_t)(xd * _vd->vox[0]), (ssize_t)0, _vd->vox[0] - 1);
+    y = ts_clamp((ssize_t)(yd * _vd->vox[1]), (ssize_t)0, _vd->vox[1] - 1);
+    z = impl_->slice;
+  }
+
+  impl_->ui->xLabel->setText("X: " + QString::number(x));
+  impl_->ui->yLabel->setText("Y: " + QString::number(y));
+  impl_->ui->zLabel->setText("Z: " + QString::number(z));
+
+  double val = 0.0;
+  const uint8_t* bytes = (*_vd)(x, y, z);
+
+  switch(_vd->getBPV())
+  {
+    case 1: val = double(bytes[0]); break;
+    case 2:
+    {
+#ifdef BOOST_LITTLE_ENDIAN
+      unsigned short us = bytes[1];
+      us <<= 8;
+      us |= bytes[0];
+#else
+      unsigned short us = bytes[0];
+      us <<= 8;
+      us |= bytes[1];
+#endif
+      if (_vd->getSignedInt())
+        val = (double)(*reinterpret_cast<short*>(&us));
+      else
+        val = (double)us;
+      break;
+    }
+    case 4: val = ((*((float*)(bytes))) - _vd->real[0][0]) / (_vd->real[0][1] - _vd->real[0][0]); break;
+    default: assert(0); break;
+  }
+
+  val *= _vd->getVoxelScale();
+  val += _vd->getVoxelOffset();
+
+  impl_->ui->valueLabel->setText("Value: " + QString::number(val));
+}
+
+void vvSliceViewer::mousePressEvent(QMouseEvent* event)
+{
+  mouseMoveEvent(event);
 }
 
 void vvSliceViewer::resizeEvent(QResizeEvent* /*event*/)
