@@ -736,6 +736,12 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
 {
   std::vector<Pin*>& pins = QObject::sender() == impl_->colorscene ? impl_->colorpins : impl_->alphapins;
 
+  float posX01 = pos.x() / (impl_->ui->color1DView->width() - 1);
+  float posXZoom = posX01 * (impl_->zoomRange[1] - impl_->zoomRange[0]) + impl_->zoomRange[0];
+  float posXValue = posXZoom * (impl_->maxVoxel - impl_->minVoxel) + impl_->minVoxel;
+  impl_->ui->mouseLabel->setText("Mouse: " + QString::number(posXZoom));
+  impl_->ui->valueLabel->setText("Value: " + QString::number(posXValue));
+
   if (impl_->moving != NULL)
   {
     std::vector<Pin*>::iterator it = std::find(pins.begin(), pins.end(), impl_->moving);

@@ -382,7 +382,7 @@
      <x>10</x>
      <y>421</y>
      <width>165</width>
-     <height>194</height>
+     <height>218</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -471,6 +471,13 @@
      <widget class="QLabel" name="mouseLabel">
       <property name="text">
        <string>Mouse:</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="valueLabel">
+      <property name="text">
+       <string>Value:</string>
       </property>
      </widget>
     </item>
