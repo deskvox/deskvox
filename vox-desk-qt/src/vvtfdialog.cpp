@@ -137,6 +137,9 @@ struct vvTFDialog::Impl
 
   vec2f zoomRange; ///< min/max for zoom area on data range
 
+  float minVoxel;
+  float maxVoxel;
+
   // texture data
   std::vector<uchar> colorTex;
   std::vector<uchar> alphaTex;
@@ -172,6 +175,8 @@ vvTFDialog::vvTFDialog(vvCanvas* canvas, QWidget* parent)
   connect(impl_->ui->skipRangeButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
   connect(impl_->ui->deleteButton, SIGNAL(clicked()), this, SLOT(onDeleteClicked()));
   connect(impl_->ui->undoButton, SIGNAL(clicked()), this, SLOT(onUndoClicked()));
+  connect(impl_->ui->zoomMinBox, SIGNAL(valueChanged(double)), this, SLOT(onZoomMinChanged(double)));
+  connect(impl_->ui->zoomMaxBox, SIGNAL(valueChanged(double)), this, SLOT(onZoomMaxChanged(double)));
   connect(impl_->ui->presetColorsBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetColorsChanged(int)));
   connect(impl_->ui->presetAlphaBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetAlphaChanged(int)));
   connect(impl_->ui->discrSlider, SIGNAL(valueChanged(int)), this, SLOT(onDiscrChanged(int)));
@@ -520,8 +525,55 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
   createPins();
   if (vd != NULL)
   {
+    float fmin;
+    float fmax;
+    vd->findMinMax(0, fmin, fmax);
+    fmin *= vd->getVoxelScale();
+    fmin += vd->getVoxelOffset();
+    fmax *= vd->getVoxelScale();
+    fmax += vd->getVoxelOffset();
+
+    // Save these so we do not always have to iterate over the volume anew
+    impl_->minVoxel = fmin;
+    impl_->maxVoxel = fmax;
+
+    impl_->ui->minLabel->setText(QString::number(fmin));
+    impl_->ui->maxLabel->setText(QString::number(fmax));
+
     impl_->ui->discrSlider->setValue(vd->tf[0].getDiscreteColors());
   }
+  drawTF();
+}
+
+void vvTFDialog::onZoomMinChanged(double zm)
+{
+  impl_->zoomRange[0] = zm;
+  impl_->colorDirty = true;
+  impl_->histDirty = true;
+  impl_->alphaDirty = true;
+  clearPins();
+  createPins();
+
+  float range = impl_->maxVoxel - impl_->minVoxel;
+  float fmin = impl_->minVoxel + range * impl_->zoomRange[0];
+  impl_->ui->minLabel->setText(QString::number(fmin));
+
+  drawTF();
+}
+
+void vvTFDialog::onZoomMaxChanged(double zm)
+{
+  impl_->zoomRange[1] = zm;
+  impl_->colorDirty = true;
+  impl_->histDirty = true;
+  impl_->alphaDirty = true;
+  clearPins();
+  createPins();
+
+  float range = impl_->maxVoxel - impl_->minVoxel;
+  float fmax = impl_->minVoxel + range * impl_->zoomRange[1];
+  impl_->ui->maxLabel->setText(QString::number(fmax));
+
   drawTF();
 }
 

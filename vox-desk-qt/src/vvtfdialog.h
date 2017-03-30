@@ -68,6 +68,8 @@ private slots:
   void onDiscrChanged(int num);
   void onApplyClicked();
   void onNewVolDesc(vvVolDesc* vd);
+  void onZoomMinChanged(double zm);
+  void onZoomMaxChanged(double zm);
   void saveTF();
   void loadTF();
 
