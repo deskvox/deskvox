@@ -43,4 +43,4 @@ void MouseGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
   emit mouseReleased(event->scenePos(), event->button());
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

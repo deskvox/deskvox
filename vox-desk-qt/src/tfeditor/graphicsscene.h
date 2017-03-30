@@ -37,4 +37,4 @@ signals:
   void mousePressed(QPointF pos, Qt::MouseButton button);
   void mouseReleased(QPointF pos, Qt::MouseButton button);
 };
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

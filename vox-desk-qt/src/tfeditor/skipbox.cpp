@@ -79,4 +79,4 @@ void tf::SkipBox::emitSize(int sliderval)
   impl->size[0] = w;
   emit size(impl->size);
 }
-
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
