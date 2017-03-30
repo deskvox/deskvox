@@ -25,14 +25,19 @@
 
 #include "ui_skipbox.h"
 
-using virvo::vec3f;
+using namespace virvo;
 
 
 struct tf::SkipBox::Impl
 {
-  Impl() : ui(new Ui_SkipBox) {}
+  Impl()
+    : ui(new Ui_SkipBox)
+    , zoomRange(0.0f, 1.0f)
+  {
+  }
 
   std::auto_ptr<Ui_SkipBox> ui;
+  vec2 zoomRange;
   vec3f size;
 
 private:
@@ -54,6 +59,11 @@ tf::SkipBox::~SkipBox()
 {
 }
 
+void tf::SkipBox::setZoomRange(vec2 zr)
+{
+  impl->zoomRange = zr;
+}
+
 void tf::SkipBox::setSize(vec3f const& size)
 {
   impl->size = size;
@@ -64,6 +74,7 @@ void tf::SkipBox::setSize(vec3f const& size)
 void tf::SkipBox::emitSize(int sliderval)
 {
   float w = static_cast<float>(sliderval) / static_cast<float>(impl->ui->widthSlider->maximum());
+  w *= impl->zoomRange[1] - impl->zoomRange[0];
   impl->ui->widthLabel->setText(tr("Width: ") + QString::number(w));
   impl->size[0] = w;
   emit size(impl->size);

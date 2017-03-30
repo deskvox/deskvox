@@ -794,6 +794,7 @@ void vvTFDialog::updateSettingsBox()
   {
     tf::GaussianBox* gb = new tf::GaussianBox(this);
     impl_->ui->settingsLayout->addWidget(gb);
+    gb->setZoomRange(impl_->zoomRange);
     gb->setHasColor(b->hasOwnColor());
     gb->setColor(b->color());
     gb->setSize(b->size());
@@ -807,6 +808,7 @@ void vvTFDialog::updateSettingsBox()
   {
     tf::PyramidBox* pb = new tf::PyramidBox(this);
     impl_->ui->settingsLayout->addWidget(pb);
+    pb->setZoomRange(impl_->zoomRange);
     pb->setHasColor(p->hasOwnColor());
     pb->setColor(p->color());
     pb->setTop(p->top());
@@ -822,6 +824,7 @@ void vvTFDialog::updateSettingsBox()
   {
     tf::SkipBox* sb = new tf::SkipBox(this);
     impl_->ui->settingsLayout->addWidget(sb);
+    sb->setZoomRange(impl_->zoomRange);
     sb->setSize(s->size());
     connect(sb, SIGNAL(size(virvo::vec3f const&)), this, SLOT(onSize(virvo::vec3f const&)));
   }

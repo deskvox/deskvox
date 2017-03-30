@@ -39,6 +39,7 @@ public:
   GaussianBox(QWidget* parent = 0);
   ~GaussianBox();
 
+  void setZoomRange(virvo::vec2 zoomRange);
   void setHasColor(bool hascolor);
   void setColor(const vvColor& color);
   void setSize(virvo::vec3f const& size);

@@ -27,12 +27,16 @@
 
 #include <QColorDialog>
 
-using virvo::vec3f;
+using namespace virvo;
 
 
 struct tf::PyramidBox::Impl
 {
-  Impl() : ui(new Ui::PyramidBox) {}
+  Impl()
+    : ui(new Ui::PyramidBox)
+    , zoomRange(0.0f, 1.0f)
+  {
+  }
 
   std::auto_ptr<Ui::PyramidBox> ui;
   bool hascolor;
@@ -40,6 +44,7 @@ struct tf::PyramidBox::Impl
   vec3f top;
   vec3f bottom;
   float opacity;
+  vec2 zoomRange;
 
 private:
 
@@ -62,6 +67,11 @@ tf::PyramidBox::PyramidBox(QWidget* parent)
 
 tf::PyramidBox::~PyramidBox()
 {
+}
+
+void tf::PyramidBox::setZoomRange(vec2 zr)
+{
+  impl->zoomRange = zr;
 }
 
 void tf::PyramidBox::setHasColor(bool hascolor)
@@ -113,6 +123,7 @@ void tf::PyramidBox::getColor()
 void tf::PyramidBox::emitTop(int sliderval)
 {
   float t = static_cast<float>(sliderval) / static_cast<float>(impl->ui->topSlider->maximum()) * 2.0f;
+  t *= impl->zoomRange[1] - impl->zoomRange[0];
   impl->ui->topLabel->setText(tr("Top width X: ") + QString::number(t));
   impl->top[0] = t;
   emit top(impl->top);
@@ -121,6 +132,7 @@ void tf::PyramidBox::emitTop(int sliderval)
 void tf::PyramidBox::emitBottom(int sliderval)
 {
   float b = static_cast<float>(sliderval) / static_cast<float>(impl->ui->bottomSlider->maximum()) * 2.0f;
+  b *= impl->zoomRange[1] - impl->zoomRange[0];
   impl->ui->bottomLabel->setText(tr("Bottom width X: ") + QString::number(b));
   impl->bottom[0] = b;
   emit bottom(impl->bottom);

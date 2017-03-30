@@ -38,6 +38,7 @@ public:
   SkipBox(QWidget* parent = 0);
   ~SkipBox();
 
+  void setZoomRange(virvo::vec2 zoomRange);
   void setSize(virvo::vec3f const& size);
 private:
 

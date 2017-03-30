@@ -39,6 +39,7 @@ public:
   PyramidBox(QWidget* parent = 0);
   ~PyramidBox();
 
+  void setZoomRange(virvo::vec2 zoomRange);
   void setHasColor(bool hascolor);
   void setColor(const vvColor& color);
   void setTop(virvo::vec3f const& top);

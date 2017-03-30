@@ -27,14 +27,19 @@
 
 #include <QColorDialog>
 
-using virvo::vec3f;
+using namespace virvo;
 
 
 struct tf::GaussianBox::Impl
 {
-  Impl() : ui(new Ui::GaussianBox) {}
+  Impl()
+    : ui(new Ui::GaussianBox)
+    , zoomRange(0.0f, 1.0f)
+  {
+  }
 
   std::auto_ptr<Ui::GaussianBox> ui;
+  vec2 zoomRange;
   bool hascolor;
   vvColor color;
   vec3f size;
@@ -60,6 +65,11 @@ tf::GaussianBox::GaussianBox(QWidget* parent)
 
 tf::GaussianBox::~GaussianBox()
 {
+}
+
+void tf::GaussianBox::setZoomRange(vec2 zr)
+{
+  impl->zoomRange = zr;
 }
 
 void tf::GaussianBox::setHasColor(bool hascolor)
@@ -104,6 +114,7 @@ void tf::GaussianBox::getColor()
 void tf::GaussianBox::emitSize(int sliderval)
 {
   float w = static_cast<float>(sliderval) / static_cast<float>(impl->ui->widthSlider->maximum());
+  w *= impl->zoomRange[1] - impl->zoomRange[0];
   impl->ui->widthLabel->setText(tr("Width: ") + QString::number(w));
   impl->size[0] = w;
   emit size(impl->size);
