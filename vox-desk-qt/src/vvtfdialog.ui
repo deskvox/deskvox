@@ -254,6 +254,22 @@
       <double>1.000000000000000</double>
      </property>
     </widget>
+    <widget class="QCheckBox" name="logHistBox">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>270</y>
+       <width>161</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Logarithmic histogram</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tf2DTab">
     <attribute name="title">

@@ -63,6 +63,7 @@ private slots:
   void onNewWidget();
   void onDeleteClicked();
   void onUndoClicked();
+  void onLogHistToggled(bool value);
   void onPresetColorsChanged(int index);
   void onPresetAlphaChanged(int index);
   void onDiscrChanged(int num);

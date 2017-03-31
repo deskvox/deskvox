@@ -106,6 +106,7 @@ struct vvTFDialog::Impl
     , colorPinMoving(INVAL_PIN)
     , alphaPinMoving(INVAL_PIN)
     , zoomRange(vec2f(0.0f, 1.0f))
+    , logHistogram(true)
     , colorDirty(true)
     , alphaDirty(true)
     , histDirty(true)
@@ -164,6 +165,8 @@ struct vvTFDialog::Impl
 
   vec2f zoomRange; ///< min/max for zoom area on data range
 
+  bool logHistogram;
+
   float minVoxel;
   float maxVoxel;
 
@@ -202,6 +205,7 @@ vvTFDialog::vvTFDialog(vvCanvas* canvas, QWidget* parent)
   connect(impl_->ui->skipRangeButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
   connect(impl_->ui->deleteButton, SIGNAL(clicked()), this, SLOT(onDeleteClicked()));
   connect(impl_->ui->undoButton, SIGNAL(clicked()), this, SLOT(onUndoClicked()));
+  connect(impl_->ui->logHistBox, SIGNAL(toggled(bool)), this, SLOT(onLogHistToggled(bool)));
   connect(impl_->ui->zoomMinBox, SIGNAL(valueChanged(double)), this, SLOT(onZoomMinChanged(double)));
   connect(impl_->ui->zoomMaxBox, SIGNAL(valueChanged(double)), this, SLOT(onZoomMaxChanged(double)));
   connect(impl_->ui->presetColorsBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetColorsChanged(int)));
@@ -245,7 +249,7 @@ void vvTFDialog::drawTF()
   }
 
   // alpha widgets
-  if (impl_->alphaDirty)
+  if (impl_->alphaDirty || impl_->histDirty /*TODO!*/)
   {
     int w = impl_->ui->alpha1DView->width();
     int h = impl_->ui->alpha1DView->height();
@@ -408,7 +412,10 @@ void vvTFDialog::makeHistogramTexture(std::vector<uchar>* hist, int width, int h
   size_t size[] = { static_cast<size_t>(width), static_cast<size_t>(height) };
   vvColor col(0.4f, 0.4f, 0.4f);
 
-  _canvas->getVolDesc()->makeHistogramTexture(0, 0, 1, size, hist->data(), vvVolDesc::VV_LINEAR, &col, impl_->zoomRange[0], impl_->zoomRange[1]);
+  _canvas->getVolDesc()->makeHistogramTexture(0, 0, 1, size, hist->data(),
+                                              impl_->logHistogram ? vvVolDesc::VV_LOGARITHMIC
+                                                                  : vvVolDesc::VV_LINEAR,
+                                              &col, impl_->zoomRange[0], impl_->zoomRange[1]);
 }
 
 void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const
@@ -438,6 +445,13 @@ void vvTFDialog::onUndoClicked()
   emit newTransferFunction();
   clearPins();
   createPins();
+  drawTF();
+}
+
+void vvTFDialog::onLogHistToggled(bool value)
+{
+  impl_->logHistogram = value;
+  impl_->histDirty = true;
   drawTF();
 }
 
