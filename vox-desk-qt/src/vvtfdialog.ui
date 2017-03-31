@@ -152,7 +152,7 @@
     <widget class="QLabel" name="maxTextLabel">
      <property name="geometry">
       <rect>
-       <x>670</x>
+       <x>660</x>
        <y>270</y>
        <width>41</width>
        <height>16</height>
@@ -168,7 +168,7 @@
     <widget class="QLabel" name="zoomMaxTextLabel">
      <property name="geometry">
       <rect>
-       <x>670</x>
+       <x>660</x>
        <y>290</y>
        <width>41</width>
        <height>16</height>
@@ -186,7 +186,7 @@
       <rect>
        <x>60</x>
        <y>270</y>
-       <width>59</width>
+       <width>81</width>
        <height>16</height>
       </rect>
      </property>
@@ -197,10 +197,10 @@
     <widget class="QLabel" name="maxLabel">
      <property name="geometry">
       <rect>
-       <x>720</x>
+       <x>710</x>
        <y>270</y>
-       <width>59</width>
-       <height>16</height>
+       <width>81</width>
+       <height>20</height>
       </rect>
      </property>
      <property name="text">
@@ -212,7 +212,7 @@
       <rect>
        <x>60</x>
        <y>290</y>
-       <width>66</width>
+       <width>81</width>
        <height>24</height>
       </rect>
      </property>
@@ -220,21 +220,18 @@
       <bool>false</bool>
      </property>
      <property name="decimals">
-      <number>4</number>
-     </property>
-     <property name="maximum">
-      <double>1.000000000000000</double>
+      <number>2</number>
      </property>
      <property name="singleStep">
-      <double>0.010000000000000</double>
+      <double>1.000000000000000</double>
      </property>
     </widget>
     <widget class="QDoubleSpinBox" name="zoomMaxBox">
      <property name="geometry">
       <rect>
-       <x>720</x>
+       <x>710</x>
        <y>290</y>
-       <width>66</width>
+       <width>81</width>
        <height>24</height>
       </rect>
      </property>
@@ -242,13 +239,13 @@
       <bool>false</bool>
      </property>
      <property name="decimals">
-      <number>4</number>
+      <number>2</number>
      </property>
      <property name="maximum">
-      <double>1.000000000000000</double>
+      <double>99.000000000000000</double>
      </property>
      <property name="singleStep">
-      <double>0.010000000000000</double>
+      <double>1.000000000000000</double>
      </property>
      <property name="value">
       <double>1.000000000000000</double>
@@ -257,7 +254,7 @@
     <widget class="QCheckBox" name="logHistBox">
      <property name="geometry">
       <rect>
-       <x>140</x>
+       <x>160</x>
        <y>270</y>
        <width>161</width>
        <height>20</height>

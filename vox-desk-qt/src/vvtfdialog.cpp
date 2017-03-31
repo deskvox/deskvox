@@ -101,6 +101,7 @@ struct vvTFDialog::Impl
     , coloritem(new QGraphicsPixmapItem)
     , alphascene(new MouseGraphicsScene)
     , alphaitem(new QGraphicsPixmapItem)
+    , vd(NULL)
     , colorPinSelected(INVAL_PIN)
     , alphaPinSelected(INVAL_PIN)
     , colorPinMoving(INVAL_PIN)
@@ -154,6 +155,8 @@ struct vvTFDialog::Impl
   MouseGraphicsScene* alphascene;
   QGraphicsPixmapItem* alphaitem;
   std::vector<Pin*> alphapins;
+
+  vvVolDesc* vd;
 
   size_t colorPinSelected;
   size_t alphaPinSelected;
@@ -558,6 +561,7 @@ void vvTFDialog::onApplyClicked()
 
 void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
 {
+  impl_->vd = vd;
   impl_->colorDirty = true;
   impl_->histDirty = true;
   impl_->alphaDirty = true;
@@ -579,6 +583,14 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
     impl_->ui->minLabel->setText(QString::number(fmin));
     impl_->ui->maxLabel->setText(QString::number(fmax));
 
+    impl_->ui->zoomMinBox->setMinimum(fmin);
+    impl_->ui->zoomMinBox->setMaximum(fmax);
+    impl_->ui->zoomMinBox->setValue(fmin);
+
+    impl_->ui->zoomMaxBox->setMinimum(fmin);
+    impl_->ui->zoomMaxBox->setMaximum(fmax);
+    impl_->ui->zoomMaxBox->setValue(fmax);
+
     impl_->ui->discrSlider->setValue(vd->tf[0].getDiscreteColors());
   }
   drawTF();
@@ -586,6 +598,12 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
 
 void vvTFDialog::onZoomMinChanged(double zm)
 {
+  assert(impl_->vd != NULL);
+
+  // Convert to [0..1]
+  zm -= impl_->vd->getVoxelOffset();
+  zm /= impl_->vd->getVoxelScale();
+  zm /= impl_->vd->getValueRange();
   impl_->zoomRange[0] = zm;
   impl_->colorDirty = true;
   impl_->histDirty = true;
@@ -593,25 +611,23 @@ void vvTFDialog::onZoomMinChanged(double zm)
   clearPins();
   createPins();
 
-  float range = impl_->maxVoxel - impl_->minVoxel;
-  float fmin = impl_->minVoxel + range * impl_->zoomRange[0];
-  impl_->ui->minLabel->setText(QString::number(fmin));
-
   drawTF();
 }
 
 void vvTFDialog::onZoomMaxChanged(double zm)
 {
+  assert(impl_->vd != NULL);
+
+  // Convert to [0..1]
+  zm -= impl_->vd->getVoxelOffset();
+  zm /= impl_->vd->getVoxelScale();
+  zm /= impl_->vd->getValueRange();
   impl_->zoomRange[1] = zm;
   impl_->colorDirty = true;
   impl_->histDirty = true;
   impl_->alphaDirty = true;
   clearPins();
   createPins();
-
-  float range = impl_->maxVoxel - impl_->minVoxel;
-  float fmax = impl_->minVoxel + range * impl_->zoomRange[1];
-  impl_->ui->maxLabel->setText(QString::number(fmax));
 
   drawTF();
 }
