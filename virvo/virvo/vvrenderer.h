@@ -202,7 +202,7 @@ protected:
   bool  _fpsDisplay;                            ///< true = show frame rate, might be costly if e. g. glFinish is called
   bool  _gammaCorrection;                       ///< true = gamma correction on
   virvo::vec4f gamma_;                          ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
-  bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
+  bool  _useOpacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
   vvColor _boundColor;                          ///< boundary color (R,G,B in [0..1])
   vvColor _probeColor;                          ///< probe boundary color (R,G,B in [0..1])
   bool  _useOffscreenBuffer;                    ///< render target for image downscaling

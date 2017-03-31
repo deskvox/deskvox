@@ -88,7 +88,7 @@ vvRenderState::vvRenderState()
   , _fpsDisplay(false)
   , _gammaCorrection(false)
   , gamma_(vec4f(1.0f, 1.0f, 1.0f, 1.0f))
-  , _opacityWeights(false)
+  , _useOpacityWeights(false)
   , _boundColor(vvColor(1.0f, 1.0f, 1.0f))
   , _probeColor(vvColor(1.0f, 1.0f, 1.0f))
   , _useOffscreenBuffer(false)
@@ -205,7 +205,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _gammaCorrection = value;
     break;
   case VV_OPACITY_WEIGHTS:
-    _opacityWeights = value;
+    _useOpacityWeights = value;
     break;
   case VV_USE_OFFSCREEN_BUFFER:
     _useOffscreenBuffer = value;
@@ -377,7 +377,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_GAMMA_CORRECTION:
     return _gammaCorrection;
   case VV_OPACITY_WEIGHTS:
-    return _opacityWeights;
+    return _useOpacityWeights;
   case VV_USE_OFFSCREEN_BUFFER:
     return _useOffscreenBuffer;
   case VV_IMAGE_SCALE:
