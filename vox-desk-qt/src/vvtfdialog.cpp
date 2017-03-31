@@ -551,9 +551,8 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
   createPins();
   if (vd != NULL)
   {
-    float fmin;
-    float fmax;
-    vd->findMinMax(0, fmin, fmax);
+    float fmin = vd->getBPV() == 4 ? vd->real[0][0] : 0.0f;
+    float fmax = vd->getBPV() == 4 ? vd->real[0][1] : vd->getValueRange();
     fmin *= vd->getVoxelScale();
     fmin += vd->getVoxelOffset();
     fmax *= vd->getVoxelScale();
