@@ -923,7 +923,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
           default: assert(0); break;
         }
 
-        bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
+        bucket[c] = (unsigned int)(float(voxVal[c] - min * getValueRange()) / valPerBucket[c]);
         bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
         factor = 1;
         for (m=0; m<c; ++m)
