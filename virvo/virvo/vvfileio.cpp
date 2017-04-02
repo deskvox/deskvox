@@ -4161,7 +4161,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
 }
 
 //----------------------------------------------------------------------------
-/** Loader for voxel file in nrrd (teem volume file) format.
+/** Loader for voxel file in Nifti format.
  */
 vvFileIO::ErrorType vvFileIO::loadNiftiFile(vvVolDesc* vd)
 {
