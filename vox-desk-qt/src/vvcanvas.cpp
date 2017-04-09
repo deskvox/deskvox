@@ -259,7 +259,7 @@ void vvCanvas::paintGL()
     glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &light_att_[2]);
   }
 
-  glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
+  glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
   glClearDepth(1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
