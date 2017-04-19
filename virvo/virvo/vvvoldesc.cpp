@@ -3735,8 +3735,10 @@ void vvVolDesc::getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t& width, si
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
+  @param altTF  an alternative transfer function, otherwise tf[0] is used
 */
-void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t* dst) const
+void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_t slice,
+                               uint8_t* dst, const vvTransFunc* altTF) const
 {
   uint8_t* sliceData;
   vvColor col;
@@ -3751,6 +3753,8 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
   sliceData = new uint8_t[sliceBytes];
   extractSliceData(frame, axis, slice, sliceData);
   memset(dst, 0, width * height * 3);
+
+  const vvTransFunc& theTF = altTF ? *altTF : tf[0];
 
   for(pixel=0; pixel<width*height; ++pixel)
   {
@@ -3772,7 +3776,7 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
       }
       if (chan==1)
       {
-        col = tf[0].computeColor(voxelVal);
+        col = theTF.computeColor(voxelVal);
         dst[dstOffset]     = int(col[0] * 255.0f);
         dst[dstOffset + 1] = int(col[1] * 255.0f);
         dst[dstOffset + 2] = int(col[2] * 255.0f);
