@@ -319,7 +319,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   makeSliceImage(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*, const vvTransFunc* altTF = 0) const;
     void   getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t&, size_t&, size_t&) const;
     void   deinterlace();
-    void   findMinMax(size_t channel, float&, float&);
+    void   findMinMax(size_t channel, float&, float&) const;
     int    findNumValue(int, float);
     int    findNumUsed(size_t channel);
     int    findNumTransparent(int);

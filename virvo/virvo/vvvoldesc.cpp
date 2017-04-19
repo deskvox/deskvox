@@ -3835,7 +3835,7 @@ void vvVolDesc::deinterlace()
   @param channel data channel to search
   @param scalarMin,scalarMax  minimum and maximum scalar values in volume animation
 */
-void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax)
+void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax) const
 {
   (void)channel;
   int mi, ma;
