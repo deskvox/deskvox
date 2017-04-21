@@ -330,7 +330,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     float  findClampValue(int, size_t channel, float);
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
-    float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan);
+    float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan) const;
     void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
     void   setDefaultRealMinMax(size_t channel = 0);
     void   addGradient(size_t srcChan, GradientType);

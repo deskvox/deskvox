@@ -4736,7 +4736,7 @@ void vvVolDesc::resizeEdgeMax(float len)
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan)
+float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan) const
 {
   uint8_t* data = getRaw(frame);
   float fval;
