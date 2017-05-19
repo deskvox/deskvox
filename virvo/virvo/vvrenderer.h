@@ -29,10 +29,9 @@
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
-
-#include <memory>
 
 class vvClipObj;
 class vvStopwatch;
@@ -402,10 +401,10 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
 private:
 
     // The current render target
-    std::auto_ptr<virvo::RenderTarget> renderTarget_;
+    boost::scoped_ptr<virvo::RenderTarget> renderTarget_;
 
     // For fps display
-    std::auto_ptr<vvStopwatch> stopwatch_;
+    boost::scoped_ptr<vvStopwatch> stopwatch_;
 
 
     float		_lastRenderTime;                   ///< time it took to render the previous frame (seconds)

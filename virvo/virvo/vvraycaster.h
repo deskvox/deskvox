@@ -21,7 +21,7 @@
 #ifndef VV_RAYCASTER_H
 #define VV_RAYCASTER_H 1
 
-#include <memory>
+#include <boost/scoped_ptr.hpp>
 
 #include "vvrenderer.h"
 
@@ -40,7 +40,7 @@ public:
     VVAPI virtual bool instantClassification() const VV_OVERRIDE;
 private:
     struct Impl;
-    std::auto_ptr<Impl> impl_;
+    boost::scoped_ptr<Impl> impl_;
 
 private:
 
