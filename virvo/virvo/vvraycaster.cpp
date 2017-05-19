@@ -18,7 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -36,6 +35,7 @@
 #include <visionaray/detail/pixel_access.h> // detail (TODO?)!
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
+#include <visionaray/array.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
 #include <visionaray/pixel_format.h>
@@ -187,7 +187,7 @@ inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
     typename simd::aligned_array<I>::type indices;
     store(indices, index);
 
-    std::array<vector<3, float>, simd::num_elements<T>::value> arr;
+    array<vector<3, float>, simd::num_elements<T>::value> arr;
 
     for (int i = 0; i < simd::num_elements<T>::value; ++i)
     {
