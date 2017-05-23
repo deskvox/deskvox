@@ -853,7 +853,7 @@ struct vvRayCaster::Impl
         if (num_threads != nullptr)
         {
             std::string str(num_threads);
-            sched.set_num_threads(std::stoi(str));
+            sched.reset(std::stoi(str));
         }
     }
 #endif
