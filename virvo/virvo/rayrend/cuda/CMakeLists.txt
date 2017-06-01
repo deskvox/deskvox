@@ -25,4 +25,10 @@ deskvox_add_library(rayrendcuda
 
 set_target_properties(rayrendcuda PROPERTIES LINKER_LANGUAGE CXX)
 
+# MSVC + CUDA: link with legacy stdio library
+
+if (MSVC_VERSION GREATER 1800 AND DESKVOX_USE_CUDA AND CUDA_FOUND)
+    target_link_libraries(rayrendcuda legacy_stdio_definitions.lib)
+endif()
+
 endif(DESKVOX_USE_CUDA)

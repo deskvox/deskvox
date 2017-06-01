@@ -404,3 +404,9 @@ deskvox_add_library(virvo
   ${VIRVO_CUDA_SOURCES}
   ${VIRVO_SHADERS}
 )
+
+# MSVC + CUDA: link with legacy stdio library
+
+if (MSVC_VERSION GREATER 1800 AND DESKVOX_USE_CUDA AND CUDA_FOUND)
+    target_link_libraries(virvo legacy_stdio_definitions.lib)
+endif()
