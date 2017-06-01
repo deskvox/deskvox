@@ -15,7 +15,7 @@ set(RAYREND_SOURCES
     ../../vvraycaster.cpp
 )
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     add_definitions(-D__AVX2__)
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
