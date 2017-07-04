@@ -67,7 +67,7 @@ set(VIRVO_FILEIO_DEFINITIONS
     HAVE_CONFIG_H
 )
 if(GDCM_FOUND)
-   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon gdcmuuid)
+   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon)
 endif()
 
 deskvox_add_library(virvo_fileio

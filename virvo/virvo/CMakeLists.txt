@@ -393,7 +393,7 @@ else()
 endif()
 
 if(GDCM_FOUND)
-   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon gdcmuuid)
+   deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon)
 endif()
 
 deskvox_link_libraries(virvo_fileio)
