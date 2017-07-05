@@ -3941,7 +3941,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     case 1:
     case 2:
       vd->bpc = static_cast<size_t>(prop.bpp);
-      vd->chan = 1;
+      vd->chan = static_cast<size_t>(prop.chan);
       break;
     case 3:
     case 4:
@@ -3949,6 +3949,12 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
       vd->chan = static_cast<size_t>(prop.bpp);
       break;
     default: assert(0); break;
+  }
+  vd->real.resize(vd->chan);
+  for (size_t c = 0; c < vd->real.size(); ++c)
+  {
+    vd->real[c][0] = 0.f;
+    vd->real[c][1] = 1.f;
   }
   vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE,prop.image);
   ++vd->frames;

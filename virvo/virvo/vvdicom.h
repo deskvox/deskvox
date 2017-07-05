@@ -33,6 +33,7 @@ class VIRVO_FILEIOEXPORT vvDicomProperties
     uchar* raw;                                   // data value array
     int    width, height;                         // width and height
     int    bpp;                                   // bytes per pixel
+    int    chan;                                  // number of channels
     int    sequence;                              // sequence number
     int    image;                                 // image number
     int    bitsStored;                            // bits stored
@@ -124,6 +125,7 @@ class VIRVO_FILEIOEXPORT vvDicom
     ///<  0 = not specified
     ///<  1 = MONOCHROME1
     ///<  2 = MONOCHROME2
+    ///<  4 = RGB
     int red_table_size;
     int green_table_size;
     int blue_table_size;

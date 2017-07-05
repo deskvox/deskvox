@@ -656,7 +656,24 @@ void vvDicom::readDicomData(FILE* fp)
         switch (element)
         {
           case 0x00 :  infoText = "image presentation group";      break;
-          case 0x02 :  infoText = "samples per pixel";             break;
+          case 0x02 :  infoText = "samples per pixel";
+          t=VV_STRING;
+          {
+            char* buff = (char*)new uchar[e_len+1];
+            pos = ftell(fp);
+            size_t n = fread(buff, e_len, 1, fp);
+            if(n != 1)
+              cerr << "Returned value from fread is " << n << ", expected 1" << endl;
+            assert(n == 1);
+            fseek(fp, pos, SEEK_SET);
+            buff[e_len] = '\0';
+            if (e_len >= 1)
+              info->chan = static_cast<int>(buff[0]);
+            else
+              cerr << "vvDicom::readDicomData: read error for (0028,0002) Samples Per Pixel" << endl;
+            delete[] buff;
+          }
+          break;
           case 0x04 :  infoText = "photometric interpretation";
           t=VV_STRING;
           {
@@ -672,6 +689,8 @@ void vvDicom::readDicomData(FILE* fp)
               photometric_specified = 1;
             else if (strncmp(buff,"MONOCHROME2",strlen("MONOCHROME2")) == 0)
               photometric_specified = 2;
+            else if (strncmp(buff,"RGB",strlen("RGB")) == 0)
+              photometric_specified = 4;
             delete[] buff;
           }
           break;
@@ -1001,8 +1020,8 @@ void vvDicom::readDicomData(FILE* fp)
   }
 
   // Read the actual pixel data:
-  info->raw = new uchar[info->height * info->width * info->bpp];
-  size_t n = fread(info->raw,  1, info->height * info->width * info->bpp, fp);
+  info->raw = new uchar[info->height * info->width * info->bpp * info->chan];
+  size_t n = fread(info->raw,  1, info->height * info->width * info->bpp * info->chan, fp);
   //if(n != 1)
     //cerr << "vvDicom::readDicomData: Error reading actual pixel data" << endl;
     cerr << "vvDicom::readDicomData:  reading actual pixel data " <<n<< endl;
@@ -1032,6 +1051,8 @@ void vvDicom::handlePhotometricInterpretation()
 
   assert(info->bpp==1 || info->bpp==2);
   if (info->raw==NULL || info->width <= 0 || info->height <= 0) return;
+  if (photometric_specified == 4 && info->chan != 3)
+    cerr << "Inconsistency between (0028,0002) Samples Per Pixel and (0028,0004) Photometric Interpretation" << endl;
   if (photometric_specified != 1)  return;
   maxValue = 1 << info->bpp;
   assert(maxValue == (1 << info->bpp));
@@ -1072,6 +1093,7 @@ vvDicomProperties::vvDicomProperties()
   raw = NULL;
   width = height = 0;
   bpp = 2;
+  chan = 1;
   sequence = 0;
   image = 0;
   bitsStored = 16;
