@@ -637,7 +637,7 @@ void vvTFDialog::saveTF()
   QString caption = tr("Save Transfer Function");
   QString dir;
   QString filter = tr("Transfer function files (*.vtf);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getSaveFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
@@ -651,7 +651,7 @@ void vvTFDialog::loadTF()
   QString caption = tr("Load Transfer Function");
   QString dir;
   QString filter = tr("Transfer function files (*.vtf);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {

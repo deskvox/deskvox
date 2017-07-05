@@ -531,7 +531,7 @@ void vvMainWindow::onLoadVolumeTriggered()
     "Raw Volume Files (*.rvf);;");
   if (virvo::fileio::hasFeature("nifti"))
     filter += "NifTI-1 Files (*.nii,*.nii.gz);;";
-  filter += tr("All Files (*.*)");
+  filter += tr("All Files (*)");
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
@@ -584,7 +584,7 @@ void vvMainWindow::onSaveVolumeAsTriggered()
     "Extended Volume Files (*.xvf);;"
     "Raw Volume Files (*.rvf);;"
     "ASCII Volume Files (*.avf);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getSaveFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
@@ -636,7 +636,7 @@ void vvMainWindow::onLoadCameraTriggered()
   QString caption = tr("Load Camera File");
   QString dir;
   QString filter = tr("Camera Files (*cam);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
@@ -651,7 +651,7 @@ void vvMainWindow::onSaveCameraAsTriggered()
   QString caption = tr("Save Camera to File");
   QString dir = "camera.cam";
   QString filter = tr("Camera Files (*cam);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getSaveFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {

@@ -133,7 +133,7 @@ void vvMergeDialog::onBrowseClicked()
   QString filter = tr("All VOX Files (*.xvf *.avf *.rvf *.tif *.rgb *.ppm *.pgm *.dcm *.ximg *.hdr *.volb);;"
     "Volume Files (*.rvf *.xvf *.avf *.tif *.tiff *.hdr *.volb);;"
     "Image Files (*.tif *.rgb *.ppm *.pgm *.dcm *.ximg);;"
-    "All Files (*.*)");
+    "All Files (*)");
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
