@@ -3954,7 +3954,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   ++vd->frames;
 
   // convert to host byte order
-  if ((prop.littleEndian&&!machineBigEndian) ||(!prop.littleEndian&&machineBigEndian)) vd->toggleEndianness(vd->frames-1);
+  if ((prop.littleEndian&&machineBigEndian) ||(!prop.littleEndian&&!machineBigEndian)) vd->toggleEndianness(vd->frames-1);
 
   // Shift bits so that most significant used bit is leftmost:
   vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), vd->frames-1);
