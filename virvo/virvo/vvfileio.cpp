@@ -47,6 +47,7 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 
 #include <math.h>
@@ -146,6 +147,52 @@ static std::map<std::string, Format> supported_formats()
     return result;
 }
 
+//----------------------------------------------------------------------------
+/// Try to guess format from file header etc.
+Format guessFormat(const vvVolDesc* vd)
+{
+#ifdef HAVE_GDCM
+  // Dicom
+
+  gdcm::Reader reader;
+  reader.SetFileName((char*)vd->getFilename());
+  if(reader.CanRead())
+    return DCOM;
+#else
+  {
+    std::ifstream fs;
+    fs.open(vd->getFilename());
+    if (fs.good())
+    {
+      // Dicom header: 128 bytes preamble + 4 bytes = 'D','I','C','M'
+      char preamble[128] = { 0 };
+      char DICM[5] = { 0 };
+      fs.read(preamble, 128);
+      if (fs.good())
+        fs.read(DICM, 4);
+
+      DICM[4] = '\0';
+      if (strncmp(DICM, "DICM", 4) == 0)
+        return DCOM;
+    }
+  }
+#endif
+
+  // XVF
+  {
+    std::ifstream fs;
+    fs.open(vd->getFilename());
+    if (fs.good())
+    {
+      std::string first_line;
+      std::getline(fs, first_line);
+      if (boost::starts_with(first_line, "XVF"))
+        return XVF;
+    }
+  }
+
+  return Unknown;
+}
 
 
 //----------------------------------------------------------------------------
@@ -5324,6 +5371,11 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   {
     format = format_found->second;
   }
+  else
+  {
+    format = guessFormat(vd);
+  }
+
 
   // Load files according to extension:
   if (format == WL)
