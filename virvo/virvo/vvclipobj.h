@@ -95,6 +95,31 @@ protected:
 
 
 //============================================================================
+// Clip cone
+//============================================================================
+
+class VIRVOEXPORT vvClipCone : public vvClipObj
+{
+public:
+
+  static boost::shared_ptr<vvClipCone> create();
+
+public:
+
+  virvo::vec3 tip;  // position of the cone's tip
+  virvo::vec3 axis; // unit vector pointing from tip into the cone
+  float theta;      // *half* angle between axis and cone surface
+
+protected:
+
+  vvClipCone() {}
+  vvClipCone(vvClipCone const&);
+  vvClipCone& operator=(vvClipCone const&);
+
+};
+
+
+//============================================================================
 // Clip triangle list
 //============================================================================
 

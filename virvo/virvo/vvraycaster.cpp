@@ -310,6 +310,68 @@ inline clip_sphere_hit_record<T> intersect(basic_ray<T> const& ray, clip_sphere 
 
 
 //-------------------------------------------------------------------------------------------------
+// Clip clone
+//
+
+struct clip_cone
+{
+    vec3 tip;       // position of the cone's tip
+    vec3 axis;      // unit vector pointing from tip into the cone
+    float theta;    // *half* angle between axis and cone surface
+};
+
+template <typename T>
+struct clip_cone_hit_record : clip_sphere_hit_record<T>
+{
+};
+
+template <typename T>
+VSNRAY_FUNC
+inline clip_cone_hit_record<T> intersect(basic_ray<T> const& ray, clip_cone const& cone)
+{
+    using R = basic_ray<T>;
+    using V = vector<3, T>;
+
+    R r = ray;
+    r.ori -= V(cone.tip);
+
+    T cos2_theta(cos(cone.theta) * cos(cone.theta));
+
+    auto A = dot(r.dir, V(cone.axis)) * dot(r.dir, V(cone.axis)) - cos2_theta;
+    auto B = T(2.0) * (dot(r.dir, V(cone.axis)) * dot(r.ori, V(cone.axis)) - dot(r.dir, r.ori) * cos2_theta);
+    auto C = dot(r.ori, V(cone.axis)) * dot(r.ori, V(cone.axis)) - dot(r.ori, r.ori) * cos2_theta;
+
+    // solve Ax**2 + Bx + C
+    auto disc = B * B - T(4.0) * A * C;
+    auto valid = disc >= T(0.0);
+
+    auto root_disc = select(valid, sqrt(disc), disc);
+
+    auto q = select( B < T(0.0), T(-0.5) * (B - root_disc), T(-0.5) * (B + root_disc) );
+
+    auto t1 = q / A;
+    auto t2 = C / q;
+
+    auto isect_pos1 = V(ray.ori) + V(ray.dir) * t1;
+    auto hits_shadow_cone1 = dot(isect_pos1 - V(cone.tip), V(cone.axis)) > T(0.0);
+
+    auto isect_pos2 = V(ray.ori) + V(ray.dir) * t2;
+    auto hits_shadow_cone2 = dot(isect_pos2 - V(cone.tip), V(cone.axis)) > T(0.0);
+
+    t1 = select(hits_shadow_cone1, T(-1.0), t1);
+    t2 = select(hits_shadow_cone2, T(-1.0), t2);
+
+    valid &= dot(ray.dir, V(cone.axis)) >= T(0.0);
+
+    clip_cone_hit_record<T> result;
+    result.hit = valid;
+    result.tnear   = select( valid, select( t1 > t2, t2, t1 ), T(-1.0) );
+    result.tfar    = select( valid, select( t1 > t2, t1, t2 ), T(-1.0) );
+    return result;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // Clip box, basically an aabb, but intersect() returns a hit record containing the
 // plane normal of the box' side where the ray entered
 //
@@ -442,6 +504,27 @@ public:
         return result;
     }
 
+    // Clip cone
+    VSNRAY_FUNC
+    return_type operator()(clip_cone const& ref) const
+    {
+        using V = vector<3, T>;
+
+        auto hit_rec = intersect(ray_, ref);
+
+        return_type result;
+        result.num_intervals = 1;
+        result.intervals[0].x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
+        result.intervals[0].y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
+
+        // normal at tfar, pointing inwards
+        V isect_pos = ray_.ori + result.intervals[0].y * ray_.dir;
+        V tmp = isect_pos - V(ref.tip);
+        result.normal = normalize(tmp * dot(V(ref.axis), tmp) / dot(tmp, tmp) - V(ref.axis));
+
+        return result;
+    }
+
 private:
 
     basic_ray<T>    ray_;
@@ -562,7 +645,7 @@ struct volume_kernel_params
         DRR
     };
 
-    using clip_object    = variant<clip_plane, clip_sphere>;
+    using clip_object    = variant<clip_plane, clip_sphere, clip_cone>;
     using transfunc_ref  = typename transfunc_type::ref_type;
 
     clip_box                    bbox;
@@ -1102,6 +1185,13 @@ void vvRayCaster::renderVolumeGL()
     setParameter(VV_CLIP_OBJ0, s0);
     setParameter(VV_CLIP_OBJ_ACTIVE0, true);*/
 
+/*    auto c0 = vvClipCone::create();
+    c0->tip = virvo::vec3(0, 0, 0);
+    c0->axis = virvo::vec3(0, 0, -1);
+    c0->theta = 40.0f * constants::degrees_to_radians<float>();
+    setParameter(VV_CLIP_OBJ0, c0);
+    setParameter(VV_CLIP_OBJ_ACTIVE0, true);*/
+
     typedef vvRenderState::ParameterType PT;
     PT act_id = VV_CLIP_OBJ_ACTIVE0;
     PT obj_id = VV_CLIP_OBJ0;
@@ -1126,6 +1216,14 @@ void vvRayCaster::renderVolumeGL()
                 sp.center = vec3(sphere->center.x, sphere->center.y, sphere->center.z);
                 sp.radius = sphere->radius;
                 clip_objects.push_back(sp);
+            }
+            else if (auto cone = boost::dynamic_pointer_cast<vvClipCone>(obj))
+            {
+                clip_cone co;
+                co.tip = vec3(cone->tip.x, cone->tip.y, cone->tip.z);
+                co.axis = vec3(cone->axis.x, cone->axis.y, cone->axis.z);
+                co.theta = cone->theta;
+                clip_objects.push_back(co);
             }
         }
     }

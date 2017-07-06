@@ -475,6 +475,12 @@ public:
   {
   }
 
+  vvParam(boost::shared_ptr< vvClipCone > const& val)
+    : type(VV_CLIP_OBJ)
+    , value(boost::static_pointer_cast<vvClipObj>(val))
+  {
+  }
+
   vvParam(boost::shared_ptr< vvClipTriangleList > const& val)
     : type(VV_CLIP_OBJ)
     , value(boost::static_pointer_cast<vvClipObj>(val))

@@ -1845,6 +1845,10 @@ void vvRenderer::renderClipObjs() const
       {
         drawSpherePerimeter(size, vd->pos, sphere->center, sphere->radius, _clipPlaneColor);
       }
+      else if (boost::shared_ptr<vvClipCone> cone = boost::dynamic_pointer_cast<vvClipCone>(obj))
+      {
+        // TODO!
+      }
     }
   }
 }
