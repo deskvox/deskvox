@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #ifdef HAVE_GDCM
+#include "gdcmAttribute.h"
 #include "gdcmReader.h"
 #include "gdcmImageReader.h"
 #include "gdcmMediaStorage.h"
@@ -3871,10 +3872,13 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
       break;
     default: assert(0); break;
   }
-     
+
+  gdcm::Attribute<0x0020,0x0013> at;
+  at.Set(ds);
+  int imageNumber = at.GetValue();
   char *rawData = new char[image.GetBufferLength()];
   image.GetBuffer(rawData);
-  vd->addFrame((uint8_t *)rawData, vvVolDesc::ARRAY_DELETE);
+  vd->addFrame((uint8_t *)rawData, vvVolDesc::ARRAY_DELETE, imageNumber);
   ++vd->frames;
 
   // Make big endian data:
