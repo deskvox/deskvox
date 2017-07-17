@@ -261,6 +261,7 @@ set(VIRVO_SOURCES
   vvimageclient.cpp
   vvimageserver.cpp
   vvmulticast.cpp
+  vvparam.cpp
   vvparbrickrend.cpp
   vvpixelformat.cpp
   vvprintgl.cpp

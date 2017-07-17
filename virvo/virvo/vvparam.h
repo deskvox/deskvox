@@ -28,6 +28,7 @@
 #include "math/math.h"
 
 #include "vvclipobj.h"
+#include "vvexport.h"
 #include "vvinttypes.h"
 #include "vvcolor.h"
 
@@ -245,535 +246,130 @@ public:
   //------------------------------------------------------------------------------------------------
 
 public:
-  vvParam() : type(VV_EMPTY)
-  {
-  }
-
-  vvParam(const bool& val)
-    : type(VV_BOOL)
-    , value(val)
-  {
-  }
-
-  vvParam(const char& val)
-    : type(VV_CHAR)
-    , value(val)
-  {
-  }
-
-  vvParam(const unsigned char& val)
-    : type(VV_UCHAR)
-    , value(val)
-  {
-  }
-
-  vvParam(const short& val)
-    : type(VV_SHORT)
-    , value(val)
-  {
-  }
-
-  vvParam(const unsigned short& val)
-    : type(VV_USHORT)
-    , value(val)
-  {
-  }
-
-  vvParam(const int& val)
-    : type(VV_INT)
-    , value(val)
-  {
-  }
-
-  vvParam(const unsigned& val)
-    : type(VV_UINT)
-    , value(val)
-  {
-  }
-
-  vvParam(const long& val)
-    : type(VV_LONG)
-    , value(val)
-  {
-  }
-
-  vvParam(const unsigned long& val)
-    : type(VV_ULONG)
-    , value(val)
-  {
-  }
-
+  VVAPI vvParam();
+  VVAPI vvParam(const bool& val);
+  VVAPI vvParam(const char& val);
+  VVAPI vvParam(const unsigned char& val);
+  VVAPI vvParam(const short& val);
+  VVAPI vvParam(const unsigned short& val);
+  VVAPI vvParam(const int& val);
+  VVAPI vvParam(const unsigned& val);
+  VVAPI vvParam(const long& val);
+  VVAPI vvParam(const unsigned long& val);
 #if VV_HAVE_LLONG
-  vvParam(const long long& val)
-    : type(VV_LLONG)
-    , value(val)
-  {
-  }
+  VVAPI vvParam(const long long& val);
 #endif
-
 #if VV_HAVE_ULLONG
-  vvParam(const unsigned long long& val)
-    : type(VV_ULLONG)
-    , value(val)
-  {
-  }
+  VVAPI vvParam(const unsigned long long& val);
 #endif
+  VVAPI vvParam(const float& val);
+  VVAPI vvParam(virvo::vector< 2, float > const& val);
+  VVAPI vvParam(virvo::vector< 2, int > const& val);
+  VVAPI vvParam(virvo::vector< 3, float > const& val);
+  VVAPI vvParam(virvo::vector< 3, double > const& val);
+  VVAPI vvParam(virvo::vector< 3, short > const& val);
+  VVAPI vvParam(virvo::vector< 3, unsigned short > const& val);
+  VVAPI vvParam(virvo::vector< 3, int > const& val);
+  VVAPI vvParam(virvo::vector< 3, unsigned int > const& val);
+  VVAPI vvParam(virvo::vector< 3, long > const& val);
+  VVAPI vvParam(virvo::vector< 3, unsigned long > const& val);
+  VVAPI vvParam(virvo::vector< 3, long long > const& val);
+  VVAPI vvParam(virvo::vector< 3, unsigned long long > const& val);
+  VVAPI vvParam(virvo::vector< 4, float > const& val);
+  VVAPI vvParam(const vvColor& val);
+  VVAPI vvParam(virvo::basic_aabb< float > const& val);
+  VVAPI vvParam(virvo::basic_aabb< double > const& val);
+  VVAPI vvParam(virvo::basic_aabb< int > const& val);
+  VVAPI vvParam(virvo::basic_aabb< unsigned int > const& val);
+  VVAPI vvParam(virvo::basic_aabb< long > const& val);
+  VVAPI vvParam(virvo::basic_aabb< unsigned long > const& val);
+  VVAPI vvParam(virvo::basic_aabb< long long > const& val);
+  VVAPI vvParam(virvo::basic_aabb< unsigned long long > const& val);
+  VVAPI vvParam(boost::shared_ptr< vvClipObj > const& val);
+  VVAPI vvParam(boost::shared_ptr< vvClipPlane > const& val);
+  VVAPI vvParam(boost::shared_ptr< vvClipSphere > const& val);
+  VVAPI vvParam(boost::shared_ptr< vvClipCone > const& val);
+  VVAPI vvParam(boost::shared_ptr< vvClipTriangleList > const& val);
 
-  vvParam(const float& val)
-    : type(VV_FLOAT)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 2, float > const& val)
-    : type(VV_VEC2F)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 2, int > const& val)
-    : type(VV_VEC2I)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, float > const& val)
-    : type(VV_VEC3F)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, double > const& val)
-    : type(VV_VEC3D)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, short > const& val)
-    : type(VV_VEC3S)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, unsigned short > const& val)
-    : type(VV_VEC3US)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, int > const& val)
-    : type(VV_VEC3I)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, unsigned int > const& val)
-    : type(VV_VEC3UI)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, long > const& val)
-    : type(VV_VEC3L)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, unsigned long > const& val)
-    : type(VV_VEC3UL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, long long > const& val)
-    : type(VV_VEC3LL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 3, unsigned long long > const& val)
-    : type(VV_VEC3ULL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::vector< 4, float > const& val)
-    : type(VV_VEC4F)
-    , value(val)
-  {
-  }
-
-  vvParam(const vvColor& val)
-    : type(VV_COLOR)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< float > const& val)
-    : type(VV_AABBF)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< double > const& val)
-    : type(VV_AABBD)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< int > const& val)
-    : type(VV_AABBI)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< unsigned int > const& val)
-    : type(VV_AABBUI)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< long > const& val)
-    : type(VV_AABBL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< unsigned long > const& val)
-    : type(VV_AABBUL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< long long > const& val)
-    : type(VV_AABBLL)
-    , value(val)
-  {
-  }
-
-  vvParam(virvo::basic_aabb< unsigned long long > const& val)
-    : type(VV_AABBULL)
-    , value(val)
-  {
-  }
-
-  vvParam(boost::shared_ptr< vvClipObj > const& val)
-    : type(VV_CLIP_OBJ)
-    , value(val)
-  {
-  }
-
-  vvParam(boost::shared_ptr< vvClipPlane > const& val)
-    : type(VV_CLIP_OBJ)
-    , value(boost::static_pointer_cast<vvClipObj>(val))
-  {
-  }
-
-  vvParam(boost::shared_ptr< vvClipSphere > const& val)
-    : type(VV_CLIP_OBJ)
-    , value(boost::static_pointer_cast<vvClipObj>(val))
-  {
-  }
-
-  vvParam(boost::shared_ptr< vvClipCone > const& val)
-    : type(VV_CLIP_OBJ)
-    , value(boost::static_pointer_cast<vvClipObj>(val))
-  {
-  }
-
-  vvParam(boost::shared_ptr< vvClipTriangleList > const& val)
-    : type(VV_CLIP_OBJ)
-    , value(boost::static_pointer_cast<vvClipObj>(val))
-  {
-  }
-
-  bool asBool() const {
-    return boost::any_cast<bool>(value);
-  }
-
-  char asChar() const {
-    return boost::any_cast<char>(value);
-  }
-
-  unsigned char asUchar() const {
-    return boost::any_cast<unsigned char>(value);
-  }
-
-  short asShort() const {
-    return boost::any_cast<short>(value);
-  }
-
-  unsigned short asUshort() const {
-    return boost::any_cast<unsigned short>(value);
-  }
-
-  int asInt() const {
-    return boost::any_cast<int>(value);
-  }
-
-  unsigned int asUint() const {
-    return boost::any_cast<unsigned int>(value);
-  }
-
-  long asLong() const {
-    return boost::any_cast<long>(value);
-  }
-
-  unsigned long asUlong() const {
-    return boost::any_cast<unsigned long>(value);
-  }
-
+  VVAPI bool asBool() const;
+  VVAPI char asChar() const;
+  VVAPI unsigned char asUchar() const;
+  VVAPI short asShort() const;
+  VVAPI unsigned short asUshort() const;
+  VVAPI int asInt() const;
+  VVAPI unsigned int asUint() const;
+  VVAPI long asLong() const;
+  VVAPI unsigned long asUlong() const;
 #if VV_HAVE_LLONG
-  long long asLlong() const {
-    return boost::any_cast<long long>(value);
-  }
+  VVAPI long long asLlong() const;
 #endif
-
 #if VV_HAVE_ULLONG
-  unsigned long long asUllong() const {
-    return boost::any_cast<unsigned long long>(value);
-  }
+  VVAPI unsigned long long asUllong() const;
 #endif
+  VVAPI float asFloat() const;
+  VVAPI virvo::vector< 2, float > asVec2f() const;
+  VVAPI virvo::vector< 2, int > asVec2i() const;
+  VVAPI virvo::vector< 3, float > asVec3f() const;
+  VVAPI virvo::vector< 3, double > asVec3d() const;
+  VVAPI virvo::vector< 3, short > asVec3s() const;
+  VVAPI virvo::vector< 3, unsigned short > asVec3us() const;
+  VVAPI virvo::vector< 3, int > asVec3i() const;
+  VVAPI virvo::vector< 3, unsigned int > asVec3ui() const;
+  VVAPI virvo::vector< 3, long > asVec3l() const;
+  VVAPI virvo::vector< 3, unsigned long > asVec3ul() const;
+  VVAPI virvo::vector< 3, long long > asVec3ll() const;
+  VVAPI virvo::vector< 3, unsigned long long > asVec3ull() const;
+  VVAPI virvo::vector< 4, float > asVec4f() const;
+  VVAPI vvColor asColor() const;
+  VVAPI virvo::basic_aabb< float > asAABBf() const;
+  VVAPI virvo::basic_aabb< double > asAABBd() const;
+  VVAPI virvo::basic_aabb< int > asAABBi() const;
+  VVAPI virvo::basic_aabb< unsigned int > asAABBui() const;
+  VVAPI virvo::basic_aabb< long > asAABBl() const;
+  VVAPI virvo::basic_aabb< unsigned long > asAABBul() const;
+  VVAPI virvo::basic_aabb< long long > asAABBll() const;
+  VVAPI virvo::basic_aabb< unsigned long long >  asAABBull() const;
+  VVAPI boost::shared_ptr< vvClipObj > asClipObj() const;
 
-  float asFloat() const {
-    return boost::any_cast<float>(value);
-  }
-
-  virvo::vector< 2, float > asVec2f() const {
-    return boost::any_cast< virvo::vector< 2, float > >(value);
-  }
-
-  virvo::vector< 2, int > asVec2i() const {
-    return boost::any_cast< virvo::vector< 2, int > >(value);
-  }
-
-  virvo::vector< 3, float > asVec3f() const {
-    return boost::any_cast< virvo::vector< 3, float > >(value);
-  }
-
-  virvo::vector< 3, double > asVec3d() const {
-    return boost::any_cast< virvo::vector< 3, double > >(value);
-  }
-
-  virvo::vector< 3, short > asVec3s() const {
-    return boost::any_cast< virvo::vector< 3, short > >(value);
-  }
-
-  virvo::vector< 3, unsigned short > asVec3us() const {
-    return boost::any_cast< virvo::vector< 3, unsigned short > >(value);
-  }
-
-  virvo::vector< 3, int > asVec3i() const {
-    return boost::any_cast< virvo::vector< 3, int > >(value);
-  }
-
-  virvo::vector< 3, unsigned int > asVec3ui() const {
-    return boost::any_cast< virvo::vector< 3, unsigned int > >(value);
-  }
-
-  virvo::vector< 3, long > asVec3l() const {
-    return boost::any_cast< virvo::vector< 3, long > >(value);
-  }
-
-  virvo::vector< 3, unsigned long > asVec3ul() const {
-    return boost::any_cast< virvo::vector< 3, unsigned long > >(value);
-  }
-
-  virvo::vector< 3, long long > asVec3ll() const {
-    return boost::any_cast< virvo::vector< 3, long long > >(value);
-  }
-
-  virvo::vector< 3, unsigned long long > asVec3ull() const {
-    return boost::any_cast< virvo::vector< 3, unsigned long long > >(value);
-  }
-
-  virvo::vector< 4, float > asVec4f() const {
-    return boost::any_cast< virvo::vector< 4, float > >(value);
-  }
-
-  vvColor asColor() const {
-    return boost::any_cast<vvColor>(value);
-  }
-
-  virvo::basic_aabb< float > asAABBf() const {
-    return boost::any_cast< virvo::basic_aabb< float > >(value);
-  }
-
-  virvo::basic_aabb< double > asAABBd() const {
-    return boost::any_cast< virvo::basic_aabb< double > >(value);
-  }
-
-  virvo::basic_aabb< int > asAABBi() const {
-    return boost::any_cast< virvo::basic_aabb< int > >(value);
-  }
-
-  virvo::basic_aabb< unsigned int > asAABBui() const {
-    return boost::any_cast< virvo::basic_aabb< unsigned int > >(value);
-  }
-
-  virvo::basic_aabb< long > asAABBl() const {
-    return boost::any_cast< virvo::basic_aabb< long > >(value);
-  }
-
-  virvo::basic_aabb< unsigned long > asAABBul() const {
-    return boost::any_cast< virvo::basic_aabb< unsigned long > >(value);
-  }
-
-  virvo::basic_aabb< long long > asAABBll() const {
-    return boost::any_cast< virvo::basic_aabb< long long > >(value);
-  }
-
-  virvo::basic_aabb< unsigned long long >  asAABBull() const {
-    return boost::any_cast< virvo::basic_aabb< unsigned long long > >(value);
-  }
-
-  boost::shared_ptr< vvClipObj > asClipObj() const {
-    return boost::any_cast< boost::shared_ptr< vvClipObj > >(value);
-  }
-
-  operator bool() const {
-    return asBool();
-  }
-
-  operator char() const {
-    return asChar();
-  }
-
-  operator unsigned char() const {
-    return asUchar();
-  }
-
-  operator short() const {
-    return asShort();
-  }
-
-  operator unsigned short() const {
-    return asUshort();
-  }
-
-  operator int() const {
-    return asInt();
-  }
-
-  operator unsigned int() const {
-    return asUint();
-  }
-
-  operator long() const {
-    return asLong();
-  }
-
-  operator unsigned long() const {
-    return asUlong();
-  }
-
+  VVAPI operator bool() const;
+  VVAPI operator char() const;
+  VVAPI operator unsigned char() const;
+  VVAPI operator short() const;
+  VVAPI operator unsigned short() const;
+  VVAPI operator int() const;
+  VVAPI operator unsigned int() const;
+  VVAPI operator long() const;
+  VVAPI operator unsigned long() const;
 #if VV_HAVE_LLONG
-  operator long long() const {
-    return asLlong();
-  }
+  VVAPI operator long long() const;
 #endif
-
 #if VV_HAVE_ULLONG
-  operator unsigned long long() const {
-    return asUllong();
-  }
+  VVAPI operator unsigned long long() const;
 #endif
-
-  operator float() const {
-    return asFloat();
-  }
-
-  operator virvo::vector< 2, float >() const {
-    return asVec2f();
-  }
-
-  operator virvo::vector< 2, int >() const {
-    return asVec2i();
-  }
-
-  operator virvo::vector< 3, float >() const {
-    return asVec3f();
-  }
-
-  operator virvo::vector< 3, double >() const {
-    return asVec3d();
-  }
-
-  operator virvo::vector< 3, short >() const {
-    return asVec3s();
-  }
-
-  operator virvo::vector< 3, unsigned short >() const {
-    return asVec3us();
-  }
-
-  operator virvo::vector< 3, int >() const {
-    return asVec3i();
-  }
-
-  operator virvo::vector< 3, unsigned int >() const {
-    return asVec3ui();
-  }
-
-  operator virvo::vector< 3, long >() const {
-    return asVec3l();
-  }
-
-  operator virvo::vector< 3, unsigned long >() const {
-    return asVec3ul();
-  }
-
-  operator virvo::vector< 3, long long >() const {
-    return asVec3ll();
-  }
-
-  operator virvo::vector< 3, unsigned long long >() const {
-    return asVec3ull();
-  }
-
-  operator virvo::vector< 4, float >() const {
-    return asVec4f();
-  }
-
-  operator vvColor() const {
-    return asColor();
-  }
-
-  operator virvo::basic_aabb< float >() const {
-    return asAABBf();
-  }
-
-  operator virvo::basic_aabb< double >() const {
-    return asAABBd();
-  }
-
-  operator virvo::basic_aabb< int >() const {
-    return asAABBi();
-  }
-
-  operator virvo::basic_aabb< unsigned int >() const {
-    return asAABBui();
-  }
-
-  operator virvo::basic_aabb< long >() const {
-    return asAABBl();
-  }
-
-  operator virvo::basic_aabb< unsigned long >() const {
-    return asAABBul();
-  }
-
-  operator virvo::basic_aabb< long long >() const {
-    return asAABBll();
-  }
-
-  operator virvo::basic_aabb< unsigned long long >() const {
-    return asAABBull();
-  }
-
-  operator boost::shared_ptr< vvClipObj >() const {
-    return asClipObj();
-  }
+  VVAPI operator float() const;
+  VVAPI operator virvo::vector< 2, float >() const;
+  VVAPI operator virvo::vector< 2, int >() const;
+  VVAPI operator virvo::vector< 3, float >() const;
+  VVAPI operator virvo::vector< 3, double >() const;
+  VVAPI operator virvo::vector< 3, short >() const;
+  VVAPI operator virvo::vector< 3, unsigned short >() const;
+  VVAPI operator virvo::vector< 3, int >() const;
+  VVAPI operator virvo::vector< 3, unsigned int >() const;
+  VVAPI operator virvo::vector< 3, long >() const;
+  VVAPI operator virvo::vector< 3, unsigned long >() const;
+  VVAPI operator virvo::vector< 3, long long >() const;
+  VVAPI operator virvo::vector< 3, unsigned long long >() const;
+  VVAPI operator virvo::vector< 4, float >() const;
+  VVAPI operator vvColor() const;
+  VVAPI operator virvo::basic_aabb< float >() const;
+  VVAPI operator virvo::basic_aabb< double >() const;
+  VVAPI operator virvo::basic_aabb< int >() const;
+  VVAPI operator virvo::basic_aabb< unsigned int >() const;
+  VVAPI operator virvo::basic_aabb< long >() const;
+  VVAPI operator virvo::basic_aabb< unsigned long >() const;
+  VVAPI operator virvo::basic_aabb< long long >() const;
+  VVAPI operator virvo::basic_aabb< unsigned long long >() const;
+  VVAPI operator boost::shared_ptr< vvClipObj >() const;
 
   // Returns the type of this parameter
   Type getType() const {
