@@ -32,6 +32,7 @@ class vvVolDesc;
 namespace virvo { namespace nifti {
 
 void load(vvVolDesc* vd);
+void save(const vvVolDesc* vd);
 
 }} // namespace virvo::nifti
 

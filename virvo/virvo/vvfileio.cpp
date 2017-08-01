@@ -4237,6 +4237,27 @@ vvFileIO::ErrorType vvFileIO::loadNiftiFile(vvVolDesc* vd)
 #endif
   return FILE_ERROR;
 }
+
+//----------------------------------------------------------------------------
+/** Saver for voxel file in Nifti format.
+ */
+vvFileIO::ErrorType vvFileIO::saveNiftiFile(const vvVolDesc* vd)
+{
+#if VV_HAVE_NIFTI
+  try
+  {
+    virvo::nifti::save(vd);
+    return OK;
+  }
+  catch (std::exception& e)
+  {
+    VV_LOG(0) << e.what();
+  }
+#else
+  VV_UNUSED(vd);
+#endif
+  return FILE_ERROR;
+}
  
 //----------------------------------------------------------------------------
 /** Loader for voxel file in nrrd (teem volume file) format.
@@ -5308,6 +5329,8 @@ vvFileIO::ErrorType vvFileIO::saveVolumeData(vvVolDesc* vd, bool overwrite, Load
   if (vvToolshed::isSuffix(vd->getFilename(), ".ppm") ||
     vvToolshed::isSuffix(vd->getFilename(), ".pgm"))
     return savePXMSlices(vd, overwrite);
+  if (vvToolshed::isSuffix(vd->getFilename(), "nii.gz"))
+    return saveNiftiFile(vd);
 
   vvDebugMsg::msg(1, "Error in saveVolumeData: unknown extension");
   return PARAM_ERROR;

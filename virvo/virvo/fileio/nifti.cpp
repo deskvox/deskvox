@@ -137,6 +137,31 @@ void load(vvVolDesc* vd)
     }
 }
 
+void save(const vvVolDesc* vd)
+{
+    int dims[] = { 3, (int)vd->vox[0], (int)vd->vox[1], (int)vd->vox[2], 1, 0, 0, 0 };
+
+    int datatype = 0;
+    if (vd->bpc == 1)
+        datatype = NIFTI_TYPE_UINT8;
+    else if (vd->bpc == 2)
+        datatype = NIFTI_TYPE_UINT16;
+    else if (vd->bpc == 4)
+        datatype = NIFTI_TYPE_FLOAT32;
+
+    nifti_image* img = nifti_make_new_nim(dims, datatype, 1);
+
+    nifti_set_filenames(img, vd->getFilename(), 0, 0);
+
+    img->dx = vd->dist[0];
+    img->dy = vd->dist[1];
+    img->dz = vd->dist[2];
+
+    img->data = vd->getRaw();
+
+    nifti_image_write(img);
+}
+
 }} // namespace virvo::nifti
 
 #endif // VV_HAVE_NIFTI
