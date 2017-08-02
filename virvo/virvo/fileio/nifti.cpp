@@ -88,6 +88,7 @@ void load(vvVolDesc* vd)
     default:
         vd->chan = 1;
         vd->bpc = header->nbyper;
+        break;
     }
 
     // voxel properties
