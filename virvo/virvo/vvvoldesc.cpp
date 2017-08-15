@@ -1031,14 +1031,14 @@ void vvVolDesc::makeHistogramTexture(int frame, size_t chan1, size_t numChan, si
   delete[] buckets;
 }
 
-void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest)
+void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest) const
 {
   computeTFTexture(0, w, h, d, dest);
 }
 
 /** Wrapper around tf.computeTFTexture.
 */
-void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest)
+void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest) const
 {
   static const int RGBA = 4;
   float dataVal;

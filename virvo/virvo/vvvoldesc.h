@@ -343,8 +343,8 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     int  findHDRBin(float);
     int  mapFloat2Int(float);
     void makeBinTexture(uint8_t* texture, size_t width);
-    void computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest);
-    void computeTFTexture(size_t w, size_t h, size_t d, float* dest); // tf for channel 0
+    void computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest) const;
+    void computeTFTexture(size_t w, size_t h, size_t d, float* dest) const; // tf for channel 0
     void makeLineTexture(DiagType, uchar, int, int, bool, std::vector< std::vector< float > > const& voxData, uint8_t*);
     void makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int*);
     void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;

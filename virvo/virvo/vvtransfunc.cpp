@@ -409,7 +409,7 @@ float vvTransFunc::computeOpacity(float x, float y, float z) const
 */
 void vvTransFunc::computeTFTexture(size_t w, size_t h, size_t d, float* array, 
   float minX, float maxX, float minY, float maxY, float minZ, float maxZ,
-  vvToolshed::Format format)
+  vvToolshed::Format format) const
 {
   assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
 
