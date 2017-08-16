@@ -75,7 +75,7 @@ class VIRVO_FILEIOEXPORT vvTransFunc
     void deleteWidgets(vvTFWidget::WidgetType);
     void computeTFTexture(size_t w, size_t h, size_t d, float* array,
                           float minX, float maxX, float minY = 0.0f, float maxY = 0.0f,
-                          float minZ = 0.0f, float maxZ = 0.0f, vvToolshed::Format format = vvToolshed::VV_RGBA);
+                          float minZ = 0.0f, float maxZ = 0.0f, vvToolshed::Format format = vvToolshed::VV_RGBA) const;
     vvColor computeBGColor(float, float, float) const;
     void computeTFTextureGamma(int, float*, float, float, int, float[], float[]);
     void computeTFTextureHighPass(int, float*, float, float, int, float[], float[], float[]);
