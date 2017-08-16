@@ -83,19 +83,19 @@ namespace virvo
 
         // Render the color buffer into the current draw buffer
         // NOTE: Must not be supported by all render targets
-        VVAPI bool displayColorBuffer() const;
+        bool displayColorBuffer() const;
 
         // Copy the color buffer into the given buffer
-        VVAPI bool downloadColorBuffer(unsigned char* buffer, size_t size) const;
+        bool downloadColorBuffer(unsigned char* buffer, size_t size) const;
 
         // Copy the depth buffer into the given buffer
-        VVAPI bool downloadDepthBuffer(unsigned char* buffer, size_t size) const;
+        bool downloadDepthBuffer(unsigned char* buffer, size_t size) const;
 
         // Copy the color buffer into the given vector
-        VVAPI bool downloadColorBuffer(std::vector<unsigned char>& buffer) const;
+        bool downloadColorBuffer(std::vector<unsigned char>& buffer) const;
 
         // Copy the depth buffer into the given vector
-        VVAPI bool downloadDepthBuffer(std::vector<unsigned char>& buffer) const;
+        bool downloadDepthBuffer(std::vector<unsigned char>& buffer) const;
 
         // Returns the format of the color buffer
         virtual PixelFormat colorFormat() const { return PF_UNSPECIFIED; }
@@ -117,13 +117,13 @@ namespace virvo
 
     protected:
         // Prepare for rendering
-        VVAPI bool beginFrame(unsigned clearMask = 0);
+        bool beginFrame(unsigned clearMask = 0);
 
         // Finish rendering
-        VVAPI bool endFrame();
+        bool endFrame();
 
         // Resize the render target
-        VVAPI bool resize(int w, int h);
+        bool resize(int w, int h);
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask) = 0;
