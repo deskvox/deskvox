@@ -860,7 +860,7 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
   @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned int* buckets, int* count, float min, float max)
+void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned int* buckets, int* count, float min, float max) const
 {
   uint8_t* raw;                                   // raw voxel data
   float* voxVal;                                  // voxel values
@@ -3892,7 +3892,7 @@ void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax) c
   @param channel data channel to work on
   @param threshold  threshold value for data range clamping [0..1]
 */
-float vvVolDesc::findClampValue(int frame, size_t channel, float threshold)
+float vvVolDesc::findClampValue(int frame, size_t channel, float threshold) const
 {
   int* hist;
   unsigned int buckets[1] = {1000};
@@ -3907,12 +3907,10 @@ float vvVolDesc::findClampValue(int frame, size_t channel, float threshold)
   threshold = ts_clamp(threshold, 0.0f, 1.0f);
 
   findMinMax(channel, fMin, fMax);
-  real[channel][0] = fMin;
-  real[channel][1] = fMax;
   size_t frameVoxels = getFrameVoxels();
   size_t thresholdVoxelCount = size_t(float(frameVoxels) * threshold);
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist, real[channel][0], real[channel][1]);
+  makeHistogram(frame, channel, 1, buckets, hist, fMin, fMax);
   for (i=0; i<buckets[0]; ++i)
   {
     if (voxelCount >= thresholdVoxelCount)
