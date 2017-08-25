@@ -33,6 +33,7 @@
 #undef MATH_NAMESPACE
 
 #include <visionaray/detail/pixel_access.h> // detail (TODO?)!
+#include <visionaray/math/math.h>
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
 #include <visionaray/array.h>
