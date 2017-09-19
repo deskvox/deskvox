@@ -602,7 +602,7 @@ public:
 
 public:
 
-    virvo_render_target(size_t w, size_t h, color_type* c, depth_type* d)
+    virvo_render_target(int w, int h, color_type* c, depth_type* d)
         : width_(w)
         , height_(h)
         , color_(c)
@@ -610,8 +610,8 @@ public:
     {
     }
 
-    size_t width() const { return width_; }
-    size_t height() const { return height_; }
+    int width() const { return width_; }
+    int height() const { return height_; }
 
     color_type* color() { return color_; }
     depth_type* depth() { return depth_; }
@@ -619,13 +619,13 @@ public:
     color_type const* color() const { return color_; }
     depth_type const* depth() const { return depth_; }
 
-    ref_type ref() { return ref_type(color(), depth(), width(), height()); }
+    ref_type ref() { return { color(), depth(), width(), height() }; }
 
     void begin_frame() {}
     void end_frame() {}
 
-    size_t width_;
-    size_t height_;
+    int width_;
+    int height_;
 
     color_type* color_;
     depth_type* depth_;
