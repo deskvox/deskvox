@@ -9,6 +9,9 @@
 
 #undef min
 #undef max
+#ifdef WIN32
+#pragma warning (disable: 4305)
+#endif
 
 namespace MATH_NAMESPACE
 {

@@ -96,7 +96,7 @@ class VIRVO_FILEIOEXPORT vvTokenizer
       VV_COMMENT    = 3                           ///< character comments start with
     };
     std::ifstream& file;                          ///< input file
-    int   blockUsed;                              ///< number of data block bytes used
+	std::streamsize   blockUsed;                              ///< number of data block bytes used
     char* data;                                   ///< raw data read from input file
     int   cur;                                    ///< index of current data byte
     int   peekChar;                               ///< next character in input file

@@ -56,7 +56,7 @@ vvSoftPar::vvSoftPar(vvVolDesc* vd, vvRenderState rs) : vvSoftVR(vd, rs)
    wViewDir = vec3(0.0f, 0.0f, 1.0f);
 
    // Provide enough space for all possible shear matrices:
-   imgSize = 2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
+   imgSize = (int)(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
    intImg = new vvSoftImg(imgSize, imgSize);
 }
 
@@ -308,7 +308,7 @@ void vvSoftPar::compositeSliceBilinear(int slice)
    iSlice[0] = len[0];
    iSlice[1] = len[1];
    iLineOffset = intImg->PIXEL_SIZE * (intImg->width - iSlice[0] + 1);
-   vLineOffset = (2 * len[0] - 1) * vd->getBPV();
+   vLineOffset = (2 * len[0] - 1) * (int)vd->getBPV();
    frac[0]   = (float)iPosX - vStart[0];
    frac[1]   = (float)iPosY - vStart[1];
 
@@ -579,7 +579,7 @@ void vvSoftPar::compositeSliceCompressedBilinear(int slice)
    iSlice[0] = len[0];
    iSlice[1] = len[1];
    iLineOffset = intImg->PIXEL_SIZE * (intImg->width - iSlice[0] + 1);
-   vLineOffset = (2 * len[0] - 1) * vd->getBPV();
+   vLineOffset = (2 * len[0] - 1) * (int)vd->getBPV();
    frac[0]   = (float)iPosX - vStart[0];
    frac[1]   = (float)iPosY - vStart[1];
 

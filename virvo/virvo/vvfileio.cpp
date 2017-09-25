@@ -798,9 +798,9 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       done = false;
       while (done==false)
       {
-        for (int c=0; c<9; ++c)
+        for (int ci=0; ci<9; ++ci)
         {
-          v[c] = virvo::serialization::readFloat(fp);
+          v[ci] = virvo::serialization::readFloat(fp);
         }
         if (v[0]==-1.0f || feof(fp)) done = true;
       }
@@ -813,11 +813,11 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     delete[] vd->iconData;
     const size_t iconBytes = vd->iconSize * vd->iconSize * static_cast<size_t>(vvVolDesc::ICON_BPP);
     vd->iconData = new uint8_t[iconBytes];
-    const size_t encodedSize = virvo::serialization::read32(fp);
-    if (encodedSize>0)                            // compressed icon?
+    const size_t c_encodedSize = virvo::serialization::read32(fp);
+    if (c_encodedSize>0)                            // compressed icon?
     {
-      uint8_t* encoded = new uint8_t[encodedSize];
-      if (fread(encoded, 1, encodedSize, fp) != encodedSize)
+      uint8_t* encoded = new uint8_t[c_encodedSize];
+      if (fread(encoded, 1, c_encodedSize, fp) != c_encodedSize)
       {
         cerr << "Error: Insuffient compressed icon data in file." << endl;
         fclose(fp);
@@ -1253,35 +1253,35 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
           vd->iconData = new uint8_t[iconBytes];
           file.seekg(tok.getFilePos(), file.beg);
-          size_t encodedSize = 0;
+          size_t i_encodedSize = 0;
           if (io32bit)
-            encodedSize = virvo::serialization::read32(file);
+			  i_encodedSize = virvo::serialization::read32(file);
           else
-            encodedSize = virvo::serialization::read64(file);
-          if (encodedSize>0)                      // compressed icon?
+			  i_encodedSize = virvo::serialization::read64(file);
+          if (i_encodedSize>0)                      // compressed icon?
           {
-            uint8_t* encoded = new uint8_t[encodedSize];
-            file.read(reinterpret_cast< char* >(encoded), encodedSize);
+            uint8_t* i_encoded = new uint8_t[i_encodedSize];
+            file.read(reinterpret_cast< char* >(i_encoded), i_encodedSize);
             size_t r = static_cast< size_t >(file.gcount());
-            if (r != encodedSize)
+            if (r != i_encodedSize)
             {
               cerr << "Error: Insuffient compressed icon data in file." << endl;
               delete[] vd->iconData;
               vd->iconData = NULL;
-              delete[] encoded;
+              delete[] i_encoded;
               return DATA_ERROR;
             }
             size_t outsize;
-            vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, encoded, encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
+            vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, i_encoded, i_encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
             if (err != vvToolshed::VV_OK)
             {
               cerr << "Error: Decoding exceeds icon size." << endl;
               delete[] vd->iconData;
               vd->iconData = NULL;
-              delete[] encoded;
+              delete[] i_encoded;
               return DATA_ERROR;
             }
-            delete[] encoded;
+            delete[] i_encoded;
           }
           else                                    // uncompressed icon
           {
@@ -1518,11 +1518,11 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
       }
       else if (key == "SCALARS")
       {
-        std::string::size_type wordend = value.find(' ');
-        if (wordend != std::string::npos)
+        std::string::size_type s_wordend = value.find(' ');
+        if (s_wordend != std::string::npos)
         {
-          std::string name = value.substr(0, wordend);
-          std::string type = value.substr(wordend+1);
+          std::string name = value.substr(0, s_wordend);
+          std::string type = value.substr(s_wordend+1);
           if (!interpret_vtk_type(type, &bpc, &signedData))
           {
             vvDebugMsg::msg(1, "Error: Unknown .vtk type - unsupported SCALARS type: ", type.c_str());
@@ -2581,7 +2581,7 @@ struct vvTifData
           depth = -depth;
         if (depth > 0.) {
           haveResolutionZ = true;
-          resolutionZ = 1./depth;
+          resolutionZ = 1.0f/depth;
         }
       }
 
@@ -2761,7 +2761,7 @@ static float tifGetRational(FILE *fp, long offset, virvo::serialization::EndianT
   std::vector<uint32_t> result = tifGetData<uint32_t>(fp, offset, 2, endian);
   float value = 0.f;
   if (result[1] != 0)
-    value = (double)result[0]/result[1];
+    value = (float)result[0]/result[1];
   return value;
 }
 
@@ -2928,7 +2928,11 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     size_t rawOffset = 0;
     for (size_t i=0; i<strips; ++i)
     {
+#ifdef WIN32
+	  _fseeki64(fp, stripOffsets[i], SEEK_SET);
+#else
       fseek(fp, stripOffsets[i], SEEK_SET);
+#endif
       size_t bytesToRead = ((planarConfiguration == 2) ? 3 : 1) * stripByteCounts[i];
       size_t readBytes = fread(raw+rawOffset, 1, bytesToRead, fp);
       if (readBytes != bytesToRead)

@@ -186,18 +186,18 @@ public:
     }
 
     // Resize the buffer
-    void resize(size_t size, CompressionType type = Compress_None)
+    void resize(size_t size, CompressionType ctype = Compress_None)
     {
         this->data.resize(size);
-        this->type = type;
+        this->type = ctype;
     }
 
     // Copy from a sequence
     template<class Iterator>
-    void assign(Iterator first, Iterator last, CompressionType type = Compress_None)
+    void assign(Iterator first, Iterator last, CompressionType ctype = Compress_None)
     {
         this->data.assign(first, last);
-        this->type = type;
+        this->type = ctype;
     }
 
     // Returns the current compression type
@@ -222,10 +222,10 @@ public:
     }
 
     // Swap this buffer with another buffer
-    void swap(VectorType& rhs, CompressionType type = Compress_None)
+    void swap(VectorType& rhs, CompressionType ctype = Compress_None)
     {
         this->data.swap(rhs);
-        this->type = type;
+        this->type = ctype;
     }
 
 private:

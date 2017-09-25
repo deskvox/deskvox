@@ -91,7 +91,7 @@ vvTokenizer::~vvTokenizer()
 int vvTokenizer::determineCurrentLine()
 {
   int  lineNr = 1;
-  long current;                                   // current position in file
+  std::streamoff current;                                   // current position in file
   long i;
   int  c;
 

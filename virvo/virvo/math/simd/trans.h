@@ -7,8 +7,12 @@
 //
 
 
+#ifdef WIN32
+#pragma warning (disable: 4305)
+#endif
 #include "sse.h"
 #include "../detail/math.h"
+
 
 #if VV_SIMD_ISA_GE(VV_SIMD_ISA_SSE2)
 

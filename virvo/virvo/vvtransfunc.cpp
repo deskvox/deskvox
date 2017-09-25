@@ -560,7 +560,7 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
   {
     for (size_t c=0; c<4; ++c)
     {
-      int index = x * 4 + c;
+      size_t index = x * 4 + c;
       if (mask[c] == 0) colors[index] = uchar(rgba[index] * 255.0f);
       else colors[index] = (uchar)255;
       colors[index + width * 4] = uchar(rgba[index] * 255.0f);

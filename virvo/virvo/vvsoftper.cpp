@@ -501,7 +501,7 @@ float* r, float* g, float* b, float* a)
 
    // Accumulate voxels (compute average value):
    scalar = sliceBase + vd->getBPV() * (top * len[0] + left);
-   lineOffset = vd->getBPV() * len[0];
+   lineOffset = (int)vd->getBPV() * len[0];
    *r = *g = *b = *a = 0.0f;
    numVoxels = w * h;
    for (y=0; y<h; ++y)
@@ -548,7 +548,7 @@ void vvSoftPer::setQuality(float q)
    }
 
    intImgSize = ts_clamp(intImgSize, 16, 4096);
-   intImgSize = vvToolshed::getTextureSize(intImgSize);
+   intImgSize = (int)vvToolshed::getTextureSize(intImgSize);
 
    intImg->setSize(intImgSize, intImgSize);
    findDIConvMatrix();

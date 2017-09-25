@@ -21,13 +21,13 @@
 #ifndef VV_SERVERMON_H
 #define VV_SERVERMON_H
 
-#include <vvplugin.h>
+#include "../../include/vvplugin.h"
 
 class vvServerMon : public QObject, public vvPlugin
 {
   Q_OBJECT
   Q_INTERFACES(vvPlugin)
-#if QT_VERSION >= 0x050000
+#if (QT_VERSION >= 0x050500)
   Q_PLUGIN_METADATA(IID "org.deskvox.vvServerMon" FILE "vvservermon.json")
 #endif
 public:

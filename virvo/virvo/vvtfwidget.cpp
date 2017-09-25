@@ -268,7 +268,7 @@ vvTFBell::vvTFBell() : vvTFWidget()
 {
   _opacity = 1.0f;
   _ownColor = true;
-  for (size_t i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
     _size[i] = 0.2f;                              // default with: smaller rather than bigger
@@ -279,7 +279,7 @@ vvTFBell::vvTFBell(vvTFBell* src) : vvTFWidget(src)
 {
   _opacity = src->_opacity;
   _ownColor = src->_ownColor;
-  for (size_t i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
     _size[i] = src->_size[i];
@@ -476,7 +476,7 @@ vvTFPyramid::vvTFPyramid() : vvTFWidget()
 {
   _opacity = 1.0f;
   _ownColor = true;
-  for (size_t i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
     _top[i] = 0.2f;                               // default with: smaller rather than bigger
@@ -488,7 +488,7 @@ vvTFPyramid::vvTFPyramid(vvTFPyramid* src) : vvTFWidget(src)
 {
   _opacity = src->_opacity;
   _ownColor = src->_ownColor;
-  for (size_t i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
     _top[i] = src->_top[i];
@@ -795,7 +795,7 @@ void vvTFPyramid::mapTo01(float min, float max)
 
 vvTFColor::vvTFColor() : vvTFWidget()
 {
-  for(size_t i=0; i<3; ++i)
+  for(int i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
   }
@@ -803,7 +803,7 @@ vvTFColor::vvTFColor() : vvTFWidget()
 
 vvTFColor::vvTFColor(vvTFColor* src) : vvTFWidget(src)
 {
-  for(size_t i=0; i<3; ++i)
+  for(int i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
   }

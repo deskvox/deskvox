@@ -309,7 +309,7 @@ void vvToolshed::RGBtoHSB(float r, float g, float b, float* h, float* s, float* 
 */
 void vvToolshed::strcpyTail(char* suffix, const char* str, char c)
 {
-  int i, j;
+  size_t i, j;
 
   // Search for c in pathname:
   i = strlen(str) - 1;
