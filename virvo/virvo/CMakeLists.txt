@@ -25,7 +25,7 @@ endif()
 
 deskvox_use_package(Bonjour)
 deskvox_use_package(Boost)
-deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_PATH} LIBS ${CG_LIBRARY} ${CG_GL_LIBRARY})
+deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_DIRS} LIBS ${CG_LIBRARIES})
 if(DESKVOX_USE_CUDA)
     find_package(CUDA)
     deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
