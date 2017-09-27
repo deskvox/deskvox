@@ -75,14 +75,14 @@ void vvDicom::setEndian()
 
 //----------------------------------------------------------------------------
 /// This function reads a 16-bit entity/value.
-inline int vvDicom::read16(FILE* fp)
+inline int vvDicom::read16(FILE* _fp)
 {
   uchar t1, t2;
   size_t n;
   (void)n;
-  n = fread(&t1, sizeof t1, 1, fp);
+  n = fread(&t1, sizeof t1, 1, _fp);
   assert(n == 1);
-  n = fread(&t2, sizeof t2, 1, fp);
+  n = fread(&t2, sizeof t2, 1, _fp);
   assert(n == 1);
 
   if (info->littleEndian)  return t1 + t2*256;
@@ -91,15 +91,15 @@ inline int vvDicom::read16(FILE* fp)
 
 //----------------------------------------------------------------------------
 /// This function reads a 32-bit entity/value.
-inline int vvDicom::read32(FILE* fp)
+inline int vvDicom::read32(FILE* _fp)
 {
   uchar t1, t2, t3, t4;
   size_t n;
   (void)n;
-  n = fread(&t1, sizeof t1, 1, fp); assert(n == 1);
-  n = fread(&t2, sizeof t2, 1, fp); assert(n == 1);
-  n = fread(&t3, sizeof t3, 1, fp); assert(n == 1);
-  n = fread(&t4, sizeof t4, 1, fp); assert(n == 1);
+  n = fread(&t1, sizeof t1, 1, _fp); assert(n == 1);
+  n = fread(&t2, sizeof t2, 1, _fp); assert(n == 1);
+  n = fread(&t3, sizeof t3, 1, _fp); assert(n == 1);
+  n = fread(&t4, sizeof t4, 1, _fp); assert(n == 1);
 
   if (info->littleEndian) return t1 + t2*256 + t3*256*256 + t4*256*256*256;
   else                    return t1*256*256*256 + t2*256*256 + t3*256 + t4;
@@ -109,7 +109,7 @@ inline int vvDicom::read32(FILE* fp)
 /** This functions sifts through the input dicom data.  It's the heart of
   the program and needs to be modified when new fields need to be supported.
 */
-void vvDicom::readDicomData(FILE* fp)
+void vvDicom::readDicomData(FILE* _fp)
 {
   int first_one = 1;
   bool done = false;
@@ -124,10 +124,10 @@ void vvDicom::readDicomData(FILE* fp)
     infoText = NULL;
     DicomTypes t = VV_UNKNOWN;
 
-    where = ftell(fp);                            // remember offset to group
-    group   = read16(fp);
-    element = read16(fp);
-    e_len   = read32(fp);
+    where = ftell(_fp);                            // remember offset to group
+    group   = read16(_fp);
+    element = read16(_fp);
+    e_len   = read32(_fp);
 
     // check and see if assumed byte order is correct & fix if necessary
 
@@ -162,10 +162,10 @@ void vvDicom::readDicomData(FILE* fp)
         first_one = 0;
         vvDebugMsg::msg(2, "\nPossible byte ordering problem - switching!");
         info->littleEndian = !info->littleEndian;
-        fseek(fp, 0, 0);
-        group   = read16(fp);
-        element = read16(fp);
-        e_len   = read32(fp);
+        fseek(_fp, 0, 0);
+        group   = read16(_fp);
+        element = read16(_fp);
+        e_len   = read32(_fp);
       }
       else
       {
@@ -173,22 +173,22 @@ void vvDicom::readDicomData(FILE* fp)
 
         // Try DICOM part 10 i.e. a 128 byte file preamble followed by DICM:
 
-        fseek(fp, 128, 0);                        //skip the preamble - next 4 bytes should
+        fseek(_fp, 128, 0);                        //skip the preamble - next 4 bytes should
         //be "DICM"
-        uchar t[4];
-        size_t n = fread(t, sizeof t, 1, fp);
+        uchar tt[4];
+        size_t n = fread(tt, sizeof tt, 1, _fp);
         if(n != 1)
           cerr << "Returned value from fread is " << n << ", expected 1" << endl;
         assert(n == 1);
-        if (t[0] != 'D' || t[1] != 'I' || t[2] != 'C' || t[3] != 'M')
+        if (tt[0] != 'D' || tt[1] != 'I' || tt[2] != 'C' || tt[3] != 'M')
         {
           // It's not proper part 10 - try w/out the 128 byte preamble:
-          fseek(fp, 0, 0);
-          n = fread(t, sizeof t, 1, fp);
+          fseek(_fp, 0, 0);
+          n = fread(tt, sizeof(tt), 1, _fp);
           assert(n == 1);
         }
 
-        if (t[0] != 'D' || t[1] != 'I' || t[2] != 'C' || t[3] != 'M')
+        if (tt[0] != 'D' || tt[1] != 'I' || tt[2] != 'C' || tt[3] != 'M')
         {
           cerr << "Not a proper DICOM part 10 file." << endl;
           if ( (group == 0 && element == 0 && e_len == 4) ||
@@ -198,19 +198,19 @@ void vvDicom::readDicomData(FILE* fp)
             (group == 8 && element == 0x16) )
           {
             first_one = 0;
-            fseek(fp, 0, 0);
-            group   = read16(fp);
-            element = read16(fp);
-            e_len   = read32(fp);
+            fseek(_fp, 0, 0);
+            group   = read16(_fp);
+            element = read16(_fp);
+            e_len   = read32(_fp);
           }
           else assert(0);
         }
         else
         {
-          where = ftell(fp);                      // remember offset to group
-          group   = read16(fp);
-          element = read16(fp);
-          e_len   = read32(fp);
+          where = ftell(_fp);                      // remember offset to group
+          group   = read16(_fp);
+          element = read16(_fp);
+          e_len   = read32(_fp);
 
 		  if(group == 0xfffc && element == 0xfffc) // Padding
 		  {
@@ -228,7 +228,7 @@ void vvDicom::readDicomData(FILE* fp)
             // These explicit vr's have a 32-bit length. Therefore, we'll need to read another 16 bits
             // and then include these additional 16 bits in the current 16 bit length.
             explicitVR = 1;
-            e_len = read32(fp);
+            e_len = read32(_fp);
           }
           else if ( (pvr[0]=='A' && pvr[1]=='E') ||
             (pvr[0]=='A' && pvr[1]=='S') ||
@@ -299,10 +299,10 @@ void vvDicom::readDicomData(FILE* fp)
           {
             vvDebugMsg::msg(2, "\nPossible byte ordering problem - switching!");
             info->littleEndian = !info->littleEndian;
-            fseek(fp, where, 0);
-            group   = read16(fp);
-            element = read16(fp);
-            read32(fp);
+            fseek(_fp, where, 0);
+            group   = read16(_fp);
+            element = read16(_fp);
+            read32(_fp);
             e_len = 4;                            // don't do e_len conversion again
           }
         }
@@ -321,7 +321,7 @@ void vvDicom::readDicomData(FILE* fp)
           // therefore, we'll need to read another 16-bits &
           // then include these addition 16-bits in the
           // current 16-bit length.
-          e_len = read32(fp);
+          e_len = read32(_fp);
         }
         else if ( (pvr[3]=='O' && pvr[2]=='B') ||
           (pvr[3]=='O' && pvr[2]=='W') ||
@@ -331,7 +331,7 @@ void vvDicom::readDicomData(FILE* fp)
           // therefore, we'll need to read another 16-bits &
           // then include these addition 16-bits in the
           // current 16-bit length.
-          e_len = read32(fp);
+          e_len = read32(_fp);
         }
         else if ( (pvr[0]=='A' && pvr[1]=='E') ||
           (pvr[0]=='A' && pvr[1]=='S') ||
@@ -389,7 +389,7 @@ void vvDicom::readDicomData(FILE* fp)
         else if ( (pvr[0]=='U' && pvr[1]=='N') )
         {
           // this is unknown, the length is in the next four bytes;
-          e_len = read32(fp);
+          e_len = read32(_fp);
         }
       }
     }
@@ -505,12 +505,12 @@ void vvDicom::readDicomData(FILE* fp)
           {
             t=VV_STRING;
             char* buff = new char[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n==1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             float d = 0.0f;
             int ret = sscanf(buff, "%f", &d);
@@ -573,12 +573,12 @@ void vvDicom::readDicomData(FILE* fp)
           t=VV_STRING;
           {
             char* buff = new char[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n==1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             int num;
             int ret = sscanf(buff, "%d", &num);
@@ -595,12 +595,12 @@ void vvDicom::readDicomData(FILE* fp)
           t=VV_STRING;
           {
             char* buff = new char[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n==1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             int num;
             int ret = sscanf(buff, "%d", &num);
@@ -626,12 +626,12 @@ void vvDicom::readDicomData(FILE* fp)
           {
             t=VV_STRING;
             char* buff = new char[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n==1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             int ret = sscanf(buff, "%f", &info->slicePos);
             if (ret != 1)
@@ -660,12 +660,12 @@ void vvDicom::readDicomData(FILE* fp)
           t=VV_STRING;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             if (e_len >= 1)
               info->chan = static_cast<int>(buff[0]);
@@ -678,12 +678,12 @@ void vvDicom::readDicomData(FILE* fp)
           t=VV_STRING;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = 0;
             if (strncmp(buff,"MONOCHROME1",strlen("MONOCHROME1")) == 0)
               photometric_specified = 1;
@@ -700,25 +700,25 @@ void vvDicom::readDicomData(FILE* fp)
           case 0x09 :  infoText = "frame increment pointer";       break;
           case 0x10 :  infoText = "rows";
           assert(e_len == 2);
-          pos = ftell(fp);
-          info->height = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          info->height = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           break;
           case 0x11 :  infoText = "columns";
           assert(e_len == 2);
-          pos = ftell(fp);
-          info->width = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          info->width = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           break;
           case 0x30 :  infoText = "pixel spacing";
           {
             char* buff = new char[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n==1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = '\0';
             float a=0.0f, b=0.0f;
             int ret = sscanf(buff, "%f\\%f", &a, &b);
@@ -743,9 +743,9 @@ void vvDicom::readDicomData(FILE* fp)
           case 0x60 :  infoText = "compression code (ret)";        break;
           case 0x0100: infoText = "bits allocated";
           assert(e_len == 2);
-          pos = ftell(fp);
-          tmp = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          tmp = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           if (tmp==8) info->bpp = 1;
           else if (tmp==16) info->bpp = 2;
           else
@@ -756,21 +756,21 @@ void vvDicom::readDicomData(FILE* fp)
           break;
           case 0x0101: infoText = "bits stored";
           assert(e_len == 2);
-          pos = ftell(fp);
-          info->bitsStored = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          info->bitsStored = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           break;
           case 0x0102: infoText = "high bit";
           assert(e_len == 2);
-          pos = ftell(fp);
-          info->highBit = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          info->highBit = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           break;
           case 0x0103: infoText = "pixel representation";
           assert(e_len == 2);
-          pos = ftell(fp);
-          tmp = read16(fp);
-          fseek(fp, pos, SEEK_SET);
+          pos = ftell(_fp);
+          tmp = read16(_fp);
+          fseek(_fp, pos, SEEK_SET);
           if      (tmp == 0)  info->isSigned = false;
           else if (tmp == 1)  info->isSigned = true;
           break;
@@ -780,12 +780,12 @@ void vvDicom::readDicomData(FILE* fp)
           window_center_specified = 1;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = 0;
             char* endptr;
             window_center = strtod(buff, &endptr);
@@ -799,12 +799,12 @@ void vvDicom::readDicomData(FILE* fp)
           window_width_specified = 1;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = 0;
             char* endptr;
             window_width = strtod(buff, &endptr);
@@ -819,11 +819,11 @@ void vvDicom::readDicomData(FILE* fp)
           intercept_specified = 1;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             assert(n == 1);
             buff[e_len] = 0;
             char* endptr;
@@ -838,12 +838,12 @@ void vvDicom::readDicomData(FILE* fp)
           slope_specified = 1;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = 0;
             char* endptr;
             slope = strtod(buff, &endptr);
@@ -858,12 +858,12 @@ void vvDicom::readDicomData(FILE* fp)
           red_table_size = e_len;
           red_table = (ushort*)new uchar[e_len * sizeof(*red_table)];
           {
-            pos = ftell(fp);
-            size_t n = fread(red_table, e_len*sizeof(*red_table),1,fp);
+            pos = ftell(_fp);
+            size_t n = fread(red_table, e_len*sizeof(*red_table),1,_fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
           }
           flip16bitData ((uchar*)red_table, e_len);
           break;
@@ -871,36 +871,36 @@ void vvDicom::readDicomData(FILE* fp)
           green_table_size = e_len;
           green_table = (ushort*)new uchar[e_len * sizeof(*green_table)];
           {
-            pos = ftell(fp);
-            size_t n = fread(green_table, e_len*sizeof(*green_table),1,fp);
+            pos = ftell(_fp);
+            size_t n = fread(green_table, e_len*sizeof(*green_table),1,_fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
           }
           break;
           case 0x1203: infoText = "blue table";
           blue_table_size = e_len;
           blue_table = (ushort*)new uchar[e_len * sizeof(*blue_table)];
           {
-            pos = ftell(fp);
-            size_t n = fread(blue_table, e_len*sizeof(*blue_table),1,fp);
+            pos = ftell(_fp);
+            size_t n = fread(blue_table, e_len*sizeof(*blue_table),1,_fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
           }
           break ;
           case 0x2114 :  infoText = "Lossy Image Compression Method";
           t=VV_STRING;
           {
             char* buff = (char*)new uchar[e_len+1];
-            pos = ftell(fp);
-            size_t n = fread(buff, e_len, 1, fp);
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
             if(n != 1)
               cerr << "Returned value from fread is " << n << ", expected 1" << endl;
             assert(n == 1);
-            fseek(fp, pos, SEEK_SET);
+            fseek(_fp, pos, SEEK_SET);
             buff[e_len] = 0;
             fprintf(stderr,"lossy compression %s\n",buff);
             delete[] buff;
@@ -952,7 +952,7 @@ void vvDicom::readDicomData(FILE* fp)
       buff = (char*)new uchar[e_len + 1];
       if (e_len > 0)
       {
-        size_t n = fread(buff, e_len, 1, fp);
+        size_t n = fread(buff, e_len, 1, _fp);
         if (n!=1) cerr << "\nError: e_len = " << e_len << endl;
         assert(n == 1);
       }
@@ -1021,7 +1021,7 @@ void vvDicom::readDicomData(FILE* fp)
 
   // Read the actual pixel data:
   info->raw = new uchar[info->height * info->width * info->bpp * info->chan];
-  size_t n = fread(info->raw,  1, info->height * info->width * info->bpp * info->chan, fp);
+  size_t n = fread(info->raw,  1, info->height * info->width * info->bpp * info->chan, _fp);
   //if(n != 1)
     //cerr << "vvDicom::readDicomData: Error reading actual pixel data" << endl;
     cerr << "vvDicom::readDicomData:  reading actual pixel data " <<n<< endl;

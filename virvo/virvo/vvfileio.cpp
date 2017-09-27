@@ -816,28 +816,28 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     const size_t c_encodedSize = virvo::serialization::read32(fp);
     if (c_encodedSize>0)                            // compressed icon?
     {
-      uint8_t* encoded = new uint8_t[c_encodedSize];
-      if (fread(encoded, 1, c_encodedSize, fp) != c_encodedSize)
+      uint8_t* c_encoded = new uint8_t[c_encodedSize];
+      if (fread(c_encoded, 1, c_encodedSize, fp) != c_encodedSize)
       {
         cerr << "Error: Insuffient compressed icon data in file." << endl;
         fclose(fp);
         delete[] vd->iconData;
         vd->iconData = NULL;
-        delete[] encoded;
+        delete[] c_encoded;
         return DATA_ERROR;
       }
       size_t outsize;
-      vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, encoded, encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
+      vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, c_encoded, encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
       if (err != vvToolshed::VV_OK)
       {
         cerr << "Error: Decoding exceeds icon size." << endl;
         fclose(fp);
         delete[] vd->iconData;
         vd->iconData = NULL;
-        delete[] encoded;
+        delete[] c_encoded;
         return DATA_ERROR;
       }
-      delete[] encoded;
+      delete[] c_encoded;
     }
     else                                          // uncompressed icon
     {
@@ -2581,7 +2581,7 @@ struct vvTifData
           depth = -depth;
         if (depth > 0.) {
           haveResolutionZ = true;
-          resolutionZ = 1.0f/depth;
+          resolutionZ = float(1.0/depth);
         }
       }
 
@@ -2730,30 +2730,35 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
 template<typename T>
 static std::vector<T> tifGetData(FILE *fp, long offset, size_t n, virvo::serialization::EndianType endian)
 {
-  std::vector<T> result;
-  long where = ftell(fp);
-  fseek(fp, offset, SEEK_SET);
-  for (size_t i=0; i<n; ++i)
-  {
-    switch(sizeof(T)) {
-    case 1:
-      result.push_back((T)virvo::serialization::read8(fp));
-      break;
-    case 2:
-      result.push_back((T)virvo::serialization::read16(fp, endian));
-      break;
-    case 4:
-      result.push_back((T)virvo::serialization::read32(fp, endian));
-      break;
-    case 8:
-      result.push_back((T)virvo::serialization::read64(fp, endian));
-      break;
-    default:
-      assert("data type not handled" == NULL);
-    }
-  }
-  fseek(fp, where, SEEK_SET);
-  return result;
+	std::vector<T> result;
+	long where = ftell(fp);
+	fseek(fp, offset, SEEK_SET);
+	for (size_t i = 0; i < n; ++i)
+	{
+		switch (sizeof(T))
+		{
+		case 1:
+			result.push_back((T)virvo::serialization::read8(fp));
+			break;
+		case 2:
+			result.push_back((T)virvo::serialization::read16(fp, endian));
+			break;
+		case 4:
+			result.push_back((T)virvo::serialization::read32(fp, endian));
+			break;
+		case 8:
+			result.push_back((T)virvo::serialization::read64(fp, endian));
+			break;
+		default:
+		{
+			fprintf(stderr, "data type not handled");
+			exit(-1);
+		}
+		break;
+		}
+	}
+	fseek(fp, where, SEEK_SET);
+	return result;
 }
 
 static float tifGetRational(FILE *fp, long offset, virvo::serialization::EndianType endian)
@@ -2945,7 +2950,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
-    if (machineBigEndian != fileBigEndian) vd->toggleEndianness(vd->frames-1);
+    if (machineBigEndian != fileBigEndian) vd->toggleEndianness((int)vd->frames-1);
     if (planarConfiguration==2) vd->convertRGBPlanarToRGBInterleaved();
     if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
     {
@@ -2990,7 +2995,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
-    if (machineBigEndian != fileBigEndian) vd->toggleEndianness(vd->frames-1);
+    if (machineBigEndian != fileBigEndian) vd->toggleEndianness((int)vd->frames-1);
   }
   return OK;
 }
@@ -3084,7 +3089,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
                                                   // advance to next word boundary
     if ((ifdOffset % 4) != 0) ifdOffset += 4 - (ifdOffset % 4);
                                                   // IFD location: right after image data
-    virvo::serialization::write32(fp, ifdOffset, virvo::serialization::VV_BIG_END);
+    virvo::serialization::write32(fp, uint32_t(ifdOffset), virvo::serialization::VV_BIG_END);
 
     // Write 8,8,8 as SHORT for RGB:
     rgbOffset = static_cast<size_t>(ftell(fp));
@@ -3107,20 +3112,24 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     }
 
     // Write IFD:
+#ifdef WIN32
+	_fseeki64(fp, ifdOffset, SEEK_SET);
+#else
     fseek(fp, ifdOffset, SEEK_SET);
+#endif
     virvo::serialization::write16(fp, uint16_t((tmpVD->chan==1) ? 11 : 12), virvo::serialization::VV_BIG_END);
 
     // ImageWidth:
     virvo::serialization::write16(fp, 0x100, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, tmpVD->vox[0], ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[0]), ENDIAN_TYPE);
 
     // ImageLength:
     virvo::serialization::write16(fp, 0x101, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[1]), ENDIAN_TYPE);
 
     // BitsPerSample:
     virvo::serialization::write16(fp, 0x102, ENDIAN_TYPE);
@@ -3135,7 +3144,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     {
       virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
       virvo::serialization::write32(fp, 3, ENDIAN_TYPE);    // 3 numbers required
-      virvo::serialization::write32(fp, rgbOffset, ENDIAN_TYPE);
+      virvo::serialization::write32(fp, uint32_t(rgbOffset), ENDIAN_TYPE);
     }
 
     // Compression:
@@ -3163,7 +3172,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     virvo::serialization::write16(fp, 0x111, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, imgOffset, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(imgOffset), ENDIAN_TYPE);
 
     // SamplesPerPixel:
     if (tmpVD->chan>1)
@@ -3179,25 +3188,25 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     virvo::serialization::write16(fp, 0x116, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[1]), ENDIAN_TYPE);
 
     // StripByteCounts:
     virvo::serialization::write16(fp, 0x117, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->chan, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->chan), ENDIAN_TYPE);
 
     // XResolution:
     virvo::serialization::write16(fp, 0x11a, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, dpiOffset, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(dpiOffset), ENDIAN_TYPE);
 
     // YResolution:
     virvo::serialization::write16(fp, 0x11b, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, dpiOffset, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(dpiOffset), ENDIAN_TYPE);
 
     // ResolutionUnit:
     virvo::serialization::write16(fp, 0x128, ENDIAN_TYPE);
@@ -3560,7 +3569,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
         case 3:                                   // Check for square slices and slice edge length greater than volume depth:
           width = slices = 1;
           remainder = size;
-          while ((factor = vvToolshed::getLargestPrimeFactor(remainder)) > 1 && width < cubRoot)
+          while ((factor = vvToolshed::getLargestPrimeFactor(int(remainder))) > 1 && width < cubRoot)
           {
                                                   // is factor contained twice?
             if ((remainder % (factor*factor)) == 0)
@@ -3968,13 +3977,13 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   ++vd->frames;
 
   // convert to host byte order
-  if ((prop.littleEndian&&machineBigEndian) ||(!prop.littleEndian&&!machineBigEndian)) vd->toggleEndianness(vd->frames-1);
+  if ((prop.littleEndian&&machineBigEndian) ||(!prop.littleEndian&&!machineBigEndian)) vd->toggleEndianness(int(vd->frames-1));
 
   // Shift bits so that most significant used bit is leftmost:
-  vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), vd->frames-1);
+  vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), int(vd->frames-1));
 
   // Make unsigned data:
-  if (prop.isSigned) vd->toggleSign(vd->frames-1);
+  if (prop.isSigned) vd->toggleSign(int(vd->frames-1));
 
   delete dicomReader;
   return OK;
@@ -5357,7 +5366,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   if (vd->getFilename()==NULL || strlen(vd->getFilename()) == 0)
   {
-    vd->computeVolume(vd->frames, vd->vox[0], vd->vox[1], vd->vox[2]);
+    vd->computeVolume(int(vd->frames), vd->vox[0], vd->vox[1], vd->vox[2]);
     return OK;
   }
 
@@ -5397,7 +5406,11 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
     }
   }
 
-  std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+  std::locale loc;
+
+  for (auto elem : suffix)
+	  std::cout << std::tolower(elem, loc);
+  //std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
   suffix.erase(0, 1); // remove leading dot
 
   std::map<std::string, Format>::iterator format_found = formats.find(suffix);
