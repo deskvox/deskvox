@@ -42,8 +42,7 @@
 #include <algorithm>
 #include <vector>
 
-using virvo::vec2f;
-using virvo::vec3f;
+using namespace virvo;
 
 
 namespace
@@ -169,9 +168,6 @@ struct vvTFDialog::Impl
   vec2f zoomRange; ///< min/max for zoom area on data range
 
   bool logHistogram;
-
-  float minVoxel;
-  float maxVoxel;
 
   // texture data
   std::vector<uchar> colorTex;
@@ -569,27 +565,16 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
   createPins();
   if (vd != NULL)
   {
-    float fmin = vd->getBPV() == 4 ? vd->real[0][0] : 0.0f;
-    float fmax = vd->getBPV() == 4 ? vd->real[0][1] : vd->getValueRange();
-    fmin *= vd->getVoxelScale();
-    fmin += vd->getVoxelOffset();
-    fmax *= vd->getVoxelScale();
-    fmax += vd->getVoxelOffset();
+    impl_->ui->minLabel->setText(QString::number(vd->range(0).x));
+    impl_->ui->maxLabel->setText(QString::number(vd->range(0).y));
 
-    // Save these so we do not always have to iterate over the volume anew
-    impl_->minVoxel = fmin;
-    impl_->maxVoxel = fmax;
+    impl_->ui->zoomMinBox->setMinimum(vd->mapping().x);
+    impl_->ui->zoomMinBox->setMaximum(vd->mapping().y);
+    impl_->ui->zoomMinBox->setValue(vd->range(0).x);
 
-    impl_->ui->minLabel->setText(QString::number(fmin));
-    impl_->ui->maxLabel->setText(QString::number(fmax));
-
-    impl_->ui->zoomMinBox->setMinimum(fmin);
-    impl_->ui->zoomMinBox->setMaximum(fmax);
-    impl_->ui->zoomMinBox->setValue(fmin);
-
-    impl_->ui->zoomMaxBox->setMinimum(fmin);
-    impl_->ui->zoomMaxBox->setMaximum(fmax);
-    impl_->ui->zoomMaxBox->setValue(fmax);
+    impl_->ui->zoomMaxBox->setMinimum(vd->mapping().x);
+    impl_->ui->zoomMaxBox->setMaximum(vd->mapping().y);
+    impl_->ui->zoomMaxBox->setValue(vd->range(0).y);
 
     impl_->ui->discrSlider->setValue(vd->tf[0].getDiscreteColors());
   }
@@ -601,9 +586,7 @@ void vvTFDialog::onZoomMinChanged(double zm)
   assert(impl_->vd != NULL);
 
   // Convert to [0..1]
-  zm -= impl_->vd->getVoxelOffset();
-  zm /= impl_->vd->getVoxelScale();
-  zm /= impl_->vd->getValueRange();
+  // TODO...
   impl_->zoomRange[0] = zm;
   impl_->colorDirty = true;
   impl_->histDirty = true;
@@ -619,9 +602,7 @@ void vvTFDialog::onZoomMaxChanged(double zm)
   assert(impl_->vd != NULL);
 
   // Convert to [0..1]
-  zm -= impl_->vd->getVoxelOffset();
-  zm /= impl_->vd->getVoxelScale();
-  zm /= impl_->vd->getValueRange();
+  // TODO...
   impl_->zoomRange[1] = zm;
   impl_->colorDirty = true;
   impl_->histDirty = true;
@@ -798,10 +779,9 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
   std::vector<Pin*>& pins = QObject::sender() == impl_->colorscene ? impl_->colorpins : impl_->alphapins;
 
   float posX01 = pos.x() / (impl_->ui->color1DView->width() - 1);
-  float posXZoom = posX01 * (impl_->zoomRange[1] - impl_->zoomRange[0]) + impl_->zoomRange[0];
-  float posXValue = posXZoom * (impl_->maxVoxel - impl_->minVoxel) + impl_->minVoxel;
-  impl_->ui->mouseLabel->setText("Mouse: " + QString::number(posXZoom));
-  impl_->ui->valueLabel->setText("Value: " + QString::number(posXValue));
+  float posXZoom = lerp(impl_->zoomRange.x, impl_->zoomRange.y, posX01);
+  // Value under cursor
+  impl_->ui->valueLabel->setText("Value: " + QString::number(posXZoom));
 
   if (impl_->getMovingPin() != NULL)
   {

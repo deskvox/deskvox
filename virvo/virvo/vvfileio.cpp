@@ -211,18 +211,18 @@ vvFileIO::vvFileIO()
 //----------------------------------------------------------------------------
 void vvFileIO::setDefaultValues(vvVolDesc* vd)
 {
-  vd->vox[0]  = 0;
-  vd->vox[1]  = 0;
-  vd->vox[2]  = 0;
-  vd->frames  = 0;
-  vd->bpc     = 1;
-  vd->chan    = 1;
-  vd->dist[0] = 1.0f;
-  vd->dist[1] = 1.0f;
-  vd->dist[2] = 1.0f;
-  vd->dt      = 1.0f;
-  vd->real.clear();
-  vd->real.push_back(vec2(0.0f, 1.0f));
+  vd->vox[0]    = 0;
+  vd->vox[1]    = 0;
+  vd->vox[2]    = 0;
+  vd->frames    = 0;
+  vd->bpc       = 1;
+  vd->chan      = 1;
+  vd->dist[0]   = 1.0f;
+  vd->dist[1]   = 1.0f;
+  vd->dist[2]   = 1.0f;
+  vd->dt        = 1.0f;
+  vd->mapping() = vec2(0.0f, 1.0f);
+  vd->range()   = vec2(0.0f, 1.0f);
 }
 
 //----------------------------------------------------------------------------
@@ -653,7 +653,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     fclose(fp);
     return FILE_ERROR;
   }
-  vd->deserializeAttributes(serialized, serializedSize);
+  vd->deserializeAttributesOLD(serialized, serializedSize);
 
   // Allow either bit or byte per voxel in vd->bpv:
   if (vd->bpc==8 || vd->bpc==16 || vd->bpc==24 || vd->bpc==32) vd->bpc /= 8;
@@ -923,7 +923,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
 
   // Write header:
   fprintf(fp, "XVF\n");
-  fprintf(fp, "VERSION %2.1f\n", 3.0f);
+  fprintf(fp, "VERSION %2.1f\n", 4.0f);
   fprintf(fp, "VOXELS %d %d %d\n", static_cast<int32_t>(vd->vox[0]), static_cast<int32_t>(vd->vox[1]), static_cast<int32_t>(vd->vox[2]));
   fprintf(fp, "TIMESTEPS %d\n", static_cast<int32_t>(vd->frames));
   fprintf(fp, "BPC %d\n", static_cast<int32_t>(vd->bpc));
@@ -931,12 +931,13 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "DIST %g %g %g\n", vd->dist[0], vd->dist[1], vd->dist[2]);
   fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
   fprintf(fp, "DTIME %g\n", vd->dt);
-  fprintf(fp, "MINMAX %g %g\n", vd->real[0][0], vd->real[0][1]);
+  fprintf(fp, "MINMAX %g %g\n", vd->mapping()[0], vd->mapping()[1]);
+  fprintf(fp, "RANGE %g %g\n", vd->range()[0], vd->range()[1]);
   fprintf(fp, "POS %g %g %g\n", vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Write channel names:
   fprintf(fp, "CHANNELNAMES");
-  for (size_t i=0; i<vd->chan; ++i)
+  for (int i=0; i<vd->chan; ++i)
   {
     if (vd->getChannelName(i).empty()) fprintf(fp, " UNNAMED");
     else fprintf(fp, " %s", vd->getChannelName(i).c_str());
@@ -1058,7 +1059,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   bool done;
   size_t encodedSize;                             // size of encoded data array
   bool bigEnd = true;
-  float xvfVersion = 3.0;
+  float xvfVersion = 4.0;
   bool io32bit = false;
 
   vvDebugMsg::msg(1, "vvFileIO::loadXVFFile()");
@@ -1115,7 +1116,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         cerr << "Reading XVF file version " << tok.nval << endl;
         xvfVersion = tok.nval;
         assert(xvfVersion >= 2.0);
-        assert(xvfVersion <= 3.0);
+        assert(xvfVersion <= 4.0);
         if (xvfVersion == 2.0) {
           io32bit = true;
         }
@@ -1146,7 +1147,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
         vd->chan = static_cast<size_t>(tok.nval);
-        vd->real.resize(vd->chan);
       }
       else if (strcmp(tok.sval, "DIST")==0)
       {
@@ -1177,8 +1177,17 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          for (size_t c = 0; c < vd->real.size(); ++c)
-            vd->real[c][i] = tok.nval;
+          vd->mapping()[i] = tok.nval;
+        }
+      }
+      else if (strcmp(tok.sval, "RANGE")==0)
+      {
+        for (size_t i=0; i<2; ++i)
+        {
+          ttype = tok.nextToken();
+          assert(ttype == vvTokenizer::VV_NUMBER);
+          for (int c = 0; c < vd->chan; ++c)
+            vd->range(c)[i] = tok.nval;
         }
       }
       else if (strcmp(tok.sval, "POS")==0)
@@ -1195,7 +1204,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         if (vd->chan<1) tok.nextLine();
         else
         {
-          for (size_t i=0; i<vd->chan; ++i)
+          for (int i=0; i<vd->chan; ++i)
           {
             ttype = tok.nextToken();
             assert(ttype == vvTokenizer::VV_WORD);
@@ -1715,8 +1724,21 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
   fprintf(fp, "HEIGHT %d\n", static_cast<int32_t>(vd->vox[1]));
   fprintf(fp, "SLICES %d\n", static_cast<int32_t>(vd->vox[2]));
   fprintf(fp, "FRAMES %d\n", static_cast<int32_t>(vd->frames));
-  fprintf(fp, "MIN %g\n", vd->real[0][0]);
-  fprintf(fp, "MAX %g\n", vd->real[0][1]);
+  if (vd->bpc == 1 || vd->bpc == 2)
+  {
+    fprintf(fp, "MIN %g\n", vd->mapping()[0]);
+    fprintf(fp, "MAX %g\n", vd->mapping()[1]);
+  }
+  else if (vd->bpc == 4)
+  {
+    fprintf(fp, "MIN %g\n", vd->range(0)[0]);
+    fprintf(fp, "MAX %g\n", vd->range(0)[1]);
+  }
+  else
+  {
+    vvDebugMsg::msg(1, "Error: cannot save avf file, invalid bpc.");
+    return DATA_ERROR;
+  }
   fprintf(fp, "XDIST %g\n", vd->dist[0]);
   fprintf(fp, "YDIST %g\n", vd->dist[1]);
   fprintf(fp, "ZDIST %g\n", vd->dist[2]);
@@ -1739,7 +1761,7 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
       {
         for (ssize_t x=0; x<vd->vox[0]; ++x)
         {
-          for (size_t c=0; c<vd->chan; ++c)
+          for (int c=0; c<vd->chan; ++c)
           {
             switch(vd->bpc)
             {
@@ -1851,6 +1873,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   uint8_t* raw;                                   // raw volume data
   int ival=0;                                     // integer data value
   size_t frameSize;                               // size of a frame in bytes
+  float min;                                      // either mapping.min or range.min
+  float max;                                      // either mapping.max or range.max
   bool done;
   bool error;
   bool oldformat = false;
@@ -1963,8 +1987,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         case  1: vd->vox[1]     = int(tokenizer.nval); break;
         case  2: vd->vox[2]     = int(tokenizer.nval); break;
         case  3: vd->frames     = int(tokenizer.nval); break;
-        case  4: vd->real[0][0] = tokenizer.nval; break;
-        case  5: vd->real[0][1] = tokenizer.nval; break;
+        case  4: min            = tokenizer.nval; break;
+        case  5: max            = tokenizer.nval; break;
         case  6: vd->dist[0]    = tokenizer.nval; break;
         case  7: vd->dist[1]    = tokenizer.nval; break;
         case  8: vd->dist[2]    = tokenizer.nval; break;
@@ -1983,6 +2007,13 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     }
     else error = done = true;
   }
+  if (vd->bpc == 1 || vd->bpc == 2)
+  {
+    vd->mapping()[0] = min;
+    vd->mapping()[1] = max;
+  }
+  vd->range(0)[0] = min;
+  vd->range(0)[1] = max;
   if (error)
   {
     cerr << "Read error in line " << tokenizer.getLineNumber() << " of file " <<
@@ -1992,7 +2023,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 
   // Check for consistence:
   if (vd->vox[0]<=0 || vd->vox[1]<=0 || vd->vox[2]<=0 ||
-    vd->frames<=0 || vd->real[0][0]>=vd->real[0][1])
+    vd->frames<=0 || vd->mapping()[0]>vd->mapping()[1] || vd->range(0)[0]>vd->range(0)[1])
   {
     vvDebugMsg::msg(1, "Error: Invalid file information in header");
     return DATA_ERROR;
@@ -2012,7 +2043,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         {
           for (ssize_t x=0; x<vd->vox[0]; ++x)
           {
-            for (size_t c=0; c<vd->chan; ++c)
+            for (int c=0; c<vd->chan; ++c)
             {
               ttype = tokenizer.nextToken();
               if (ttype != vvTokenizer::VV_NUMBER)
@@ -2250,8 +2281,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     timesteps.removeAll();
     return DATA_ERROR;
   }
-  vd->real[0][0] = globalMin;
-  vd->real[0][1] = globalMax;
+  vd->range()[0] = globalMin;
+  vd->range()[1] = globalMax;
 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
@@ -2475,8 +2506,8 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   cerr << numTimesteps << " time steps read" << endl;
   cerr << "Global: scalar min,max: " << globalMin << "," << globalMax << endl;
 
-  vd->real[0][0] = globalMin;
-  vd->real[0][1] = globalMax;
+  vd->range(0)[0] = globalMin;
+  vd->range(0)[1] = globalMax;
 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
@@ -3968,10 +3999,11 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     default: assert(0); break;
   }
   vd->real.resize(vd->chan);
+  vd->mapping() = vec2(0.0f, 1.0f);
   for (size_t c = 0; c < vd->real.size(); ++c)
   {
-    vd->real[c][0] = 0.f;
-    vd->real[c][1] = 1.f;
+    vd->range(c)[0] = 0.f;
+    vd->range(c)[1] = 1.f;
   }
   vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE,prop.image);
   ++vd->frames;
@@ -4571,40 +4603,40 @@ vvFileIO::ErrorType vvFileIO::loadVis04File(vvVolDesc* vd)
   if (!machineBigEndian) vd->toggleEndianness();                         // file is big endian
 
   // Set real min and max:
-  vd->real[0][0] = 0.0f;
-  if (vvToolshed::strCompare(vd->getFilename(), "QCLOUD", 6) == 0)      vd->real[0][1] = 0.00332f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QGRAUP", 6) == 0) vd->real[0][1] = 0.01638f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QICE", 4) == 0)   vd->real[0][1] = 0.00099f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[0][1] = 0.01132f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QSNOW", 5) == 0)  vd->real[0][1] = 0.00135f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->real[0][1] = 0.01132f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "QVAPOR", 6) == 0) vd->real[0][1] = 0.02368f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "CLOUD", 5) == 0)  vd->real[0][1] = 0.00332f;
-  else if (vvToolshed::strCompare(vd->getFilename(), "PRECIP", 6) == 0) vd->real[0][1] = 0.01672f;
+  vd->range(0)[0] = 0.0f;
+  if (vvToolshed::strCompare(vd->getFilename(), "QCLOUD", 6) == 0)      vd->range(0)[1] = 0.00332f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QGRAUP", 6) == 0) vd->range(0)[1] = 0.01638f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QICE", 4) == 0)   vd->range(0)[1] = 0.00099f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->range(0)[1] = 0.01132f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QSNOW", 5) == 0)  vd->range(0)[1] = 0.00135f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QRAIN", 5) == 0)  vd->range(0)[1] = 0.01132f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "QVAPOR", 6) == 0) vd->range(0)[1] = 0.02368f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "CLOUD", 5) == 0)  vd->range(0)[1] = 0.00332f;
+  else if (vvToolshed::strCompare(vd->getFilename(), "PRECIP", 6) == 0) vd->range(0)[1] = 0.01672f;
   else if (vvToolshed::strCompare(vd->getFilename(), "Pf", 2) == 0)
   {
-    vd->real[0][0] = -5471.85791f;
-    vd->real[0][1] =  3225.42578f;
+    vd->range(0)[0] = -5471.85791f;
+    vd->range(0)[1] =  3225.42578f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "TCf", 3) == 0)
   {
-    vd->real[0][0] = -83.00402f;
-    vd->real[0][1] =  31.51576f;
+    vd->range(0)[0] = -83.00402f;
+    vd->range(0)[1] =  31.51576f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Uf", 2) == 0)
   {
-    vd->real[0][0] = -79.47297f;
-    vd->real[0][1] =  85.17703f;
+    vd->range(0)[0] = -79.47297f;
+    vd->range(0)[1] =  85.17703f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Vf", 2) == 0)
   {
-    vd->real[0][0] = -76.03391f;
-    vd->real[0][1] =  82.95293f;
+    vd->range(0)[0] = -76.03391f;
+    vd->range(0)[1] =  82.95293f;
   }
   else if (vvToolshed::strCompare(vd->getFilename(), "Wf", 2) == 0)
   {
-    vd->real[0][0] = -9.06026f;
-    vd->real[0][1] = 28.61434f;
+    vd->range(0)[0] = -9.06026f;
+    vd->range(0)[1] = 28.61434f;
   }
 
   return OK;
@@ -4625,6 +4657,8 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   bool rightHanded = true;
   bool error = false;
   char* filenameBak = NULL;
+  float minVal = 0.0f;
+  float maxVal = 0.0f;
 
   vvDebugMsg::msg(1, "vvFileIO::loadHDRFile()");
 
@@ -4718,14 +4752,14 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
     else if (vvToolshed::strCompare(tokenizer.sval, "MINVAL:")==0)
     {
       ttype = tokenizer.nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0][0] = tokenizer.nval;
-      cerr << "hdr file: MinVal=" << vd->real[0][0] << endl;
+      if (ttype == vvTokenizer::VV_NUMBER) minVal = tokenizer.nval;
+      cerr << "hdr file: MinVal=" << minVal << endl;
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "MAXVAL:")==0)
     {
       ttype = tokenizer.nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0][1] = tokenizer.nval;
-      cerr << "hdr file: MaxVal=" << vd->real[0][1] << endl;
+      if (ttype == vvTokenizer::VV_NUMBER) maxVal = tokenizer.nval;
+      cerr << "hdr file: MaxVal=" << maxVal << endl;
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "BYTEORDER:")==0)
     {
@@ -4763,6 +4797,17 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   {
     cerr << "Read error in line " << tokenizer.getLineNumber() << " of MeshViewer file." << endl;
     vd->setFilename(filenameBak);
+    delete[] filenameBak;
+    return DATA_ERROR;
+  }
+
+  if (vd->bpc == 1 || vd->bpc == 2)
+    vd->mapping() = vec2(minVal, maxVal);
+  else if (vd->bpc == 4)
+    vd->range(0) = vec2(minVal, maxVal);
+  else
+  {
+    cerr << "Read error (bpc is << " << vd->bpc << ")\n";
     delete[] filenameBak;
     return DATA_ERROR;
   }

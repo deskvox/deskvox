@@ -116,7 +116,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd) const
       return retval;
     }
     vvDebugMsg::msg(3, "Header received");
-    vd->deserializeAttributes(&buffer[0]);
+    vd->deserializeAttributesOLD(&buffer[0]);
     vd->_scale = virvo::serialization::readFloat(&buffer[size]);
 
     return vvSocket::VV_OK;

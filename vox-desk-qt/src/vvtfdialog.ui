@@ -256,7 +256,7 @@
       <rect>
        <x>160</x>
        <y>270</y>
-       <width>161</width>
+       <width>191</width>
        <height>20</height>
       </rect>
      </property>
@@ -484,13 +484,6 @@
         </widget>
        </item>
       </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="mouseLabel">
-      <property name="text">
-       <string>Mouse:</string>
-      </property>
      </widget>
     </item>
     <item>

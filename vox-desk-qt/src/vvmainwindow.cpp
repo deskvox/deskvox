@@ -387,15 +387,15 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
   case vvFileIO::OK:
   {
     vvDebugMsg::msg(2, "Loaded file: ", ba.data());
+    if (vd->range(0)[0] == 0.0f && vd->range(0)[1] == 1.0f)
+    {
+      vd->findAndSetRange();
+    }
     // use default TF if none stored
     if (vd->tf[0].isEmpty())
     {
-      vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
-    }
-    if (vd->bpc == 4 && vd->real[0][0] == 0.0f && vd->real[0][1] == 1.0f)
-    {
-      vd->setDefaultRealMinMax();
+      vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
     }
     impl_->canvas->setVolDesc(vd);
     impl_->dimensionDialog->setInitialDist(vd->dist);
@@ -436,15 +436,15 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
   {
   case vvFileIO::OK:
     vvDebugMsg::msg(2, "Loaded slice sequence: ", vd->getFilename());
+    if (vd->range(0)[0] == 0.0f && vd->range(0)[1] == 1.0f)
+    {
+      vd->findAndSetRange();
+    }
     // use default TF if non stored
     if (vd->tf[0].isEmpty())
     {
-      vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
-    }
-    if (vd->bpc == 4 && vd->real[0][0] == 0.0f && vd->real[0][1] == 1.0f)
-    {
-      vd->setDefaultRealMinMax();
+      vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
+      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
     }
     impl_->canvas->setVolDesc(vd);
     break;

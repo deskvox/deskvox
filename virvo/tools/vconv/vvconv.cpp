@@ -217,7 +217,7 @@ bool vvConv::readVolumeData()
       gain = new int[vd->chan];
       offset = new int[vd->chan];
 
-      for (size_t i = 0; i < vd->chan; i++)
+      for (int i = 0; i < vd->chan; i++)
       {
         laser[i] = 0;
         intensity[i] = 0;
@@ -736,11 +736,9 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (autoRealRange)
   {
-    float scalarMin, scalarMax;
     cerr << "Automatically setting physical data value range." << endl;
-    v->findMinMax(0, scalarMin, scalarMax);
-    v->real[0][0] = scalarMin;
-    v->real[0][1] = scalarMax;
+    for (int c = 0; c < v->chan; ++c)
+      v->findMinMax(c, v->range(c)[0], v->range(c)[1]);
   }
   if (invertVoxelOrder)
   {
@@ -832,8 +830,8 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (setRange)
   {
     cerr << "Setting physical data value range." << endl;
-    v->real[0][0] = newRange[0];
-    v->real[0][1] = newRange[1];
+    v->range(0)[0] = newRange[0];
+    v->range(0)[1] = newRange[1];
   }
   if (zoomData)
   {
@@ -2482,7 +2480,7 @@ int vvConv::run(int argc, char** argv)
     else if (histType==0)   // ASCII on screen
     {
       cerr << endl;
-      for (size_t m=0; m<tmpVD->chan; ++m)
+      for (int m=0; m<tmpVD->chan; ++m)
       {
         if (tmpVD->chan>1) cerr << "Channel " << m << ":" << endl;
         tmpVD->printHistogram(0, m);
@@ -2494,7 +2492,7 @@ int vvConv::run(int argc, char** argv)
       char* basePath = new char[strlen(srcFile) + 1];
       vvToolshed::extractBasePath(basePath, srcFile);
       char* imgFileName = new char[strlen(srcFile) + 15];
-      for (size_t m=0; m<tmpVD->chan; ++m)
+      for (int m=0; m<tmpVD->chan; ++m)
       {
         if (tmpVD->chan>1)
         {
@@ -2513,7 +2511,7 @@ int vvConv::run(int argc, char** argv)
         uint8_t* imgData = new uint8_t[imgVD->vox[0] * imgVD->vox[1] * 3];
         size_t size[2] = { static_cast<size_t>(imgVD->vox[0]), static_cast<size_t>(imgVD->vox[1]) };
         vvColor col(1.0f, 1.0f, 1.0f);
-        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0][0], tmpVD->real[0][1]);
+        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->range(m)[0], tmpVD->range(m)[1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
         imgVD->frames = 1;
         imgVD->flip(virvo::cartesian_axis< 3 >::Y);

@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <limits.h>
 #include <math.h>
+#include <cfloat>
 #include <cstring>
 
 #include "vvopengl.h"
@@ -538,7 +539,10 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   virvo::vector< 3, ssize_t > offsets(offsetX, offsetY, offsetZ);
   offsets += _paddingRegion.min;
 
-  bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
+  bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==static_cast<int>(texelsize);
+  for (int c=0; c<vd->chan; ++c)
+    useRaw &= fabs(vd->mapping()[0]-vd->range(c)[0]) <= FLT_EPSILON && fabs(vd->mapping()[1]-vd->range(c)[1]) <= FLT_EPSILON;
+
   if (sizeX != vd->vox[0])
     useRaw = false;
   if (sizeY != vd->vox[1])
@@ -589,17 +593,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
               for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
                 srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
-                if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
-                else if (vd->bpc == 2)
-                {
-                  rawVal[0] = *(uint16_t*)(raw+srcIndex);
-                  rawVal[0] >>= 8;
-                }
-                else // vd->bpc==4: convert floating point to 8bit value
-                {
-                  const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                  rawVal[0] = vd->mapFloat2Int(fval);
-                }
+                // resample voxel to 8-bit
+                rawVal[0] = vd->resampleVoxel(raw + srcIndex);
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
                 switch(voxelType)
                 {
@@ -626,25 +621,15 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
               for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-                for (size_t c = 0; c < std::min(vd->chan, size_t(4)); c++)
+                for (int c = 0; c < std::min(vd->chan, 4); c++)
                 {
                   srcIndex = vd->bpc * (min(x,vd->vox[0]-1)*vd->chan+c) + rawSliceOffset + heightOffset;
-                  if (vd->bpc == 1)
-                    rawVal[c] = (int) raw[srcIndex];
-                  else if (vd->bpc == 2)
-                  {
-                    rawVal[c] = *((uint16_t *)(raw + srcIndex));
-                    rawVal[c] >>= 8;
-                  }
-                  else  // vd->bpc == 4
-                  {
-                    const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                    rawVal[c] = vd->mapFloat2Int(fval);
-                  }
+                  // resample voxel to 8-bit
+                  rawVal[c] = vd->resampleVoxel(raw + srcIndex);
                 }
 
                 // Copy color components:
-                for (size_t c = 0; c < std::min(vd->chan, size_t(3)); c++)
+                for (int c = 0; c < std::min(vd->chan, 3); c++)
                 {
                   texData[4 * texOffset + c] = (uint8_t) rawVal[c];
                 }
@@ -658,7 +643,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
               else
               {
                 size_t alpha = 0;
-                for (size_t c = 0; c < vd->chan; c++)
+                for (int c = 0; c < vd->chan; c++)
                 {
                   // Alpha: mean of sum of RGB conversion table results:
                   alpha += (size_t) rgbaLUT[0][size_t(rawVal[c]) * 4 + c];
@@ -2005,7 +1990,7 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
         for (size_t x = 0; x < width; x++)
       {
         index = (y * width + x) * vd->chan;
-        for (size_t c = 0; c < vd->chan; c++)
+        for (int c = 0; c < vd->chan; c++)
         {
           result[index + c] = data[index + c];
           std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;

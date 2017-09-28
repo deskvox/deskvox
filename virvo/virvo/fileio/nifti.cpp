@@ -25,6 +25,10 @@
 #if VV_HAVE_NIFTI
 
 #include <cassert>
+#include <cfloat>
+#include <climits>
+#include <iostream>
+#include <ostream>
 
 #include <nifti1_io.h>
 
@@ -37,6 +41,8 @@ namespace virvo { namespace nifti {
 
 void load(vvVolDesc* vd)
 {
+    bool verbose = true;
+
     // read nifti header ----------------------------------
 
     nifti_image* header = nifti_image_read(vd->getFilename(), 0);
@@ -61,49 +67,68 @@ void load(vvVolDesc* vd)
 
     vd->frames = 1;
 
-    bool is_signed_int = false;
-
     // bytes per pixel and num channels
 
+    vd->chan = 1; // default
+
+    // Determine chan and bpc, set default mapping
     switch (header->datatype)
     {
     case NIFTI_TYPE_RGB24:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_RGB24\n";
         vd->chan = 3;
         vd->bpc = header->nbyper / 3;
         break;
     case NIFTI_TYPE_RGBA32:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_RGB32\n";
         vd->chan = 4;
         vd->bpc = header->nbyper / 4;
         break;
     case NIFTI_TYPE_INT8:
-    case NIFTI_TYPE_INT16:
-    case NIFTI_TYPE_INT32:
-        is_signed_int = true;
-        // fall through
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT8\n";
+        assert(header->nbyper == 1);
+        vd->bpc = 1;
+        vd->mapping() = vec2(CHAR_MIN, CHAR_MAX);
+        break;
     case NIFTI_TYPE_UINT8:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT8\n";
+        assert(header->nbyper == 1);
+        vd->bpc = 1;
+        vd->mapping() = vec2(0, UCHAR_MAX);
+        break;
+    case NIFTI_TYPE_INT16:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT16\n";
+        assert(header->nbyper == 2);
+        vd->bpc = 2;
+        vd->mapping() = vec2(SHRT_MIN, SHRT_MAX);
+        break;
     case NIFTI_TYPE_UINT16:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT16\n";
+        assert(header->nbyper == 2);
+        vd->bpc = 2;
+        vd->mapping() = vec2(0, USHRT_MAX);
+        break;
+    case NIFTI_TYPE_INT32:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT32\n";
+        assert(header->nbyper == 4);
+        vd->bpc = 4;
+        vd->mapping() = vec2(INT_MIN, INT_MAX);
+        break;
     case NIFTI_TYPE_UINT32:
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT32\n";
+        assert(header->nbyper == 4);
+        vd->bpc = 4;
+        vd->mapping() = vec2(0, UINT_MAX);
+        break;
     case NIFTI_TYPE_FLOAT32:
-        // all: fall through
+        if (verbose) std::cout << "Datatype: NIFTI_TYPE_FLOAT32\n";
+        vd->mapping() = vec2(-FLT_MAX, FLT_MAX);
+        vd->bpc = 4;
+        break;
     default:
-        vd->chan = 1;
+        if (verbose) std::cout << "Datatype: UNKNOWN\n";
         vd->bpc = header->nbyper;
         break;
-    }
-
-    // voxel properties
-
-    vd->setSignedInt(is_signed_int);
-    vd->setVoxelScale(header->scl_slope);
-    vd->setVoxelOffset(header->scl_inter);
-
-
-    // data range
-
-    for (size_t c = 0; c < vd->chan; ++c)
-    {
-        vd->real[c][0] = header->cal_min;
-        vd->real[c][1] = header->cal_max;
     }
 
 
@@ -122,20 +147,83 @@ void load(vvVolDesc* vd)
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
 
 
-    // find min/max if cal_{min|max} zero
+    float slope = header->scl_slope;
+    float inter = header->scl_inter;
 
-    for (size_t c = 0; c < vd->chan; ++c)
+    if (verbose)
     {
-        if (vd->real[c][0] == 0.f && vd->real[c][1] == 0.f)
+        std::cout << "Intercept: " << inter << ", slope: " << slope << '\n';
+    }
+
+
+    // adapt data formats
+
+    if (header->datatype == NIFTI_TYPE_INT16)
+    {
+        vd->mapping() = vec2(SHRT_MIN * slope + inter, SHRT_MAX * slope + inter);
+
+        // Remap data
+        for (ssize_t z = 0; z < vd->vox[2]; ++z)
         {
-            if (vd->bpc == 1 || vd->bpc == 2)
-                vd->real[c][1] = 1.f;
-            else if (vd->bpc == 4) // floating point: search for min/max in data
-                vd->findMinMax(c, vd->real[c][0], vd->real[c][1]);
-            else
-                assert(0);
+            for (ssize_t y = 0; y < vd->vox[1]; ++y)
+            {
+                for (ssize_t x = 0; x < vd->vox[0]; ++x)
+                {
+                    uint8_t* bytes = (*vd)(x, y, z);
+                    int32_t voxel = (int)*reinterpret_cast<int16_t*>(bytes);
+                    voxel -= SHRT_MIN;
+                    *reinterpret_cast<uint16_t*>(bytes) = voxel;
+                }
+            }
         }
     }
+    else if (header->datatype == NIFTI_TYPE_INT32)
+    {
+        vd->mapping() = vec2(INT_MIN * slope + inter, INT_MAX * slope + inter);
+
+        // Remap data to float
+        for (ssize_t z = 0; z < vd->vox[2]; ++z)
+        {
+            for (ssize_t y = 0; y < vd->vox[1]; ++y)
+            {
+                for (ssize_t x = 0; x < vd->vox[0]; ++x)
+                {
+                    uint8_t* bytes = (*vd)(x, y, z);
+                    int32_t i = *reinterpret_cast<int32_t*>(bytes);
+                    float f = static_cast<float>(i);
+                    *reinterpret_cast<float*>(bytes) = f;
+                }
+            }
+        }
+    }
+    else if (header->datatype == NIFTI_TYPE_UINT32)
+    {
+        vd->mapping() = vec2(inter, UINT_MAX * slope + inter);
+
+        // Remap data to float
+        for (ssize_t z = 0; z < vd->vox[2]; ++z)
+        {
+            for (ssize_t y = 0; y < vd->vox[1]; ++y)
+            {
+                for (ssize_t x = 0; x < vd->vox[0]; ++x)
+                {
+                    uint8_t* bytes = (*vd)(x, y, z);
+                    unsigned u = *reinterpret_cast<unsigned*>(bytes);
+                    float f = static_cast<float>(u);
+                    *reinterpret_cast<float*>(bytes) = f;
+                }
+            }
+        }
+    }
+    else
+    {
+        vd->mapping() *= slope;
+        vd->mapping() += inter;
+    }
+
+
+    for (int c = 0; c < vd->chan; ++c)
+        vd->findMinMax(c, vd->range(c)[0], vd->range(c)[1]);
 }
 
 void save(const vvVolDesc* vd)

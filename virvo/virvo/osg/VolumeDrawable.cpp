@@ -452,7 +452,7 @@ void VolumeDrawable::setTransferFunction(const vvTransFunc &tf, int chan)
 {
     if (vd)
     {
-        if (vd->tf.size() <= chan)
+        if (static_cast<int>(vd->tf.size()) <= chan)
             vd->tf.resize(chan + 1);
         vd->tf[chan] = tf;
     }
@@ -473,7 +473,7 @@ void VolumeDrawable::mapTransferFunctionFrom01(int chan)
              ++it)
         {
             vvTFWidget *w = *it;
-            w->mapFrom01(vd->real[chan][0], vd->real[chan][1]);
+            w->mapFrom01(vd->range(chan)[0], vd->range(chan)[1]);
         }
     }
 }
@@ -491,7 +491,7 @@ void VolumeDrawable::mapTransferFunctionsFrom01()
                  ++it)
             {
                 vvTFWidget *w = *it;
-                w->mapFrom01(vd->real[chan][0], vd->real[chan][1]);
+                w->mapFrom01(vd->range(chan)[0], vd->range(chan)[1]);
             }
         }
     }

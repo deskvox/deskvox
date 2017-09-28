@@ -1286,9 +1286,9 @@ void vvRayCaster::renderVolumeGL()
     thrust::device_vector<vec2> device_ranges;
     auto ranges_data = [&]()
     {
-        for (size_t i = 0; i < vd->real.size(); ++i)
+        for (int c = 0; c < vd->chan; ++c)
         {
-            device_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+            device_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
         }
 
         return thrust::raw_pointer_cast(device_ranges.data());
@@ -1309,7 +1309,7 @@ void vvRayCaster::renderVolumeGL()
     auto volumes_data = [&]()
     {
         host_volumes.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->chan; ++c)
         {
             if (vd->bpc == 1)
             {
@@ -1340,9 +1340,9 @@ void vvRayCaster::renderVolumeGL()
     aligned_vector<vec2> host_ranges;
     auto ranges_data = [&]()
     {
-        for (size_t i = 0; i < vd->real.size(); ++i)
+        for (int c = 0; c < vd->chan; ++c)
         {
-            host_ranges.push_back(vec2(vd->real[i].x, vd->real[i].y));
+            host_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
         }
 
         return host_ranges.data();

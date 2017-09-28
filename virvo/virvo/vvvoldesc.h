@@ -51,6 +51,8 @@
 
 class VIRVO_FILEIOEXPORT vvVolDesc
 {
+    typedef virvo::vec2 vec2;
+
   public:
     struct line
     {
@@ -130,15 +132,17 @@ class VIRVO_FILEIOEXPORT vvVolDesc
                                                   ///< <LI>1 = 1 unsigned char</LI>
                                                   ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
                                                   ///< <LI>4 = float</LI>
-    bool signedInt;                               ///< true=integer data is signed (default = false)
-    float voxelScale;                             ///< scaling factor for all voxels, allows to transfer voxels to wider range (default = 1.f)
-    float voxelOffset;                            ///< offset for all voxels (default = 0.f)
-    size_t chan;                                  ///< number of channels (default = 1), each channel contains bpc bytes
+    int chan;                                     ///< number of channels (default = 1), each channel contains bpc bytes
     virvo::vec3f dist;                            ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
-    std::vector<virvo::vec2> real;                ///< 1/2 bpc: physical equivalent of min/max scalar value
-                                                  ///< 4 bpc:   min and max values for mapping to transfer function space
-                                                  ///<     if more than 1: each channel has its own
+private:
+    vec2 mapping_;                                ///< Mapping from internal data representation to floating point. Defaults: bpc=1|2: [0..1], bpc=4[-FLT_MAX..FLT_MAX]
+    std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set
+public:
+    vec2& mapping() { return mapping_; }
+    const vec2& mapping() const { return mapping_; }
+    vec2& range(int chan = -1) { return range_[chan]; }
+    const vec2& range(int chan = -1) const { return range_[chan]; }
     std::vector<float> channelWeights;            ///< scalar weight for each channel, default: 1.0f
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]
@@ -165,7 +169,10 @@ class VIRVO_FILEIOEXPORT vvVolDesc
       a & bpc;
       a & dist;
       a & dt;
-      a & real;
+      a & mapping_[0];
+      a & mapping_[1];
+      a & range_[0];
+      a & range_[1];
       a & pos;
       a & chan;
       a & _scale;
@@ -182,13 +189,16 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     template<class A>
     void load(A& a, unsigned /*version*/)
     {
-      // Header (from vvVolDesc::deserializeAttributes)
+      // Header (from vvVolDesc::deserializeAttributesOLD)
       a & vox;
       a & frames;
       a & bpc;
       a & dist;
       a & dt;
-      a & real;
+      a & mapping_[0];
+      a & mapping_[1];
+      a & range_[0];
+      a & range_[1];
       a & pos;
       a & chan;
       a & _scale;
@@ -242,24 +252,16 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   setIndexChannel(int ic);
     int    getIndexChannel() const;
     size_t getBPV() const;
-    void   setSignedInt(bool si);
-    bool   getSignedInt() const;
-    void   setVoxelScale(float vs);
-    float  getVoxelScale() const;
-    void   setVoxelOffset(float vo);
-    float  getVoxelOffset() const;
     void   setDist(float, float, float);
     void   setDist(virvo::vec3f const& d);
-    void   setRealRange(virvo::vec2 range);
-    void   setRealRange(size_t channel, virvo::vec2 range);
     virvo::vec3f getSize() const;
     size_t getStoredFrames() const;
-    float  getValueRange(size_t channel = 0) const;
+    float  getValueRange(int channel = 0) const;
 
     // Conversion routines:
     void   convertBPC(size_t, bool=false);
-    void   convertChannels(size_t, int frame=-1, bool=false);
-    void   deleteChannel(size_t, bool=false);
+    void   convertChannels(int newChan, int frame=-1, bool verbose=false);
+    void   deleteChannel(int channel, bool verbose=false);
     void   bitShiftData(int, int frame=-1, bool=false);
     void   invert();
     void   convertRGB24toRGB8();
@@ -293,9 +295,9 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   addFrame(uint8_t*, DeleteType, int fd=-1);
     void   copyFrame(uint8_t*);
     void   removeSequence();
-    void   makeHistogram(int, size_t, size_t, unsigned int*, int*, float, float) const;
+    void   makeHistogram(int frame, int chan1, int numChan, unsigned int*, int*, float, float) const;
     void   normalizeHistogram(int, int*, float*, NormalizationType);
-    void   makeHistogramTexture(int frame, size_t, size_t, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
+    void   makeHistogramTexture(int frame, int chan1, int numChan, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);
     bool   isChannelUsed(size_t);
     void   makeIcon(size_t, const uint8_t*);
@@ -306,48 +308,49 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     void   printVolumeInfo();
     void   printStatistics();
     void   printVoxelData(int frame, ssize_t slice, ssize_t width=0, ssize_t height=0);
-    void   printHistogram(int frame, size_t channel);
+    void   printHistogram(int frame, int channel);
     void   trilinearInterpolation(size_t f, float, float, float, uint8_t*);
-    void   drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, size_t chan, uint8_t* val);
-    void   drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, size_t chan, uint8_t* val);
+    void   drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, int chan, uint8_t* val);
+    void   drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, int chan, uint8_t* val);
     void   drawLine(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, uint8_t*);
     void   drawBoundaries(uchar*, int=-1);
     size_t serializeAttributes(uint8_t* = NULL) const;
     void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
+    void   deserializeAttributesOLD(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uint8_t*, int=0, int=0);
     void   extractSliceData(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*) const;
     void   makeSliceImage(int, virvo::cartesian_axis< 3 > axis, size_t slice, uint8_t*, const vvTransFunc* altTF = 0) const;
     void   getVolumeSize(virvo::cartesian_axis< 3 > axis, size_t&, size_t&, size_t&) const;
     void   deinterlace();
-    void   findMinMax(size_t channel, float&, float&) const;
+    void   findMinMax(int channel, float&, float&) const;
     int    findNumValue(int, float);
-    int    findNumUsed(size_t channel);
+    int    findNumUsed(int channel);
     int    findNumTransparent(int);
     void   findDataBounds(ssize_t &x, ssize_t &y, ssize_t &z, ssize_t &w, ssize_t &h, ssize_t &s) const;
-    void   calculateDistribution(int frame, size_t chan, float&, float&, float&);
+    void   calculateDistribution(int frame, int chan, float&, float&, float&);
     void   voxelStatistics(size_t frame, size_t c, ssize_t x, ssize_t y, ssize_t z, float&, float&);
     float  calculateMean(int);
-    float  findClampValue(int, size_t channel, float) const;
+    float  findClampValue(int, int channel, float) const;
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
-    float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan) const;
+    float  getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const;
     void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
-    void   setDefaultRealMinMax(size_t channel = 0);
+    void   findAndSetRange(int channel = 0);
     void   addGradient(size_t srcChan, GradientType);
     void   addVariance(size_t srcChan);
     void   deleteChannelNames();
-    void   setChannelName(size_t, std::string const& name);
-    std::string getChannelName(size_t) const;
+    void   setChannelName(int channel, std::string const& name);
+    std::string getChannelName(int channel) const;
     void updateFrame(int, uint8_t*, DeleteType);
     void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
-    int  findHDRBin(float);
-    int  mapFloat2Int(float);
+    int  findHDRBin(float fval) const;
+    int  resampleVoxel(const uint8_t* bytes, int newBPV=1) const;
     void makeBinTexture(uint8_t* texture, size_t width);
-    void computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest) const;
+    void computeTFTexture(int chan, size_t w, size_t h, size_t d, float* dest) const;
     void computeTFTexture(size_t w, size_t h, size_t d, float* dest) const; // tf for channel 0
     void makeLineTexture(DiagType, uchar, int, int, bool, std::vector< std::vector< float > > const& voxData, uint8_t*);
-    void makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int*);
-    void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;
+    void makeLineHistogram(int channel, int buckets, std::vector< std::vector< float > > const& data, int*);
+    void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, int channel=0, int frame=-1) const;
     virvo::vector< 3, ssize_t > voxelCoords(virvo::vec3f const& objCoords) const;
     virvo::vec3f objectCoords(virvo::vector< 3, ssize_t > const& voxCoords) const;
 
@@ -361,7 +364,7 @@ class VIRVO_FILEIOEXPORT vvVolDesc
 
     void initialize();
     void setDefaults();
-    void makeLineIntensDiag(size_t channel, std::vector< std::vector< float > > const& data, size_t numValues, int*);
+    void makeLineIntensDiag(int channel, std::vector< std::vector< float > > const& data, size_t numValues, int*);
     bool isChannelOn(size_t num, unsigned char);
 };
 #endif

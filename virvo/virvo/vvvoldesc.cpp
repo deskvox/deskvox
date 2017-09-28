@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <iterator>
 #include <algorithm>    // required for std::sort function
 #include <string.h>
 #include <stdlib.h>
@@ -110,7 +111,7 @@ uint8_t** d, vvVolDesc::DeleteType deleteType)
   bpc    = b;
   chan    = m;
   frames = f;
-  real.resize(chan);
+  range_.resize(chan);
   channelWeights.resize(chan);
   std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
@@ -162,7 +163,7 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
   bpc    = 1;
   chan    = 1;
   frames = f;
-  real.push_back(virvo::vec2(
+  range_.push_back(virvo::vec2(
         std::numeric_limits<float>::max(),
        -std::numeric_limits<float>::max()
         ));
@@ -172,14 +173,14 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
   for (size_t i=0; i<f; ++i)
   {
     vvToolshed::getMinMaxIgnore(d[i], getFrameVoxels(), std::numeric_limits< float >::max(), &frameMin, &frameMax);
-    if (frameMin < real[0][0]) real[0][0] = frameMin;
-    if (frameMax > real[0][1]) real[0][1] = frameMax;
+    if (frameMin < range(0)[0]) range(0)[0] = frameMin;
+    if (frameMax > range(0)[1]) range(0)[1] = frameMax;
   }
   for (size_t i=0; i<f; ++i)
   {
     data = new uint8_t[getFrameBytes()];
     vvToolshed::convertFloat2UCharClampZero(d[i], data, getFrameVoxels(),
-      real[0][0], real[0][1], std::numeric_limits< float >::max());
+      range(0)[0], range(0)[1], std::numeric_limits< float >::max());
     addFrame(data, ARRAY_DELETE);
   }
   if (strcmp("COVISE", fn)==0)                    // convert data if source is COVISE
@@ -215,7 +216,7 @@ float** g, float** b)
   frames = f;
   frameSize = getFrameBytes();
   compSize  = getFrameVoxels();
-  real.resize(chan);
+  range_.resize(chan);
   channelWeights.resize(chan);
   std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
@@ -254,7 +255,7 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
   bpc    = 1;
   chan    = 3;
   frames = 1;
-  real.resize(chan);
+  range_.resize(chan);
   channelWeights.resize(chan);
   std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
   uint8_t* data = new uint8_t[getFrameBytes()];
@@ -278,10 +279,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
     vox[i]  = v->vox[i];
     dist[i] = v->dist[i];
   }
-  for (std::vector<vec2>::const_iterator it = v->real.begin(); it != v->real.end(); ++it)
-  {
-    real.push_back(*it);
-  }
+  std::copy(v->range_.begin(), v->range_.end(), std::back_inserter(range_));
   dt     = v->dt;
   bpc    = v->bpc;
   chan   = v->chan;
@@ -289,8 +287,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   currentFrame = (f==-1) ? v->currentFrame : 0;
   indexChannel = -1;
 
-  real.resize(chan);
-  std::copy(v->real.begin(), v->real.end(), std::back_inserter(real));
+  std::copy(v->range_.begin(), v->range_.end(), std::back_inserter(range_));
   std::copy(v->channelWeights.begin(), v->channelWeights.end(), std::back_inserter(channelWeights));
 
   // Copy icon:
@@ -391,13 +388,11 @@ void vvVolDesc::setDefaults()
   vox[0] = vox[1] = vox[2] = frames = 0;
   frames = 0;
   bpc = 1;
-  signedInt = false;
-  voxelScale = 1.0f;
-  voxelOffset = 0.0f;
   chan = 0;
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
-  real.push_back(vec2(0.0f, 1.0f));
+  mapping_ = vec2(0.0f, 1.0f);
+  range_.push_back(vec2(0.0f, 1.0f));
   pos = vec3f(0.0f, 0.0f, 0.0f);
 }
 
@@ -425,11 +420,11 @@ void vvVolDesc::deleteChannelNames()
   @param name new channel name; name will be copied: caller has to delete name.
          NULL may be passed as a name.
 */
-void vvVolDesc::setChannelName(size_t channel, std::string const& name)
+void vvVolDesc::setChannelName(int channel, std::string const& name)
 {
   vvDebugMsg::msg(2, "vvVolDesc::setChannelName()");
 
-  if (channel >= channelNames.size())
+  if (channel >= static_cast<int>(channelNames.size()))
   {
     channelNames.resize(channel + 1);
   }
@@ -441,7 +436,7 @@ void vvVolDesc::setChannelName(size_t channel, std::string const& name)
 /** @return a channel name.
   @param channel channel index to get name of (0=first channel)
 */
-std::string vvVolDesc::getChannelName(size_t channel) const
+std::string vvVolDesc::getChannelName(int channel) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::getChannelName()");
   assert(channel < channelNames.size());
@@ -535,11 +530,9 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     dt     = src->dt;
     raw.merge(&src->raw);
     for (size_t i=0; i<3; ++i) dist[i] = src->dist[i];
-    for (std::vector<vec2>::iterator it = src->real.begin(); it != src->real.end(); ++it)
-    {
-      real.push_back(*it);
-    }
-    for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
+    range_.resize(src->range_.size());
+    std::copy(src->range_.begin(), src->range_.end(), range_.begin());
+    for (int i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
     indexChannel = src->indexChannel;
@@ -576,7 +569,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
         if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
         else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
       }
-      for (size_t i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
+      for (int i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
       chan += src->chan;                          // update target channel number
       src->removeSequence();                      // delete copied frames from source
       return OK;
@@ -860,19 +853,19 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
   @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned int* buckets, int* count, float min, float max) const
+void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* buckets, int* count, float min, float max) const
 {
   uint8_t* raw;                                   // raw voxel data
   float* voxVal;                                  // voxel values
   float* valPerBucket;                            // scalar data values per bucket
-  size_t c, m;                                    // counters
+  int c, m;                                       // counters
   size_t srcIndex;                                // index into raw volume data
   size_t dstIndex;                                // index into histogram array
   size_t factor;                                  // multiplication factor for dstIndex
   size_t numVoxels;                               // number of voxels per frame
-  unsigned int* bucket;                                    // bucket ID
-  size_t srcChan;                                 // channel index in data set
-  unsigned int totalBuckets;                               // total number of buckets
+  unsigned int* bucket;                           // bucket ID
+  int srcChan;                                    // channel index in data set
+  unsigned int totalBuckets;                      // total number of buckets
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
 
@@ -889,8 +882,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
   numVoxels = getFrameVoxels();
   for (c=0; c<numChan; ++c)
   {
-    if (bpc==4) valPerBucket[c] = (max-min) / float(buckets[c]);
-    else valPerBucket[c] = getValueRange() * (max-min) / float(buckets[c]);
+    valPerBucket[c] = (max-min) / float(buckets[c]);
   }
   for (size_t f=0; f<frames; ++f)
   {
@@ -902,13 +894,14 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
     {
       srcIndex = i * getBPV();
       dstIndex = 0;
-      for (size_t c=0; c<numChan; ++c)
+      for (int c=0; c<numChan; ++c)
       {
         srcChan = ts_min(c, chan-1);
         switch (bpc)
         {
           case 1:
             voxVal[c] = float(raw[srcIndex + chan1 + srcChan]);
+            voxVal[c] = lerp(mapping_[0], mapping_[1], voxVal[c] / 255);
             break;
           case 2:
 #ifdef BOOST_LITTLE_ENDIAN
@@ -916,6 +909,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
 #else
             voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan)] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan) + 1]));
 #endif
+            voxVal[c] = lerp(mapping_[0], mapping_[1], voxVal[c] / 65535);
             break;
           case 4:
             voxVal[c] = *((float*)(raw + srcIndex + 4 * (chan1 + srcChan)));
@@ -923,7 +917,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
           default: assert(0); break;
         }
 
-        bucket[c] = (unsigned int)(float(voxVal[c] - min * getValueRange()) / valPerBucket[c]);
+        bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
         bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
         factor = 1;
         for (m=0; m<c; ++m)
@@ -955,7 +949,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, unsigned 
   @param color           color for histogram foreground (background is transparent)
   @param min,max         data range for which histogram is to be created. Use 0..1 for integer data types.
 */
-void vvVolDesc::makeHistogramTexture(int frame, size_t chan1, size_t numChan, size_t* size, uint8_t* data,
+void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, size_t* size, uint8_t* data,
   NormalizationType ntype, vvColor* color, float min, float max)
 {
   const size_t BPT = 4;                           // bytes per texel
@@ -963,7 +957,7 @@ void vvVolDesc::makeHistogramTexture(int frame, size_t chan1, size_t numChan, si
   int*   count;                                   // histogram values (integer)
   size_t x,y;                                     // texel index
   size_t barHeight;                               // histogram bar height [texels]
-  size_t c;                                       // color component counter
+  int c;                                          // color component counter
   size_t texIndex;                                // index in TF texture
   size_t numValues;
   int    histIndex;
@@ -1038,7 +1032,7 @@ void vvVolDesc::computeTFTexture(size_t w, size_t h, size_t d, float* dest) cons
 
 /** Wrapper around tf.computeTFTexture.
 */
-void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, float* dest) const
+void vvVolDesc::computeTFTexture(int chan, size_t w, size_t h, size_t d, float* dest) const
 {
   static const int RGBA = 4;
   float dataVal;
@@ -1046,12 +1040,12 @@ void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, floa
 
   if (this->chan == 2 && tf.size()==1)
   {
-     tf[0].computeTFTexture(w, h, d, dest, real[0][0], real[0][1], 0.0f, 1.0f); //TODO substitute fixed values!
+     tf[0].computeTFTexture(w, h, d, dest, range(0)[0], range(0)[1], 0.0f, 1.0f); //TODO substitute fixed values!
   }
   else
   {
      //default: act as 1D
-     tf[chan].computeTFTexture(w, h, d, dest, real[chan][0], real[chan][1]);
+     tf[chan].computeTFTexture(w, h, d, dest, range(chan)[0], range(chan)[1]);
   }
 
   // convert opacity TF if hdr mode:
@@ -1062,7 +1056,7 @@ void vvVolDesc::computeTFTexture(size_t chan, size_t w, size_t h, size_t d, floa
      for (size_t i=0; i<w; ++i) // go through all bins and non-linearize them
      {
         dataVal = _hdrBinLimits[i];
-        linearBin = size_t((dataVal - real[0][0]) / (real[0][1] - real[0][0]) * float(w));
+        linearBin = size_t((dataVal - range(0)[0]) / (range(0)[1] - range(0)[0]) * float(w));
         linearBin = virvo::clamp(linearBin, size_t(0), w-1);
         dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
      }
@@ -1119,7 +1113,7 @@ void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twi
         ++tex;
       }
 
-  for (size_t i = 0; i < chan; ++i)
+  for (int i = 0; i < chan; ++i)
   {
     if (isChannelOn(i, selChannel))
     {
@@ -1180,7 +1174,7 @@ bool vvVolDesc::isChannelOn(size_t num, unsigned char selected)
   }
 }
 
-void vvVolDesc::makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int* count)
+void vvVolDesc::makeLineHistogram(int channel, int buckets, std::vector< std::vector< float > > const& data, int* count)
 {
   size_t numVoxels;
   int bucket;
@@ -1201,7 +1195,7 @@ void vvVolDesc::makeLineHistogram(size_t channel, int buckets, std::vector< std:
   }
 }
 
-void vvVolDesc::makeLineIntensDiag(size_t channel, std::vector< std::vector< float > > const& data, size_t numValues, int* values)
+void vvVolDesc::makeLineIntensDiag(int channel, std::vector< std::vector< float > > const& data, size_t numValues, int* values)
 {
   float step;
 
@@ -1234,7 +1228,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
   buckets[0] = (unsigned int)(getValueRange());
   hist = new int[buckets[0]];
 
-  for (size_t m=0; m<chan; ++m)
+  for (int m=0; m<chan; ++m)
   {
     if (chan > 1)
     {
@@ -1246,7 +1240,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
     }
 
     // Compute histogram:
-    makeHistogram(-1, m, 1, buckets, hist, real[m][0], real[m][1]);
+    makeHistogram(-1, m, 1, buckets, hist, range(m)[0], range(m)[1]);
 
     // Check if file exists:
     if (!overwrite && vvToolshed::isFile(fileName))
@@ -1335,59 +1329,17 @@ size_t vvVolDesc::getBPV() const
 }
 
 //----------------------------------------------------------------------------
-/// Set if voxel stores signed integers
-void vvVolDesc::setSignedInt(bool si)
-{
-  signedInt = si;
-}
-
-//----------------------------------------------------------------------------
-/// Get if voxel stores signed integers
-bool vvVolDesc::getSignedInt() const
-{
-  return signedInt;
-}
-
-//----------------------------------------------------------------------------
-/// Set voxel scale
-void vvVolDesc::setVoxelScale(float vs)
-{
-  voxelScale = vs;
-}
-
-//----------------------------------------------------------------------------
-/// Get voxel scale
-float vvVolDesc::getVoxelScale() const
-{
-  return voxelScale;
-}
-
-//----------------------------------------------------------------------------
-/// Set voxel offset
-void vvVolDesc::setVoxelOffset(float vo)
-{
-  voxelOffset = vo;
-}
-
-//----------------------------------------------------------------------------
-/// Get voxel offset
-float vvVolDesc::getVoxelOffset() const
-{
-  return voxelOffset;
-}
-
-//----------------------------------------------------------------------------
 /** Get range of values in each channel. Depends only on setting of bpc.
     Useful for creating histograms.
  @return the range of values in each channel; returns 0.0f on error.
 */
-float vvVolDesc::getValueRange(size_t channel) const
+float vvVolDesc::getValueRange(int channel) const
 {
   switch(bpc)
   {
     case 1: return 256.0f;
     case 2: return 65536.0f;
-    case 4: return real[channel][1] - real[channel][0];
+    case 4: return range(channel)[1] - range(channel)[0];
     default: assert(0); return 0.0f;
   }
 }
@@ -1442,7 +1394,7 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
       {
         for (ssize_t x=0; x<vox[0]; ++x)
         {
-          for (size_t c=0; c<chan; ++c)
+          for (int c=0; c<chan; ++c)
           {
             // Perform actual conversion:
             switch (bpc)                          // switch by source voxel type
@@ -1472,14 +1424,14 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
                 break;
               }
               case 4:                             // float source
-                val = ts_clamp(*((float*)src), real[c][0], real[c][1]);
+                val = ts_clamp(*((float*)src), range(c)[0], range(c)[1]);
                 switch (newBPC)                   // switch by destination voxel type
                 {
                   case 1:
-                    *dst = uchar((val - real[c][0]) / (real[c][1] - real[c][0]) * 255.0f);
+                    *dst = uchar((val - range(c)[0]) / (range(c)[1] - range(c)[0]) * 255.0f);
                     break;
                   case 2:
-                    virvo::serialization::write16(dst, uint16_t((val - real[c][0]) / (real[c][1] - real[c][0]) * 65535.0f));
+                    virvo::serialization::write16(dst, uint16_t((val - range(c)[0]) / (range(c)[1] - range(c)[0]) * 65535.0f));
                     break;
                 }
                 break;
@@ -1505,7 +1457,7 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
   @param newChan new number of channels
   @param verbose true = print progress info
 */
-void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
+void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
 {
   uint8_t* newRaw;
   uint8_t* rd;
@@ -1542,7 +1494,7 @@ void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
         for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
-          for (size_t i=0; i<newChan; ++i)
+          for (int i=0; i<newChan; ++i)
           {
             if (i < chan) memcpy(dst+i*bpc, src+i*bpc, bpc);
             else memset(dst+i*bpc, 0, bpc);
@@ -1571,7 +1523,7 @@ void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
   @param channel channel index to delete [0 is first channel, valid: 1..numChannels-1]
   @param verbose true = print progress info
 */
-void vvVolDesc::deleteChannel(size_t channel, bool verbose)
+void vvVolDesc::deleteChannel(int channel, bool verbose)
 {
   uint8_t* newRaw;
   uint8_t* rd;
@@ -1599,7 +1551,7 @@ void vvVolDesc::deleteChannel(size_t channel, bool verbose)
         for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
-          for (size_t c=0; c<channel; ++c)
+          for (int c=0; c<channel; ++c)
           {
             memcpy(dst+c*bpc, src+c*bpc, bpc);    // copy channels up to the one to delete
           }
@@ -2965,17 +2917,10 @@ void vvVolDesc::printVolumeInfo()
   }
   cerr << "Sample distances:                  " << setprecision(3) << dist[0] << " x " << dist[1] << " x " << dist[2] << endl;
   cerr << "Time step duration [s]:            " << setprecision(3) << dt << endl;
-  if (chan == 1)
-  {
-    cerr << "Physical data range:               " << real[0][0] << " to " << real[0][1] << endl;
-  }
-  else
-  {
-    for (size_t i = 0; i < real.size(); ++i)
-    {
-      cerr << "Physical data range channel " << i << ":     " << real[i][0] << " to " << real[i][1] << endl;
-    }
-  }
+  cerr << "Mapped data range:                 " << mapping()[0] << " to " << mapping()[1] << endl;
+  cerr << "Actual data range [channel 0]:   " << range(0)[0] << " to " << range(0)[1] << endl;
+  for (size_t c = 1; c < range_.size(); ++c)
+    cerr << "                  [channel " << c << "]:    " << range(c)[0] << " to " << range(c)[1] << endl;
   cerr << "Object location [mm]:              " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
   cerr << "Icon stored:                       " << ((iconSize>0) ? "yes" : "no") << endl;
   if (iconSize>0)
@@ -2992,7 +2937,7 @@ void vvVolDesc::printStatistics()
   float mean, variance, stdev;
   float zeroVoxels, numTransparent;
 
-  for (size_t c=0; c<chan; ++c)
+  for (int c=0; c<chan; ++c)
   {
     if (chan>1) cerr << "Channel " << c+1 << endl;
     findMinMax(0, scalarMin, scalarMax);
@@ -3017,7 +2962,7 @@ void vvVolDesc::printStatistics()
   @param frame   frame to compute histogram for (-1 for all frames)
   @param channel channel to compute histogram for (0=first)
 */
-void vvVolDesc::printHistogram(int frame, size_t channel)
+void vvVolDesc::printHistogram(int frame, int channel)
 {
   int* hist;
   int i;
@@ -3025,7 +2970,7 @@ void vvVolDesc::printHistogram(int frame, size_t channel)
   unsigned int buckets[1] = {32};
 
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist, real[channel][0], real[channel][1]);
+  makeHistogram(frame, channel, 1, buckets, hist, range(channel)[0], range(channel)[1]);
   for (i=0; i<buckets[0]; ++i)
 
   {
@@ -3060,7 +3005,7 @@ void vvVolDesc::printVoxelData(int frame, ssize_t slice, ssize_t width, ssize_t 
     for (ssize_t x=0; x<nx; ++x)
     {
       cerr << "(";
-      for (size_t m=0; m<chan; ++m)
+      for (int m=0; m<chan; ++m)
       {
         switch (bpc)
         {
@@ -3168,7 +3113,7 @@ void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint
   neighbor[6] = neighbor[2] + sliceSize;
   neighbor[7] = neighbor[3] + sliceSize;
 
-  for (size_t j=0; j<chan; ++j)
+  for (int j=0; j<chan; ++j)
   {
     // Get neighboring voxel values:
     for (size_t i=0; i<8; ++i)
@@ -3211,7 +3156,7 @@ void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, size_t chan, uint8_t* val)
+void vvVolDesc::drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, int chan, uint8_t* val)
 {
   uint8_t* raw;
   size_t lineSize, sliceSize;
@@ -3263,7 +3208,7 @@ void vvVolDesc::drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssiz
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, size_t chan, uint8_t* val)
+void vvVolDesc::drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, int chan, uint8_t* val)
 {
   /*
   if (_radius != radius)
@@ -3510,11 +3455,12 @@ Length          Data Type        VolDesc Attribute
 3 x 4 bytes     unsigned int     vox[0..2]
 4 bytes         unsigned int     frames
 1 byte          unsigned char    bpv (bytes per voxel)
+4 bytes         unsigned int     chan (number of channels)
 3 x 4 bytes     float            dist[0..2]
 4 bytes         float            dt
-2 x 4 bytes     float            realMin, realMax
+2 x 4 bytes     float            mappingMin, mappingMax
+c x 2 x 4 bytes float            rangeMin, rangeMax per channel
 3 x 4 bytes     float            pos
-1 byte          unsigned char    storage type
 </PRE>
 @param buffer pointer to _allocated_ memory for serialized attributes
 @return number of bytes required for serialization buffer
@@ -3532,17 +3478,22 @@ size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
     ptr += virvo::serialization::write32 (ptr, vox[1]);
     ptr += virvo::serialization::write32 (ptr, vox[2]);
     ptr += virvo::serialization::write32 (ptr, frames);
+    ptr += virvo::serialization::write32 (ptr, uint32_t(chan));
     ptr += virvo::serialization::write8    (ptr, uint8_t(bpc));
     ptr += virvo::serialization::writeFloat(ptr, dist[0]);
     ptr += virvo::serialization::writeFloat(ptr, dist[1]);
     ptr += virvo::serialization::writeFloat(ptr, dist[2]);
     ptr += virvo::serialization::writeFloat(ptr, dt);
-    ptr += virvo::serialization::writeFloat(ptr, real[0][0]); // TODO: do this for each channel
-    ptr += virvo::serialization::writeFloat(ptr, real[0][1]); // TODO:    ""  ""  ""  ""  ""
+    ptr += virvo::serialization::writeFloat(ptr, mapping_[0]);
+    ptr += virvo::serialization::writeFloat(ptr, mapping_[1]);
+    for (int c = 0; c < chan; ++c)
+    {
+        ptr += virvo::serialization::writeFloat(ptr, range_[c][0]);
+        ptr += virvo::serialization::writeFloat(ptr, range_[c][1]);
+    }
     ptr += virvo::serialization::writeFloat(ptr, pos[0]);
     ptr += virvo::serialization::writeFloat(ptr, pos[1]);
     ptr += virvo::serialization::writeFloat(ptr, pos[2]);
-    ptr += virvo::serialization::write8    (ptr, uint8_t(chan));
     assert(ptr - buffer == SERIAL_ATTRIB_SIZE);
   }
   return SERIAL_ATTRIB_SIZE;
@@ -3558,6 +3509,116 @@ size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
                   passed value. The remaining values will be set to default values.
 */
 void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
+{
+  vvDebugMsg::msg(3, "vvVolDesc::deserializeAttributes()");
+  assert(buffer!=NULL);
+
+  // Set default values for all serializable attributes:
+  setDefaults();
+
+  uint8_t* ptr = buffer;
+
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    vox[0] = virvo::serialization::read32(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    vox[1] = virvo::serialization::read32(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    vox[2] = virvo::serialization::read32(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    frames = virvo::serialization::read32(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    chan = virvo::serialization::read32(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 1 - buffer >= 0);
+  if (size_t(ptr+1 - buffer) <= bufSize)
+    bpc = virvo::serialization::read8(ptr);
+  else return;
+  ptr += 1;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    dist[0] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    dist[1]  = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    dist[2] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    dt = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    mapping_[0] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    mapping_[1] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(range_.size() == static_cast<size_t>(chan));
+  for (int c = 0; c < chan; ++c)
+  {
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      range_[c][0] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      range_[c][1] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+  }
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    pos[0] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    pos[1] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
+    pos[2] = virvo::serialization::readFloat(ptr);
+  else return;
+  ptr += 4;
+}
+
+//----------------------------------------------------------------------------
+/** Deserializes all volume attributes from a memory buffer.
+  This corresponds to the OLD volume format with a global min/max range
+  for all channels!
+  @param buffer   pointer to _allocated_ memory for serialized attributes
+  @param bufSize  size of buffer [bytes]. Values smaller than the default
+                  size are allowed and only fill the values up to the
+                  passed value. The remaining values will be set to default values.
+*/
+void vvVolDesc::deserializeAttributesOLD(uint8_t* buffer, size_t bufSize)
 {
   vvDebugMsg::msg(3, "vvVolDesc::deserializeAttributes()");
   assert(buffer!=NULL);
@@ -3612,16 +3673,37 @@ void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
     dt = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
-  assert(ptr + 4 - buffer >= 0);
-  if (size_t(ptr+4 - buffer) <= bufSize)
-    real.push_back(vec2(virvo::serialization::readFloat(ptr), 1.0f));
-  else return;
-  ptr += 4;
-  assert(ptr + 4 - buffer >= 0);
-  if (size_t(ptr+4 - buffer) <= bufSize)
-    real[0][1] = virvo::serialization::readFloat(ptr);
-  else return;
-  ptr += 4;
+  if (bpc == 1 || bpc == 2)
+  {
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      mapping_[0] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      mapping_[1] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+  }
+  else if (bpc == 4)
+  {
+    assert(range_.size() > 0);
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      range_[0][0] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      range_[0][1] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+  }
+  else
+  {
+    assert(0);
+  }
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
     pos[0] = virvo::serialization::readFloat(ptr);
@@ -3758,20 +3840,26 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
 
   for(pixel=0; pixel<width*height; ++pixel)
   {
-    for (size_t c=0; c<ts_min(chan, size_t(3)); ++c)
+    for (int c=0; c<ts_min(chan, 3); ++c)
     {
       dstOffset = pixel * 3 + c;
       srcOffset = pixel * bpc * chan + bpc * c;
 
       switch(bpc)
       {
-        case 1: voxelVal = float(sliceData[srcOffset]) / 255.0f; break;
+        case 1:
+          voxelVal = float(sliceData[srcOffset]);
+          voxelVal = lerp(mapping_[0], mapping_[1], voxelVal / 255);
+          break;
+        case 2:
 #ifdef BOOST_LITTLE_ENDIAN
-        case 2: voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset])) / 65535.0f; break;
+          voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset]));
 #else
-        case 2: voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1])) / 65535.0f; break;
+          voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1]));
 #endif
-        case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - real[c][0]) / (real[c][1] - real[c][0]); break;
+          voxelVal = lerp(mapping_[0], mapping_[1], voxelVal / 65535);
+          break;
+        case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - range_[c][0]) / (range_[c][1] - range_[c][0]); break;
         default: assert(0); break;
       }
       if (chan==1)
@@ -3835,7 +3923,7 @@ void vvVolDesc::deinterlace()
   @param channel data channel to search
   @param scalarMin,scalarMax  minimum and maximum scalar values in volume animation
 */
-void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax) const
+void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax) const
 {
   (void)channel;
   int mi, ma;
@@ -3843,43 +3931,27 @@ void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax) c
 
   vvDebugMsg::msg(2, "vvVolDesc::findMinMax()");
 
-  switch(bpc)
-  {
-    case 1:
-      scalarMin = 255.0f;
-      scalarMax = 0.0f;
-      break;
-    case 2:
-      scalarMin = 65535.0f;
-      scalarMax = 0.0f;
-      break;
-    case 4:
-      scalarMin =  std::numeric_limits< float >::max();
-      scalarMax = -std::numeric_limits< float >::max();
-      break;
-    default: assert(0); break;
-  }
-
   // TODO: make search channel dependent
   for (size_t f=0; f<frames; ++f)
   {
     switch(bpc)
     {
       case 1: vvToolshed::getMinMax(getRaw(f), getFrameBytes(), &mi, &ma);
-        fMin = float(mi);
-        fMax = float(ma);
+        fMin = lerp(mapping_[0], mapping_[1], static_cast<float>(mi) / 255);
+        fMax = lerp(mapping_[0], mapping_[1], static_cast<float>(ma) / 255);
         break;
       case 2: vvToolshed::getMinMax16bitHost(getRaw(f), getFrameVoxels(), &mi, &ma);
-        fMin = float(mi);
-        fMax = float(ma);
+        fMin = lerp(mapping_[0], mapping_[1], static_cast<float>(mi) / 65535);
+        fMax = lerp(mapping_[0], mapping_[1], static_cast<float>(ma) / 65535);
         break;
       case 4:
         vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax);
         break;
       default: assert(0); break;
     }
-    if (fMin < scalarMin) scalarMin = fMin;
-    if (fMax > scalarMax) scalarMax = fMax;
+
+    scalarMin = fMin;
+    scalarMax = fMax;
   }
 }
 
@@ -3892,7 +3964,7 @@ void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax) c
   @param channel data channel to work on
   @param threshold  threshold value for data range clamping [0..1]
 */
-float vvVolDesc::findClampValue(int frame, size_t channel, float threshold) const
+float vvVolDesc::findClampValue(int frame, int channel, float threshold) const
 {
   int* hist;
   unsigned int buckets[1] = {1000};
@@ -3951,7 +4023,7 @@ int vvVolDesc::findNumValue(int frame, float val)
   for (size_t i=0; i<frameVoxels; ++i)
   {
     allEqual = true;
-    for (size_t m=0; m<chan; ++m)
+    for (int m=0; m<chan; ++m)
     {
       switch (bpc)
       {
@@ -4061,7 +4133,7 @@ void vvVolDesc::findDataBounds(ssize_t &x, ssize_t &y, ssize_t &z, ssize_t &w, s
 /** Find the number of different data values used in a dataset.
   @return -1 if data type is float
 */
-int vvVolDesc::findNumUsed(size_t channel)
+int vvVolDesc::findNumUsed(int channel)
 {
   bool* used;                                     // true = scalar value occurs in array
   uint8_t* raw;
@@ -4146,7 +4218,7 @@ int vvVolDesc::findNumTransparent(int frame)
     rgba = new float[4 * lutEntries];
 
     // Generate arrays from pins:
-    tf[0].computeTFTexture(lutEntries, 1, 1, rgba, real[0][0], real[0][1]);
+    tf[0].computeTFTexture(lutEntries, 1, 1, rgba, range(0)[0], range(0)[1]);
   }
 
   // Search volume:
@@ -4222,7 +4294,7 @@ float vvVolDesc::calculateMean(int frame)
   @param chan channel to look at
   @return mean, variance, stdev
 */
-void vvVolDesc::calculateDistribution(int frame, size_t chan, float& mean, float& variance, float& stdev)
+void vvVolDesc::calculateDistribution(int frame, int chan, float& mean, float& variance, float& stdev)
 {
   uint8_t* raw;
   double sumSquares = 0.0;
@@ -4306,8 +4378,8 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
   if (chan==1 || channel==-1)                     // effect on real range undefined if only one channel is zoomed
   {
     int irange = (bpc==2) ? 65535 : 255;
-    real[0][0] = fmin / float(irange) * (real[0][1] - real[0][0]) + real[0][0];
-    real[0][1] = fmax / float(irange) * (real[0][1] - real[0][0]) + real[0][0];
+    range(0)[0] = fmin / float(irange) * (range(0)[1] - range(0)[0]) + range(0)[0];
+    range(0)[1] = fmax / float(irange) * (range(0)[1] - range(0)[0]) + range(0)[0];
   }
 
   // Perform the actual expansion:
@@ -4698,23 +4770,6 @@ void vvVolDesc::setDist(vec3f const& d)
   dist = d;
 }
 
-void vvVolDesc::setRealRange(virvo::vec2 range)
-{
-    for (std::vector<virvo::vec2>::iterator it = real.begin();
-                    it != real.end();
-                    ++it)
-    {
-        *it = range;
-    }
-}
-
-void vvVolDesc::setRealRange(size_t channel, virvo::vec2 range)
-{
-    assert( channel < real.size() );
-
-    real[channel] = range;
-}
-
 
 //----------------------------------------------------------------------------
 /** Resize volume so that the longest edge becomes the length of len.
@@ -4734,7 +4789,7 @@ void vvVolDesc::resizeEdgeMax(float len)
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan) const
+float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const
 {
   uint8_t* data = getRaw(frame);
   float fval;
@@ -4744,7 +4799,12 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t
   index = bpv * (x + y * vox[0] + z * vox[0] * vox[1]) + chan * bpc;
   switch(bpc)
   {
-    case 1: fval = float(data[index]); break;
+    case 1:
+    {
+      fval = float(data[index]);
+      fval = lerp(mapping_[0], mapping_[1], fval / 255);
+      break;
+    }
     case 2:
     {
 #ifdef BOOST_LITTLE_ENDIAN
@@ -4752,17 +4812,13 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t
 #else
       unsigned short ival = ((unsigned short)data[index] << 8) | data[index+1]; fval = float(ival);
 #endif
-      if (getSignedInt())
-        fval = (float)(*reinterpret_cast<short*>(&ival));
-      else
-        fval = (float)ival;
+      fval = (float)ival;
+      fval = lerp(mapping_[0], mapping_[1], fval / 65535);
       break;
     }
     case 4: fval = *((float*)(data + index)); break;
     default: assert(0); fval = 0.0f; break;
   }
-  fval *= getVoxelScale();
-  fval += getVoxelOffset();
   return fval;
 }
 
@@ -4834,7 +4890,7 @@ std::vector< std::vector< float > >& resArray)
 
       std::vector< float > tmp(chan);
 
-      for (size_t i = 0; i < chan; i++)
+      for (int i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4882,7 +4938,7 @@ std::vector< std::vector< float > >& resArray)
 
       std::vector< float > tmp(chan);
 
-      for (size_t i = 0; i < chan; i++)
+      for (int i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4931,7 +4987,7 @@ std::vector< std::vector< float > >& resArray)
 
       std::vector< float > tmp(chan);
 
-      for (size_t i = 0; i < chan; i++)
+      for (int i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4974,12 +5030,9 @@ std::vector< std::vector< float > >& resArray)
 //----------------------------------------------------------------------------
 /** Find min and max data values and set real[0/1] accordingly.
  */
-void vvVolDesc::setDefaultRealMinMax(size_t channel)
+void vvVolDesc::findAndSetRange(int channel)
 {
-  float fMin, fMax;
-  findMinMax(channel, fMin, fMax);
-  real[channel][0] = fMin;
-  real[channel][1] = fMax;
+  findMinMax(channel, range_[channel][0], range_[channel][1]);
 }
 
 //----------------------------------------------------------------------------
@@ -5040,7 +5093,7 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
           {
             case 1: height = float(*src) / 255.0f; break;
             case 2: height = (float(*src) * 256.0f + float(*(src+1))) / 65535.0f; break;
-            case 4: height = (*((float*)src) - real[0][0]) / (real[0][1] - real[0][0]); break;
+            case 4: height = (*((float*)src) - range(0)[0]) / (range(0)[1] - range(0)[0]); break;
             default: assert(0); break;
           }
 
@@ -5379,8 +5432,8 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   // Make sure min and max of data range are included in data:
   if (lockRange)
   {
-    sortedData[numVoxels]   = real[0][0];
-    sortedData[numVoxels+1] = real[0][1];
+    sortedData[numVoxels]   = range(0)[0];
+    sortedData[numVoxels+1] = range(0)[1];
     numVoxels += 2;
   }
 
@@ -5396,7 +5449,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 
     // Trim values below realMin:
     size_t i;
-    for(i=0; i<numVoxels && sortedData[i] < real[0][0]; ++i)
+    for(i=0; i<numVoxels && sortedData[i] < range(0)[0]; ++i)
     {
       minIndex = i;  // find index of realMin
     }
@@ -5409,7 +5462,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 
     // Trim values above realMax:
     // find index of realMax
-    for(i=numVoxels-1; i>0 && sortedData[i] > real[0][1]; --i)
+    for(i=numVoxels-1; i>0 && sortedData[i] > range(0)[1]; --i)
        ;
     maxIndex = ts_clamp(i, size_t(0), numVoxels-1);
     numVoxels -= (numVoxels-1-maxIndex);
@@ -5552,8 +5605,8 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   {
     if (!lockRange)
     {
-      real[0][0] = sortedData[0];
-      real[0][1] = sortedData[numVoxels-1];
+      range(0)[0] = sortedData[0];
+      range(0)[1] = sortedData[numVoxels-1];
     }
   }
 
@@ -5564,35 +5617,73 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 }
 
 //----------------------------------------------------------------------------
-/** Map floating point data value to integer. Uses high dynamic range (HDR)
-  techniques if _binOpacityWeighted or _binIsoData are true, otherwise
-  it clamps the value between real[0] and real[1] and linearly maps the value
-  to an 8bit integer.
-  @param fval floating point data value
-  @return 8bit integer value [0..255]
+/** Resample voxel to integer value. Voxel is provided as 8-bit
+  unsigned char array of length bpc. If bpc == newBPV, voxels are
+  returned with their presentation unchanged. Else, first converts
+  to the floating point interval mapping_[0]..mapping_[1].
+  Then uses high dynamic range (HDR) techniques if _binOpacityData
+  are true, otherwise it clamps the value between range_[0] and range_[1]
+  and linearly maps the value to an 8-bit or 16-bit integer.
+  @param bytes 8-bit unsigned char array representing the voxel.
+  @param newBPV
+  @return resampled integer value
 */
-int vvVolDesc::mapFloat2Int(float fval)
+int vvVolDesc::resampleVoxel(const uint8_t* bytes, int newBPV) const
 {
-  int ival;
+  // TODO: maybe use a template with newBPV a compile time constant.
+  assert(newBPV == 1 || newBPV == 2);
+
+  if (bpc == 1 && newBPV == 1)
+    return bytes[0];
+
+  if (bpc == 2 && newBPV == 2)
+  {
+    int ival = bytes[1];
+    ival <<= 1;
+    ival |= bytes[0];
+    return ival;
+  }
+
+  float fval = 0.0f;
+
+  if (bpc == 4)
+  {
+    fval = *reinterpret_cast<const float*>(bytes);
+  }
+  else if (bpc == 2)
+  {
+    uint16_t val16 = *reinterpret_cast<const uint16_t*>(bytes);
+    fval = lerp(mapping_[0], mapping_[1], val16 / 65535.0f);
+  }
+  else if (bpc == 1)
+  {
+    fval = lerp(mapping_[0], mapping_[1], bytes[0] / 255.0f);
+  }
+
+  fval = ts_clamp(fval, range(0)[0], range(0)[1]);
+
+  int scale = newBPV == 1 ? 255 : 65535;
 
   switch(_binning)
   {
     case LINEAR:
-      fval = ts_clamp(fval, real[0][0], real[0][1]);
-      return int((fval - real[0][0]) / (real[0][1] - real[0][0]) * 255.0f);
+      return (fval - range(0)[0]) / (range(0)[1] - range(0)[0]) * scale;
     case ISO_DATA:
     case OPACITY:
-      ival = findHDRBin(fval);
-      return ival;
+      return findHDRBin(fval);
     default: assert(0);
       return -1;
   }
+
+  assert(0);
+
+  return -1;
 }
 
 //----------------------------------------------------------------------------
 /** Returns the number of the bin the floating point value is in.
 */
-int vvVolDesc::findHDRBin(float fval)
+int vvVolDesc::findHDRBin(float fval) const
 {
   for (size_t i=0; i<NUM_HDR_BINS; ++i)
   {
@@ -5611,15 +5702,13 @@ int vvVolDesc::findHDRBin(float fval)
 */
 void vvVolDesc::makeBinTexture(uint8_t* texture, size_t width)
 {
-  float range;
-
   memset(texture, 0, width * 4);    // initialize with transparent texels
   if (bpc==4)
   {
-    range = real[0][1] - real[0][0];
+    float r = range(0)[1] - range(0)[0];
     for (size_t i=0; i<NUM_HDR_BINS; ++i)
     {
-      size_t index = size_t((_hdrBinLimits[i] - real[0][0]) / range * float(width-1));
+      size_t index = size_t((_hdrBinLimits[i] - range(0)[0]) / r * float(width-1));
       index = ts_clamp(index, size_t(0), size_t(width-1));
       texture[4*index]   = 0;
       texture[4*index+1] = 0;
@@ -5644,7 +5733,7 @@ static size_t index(size_t i, size_t j, size_t k, size_t d0, size_t d1, size_t d
   @param channel no. of channel to extract data from
   @param frame no. of channel to extract data from
 */
-void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, ssize_t downsample, size_t channel, int frame) const
+void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, ssize_t downsample, int channel, int frame) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::computeMinMaxArrays()");
 
