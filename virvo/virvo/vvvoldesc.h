@@ -136,13 +136,13 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     virvo::vec3f dist;                            ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
 private:
-    vec2 mapping_;                                ///< Mapping from internal data representation to floating point. Defaults: bpc=1|2: [0..1], bpc=4[-FLT_MAX..FLT_MAX]
+    std::vector<vec2> mapping_;                   ///< Mapping from internal data representation to floating point. Defaults: bpc=1|2: [0..1], bpc=4[-FLT_MAX..FLT_MAX]
     std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set
 public:
-    vec2& mapping() { return mapping_; }
-    const vec2& mapping() const { return mapping_; }
-    vec2& range(int chan = -1) { return range_[chan]; }
-    const vec2& range(int chan = -1) const { return range_[chan]; }
+    vec2& mapping(int chan) { return mapping_[chan]; }
+    const vec2& mapping(int chan) const { return mapping_[chan]; }
+    vec2& range(int chan) { return range_[chan]; }
+    const vec2& range(int chan) const { return range_[chan]; }
     std::vector<float> channelWeights;            ///< scalar weight for each channel, default: 1.0f
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]
@@ -344,7 +344,7 @@ public:
     void updateFrame(int, uint8_t*, DeleteType);
     void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float fval) const;
-    int  resampleVoxel(const uint8_t* bytes, int newBPV=1) const;
+    int  rescaleVoxel(const uint8_t* bytes, int newBPV=1, int chan=0) const;
     void makeBinTexture(uint8_t* texture, size_t width);
     void computeTFTexture(int chan, size_t w, size_t h, size_t d, float* dest) const;
     void computeTFTexture(size_t w, size_t h, size_t d, float* dest) const; // tf for channel 0

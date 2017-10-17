@@ -88,41 +88,41 @@ void load(vvVolDesc* vd)
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT8\n";
         assert(header->nbyper == 1);
         vd->bpc = 1;
-        vd->mapping() = vec2(CHAR_MIN, CHAR_MAX);
+        vd->mapping(0) = vec2(CHAR_MIN, CHAR_MAX);
         break;
     case NIFTI_TYPE_UINT8:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT8\n";
         assert(header->nbyper == 1);
         vd->bpc = 1;
-        vd->mapping() = vec2(0, UCHAR_MAX);
+        vd->mapping(0) = vec2(0, UCHAR_MAX);
         break;
     case NIFTI_TYPE_INT16:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT16\n";
         assert(header->nbyper == 2);
         vd->bpc = 2;
-        vd->mapping() = vec2(SHRT_MIN, SHRT_MAX);
+        vd->mapping(0) = vec2(SHRT_MIN, SHRT_MAX);
         break;
     case NIFTI_TYPE_UINT16:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT16\n";
         assert(header->nbyper == 2);
         vd->bpc = 2;
-        vd->mapping() = vec2(0, USHRT_MAX);
+        vd->mapping(0) = vec2(0, USHRT_MAX);
         break;
     case NIFTI_TYPE_INT32:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_INT32\n";
         assert(header->nbyper == 4);
         vd->bpc = 4;
-        vd->mapping() = vec2(INT_MIN, INT_MAX);
+        vd->mapping(0) = vec2(INT_MIN, INT_MAX);
         break;
     case NIFTI_TYPE_UINT32:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_UINT32\n";
         assert(header->nbyper == 4);
         vd->bpc = 4;
-        vd->mapping() = vec2(0, UINT_MAX);
+        vd->mapping(0) = vec2(0, UINT_MAX);
         break;
     case NIFTI_TYPE_FLOAT32:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_FLOAT32\n";
-        vd->mapping() = vec2(-FLT_MAX, FLT_MAX);
+        vd->mapping(0) = vec2(-FLT_MAX, FLT_MAX);
         vd->bpc = 4;
         break;
     default:
@@ -160,7 +160,7 @@ void load(vvVolDesc* vd)
 
     if (header->datatype == NIFTI_TYPE_INT16)
     {
-        vd->mapping() = vec2(SHRT_MIN * slope + inter, SHRT_MAX * slope + inter);
+        vd->mapping(0) = vec2(SHRT_MIN * slope + inter, SHRT_MAX * slope + inter);
 
         // Remap data
         for (ssize_t z = 0; z < vd->vox[2]; ++z)
@@ -179,7 +179,7 @@ void load(vvVolDesc* vd)
     }
     else if (header->datatype == NIFTI_TYPE_INT32)
     {
-        vd->mapping() = vec2(INT_MIN * slope + inter, INT_MAX * slope + inter);
+        vd->mapping(0) = vec2(INT_MIN * slope + inter, INT_MAX * slope + inter);
 
         // Remap data to float
         for (ssize_t z = 0; z < vd->vox[2]; ++z)
@@ -198,7 +198,7 @@ void load(vvVolDesc* vd)
     }
     else if (header->datatype == NIFTI_TYPE_UINT32)
     {
-        vd->mapping() = vec2(inter, UINT_MAX * slope + inter);
+        vd->mapping(0) = vec2(inter, UINT_MAX * slope + inter);
 
         // Remap data to float
         for (ssize_t z = 0; z < vd->vox[2]; ++z)
@@ -217,8 +217,8 @@ void load(vvVolDesc* vd)
     }
     else
     {
-        vd->mapping() *= slope;
-        vd->mapping() += inter;
+        vd->mapping(0) *= slope;
+        vd->mapping(0) += inter;
     }
 
 

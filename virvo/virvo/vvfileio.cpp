@@ -211,18 +211,18 @@ vvFileIO::vvFileIO()
 //----------------------------------------------------------------------------
 void vvFileIO::setDefaultValues(vvVolDesc* vd)
 {
-  vd->vox[0]    = 0;
-  vd->vox[1]    = 0;
-  vd->vox[2]    = 0;
-  vd->frames    = 0;
-  vd->bpc       = 1;
-  vd->chan      = 1;
-  vd->dist[0]   = 1.0f;
-  vd->dist[1]   = 1.0f;
-  vd->dist[2]   = 1.0f;
-  vd->dt        = 1.0f;
-  vd->mapping() = vec2(0.0f, 1.0f);
-  vd->range()   = vec2(0.0f, 1.0f);
+  vd->vox[0]     = 0;
+  vd->vox[1]     = 0;
+  vd->vox[2]     = 0;
+  vd->frames     = 0;
+  vd->bpc        = 1;
+  vd->chan       = 1;
+  vd->dist[0]    = 1.0f;
+  vd->dist[1]    = 1.0f;
+  vd->dist[2]    = 1.0f;
+  vd->dt         = 1.0f;
+  vd->mapping(0) = vec2(0.0f, 1.0f);
+  vd->range(0)   = vec2(0.0f, 1.0f);
 }
 
 //----------------------------------------------------------------------------
@@ -931,8 +931,8 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "DIST %g %g %g\n", vd->dist[0], vd->dist[1], vd->dist[2]);
   fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
   fprintf(fp, "DTIME %g\n", vd->dt);
-  fprintf(fp, "MINMAX %g %g\n", vd->mapping()[0], vd->mapping()[1]);
-  fprintf(fp, "RANGE %g %g\n", vd->range()[0], vd->range()[1]);
+  fprintf(fp, "MINMAX %g %g\n", vd->mapping(0)[0], vd->mapping(0)[1]);
+  fprintf(fp, "RANGE %g %g\n", vd->range(0)[0], vd->range(0)[1]);
   fprintf(fp, "POS %g %g %g\n", vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Write channel names:
@@ -1177,7 +1177,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->mapping()[i] = tok.nval;
+          for (int c = 0; c < vd->chan; ++c)
+            vd->mapping(c)[i] = tok.nval;
         }
       }
       else if (strcmp(tok.sval, "RANGE")==0)
@@ -1726,8 +1727,8 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
   fprintf(fp, "FRAMES %d\n", static_cast<int32_t>(vd->frames));
   if (vd->bpc == 1 || vd->bpc == 2)
   {
-    fprintf(fp, "MIN %g\n", vd->mapping()[0]);
-    fprintf(fp, "MAX %g\n", vd->mapping()[1]);
+    fprintf(fp, "MIN %g\n", vd->mapping(0)[0]);
+    fprintf(fp, "MAX %g\n", vd->mapping(0)[1]);
   }
   else if (vd->bpc == 4)
   {
@@ -2009,8 +2010,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   }
   if (vd->bpc == 1 || vd->bpc == 2)
   {
-    vd->mapping()[0] = min;
-    vd->mapping()[1] = max;
+    vd->mapping(0)[0] = min;
+    vd->mapping(0)[1] = max;
   }
   vd->range(0)[0] = min;
   vd->range(0)[1] = max;
@@ -2023,7 +2024,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 
   // Check for consistence:
   if (vd->vox[0]<=0 || vd->vox[1]<=0 || vd->vox[2]<=0 ||
-    vd->frames<=0 || vd->mapping()[0]>vd->mapping()[1] || vd->range(0)[0]>vd->range(0)[1])
+    vd->frames<=0 || vd->mapping(0)[0]>vd->mapping(0)[1] || vd->range(0)[0]>vd->range(0)[1])
   {
     vvDebugMsg::msg(1, "Error: Invalid file information in header");
     return DATA_ERROR;
@@ -2281,8 +2282,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     timesteps.removeAll();
     return DATA_ERROR;
   }
-  vd->range()[0] = globalMin;
-  vd->range()[1] = globalMax;
+  vd->range(0)[0] = globalMin;
+  vd->range(0)[1] = globalMax;
 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
@@ -3999,7 +4000,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     default: assert(0); break;
   }
   vd->real.resize(vd->chan);
-  vd->mapping() = vec2(0.0f, 1.0f);
+  vd->mapping(0) = vec2(0.0f, 1.0f);
   for (size_t c = 0; c < vd->real.size(); ++c)
   {
     vd->range(c)[0] = 0.f;
@@ -4802,7 +4803,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   }
 
   if (vd->bpc == 1 || vd->bpc == 2)
-    vd->mapping() = vec2(minVal, maxVal);
+    vd->mapping(0) = vec2(minVal, maxVal);
   else if (vd->bpc == 4)
     vd->range(0) = vec2(minVal, maxVal);
   else

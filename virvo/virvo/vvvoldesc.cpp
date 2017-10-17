@@ -391,7 +391,7 @@ void vvVolDesc::setDefaults()
   chan = 0;
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
-  mapping_ = vec2(0.0f, 1.0f);
+  mapping_.push_back(vec2(0.0f, 1.0f));
   range_.push_back(vec2(0.0f, 1.0f));
   pos = vec3f(0.0f, 0.0f, 0.0f);
 }
@@ -901,7 +901,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
         {
           case 1:
             voxVal[c] = float(raw[srcIndex + chan1 + srcChan]);
-            voxVal[c] = lerp(mapping_[0], mapping_[1], voxVal[c] / 255);
+            voxVal[c] = lerp(mapping(c)[0], mapping(c)[1], voxVal[c] / 255);
             break;
           case 2:
 #ifdef BOOST_LITTLE_ENDIAN
@@ -909,7 +909,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
 #else
             voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan)] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan) + 1]));
 #endif
-            voxVal[c] = lerp(mapping_[0], mapping_[1], voxVal[c] / 65535);
+            voxVal[c] = lerp(mapping(c)[0], mapping(c)[1], voxVal[c] / 65535);
             break;
           case 4:
             voxVal[c] = *((float*)(raw + srcIndex + 4 * (chan1 + srcChan)));
@@ -2917,7 +2917,7 @@ void vvVolDesc::printVolumeInfo()
   }
   cerr << "Sample distances:                  " << setprecision(3) << dist[0] << " x " << dist[1] << " x " << dist[2] << endl;
   cerr << "Time step duration [s]:            " << setprecision(3) << dt << endl;
-  cerr << "Mapped data range:                 " << mapping()[0] << " to " << mapping()[1] << endl;
+  cerr << "Mapped data range:                 " << mapping(0)[0] << " to " << mapping(0)[1] << endl;
   cerr << "Actual data range [channel 0]:   " << range(0)[0] << " to " << range(0)[1] << endl;
   for (size_t c = 1; c < range_.size(); ++c)
     cerr << "                  [channel " << c << "]:    " << range(c)[0] << " to " << range(c)[1] << endl;
@@ -3484,8 +3484,11 @@ size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
     ptr += virvo::serialization::writeFloat(ptr, dist[1]);
     ptr += virvo::serialization::writeFloat(ptr, dist[2]);
     ptr += virvo::serialization::writeFloat(ptr, dt);
-    ptr += virvo::serialization::writeFloat(ptr, mapping_[0]);
-    ptr += virvo::serialization::writeFloat(ptr, mapping_[1]);
+    for (int c = 0; c < chan; ++c)
+    {
+        ptr += virvo::serialization::writeFloat(ptr, mapping_[c][0]);
+        ptr += virvo::serialization::writeFloat(ptr, mapping_[c][1]);
+    }
     for (int c = 0; c < chan; ++c)
     {
         ptr += virvo::serialization::writeFloat(ptr, range_[c][0]);
@@ -3568,16 +3571,19 @@ void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
     dt = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
-  assert(ptr + 4 - buffer >= 0);
-  if (size_t(ptr+4 - buffer) <= bufSize)
-    mapping_[0] = virvo::serialization::readFloat(ptr);
-  else return;
-  ptr += 4;
-  assert(ptr + 4 - buffer >= 0);
-  if (size_t(ptr+4 - buffer) <= bufSize)
-    mapping_[1] = virvo::serialization::readFloat(ptr);
-  else return;
-  ptr += 4;
+  for (int c = 0; c < chan; ++c)
+  {
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      mapping_[c][0] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+    assert(ptr + 4 - buffer >= 0);
+    if (size_t(ptr+4 - buffer) <= bufSize)
+      mapping_[c][1] = virvo::serialization::readFloat(ptr);
+    else return;
+    ptr += 4;
+  }
   assert(range_.size() == static_cast<size_t>(chan));
   for (int c = 0; c < chan; ++c)
   {
@@ -3677,12 +3683,12 @@ void vvVolDesc::deserializeAttributesOLD(uint8_t* buffer, size_t bufSize)
   {
     assert(ptr + 4 - buffer >= 0);
     if (size_t(ptr+4 - buffer) <= bufSize)
-      mapping_[0] = virvo::serialization::readFloat(ptr);
+      mapping_[0][0] = virvo::serialization::readFloat(ptr);
     else return;
     ptr += 4;
     assert(ptr + 4 - buffer >= 0);
     if (size_t(ptr+4 - buffer) <= bufSize)
-      mapping_[1] = virvo::serialization::readFloat(ptr);
+      mapping_[0][1] = virvo::serialization::readFloat(ptr);
     else return;
     ptr += 4;
   }
@@ -3849,7 +3855,7 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
       {
         case 1:
           voxelVal = float(sliceData[srcOffset]);
-          voxelVal = lerp(mapping_[0], mapping_[1], voxelVal / 255);
+          voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 255);
           break;
         case 2:
 #ifdef BOOST_LITTLE_ENDIAN
@@ -3857,7 +3863,7 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
 #else
           voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1]));
 #endif
-          voxelVal = lerp(mapping_[0], mapping_[1], voxelVal / 65535);
+          voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 65535);
           break;
         case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - range_[c][0]) / (range_[c][1] - range_[c][0]); break;
         default: assert(0); break;
@@ -3937,12 +3943,12 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax) cons
     switch(bpc)
     {
       case 1: vvToolshed::getMinMax(getRaw(f), getFrameBytes(), &mi, &ma);
-        fMin = lerp(mapping_[0], mapping_[1], static_cast<float>(mi) / 255);
-        fMax = lerp(mapping_[0], mapping_[1], static_cast<float>(ma) / 255);
+        fMin = lerp(mapping(channel)[0], mapping(channel)[1], static_cast<float>(mi) / 255);
+        fMax = lerp(mapping(channel)[0], mapping(channel)[1], static_cast<float>(ma) / 255);
         break;
       case 2: vvToolshed::getMinMax16bitHost(getRaw(f), getFrameVoxels(), &mi, &ma);
-        fMin = lerp(mapping_[0], mapping_[1], static_cast<float>(mi) / 65535);
-        fMax = lerp(mapping_[0], mapping_[1], static_cast<float>(ma) / 65535);
+        fMin = lerp(mapping(channel)[0], mapping(channel)[1], static_cast<float>(mi) / 65535);
+        fMax = lerp(mapping(channel)[0], mapping(channel)[1], static_cast<float>(ma) / 65535);
         break;
       case 4:
         vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax);
@@ -4802,7 +4808,7 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int ch
     case 1:
     {
       fval = float(data[index]);
-      fval = lerp(mapping_[0], mapping_[1], fval / 255);
+      fval = lerp(mapping(chan)[0], mapping(chan)[1], fval / 255);
       break;
     }
     case 2:
@@ -4813,7 +4819,7 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int ch
       unsigned short ival = ((unsigned short)data[index] << 8) | data[index+1]; fval = float(ival);
 #endif
       fval = (float)ival;
-      fval = lerp(mapping_[0], mapping_[1], fval / 65535);
+      fval = lerp(mapping(chan)[0], mapping(chan)[1], fval / 65535);
       break;
     }
     case 4: fval = *((float*)(data + index)); break;
@@ -5617,7 +5623,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
 }
 
 //----------------------------------------------------------------------------
-/** Resample voxel to integer value. Voxel is provided as 8-bit
+/** Rescale voxel to integer value. Voxel is provided as 8-bit
   unsigned char array of length bpc. If bpc == newBPV, voxels are
   returned with their presentation unchanged. Else, first converts
   to the floating point interval mapping_[0]..mapping_[1].
@@ -5628,7 +5634,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   @param newBPV
   @return resampled integer value
 */
-int vvVolDesc::resampleVoxel(const uint8_t* bytes, int newBPV) const
+int vvVolDesc::rescaleVoxel(const uint8_t* bytes, int newBPV, int chan) const
 {
   // TODO: maybe use a template with newBPV a compile time constant.
   assert(newBPV == 1 || newBPV == 2);
@@ -5653,21 +5659,21 @@ int vvVolDesc::resampleVoxel(const uint8_t* bytes, int newBPV) const
   else if (bpc == 2)
   {
     uint16_t val16 = *reinterpret_cast<const uint16_t*>(bytes);
-    fval = lerp(mapping_[0], mapping_[1], val16 / 65535.0f);
+    fval = lerp(mapping(chan)[0], mapping(chan)[1], val16 / 65535.0f);
   }
   else if (bpc == 1)
   {
-    fval = lerp(mapping_[0], mapping_[1], bytes[0] / 255.0f);
+    fval = lerp(mapping(chan)[0], mapping(chan)[1], bytes[0] / 255.0f);
   }
 
-  fval = ts_clamp(fval, range(0)[0], range(0)[1]);
+  fval = ts_clamp(fval, range(chan)[0], range(chan)[1]);
 
   int scale = newBPV == 1 ? 255 : 65535;
 
   switch(_binning)
   {
     case LINEAR:
-      return (fval - range(0)[0]) / (range(0)[1] - range(0)[0]) * scale;
+      return (fval - range(chan)[0]) / (range(chan)[1] - range(chan)[0]) * scale;
     case ISO_DATA:
     case OPACITY:
       return findHDRBin(fval);

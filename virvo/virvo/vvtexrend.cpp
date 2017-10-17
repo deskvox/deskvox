@@ -541,7 +541,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
 
   bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==static_cast<int>(texelsize);
   for (int c=0; c<vd->chan; ++c)
-    useRaw &= fabs(vd->mapping()[0]-vd->range(c)[0]) <= FLT_EPSILON && fabs(vd->mapping()[1]-vd->range(c)[1]) <= FLT_EPSILON;
+    useRaw &= fabs(vd->mapping(c)[0]-vd->range(c)[0]) <= FLT_EPSILON && fabs(vd->mapping(c)[1]-vd->range(c)[1]) <= FLT_EPSILON;
 
   if (sizeX != vd->vox[0])
     useRaw = false;
@@ -593,8 +593,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
               for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
                 srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
-                // resample voxel to 8-bit
-                rawVal[0] = vd->resampleVoxel(raw + srcIndex);
+                // rescale voxel to 8-bit
+                rawVal[0] = vd->rescaleVoxel(raw + srcIndex);
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
                 switch(voxelType)
                 {
@@ -624,8 +624,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 for (int c = 0; c < std::min(vd->chan, 4); c++)
                 {
                   srcIndex = vd->bpc * (min(x,vd->vox[0]-1)*vd->chan+c) + rawSliceOffset + heightOffset;
-                  // resample voxel to 8-bit
-                  rawVal[c] = vd->resampleVoxel(raw + srcIndex);
+                  // rescale voxel to 8-bit
+                  rawVal[c] = vd->rescaleVoxel(raw + srcIndex, 8/*bit*/, c);
                 }
 
                 // Copy color components:

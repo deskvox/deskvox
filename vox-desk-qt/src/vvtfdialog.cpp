@@ -568,12 +568,12 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
     impl_->ui->minLabel->setText(QString::number(vd->range(0).x));
     impl_->ui->maxLabel->setText(QString::number(vd->range(0).y));
 
-    impl_->ui->zoomMinBox->setMinimum(vd->mapping().x);
-    impl_->ui->zoomMinBox->setMaximum(vd->mapping().y);
+    impl_->ui->zoomMinBox->setMinimum(vd->mapping(0).x);
+    impl_->ui->zoomMinBox->setMaximum(vd->mapping(0).y);
     impl_->ui->zoomMinBox->setValue(vd->range(0).x);
 
-    impl_->ui->zoomMaxBox->setMinimum(vd->mapping().x);
-    impl_->ui->zoomMaxBox->setMaximum(vd->mapping().y);
+    impl_->ui->zoomMaxBox->setMinimum(vd->mapping(0).x);
+    impl_->ui->zoomMaxBox->setMaximum(vd->mapping(0).y);
     impl_->ui->zoomMaxBox->setValue(vd->range(0).y);
 
     impl_->ui->discrSlider->setValue(vd->tf[0].getDiscreteColors());
