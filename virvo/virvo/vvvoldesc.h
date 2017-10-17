@@ -137,10 +137,13 @@ class VIRVO_FILEIOEXPORT vvVolDesc
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
 private:
     std::vector<vec2> mapping_;                   ///< Mapping from internal data representation to floating point. Defaults: bpc=1|2: [0..1], bpc=4[-FLT_MAX..FLT_MAX]
-    std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set
+    std::vector<vec2> zoomRange_;                 ///< (Possibly user specified) zoom range (zoomRange_ in mapping_)
+    std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set (range_ in zoomRange_)
 public:
     vec2& mapping(int chan) { return mapping_[chan]; }
     const vec2& mapping(int chan) const { return mapping_[chan]; }
+    vec2& zoomRange(int chan) { return zoomRange_[chan]; }
+    const vec2& zoomRange(int chan) const { return zoomRange_[chan]; }
     vec2& range(int chan) { return range_[chan]; }
     const vec2& range(int chan) const { return range_[chan]; }
     std::vector<float> channelWeights;            ///< scalar weight for each channel, default: 1.0f

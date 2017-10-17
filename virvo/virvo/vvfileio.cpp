@@ -932,6 +932,8 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
   fprintf(fp, "DTIME %g\n", vd->dt);
   fprintf(fp, "MINMAX %g %g\n", vd->mapping(0)[0], vd->mapping(0)[1]);
+//fprintf(fp, "ZOOMRANGE %g %g\n", vd->zoomRange(0)[0], vd->zoomRange(0)[1]);
+  fprintf(fp, "ZOOMRANGE %g %g\n", vd->mapping(0)[0], vd->mapping(0)[1]); // TODO
   fprintf(fp, "RANGE %g %g\n", vd->range(0)[0], vd->range(0)[1]);
   fprintf(fp, "POS %g %g %g\n", vd->pos[0], vd->pos[1], vd->pos[2]);
 

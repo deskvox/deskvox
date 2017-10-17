@@ -392,6 +392,7 @@ void vvVolDesc::setDefaults()
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
   mapping_.push_back(vec2(0.0f, 1.0f));
+  zoomRange_.push_back(vec2(0.0f, 0.0f)); // TODO
   range_.push_back(vec2(0.0f, 1.0f));
   pos = vec3f(0.0f, 0.0f, 0.0f);
 }
