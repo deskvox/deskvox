@@ -1016,7 +1016,7 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
                     for (ssize_t x = 0; x < vd->vox[0]; ++x)
                     {
                         const uint8_t* voxel = (*vd)(f, x, y, z);
-                        for (size_t c = 0; c < vd->chan; ++c)
+                        for (int c = 0; c < vd->chan; ++c)
                         {
                             size_t index = (z * vd->getSliceBytes() + y * vd->vox[1] + x) * vd->bpc;
                             memcpy(
@@ -1031,7 +1031,7 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
             raw = tmp.data();
         }
 
-        for (size_t c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->chan; ++c)
         {
             size_t index = f * vd->chan + c;
 
@@ -1255,7 +1255,7 @@ void vvRayCaster::renderVolumeGL()
     auto volumes_data = [&]()
     {
         device_volumes.resize(vd->chan);
-        for (size_t c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->chan; ++c)
         {
             if (vd->bpc == 1)
             {
