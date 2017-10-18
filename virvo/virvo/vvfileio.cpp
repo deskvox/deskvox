@@ -4001,10 +4001,11 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
       break;
     default: assert(0); break;
   }
-  vd->real.resize(vd->chan);
-  vd->mapping(0) = vec2(0.0f, 1.0f);
-  for (size_t c = 0; c < vd->real.size(); ++c)
+  for (int c = 0; c < vd->chan; ++c)
   {
+    // TODO
+    vd->mapping(c)[0] = 0.f;
+    vd->mapping(c)[1] = 1.f;
     vd->range(c)[0] = 0.f;
     vd->range(c)[1] = 1.f;
   }
