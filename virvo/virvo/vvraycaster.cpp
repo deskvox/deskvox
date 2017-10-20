@@ -619,7 +619,7 @@ public:
     color_type const* color() const { return color_; }
     depth_type const* depth() const { return depth_; }
 
-    ref_type ref() { return { color(), depth(), width(), height() }; }
+    ref_type ref() { return { color(), depth(), size_t(width()), size_t(height()) }; }
 
     void begin_frame() {}
     void end_frame() {}
