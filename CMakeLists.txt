@@ -140,7 +140,7 @@ endif()
 if (NOT DEFINED DESKVOX_USE_QT4)
   # Make this an option only if the variable has not otherwise been set. Allows
   # other CMake modules to override the default value defined here.
-  option(DESKVOX_USE_QT4 "Use QT4 not QT5 if available" ON)
+  option(DESKVOX_USE_QT4 "Use QT4 not QT5 if available" OFF)
 endif()
 include(Qt4-5)
 
