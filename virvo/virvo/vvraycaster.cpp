@@ -795,13 +795,13 @@ struct volume_kernel
                     {
                         // TODO: make this modifiable
                         plastic<S> mat;
-                        mat.set_ca( from_rgb(vector<3, S>(0.3f, 0.3f, 0.3f)) );
-                        mat.set_cd( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
-                        mat.set_cs( from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f)) );
-                        mat.set_ka( 1.0f );
-                        mat.set_kd( 1.0f );
-                        mat.set_ks( 1.0f );
-                        mat.set_specular_exp( 1000.0f );
+                        mat.ca() = from_rgb(vector<3, S>(0.3f, 0.3f, 0.3f));
+                        mat.cd() = from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f));
+                        mat.cs() = from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f));
+                        mat.ka() = 1.0f;
+                        mat.kd() = 1.0f;
+                        mat.ks() = 1.0f;
+                        mat.specular_exp() = 1000.0f;
 
 
                         // calculate shading
