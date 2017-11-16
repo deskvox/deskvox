@@ -223,7 +223,11 @@ void load(vvVolDesc* vd)
 
 
     for (int c = 0; c < vd->chan; ++c)
+    {
         vd->findMinMax(c, vd->range(c)[0], vd->range(c)[1]);
+        vd->tf[c].setDefaultColors(vd->chan == 1 ? 0 : 4 + c, vd->range(c)[0], vd->range(c)[1]);
+        vd->tf[c].setDefaultAlpha(0, vd->range(c)[0], vd->range(c)[1]);
+    }
 }
 
 void save(const vvVolDesc* vd)
