@@ -1159,7 +1159,7 @@ void VVTransferWindow::drawBinLimits()
       for (size_t i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
       {
         xmin = data2norm(_canvas->_vd->_hdrBinLimits[i]);
-        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->real[0][1]);
+        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->range(0)[1]);
         else xmax = data2norm(_canvas->_vd->_hdrBinLimits[i+1]);
       
         glBegin(GL_LINES);
@@ -1181,7 +1181,7 @@ void VVTransferWindow::drawBinLimits()
         glBegin(GL_LINES);
           glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
           xmin = data2norm((float(i) / 256.0f) * 
-            (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) + _canvas->_vd->real[0][0]);
+            (_canvas->_vd->range(0)[1] - _canvas->_vd->range(0)[0]) + _canvas->_vd->range(0)[0]);
           glVertex3f(xmin, ymin, 0.0f);
           glVertex3f(xmin, ymax, 0.0f);
         glEnd();
@@ -1293,7 +1293,7 @@ float VVTransferWindow::hdr2data(float hdr)
 {
   size_t bin = _canvas->_vd->findHDRBin(hdr);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->range(0)[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1304,7 +1304,7 @@ float VVTransferWindow::data2hdr(float data)
 {
   size_t bin = _canvas->_vd->findHDRBin(data);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->range(0)[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1314,7 +1314,7 @@ float VVTransferWindow::data2hdr(float data)
 float VVTransferWindow::hdr2realbin(float hdr)
 {    
   size_t bin = _canvas->_vd->findHDRBin(hdr);
-  float realbin = float(bin) * (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->real[0][0];
+  float realbin = float(bin) * (_canvas->_vd->range(0)[1] - _canvas->_vd->range(0)[0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->range(0)[0];
   return realbin;
 }
 
@@ -1322,10 +1322,10 @@ float VVTransferWindow::hdr2realbin(float hdr)
 */
 float VVTransferWindow::realbin2hdr(float realbin)
 {    
-  size_t bin = (realbin - _canvas->_vd->real[0][0]) / (_canvas->_vd->real[0][1] - _canvas->_vd->real[0][0]) * float(vvVolDesc::NUM_HDR_BINS-1);
+  size_t bin = (realbin - _canvas->_vd->range(0)[0]) / (_canvas->_vd->range(0)[1] - _canvas->_vd->range(0)[0]) * float(vvVolDesc::NUM_HDR_BINS-1);
   bin = ts_clamp(bin, size_t(0), vvVolDesc::NUM_HDR_BINS-1);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
-  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[0][1];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->range(0)[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
   return binPos;
 }
@@ -1481,7 +1481,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   {
     // Shift colors according to HDR bins:
     tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * RGBA * 3];
-    _canvas->_vd->tf[0].makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0][0], _canvas->_vd->real[0][1], _invertCheck->getCheck()!=0);
+    _canvas->_vd->tf[0].makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->range(0)[0], _canvas->_vd->range(0)[1], _invertCheck->getCheck()!=0);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
@@ -1527,7 +1527,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck() && _shell->_floatRangeDialog->_opacityCheck->getCheck())
   {   // histogram equalization mode?
     tmpTex = new uchar[vvVolDesc::NUM_HDR_BINS * height * RGBA];
-    _canvas->_vd->tf[0].makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _canvas->_vd->real[0][0], _canvas->_vd->real[0][1]);
+    _canvas->_vd->tf[0].makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _canvas->_vd->range(0)[0], _canvas->_vd->range(0)[1]);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));
@@ -1713,8 +1713,8 @@ long VVTransferWindow::onCmdZoomLUT(FXObject*,FXSelector,void*)
 
 void VVTransferWindow::zoomLUT()
 {
-  _dataZoom[0] = _canvas->_vd->real[0][0];
-  _dataZoom[1] = _canvas->_vd->real[0][1];
+  _dataZoom[0] = _canvas->_vd->range(0)[0];
+  _dataZoom[1] = _canvas->_vd->range(0)[1];
   setDirtyHistogram();
   updateValues();
 }
@@ -1723,11 +1723,8 @@ long VVTransferWindow::onCmdDefault(FXObject*,FXSelector,void*)
 {
   float fMin, fMax;
   _canvas->_vd->tf[0].putUndoBuffer();
-  _canvas->_vd->findMinMax(0, fMin, fMax);
-  _canvas->_vd->real[0][0] = fMin;
-  _canvas->_vd->real[0][1] = fMax;
-  _dataZoom[0] = _canvas->_vd->real[0][0];
-  _dataZoom[1] = _canvas->_vd->real[0][1];
+  _dataZoom[0] = _canvas->_vd->range(0)[0];
+  _dataZoom[1] = _canvas->_vd->range(0)[1];
   _canvas->_vd->tf[0].setDefaultAlpha(0, _dataZoom[0], _dataZoom[1]);
   _canvas->_vd->tf[0].setDefaultColors(0, _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
@@ -1765,8 +1762,8 @@ void VVTransferWindow::updateValues()
   _currentWidget = NULL;
   _zoomMinButton->setText(FXStringFormat("%.5g", _dataZoom[0]));
   _zoomMaxButton->setText(FXStringFormat("%.5g", _dataZoom[1]));
-  _realMinLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0][0]));
-  _realMaxLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0][1]));
+  _realMinLabel->setText(FXStringFormat("%.5g", _canvas->_vd->range(0)[0]));
+  _realMaxLabel->setText(FXStringFormat("%.5g", _canvas->_vd->range(0)[1]));
   updateLabels();
   _disColorSlider->setValue(_canvas->_vd->tf[0].getDiscreteColors());
   _disColorLabel->setText(FXStringFormat("%d", _disColorSlider->getValue()));

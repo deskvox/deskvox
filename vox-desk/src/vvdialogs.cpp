@@ -221,8 +221,8 @@ void VVVolumeDialog::updateValues()
   _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[0]));
   _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[1]));
   _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[2]));
-  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[0][0]));
-  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->real[0][1]));
+  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[0]));
+  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[1]));
   _canvas->_vd->findMinMax(0, fMin, fMax);
   _minLabel->setText(FXStringFormat("%.9g",  fMin));
   _maxLabel->setText(FXStringFormat("%.9g",  fMax));
@@ -2704,14 +2704,14 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
   {
     if(_shell->_glcanvas->makeCurrent())
     {
-      _canvas->_vd->real[0][0] = FXFloatVal(_minTF->getText());
-      _canvas->_vd->real[0][1] = FXFloatVal(_maxTF->getText());
-      if (_prevRange[0] != _canvas->_vd->real[0][0] ||
-          _prevRange[1] != _canvas->_vd->real[0][1])
+      _canvas->_vd->range(0)[0] = FXFloatVal(_minTF->getText());
+      _canvas->_vd->range(0)[1] = FXFloatVal(_maxTF->getText());
+      if (_prevRange[0] != _canvas->_vd->range(0)[0] ||
+          _prevRange[1] != _canvas->_vd->range(0)[1])
       {
         _shell->_transWindow->setDirtyHistogram();
-        _prevRange[0] = _canvas->_vd->real[0][0];
-        _prevRange[1] = _canvas->_vd->real[0][1];
+        _prevRange[0] = _canvas->_vd->range(0)[0];
+        _prevRange[1] = _canvas->_vd->range(0)[1];
       }
       
       _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, (_hdrCheck->getCheck()) ? _algoType : 0);
@@ -2814,8 +2814,8 @@ void VVFloatRangeDialog::updateValues()
 {
   if (_canvas->_renderer)
   {
-    _minTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[0][0]));
-    _maxTF->setText(FXStringFormat("%.9g", _canvas->_vd->real[0][1]));
+    _minTF->setText(FXStringFormat("%.9g", _canvas->_vd->range(0)[0]));
+    _maxTF->setText(FXStringFormat("%.9g", _canvas->_vd->range(0)[1]));
   }
 }
 

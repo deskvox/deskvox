@@ -615,10 +615,9 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
   delete fio;
   if (vd->tf[0].isEmpty())
   {
-    vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
-    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
+    vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
+    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
   }
-  if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
   setCanvasRenderer(vd, vvRenderer::INVALID);
   _transWindow->setDirtyHistogram();
   _transWindow->zoomLUT();
@@ -660,10 +659,9 @@ void VVShell::loadVolumeFile(const char* filename)
       // Use default TF if none stored:
       if (vd->tf[0].isEmpty())
       {
-        vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
-        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
+        vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
+        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
       }
-      if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
@@ -832,10 +830,9 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
       // Use previous pin list if loaded dataset has no pins:
       if (vd->tf[0].isEmpty())
       {
-        vd->tf[0].setDefaultAlpha(0, vd->real[0][0], vd->real[0][1]);
-        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0][0], vd->real[0][1]);
+        vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
+        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
       }
-      if (vd->bpc==4 && vd->real[0][0]==0.0f && vd->real[0][1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentVoxels);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
