@@ -1721,7 +1721,6 @@ void VVTransferWindow::zoomLUT()
 
 long VVTransferWindow::onCmdDefault(FXObject*,FXSelector,void*)
 {
-  float fMin, fMax;
   _canvas->_vd->tf[0].putUndoBuffer();
   _dataZoom[0] = _canvas->_vd->range(0)[0];
   _dataZoom[1] = _canvas->_vd->range(0)[1];
