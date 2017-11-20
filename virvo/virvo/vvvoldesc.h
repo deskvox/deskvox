@@ -288,6 +288,7 @@ public:
     void   toggleSign(int frame=-1);
     void   makeUnsigned(int frame=-1);
     void   blend(vvVolDesc*, int, bool=false);
+    void   applyMask(vvVolDesc* maskVD);
     void   swapChannels(size_t, size_t, bool=false);
     void   extractChannel(float[3], bool=false);
     bool   makeHeightField(size_t, int, bool=false);
@@ -336,6 +337,7 @@ public:
     float  findClampValue(int, int channel, float) const;
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
+    float  getChannelValue(int frame, size_t indexXYZ, int chan) const;
     float  getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const;
     void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
     void   findAndSetRange(int channel = 0);

@@ -112,6 +112,8 @@ vvConv::vvConv()
     , blend(false)
     , blendFile(NULL)
     , blendType(0)
+    , mask(false)
+    , maskFile(NULL)
     , channels(-1)
     , setIcon(false)
     , makeIconSize(0)
@@ -860,6 +862,14 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     v->blend(blendVD, blendType, true);    
     delete fio;
     delete blendVD;
+  }
+  if (mask)
+  {
+    vvVolDesc maskVD(maskFile);
+    vvFileIO fio;
+    fio.loadVolumeData(&maskVD);
+    cerr << "Applying mask: ";
+    v->applyMask(&maskVD);
   }
   if (bpchan>-1)
   {
@@ -1773,6 +1783,22 @@ bool vvConv::parseCommandLine(int argc, char** argv)
         return false;
       }
       blendType = atoi(argv[arg]);
+    }
+
+    else if (vvToolshed::strCompare(argv[arg], "-mask")==0)
+    {
+      mask = true;
+      if ((++arg)>=argc) 
+      {
+        cerr << "File name for mask file missing." << endl;
+        return false;
+      }
+      maskFile = argv[arg];
+      if (!vvToolshed::isFile(maskFile))  
+      {
+        cerr << "Mask file not found: " << maskFile << endl;
+        return false;
+      }
     }
 
     else if (vvToolshed::strCompare(argv[arg], "-mergetype")==0)

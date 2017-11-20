@@ -4427,6 +4427,39 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
 }
 
 //----------------------------------------------------------------------------
+/** Discard all voxel values where voxel value in mask volume
+  description is 0.
+  @param maskVD  mask volume to apply
+*/
+void vvVolDesc::applyMask(vvVolDesc* maskVD)
+{
+  vvDebugMsg::msg(2, "vvVolDesc::applyMask()");
+
+  if (maskVD->vox[0] != vox[0] || maskVD->vox[1] != vox[1] || maskVD->vox[2] != vox[2])
+  {
+    cerr << "Cannot apply mask: volume and mask must have same size" << endl;
+    return;
+  }
+
+  int chan = 0; // TODO
+
+  for (size_t f=0; f<frames; ++f)
+  {
+    uint8_t* data = getRaw(f);
+    for (size_t i=0; i<getFrameVoxels(); ++i)
+    {
+      bool m = static_cast<bool>(maskVD->getChannelValue(f, i, 0));
+
+      if (!m)
+      {
+        size_t index = getBPV() * i + chan * bpc;
+        memset(data + index, 0, bpc);
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
 /** Blend two volumes together. Both volumes must have the same size and
   the same data type. If the number of time steps is different,
   the sequence with less steps will be repeated. The result will have
@@ -4796,14 +4829,14 @@ void vvVolDesc::resizeEdgeMax(float len)
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const
+float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int chan) const
 {
   uint8_t* data = getRaw(frame);
   float fval;
   size_t index;
   size_t bpv = getBPV();
 
-  index = bpv * (x + y * vox[0] + z * vox[0] * vox[1]) + chan * bpc;
+  index = bpv * indexXYZ + chan * bpc;
   switch(bpc)
   {
     case 1:
@@ -4827,6 +4860,12 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int ch
     default: assert(0); fval = 0.0f; break;
   }
   return fval;
+}
+
+//----------------------------------------------------------------------------
+float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const
+{
+  return getChannelValue(frame, x + y * vox[0] + z * vox[0] * vox[1], chan);
 }
 
 //----------------------------------------------------------------------------

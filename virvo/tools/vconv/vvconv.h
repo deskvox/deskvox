@@ -121,6 +121,8 @@ class vvConv
     bool  blend;        ///< true = do blending
     char* blendFile;    ///< file to blend
     int   blendType;    ///< blending method
+    bool  mask;         ///< true = apply binary mask
+    char* maskFile;     ///< file containing the binary mask
     int   channels;     ///< set number of channels (-1 if not used)
     bool  setIcon;      ///< true = set icon to image from file
     char* iconFile;     ///< icon image file
