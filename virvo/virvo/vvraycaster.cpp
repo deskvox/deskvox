@@ -381,7 +381,7 @@ struct clip_box : basic_aabb<float>
 {
     using base_type = basic_aabb<float>;
 
-    VSNRAY_FUNC clip_box() = default;
+    clip_box() = default;
     VSNRAY_FUNC clip_box(vec3 const& min, vec3 const& max)
         : base_type(min, max)
     {
