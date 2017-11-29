@@ -208,6 +208,7 @@ set(VIRVO_HEADERS
   vvtcpserver.h
   vvtcpsocket.h
   vvtexrend.h
+  vvtextureutil.h
   vvtfwidget.h
   vvtokenizer.h
   vvtoolshed.h
@@ -290,6 +291,7 @@ set(VIRVO_SOURCES
   vvtcpserver.cpp
   vvtcpsocket.cpp
   vvtexrend.cpp
+  vvtextureutil.cpp
   vvudpsocket.cpp
   vvvecmath.cpp
   vvvffile.cpp

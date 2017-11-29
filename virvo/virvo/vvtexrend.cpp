@@ -45,6 +45,7 @@
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvtexrend.h"
+#include "vvtextureutil.h"
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
@@ -57,20 +58,7 @@
 #include "private/vvlog.h"
 
 using namespace std;
-
-namespace gl = virvo::gl;
-
-using virvo::aabb;
-using virvo::mat4;
-using virvo::plane3;
-using virvo::ray;
-using virvo::vec3f;
-using virvo::vec3;
-using virvo::vec4f;
-using virvo::vec4i;
-using virvo::vec4;
-
-using virvo::PixelFormat;
+using namespace virvo;
 
 enum {
   Shader1Chan = 0,
@@ -503,11 +491,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                                                  ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ, bool newTex)
 {
   ErrorType err = OK;
-  size_t srcIndex;
-  size_t texOffset=0;
-  vec4i rawVal;
-  uint8_t* texData = NULL;
-
   vvDebugMsg::msg(1, "vvTexRend::updateTextures3D()");
 
   if (!extTex3d) return NO3DTEX;
@@ -517,8 +500,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   VV_LOG(1) << "3D Texture height    = " << sizeY << std::endl;
   VV_LOG(1) << "3D Texture depth     = " << sizeZ << std::endl;
   VV_LOG(1) << "3D Texture size (KB) = " << texSize / 1024 << std::endl;
-
-  size_t sliceSize = vd->getSliceBytes();
 
   if (vd->frames != textures)
     newTex = true;
@@ -536,125 +517,51 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
 
   VV_LOG(2) << "Transferring textures to TRAM. Total size [KB]: " << vd->frames * texSize / 1024 << std::endl;
 
-  virvo::vector< 3, ssize_t > offsets(offsetX, offsetY, offsetZ);
-  offsets += _paddingRegion.min;
+  vec3i first(offsetX, offsetY, offsetZ);
+  vec3i last = first + vec3i(sizeX, sizeY, sizeZ);
 
-  bool useRaw = vd->bpc==1 && vd->chan<=4 && vd->chan==static_cast<int>(texelsize);
-  for (int c=0; c<vd->chan; ++c)
-    useRaw &= fabs(vd->mapping(c)[0]-vd->range(c)[0]) <= FLT_EPSILON && fabs(vd->mapping(c)[1]-vd->range(c)[1]) <= FLT_EPSILON;
+  PixelFormat pf = PF_R8;
 
-  if (sizeX != vd->vox[0])
-    useRaw = false;
-  if (sizeY != vd->vox[1])
-    useRaw = false;
-  if (sizeZ != vd->vox[2])
-    useRaw = false;
-  for (int i=0; i<3; ++i) {
-    if (offsets[i] != 0)
-      useRaw = false;
-  }
-  if (!useRaw)
-  {
-    texData = new uint8_t[texSize];
-    memset(texData, 0, texSize);
-  }
+  // Texrend uses 8-bit per color component for rendering!
+  if (voxelType == VV_RGBA) // pre-classification
+    pf = PF_RGBA8;
+  else if (vd->chan == 1)
+    pf = PF_R8;
+  else if (vd->chan == 2)
+    pf = PF_RG8;
+  else if (vd->chan == 3)
+    pf = PF_RGB8;
+  else if (vd->chan == 4)
+    pf = PF_RGBA8;
+  else
+    cerr << "Cannot determine pixel format: unsupported number of channels." << endl;
+    // TODO: out..
+
+  std::vector<uint8_t> texData(TextureUtil::computeTextureSize(first, last, pf));
 
   // Generate sub texture contents:
   for (size_t f = 0; f < vd->frames; f++)
   {
-    uint8_t *raw = vd->getRaw(f);
-    if (useRaw) {
-      texData = raw;
+    if (voxelType == VV_RGBA)
+    {
+      // Compute RGBA texture with indirection from rgbaLUT
+      TextureUtil::createTexture(&texData[0],
+          vd,
+          first,
+          last,
+          &(rgbaLUT[0])[0], // TODO: why rgbaLUT[0]?
+          1/*bytes per RGBA channel*/,
+          f);
     }
     else
     {
-      for (ssize_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
-      {
-        size_t rawSliceOffset = (std::min(std::max(s,ssize_t(0)),vd->vox[2]-1)) * sliceSize;
-        for (ssize_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
-        {
-          size_t heightOffset = (std::min(std::max(y,ssize_t(0)),vd->vox[1]-1)) * vd->vox[0] * vd->bpc * vd->chan;
-          size_t texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
-          
-          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
-          {
-            if (vd->bpc == 1 && texelsize == 1)
-            {
-              // one byte, one color channel ==> can use memcpy for consecutive memory chunks
-              ssize_t x1 = offsets[0];
-              ssize_t x2 = offsets[0] + sizeX;
-              size_t srcMin = vd->bpc * min(x1, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
-              size_t srcMax = vd->bpc * min(x2, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
-              texOffset = texLineOffset - offsetX;
-              memcpy(&texData[texelsize * texOffset], &raw[srcMin], srcMax - srcMin);
-            }
-            else
-            {
-              for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
-              {
-                srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
-                // rescale voxel to 8-bit
-                rawVal[0] = vd->rescaleVoxel(raw + srcIndex);
-                texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-                switch(voxelType)
-                {
-                case VV_PIX_SHD:
-                  texData[texelsize * texOffset] = (uint8_t) rawVal[0];
-                  break;
-                case VV_RGBA:
-                  for (size_t c = 0; c < 4; c++)
-                  {
-                    texData[4 * texOffset + c] = rgbaLUT[0][size_t(rawVal[0]) * 4 + c];
-                  }
-                  break;
-                default:
-                  assert(0);
-                  break;
-                }
-              }
-            }
-          }
-          else if (vd->bpc==1 || vd->bpc==2 || vd->bpc==4)
-          {
-            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
-            {
-              for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
-              {
-                texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-                for (int c = 0; c < std::min(vd->chan, 4); c++)
-                {
-                  srcIndex = vd->bpc * (min(x,vd->vox[0]-1)*vd->chan+c) + rawSliceOffset + heightOffset;
-                  // rescale voxel to 8-bit
-                  rawVal[c] = vd->rescaleVoxel(raw + srcIndex, 8/*bit*/, c);
-                }
-
-                // Copy color components:
-                for (int c = 0; c < std::min(vd->chan, 3); c++)
-                {
-                  texData[4 * texOffset + c] = (uint8_t) rawVal[c];
-                }
-              }
-
-              // Alpha channel:
-              if (vd->chan >= 4)
-              {
-                texData[4 * texOffset + 3] = (uint8_t)rawVal[3];
-              }
-              else
-              {
-                size_t alpha = 0;
-                for (int c = 0; c < vd->chan; c++)
-                {
-                  // Alpha: mean of sum of RGB conversion table results:
-                  alpha += (size_t) rgbaLUT[0][size_t(rawVal[c]) * 4 + c];
-                }
-                texData[4 * texOffset + 3] = (uint8_t) (alpha / vd->chan);
-              }
-            }
-          }
-          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
-        }
-      }
+      TextureUtil::createTexture(&texData[0],
+          vd,
+          first,
+          last,
+          pf,
+          TextureUtil::All,
+          f);
     }
 
     if (newTex)
@@ -676,7 +583,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       if (glWidth==texels[0])
       {
         glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
-          texFormat, GL_UNSIGNED_BYTE, texData);
+          texFormat, GL_UNSIGNED_BYTE, &texData[0]);
       }
       else
       {
@@ -690,14 +597,10 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     {
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
       glTexSubImage3D(GL_TEXTURE_3D_EXT, 0, offsetX, offsetY, offsetZ,
-        sizeX, sizeY, sizeZ, texFormat, GL_UNSIGNED_BYTE, texData);
+        sizeX, sizeY, sizeZ, texFormat, GL_UNSIGNED_BYTE, &texData[0]);
     }
   }
 
-  if (!useRaw)
-  {
-    delete[] texData;
-  }
   return err;
 }
 
