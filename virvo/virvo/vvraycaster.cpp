@@ -56,6 +56,7 @@
 #include "gl/util.h"
 #include "vvcudarendertarget.h"
 #include "vvraycaster.h"
+#include "vvtextureutil.h"
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
@@ -952,6 +953,9 @@ struct vvRayCaster::Impl
     std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
 
+    // Internal storage format for textures
+    virvo::PixelFormat              texture_format = virvo::PF_R8;
+
     void updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer);
     void updateTransfuncTexture(vvVolDesc* vd, vvRenderer* renderer);
 
@@ -962,15 +966,15 @@ struct vvRayCaster::Impl
 
 void vvRayCaster::Impl::updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer)
 {
-    if (vd->bpc == 1)
+    if (texture_format == virvo::PF_R8)
     {
         updateVolumeTexturesImpl(vd, renderer, volumes8);
     }
-    else if (vd->bpc == 2)
+    else if (texture_format == virvo::PF_R16UI)
     {
         updateVolumeTexturesImpl(vd, renderer, volumes16);
     }
-    else if (vd->bpc == 4)
+    else if (texture_format == virvo::PF_R32F)
     {
         updateVolumeTexturesImpl(vd, renderer, volumes32);
     }
@@ -1000,43 +1004,27 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
     tex_address_mode address_mode = Clamp;
 
     volumes.resize(vd->frames * vd->chan);
+
     for (size_t f = 0; f < vd->frames; ++f)
     {
-        uint8_t* raw = vd->getRaw(f);
-        aligned_vector<uint8_t> tmp;
-
-        // Swizzle from AoS to SoA
-        if (vd->chan > 1)
-        {
-            tmp.resize(vd->getFrameBytes());
-            for (ssize_t z = 0; z < vd->vox[2]; ++z)
-            {
-                for (ssize_t y = 0; y < vd->vox[1]; ++y)
-                {
-                    for (ssize_t x = 0; x < vd->vox[0]; ++x)
-                    {
-                        const uint8_t* voxel = (*vd)(f, x, y, z);
-                        for (int c = 0; c < vd->chan; ++c)
-                        {
-                            size_t index = (z * vd->getSliceBytes() + y * vd->vox[1] + x) * vd->bpc;
-                            memcpy(
-                                &tmp[c * vd->getFrameBytes() + index],
-                                &voxel[c],
-                                vd->bpc
-                                );
-                        }
-                    }
-                }
-            }
-            raw = tmp.data();
-        }
-
         for (int c = 0; c < vd->chan; ++c)
         {
+            std::vector<uint8_t> tex(virvo::TextureUtil::computeTextureSize(virvo::vec3i(0), virvo::vec3i(vd->vox), texture_format));
+
+            virvo::TextureUtil::Channels channelbits = 1ULL << c;
+
+            virvo::TextureUtil::createTexture(&tex[0],
+                vd,
+                virvo::vec3i(0),
+                virvo::vec3i(vd->vox),
+                texture_format,
+                channelbits,
+                f);
+
             size_t index = f * vd->chan + c;
 
             volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(raw + c * vd->getFrameBytes()));
+            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(tex.data()));
             volumes[index].set_address_mode(address_mode);
             volumes[index].set_filter_mode(filter_mode);
         }
@@ -1257,15 +1245,15 @@ void vvRayCaster::renderVolumeGL()
         device_volumes.resize(vd->chan);
         for (int c = 0; c < vd->chan; ++c)
         {
-            if (vd->bpc == 1)
+            if (impl_->texture_format == virvo::PF_R8)
             {
                 device_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
             }
-            else if (vd->bpc == 2)
+            else if (impl_->texture_format == virvo::PF_R16UI)
             {
                 device_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
             }
-            else if (vd->bpc == 4)
+            else if (impl_->texture_format == virvo::PF_R32F)
             {
                 device_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
             }
@@ -1311,15 +1299,15 @@ void vvRayCaster::renderVolumeGL()
         host_volumes.resize(vd->chan);
         for (int c = 0; c < vd->chan; ++c)
         {
-            if (vd->bpc == 1)
+            if (impl_->texture_format == virvo::PF_R8)
             {
                 host_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
             }
-            else if (vd->bpc == 2)
+            else if (impl_->texture_format == virvo::PF_R16UI)
             {
                 host_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
             }
-            else if (vd->bpc == 4)
+            else if (impl_->texture_format == virvo::PF_R32F)
             {
                 host_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
             }
