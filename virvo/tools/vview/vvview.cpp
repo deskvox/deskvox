@@ -1880,7 +1880,6 @@ double vvView::performanceTest()
 
       int framesRendered = 0;
       vvRendererFactory::Options opt;
-      opt["voxeltype"] = test->getVoxelType();
       ds->createRenderer("", opt,
                       (size_t) test->getBrickDims()[0],
                       (size_t) test->getBrickDims()[1],
@@ -2124,13 +2123,13 @@ void vvView::createMenus()
   voxelMenu = glutCreateMenu(voxelMenuCallback);
   glutAddMenuEntry("Auto select", 0);
   glutAddMenuEntry("RGBA", 1);
-  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Fragment shader", 5);
+  if (vvTexRend::isSupported(vvTexRend::VV_POST_CLASSIFICATION)) glutAddMenuEntry("Fragment shader", 5);
 
   // Renderer options menu:
   optionsMenu = glutCreateMenu(optionsMenuCallback);
   glutAddMenuEntry("Toggle slice interpolation [i]", 0);
   glutAddMenuEntry("Toggle warp interpolation [W]", 16);
-  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)
+  if (vvTexRend::isSupported(vvTexRend::VV_POST_CLASSIFICATION)
       && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
   {
     glutAddMenuEntry("Toggle pre-integration [P]", 1);
@@ -2150,7 +2149,7 @@ void vvView::createMenus()
   glutAddMenuEntry("Increase buffer precision", 10);
   glutAddMenuEntry("Decrease buffer precision", 11);
   glutAddMenuEntry("Show/hide bricks [B]", 12);
-  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
+  if (vvTexRend::isSupported(vvTexRend::VV_POST_CLASSIFICATION))
     glutAddMenuEntry("Cycle shader [A]", 14);
   glutAddMenuEntry("Inc ibr mode [#]", 17);
   glutAddMenuEntry("Toggle synchronous ibr mode [T]", 19);

@@ -78,6 +78,8 @@ void VolumeDrawable::init(std::string rendererName, std::string voxType)
 
     vd = NULL;
     setSupportsDisplayList(false);
+    if (voxType == "rgba")
+        setParameter(vvRenderState::VV_POST_CLASSIFICATION, false);
     setParameter(vvRenderState::VV_BOUNDARIES, false);
     preint = false;
     lighting = false;

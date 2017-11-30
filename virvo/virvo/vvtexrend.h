@@ -63,14 +63,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
       UNSUPPORTED                                 ///< general error code
     };
-    enum VoxelType                                /// Internal data type used in textures
-    {
-      VV_BEST = 0,                                ///< choose best
-      VV_RGBA,                                    ///< transfer function look-up done in software
-      VV_PIX_SHD                                  ///< Fragment program (Cg or GLSL)
-    };
     enum FeatureType                              /// Rendering features
     {
+      VV_POST_CLASSIFICATION,                     ///< post-classification, needs shaders
       VV_MIP                                      ///< maximum intensity projection
     };
     enum SliceOrientation                         /// Slice orientation for planar 3D textures
@@ -97,7 +92,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
     std::vector<GLuint> pixLUTName;               ///< names for transfer function textures
-    VoxelType voxelType;                          ///< voxel type actually used
     bool extTex3d;                                ///< true = 3D texturing supported
     bool extNonPower2;                            ///< true = NonPowerOf2 textures supported
     bool extMinMax;                               ///< true = maximum/minimum intensity projections supported
@@ -115,12 +109,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     virvo::vec3 _eye;                             ///< the current eye position
 
-    void setVoxelType(VoxelType vt);
+    void setupClassification();
     void makeLUTTexture() const;
     ErrorType makeTextures(bool newTex);
 
-    void initClassificationStage();
-    void freeClassificationStage();
     void enableShader (vvShaderProgram* shader) const;
     void disableShader(vvShaderProgram* shader) const;
 
@@ -131,7 +123,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setGLenvironment() const;
     void unsetGLenvironment() const;
     void renderTex3DPlanar(virvo::mat4 const& mv);
-    VoxelType findBestVoxelType(VoxelType) const;
     void updateLUT(float dist);
     size_t getLUTSize(virvo::vector< 3, size_t >& size) const;
     size_t getPreintTableSize() const;
@@ -143,7 +134,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setCurrentShader(int);
     size_t getTextureSize(size_t sz) const;
   public:
-    vvTexRend(vvVolDesc*, vvRenderState, VoxelType=VV_BEST);
+    vvTexRend(vvVolDesc*, vvRenderState);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
@@ -158,9 +149,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool checkParameter(ParameterType param, vvParam const& value) const;
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
-    static bool isSupported(VoxelType);
-    bool isSupported(FeatureType) const;
-    VoxelType getVoxelType() const;
+    static bool isSupported(FeatureType);
     void renderQualityDisplay() const;
     void printLUT(size_t chan=0) const;
     void setTexMemorySize(size_t);

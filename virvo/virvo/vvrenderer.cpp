@@ -65,6 +65,7 @@ vvRenderState::vvRenderState()
   : _quality(1.0f)
   , _mipMode(0)
   , _alphaMode(0)
+  , _postClassification(true)
   , _emptySpaceLeaping(true)
   , _boundaries(false)
   , _orientation(false)
@@ -147,6 +148,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_ALPHA_MODE:
     _alphaMode = value;
+    break;
+  case VV_POST_CLASSIFICATION:
+    _postClassification = value;
     break;
   case VV_LEAPEMPTY:
     _emptySpaceLeaping = value;
@@ -344,6 +348,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _mipMode;
   case VV_ALPHA_MODE:
     return _alphaMode;
+  case VV_POST_CLASSIFICATION:
+    return _postClassification;
   case VV_LEAPEMPTY:
     return _emptySpaceLeaping;
   case VV_CLIP_PERIMETER:

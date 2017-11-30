@@ -137,7 +137,6 @@ vvPerformanceTest::vvPerformanceTest()
   _iterations = 1;
   _frames = 90;
   _quality = 1.0f;
-  _voxelType = vvTexRend::VV_BEST;
   _testAnimation = VV_ROT_Y;
   _projectionType = vvObjView::PERSPECTIVE;
   _brickDims[0] = _brickDims[1] = _brickDims[2] = 64;
@@ -305,11 +304,6 @@ void vvPerformanceTest::setBrickDimZ(const float brickDimZ)
   _brickDims[2] = brickDimZ;
 }
 
-void vvPerformanceTest::setVoxelType(const std::string &voxelType)
-{
-  _voxelType = voxelType;
-}
-
 void vvPerformanceTest::setFrames(const int frames)
 {
   _frames = frames;
@@ -358,11 +352,6 @@ float vvPerformanceTest::getQuality() const
 vvVector3 vvPerformanceTest::getBrickDims() const
 {
   return _brickDims;
-}
-
-std::string vvPerformanceTest::getVoxelType() const
-{
-  return _voxelType;
 }
 
 int vvPerformanceTest::getFrames() const
@@ -539,37 +528,6 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
   {
     std::cerr << "only planar 3D textures are supported" << std::endl;
   }
-  else if (strcmp(headerName, "VOXELTYPE") == 0)
-  {
-    if (strcmp(str, "VV_BEST") == 0)
-    {
-      test->setVoxelType("default");
-    }
-    else if (strcmp(str, "VV_RGBA") == 0)
-    {
-      test->setVoxelType("rgba");
-    }
-    else if (strcmp(str, "VV_SGI_LUT") == 0)
-    {
-      test->setVoxelType("sgilut");
-    }
-    else if (strcmp(str, "VV_PAL_TEX") == 0)
-    {
-      test->setVoxelType("paltex");
-    }
-    else if (strcmp(str, "VV_TEX_SHD") == 0)
-    {
-      test->setVoxelType("regcomb");
-    }
-    else if (strcmp(str, "VV_PIX_SHD") == 0)
-    {
-      test->setVoxelType("shader");
-    }
-    else if (strcmp(str, "VV_FRG_PRG") == 0)
-    {
-      test->setVoxelType("arb");
-    }
-  }
   else if (strcmp(headerName, "FRAMES") == 0)
   {
     test->setFrames(atoi(str));
@@ -671,26 +629,6 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
   else if (strcmp(headerName, "GEOMTYPE") == 0)
   {
     std::cerr << "only planar 3D textures are supported" << std::endl;
-  }
-  else if (strcmp(headerName, "VOXELTYPE") == 0)
-  {
-    std::string v = previousTest->getVoxelType();
-    if(v == "default")
-      sprintf(str, "%s", "VV_BEST");
-    else if(v == "rgba")
-      sprintf(str, "%s", "VV_RGBA");
-    else if(v == "sgilut")
-      sprintf(str, "%s", "VV_SGI_LUT");
-    else if(v == "paltex")
-      sprintf(str, "%s", "VV_PAL_TEX");
-    else if(v == "regcomb")
-      sprintf(str, "%s", "VV_TEX_SHD");
-    else if(v == "shader")
-      sprintf(str, "%s", "VV_PIX_SHD");
-    else if(v == "arb")
-      sprintf(str, "%s", "VV_FRG_PRG");
-    else
-      sprintf(str, "%s", "VV_BEST");
   }
   else if (strcmp(headerName, "FRAMES") == 0)
   {

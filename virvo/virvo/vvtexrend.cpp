@@ -110,12 +110,11 @@ static PixelFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
   @param vd                      volume description
   @param renderState             object describing the render state
   @param geom                    render geometry (default: automatic)
-  @param vox                     voxel type (default: best)
   @param displayNames            names of x-displays (host:display.screen) for multi-gpu rendering
   @param numDisplays             # displays for multi-gpu rendering
   @param multiGpuBufferPrecision precision of the offscreen buffer used for multi-gpu rendering
 */
-vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
+vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
@@ -209,33 +208,37 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, VoxelType vox)
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
-  extPixShd  = isSupported(VV_PIX_SHD);
+  extPixShd = vvShaderFactory::isSupported("cg") || vvShaderFactory::isSupported("glsl");
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
   // Store number of supported OpenGL clip planes
   glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
 
-  // Determine best rendering algorithm for current hardware:
-  setVoxelType(findBestVoxelType(vox));
-
   _shader.reset(initShader());
-  if(voxelType == VV_PIX_SHD && !_shader)
-    setVoxelType(VV_RGBA);
-  initClassificationStage();
+  // Can only use post-classification if shaders
+  // are supported and can be loaded/were found
+  if(!extPixShd || !_shader)
+    setParameter(vvRenderer::VV_POST_CLASSIFICATION, false);
+
+  setupClassification();
+
+  if (_postClassification)
+  {
+    pixLUTName.resize(vd->tf.size());
+    glGenTextures(pixLUTName.size(), &pixLUTName[0]);
+  }
 
   cerr << "Rendering algorithm: ";
-  switch(voxelType)
-  {
-    case VV_RGBA:    cerr << "VV_RGBA";    break;
-    case VV_PIX_SHD: cerr << "VV_PIX_SHD, vv_shader" << _currentShader+1; break;
-    default: assert(0); break;
-  }
+  if (_postClassification)
+    cerr << "VV_PIX_SHD, vv_shader" << _currentShader+1;
+  else
+    cerr << "VV_RGBA";
   cerr << endl;
 
   textures = 0;
 
-  if (voxelType != VV_RGBA)
+  if (_postClassification)
   {
     makeTextures(true);      // we only have to do this once for non-RGBA textures
   }
@@ -249,7 +252,10 @@ vvTexRend::~vvTexRend()
 {
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
 
-  freeClassificationStage();
+  if (_postClassification)
+  {
+    glDeleteTextures(pixLUTName.size(), &pixLUTName[0]);
+  }
   removeTextures();
 }
 
@@ -258,74 +264,40 @@ vvTexRend::~vvTexRend()
 /** Initialize texture parameters for a voxel type
   @param vt voxeltype
 */
-void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
+void vvTexRend::setupClassification()
 {
-  voxelType = vt;
-  switch(voxelType)
+  if (_postClassification)
   {
-    case VV_PIX_SHD:
-      if(vd->chan == 1)
-      {
-        texelsize=1;
-        internalTexFormat = GL_LUMINANCE;
-        texFormat = GL_LUMINANCE;
-      }
-      else if (vd->chan == 2)
-      {
-        texelsize=2;
-        internalTexFormat = GL_LUMINANCE_ALPHA;
-        texFormat = GL_LUMINANCE_ALPHA;
-      }
-      else if (vd->chan == 3)
-      {
-        texelsize=3;
-        internalTexFormat = GL_RGB;
-        texFormat = GL_RGB;
-      }
-      else
-      {
-        texelsize=4;
-        internalTexFormat = GL_RGBA;
-        texFormat = GL_RGBA;
-      }
-      break;
-    case VV_RGBA:
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      texelsize=4;
-      break;
-    default:
-      assert(0);
-      break;
-  }
-}
-
-//----------------------------------------------------------------------------
-/// Chooses the best voxel type depending on the graphics hardware's
-/// capabilities.
-vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox) const
-{
-  vvDebugMsg::msg(1, "vvTexRend::findBestVoxelType()");
-
-  if (vox==VV_BEST)
-  {
-    if (vd->chan==1)
+    if (vd->chan == 1)
     {
-      if (extPixShd) return VV_PIX_SHD;
+      texelsize=1;
+      internalTexFormat = GL_LUMINANCE;
+      texFormat = GL_LUMINANCE;
+    }
+    else if (vd->chan == 2)
+    {
+      texelsize=2;
+      internalTexFormat = GL_LUMINANCE_ALPHA;
+      texFormat = GL_LUMINANCE_ALPHA;
+    }
+    else if (vd->chan == 3)
+    {
+      texelsize=3;
+      internalTexFormat = GL_RGB;
+      texFormat = GL_RGB;
     }
     else
     {
-      if (extPixShd) return VV_PIX_SHD;
+      texelsize=4;
+      internalTexFormat = GL_RGBA;
+      texFormat = GL_RGBA;
     }
-    return VV_RGBA;
   }
   else
   {
-    switch(vox)
-    {
-      case VV_PIX_SHD: if (extPixShd) return VV_PIX_SHD;
-      default: return VV_RGBA;
-    }
+    internalTexFormat = GL_RGBA;
+    texFormat = GL_RGBA;
+    texelsize=4;
   }
 }
 
@@ -369,7 +341,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
   updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], newTex);
   vvGLTools::printGLError("vvTexRend::makeTextures");
 
-  if (voxelType==VV_PIX_SHD)
+  if (_postClassification)
   {
     updateTransferFunction();
     updateLUT(1.f);
@@ -421,7 +393,7 @@ void vvTexRend::updateTransferFunction()
   virvo::vector< 3, size_t > size;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
-  if (voxelType==VV_PIX_SHD /* && vd->tf.size() > 1*/)
+  if (_postClassification)
   {
      if (_preIntegration && arbMltTex && !(getParameter(VV_CLIP_MODE) && (_clipSingleSlice || _clipOpaque)))
        usePreIntegration = true;
@@ -433,7 +405,7 @@ void vvTexRend::updateTransferFunction()
      if (_preIntegration &&
            arbMltTex && 
            !(getParameter(VV_CLIP_MODE) && (_clipSingleSlice || _clipOpaque)) &&
-           (voxelType==VV_PIX_SHD && (_currentShader==Shader1Chan || _currentShader==ShaderPreInt)))
+           (_postClassification && (_currentShader==Shader1Chan || _currentShader==ShaderPreInt)))
      {
         usePreIntegration = true;
         if(_currentShader==Shader1Chan)
@@ -523,7 +495,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   PixelFormat pf = PF_R8;
 
   // Texrend uses 8-bit per color component for rendering!
-  if (voxelType == VV_RGBA) // pre-classification
+  if (!_postClassification) // pre-classification
     pf = PF_RGBA8;
   else if (vd->chan == 1)
     pf = PF_R8;
@@ -542,7 +514,17 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   // Generate sub texture contents:
   for (size_t f = 0; f < vd->frames; f++)
   {
-    if (voxelType == VV_RGBA)
+    if (_postClassification)
+    {
+      TextureUtil::createTexture(&texData[0],
+          vd,
+          first,
+          last,
+          pf,
+          TextureUtil::All,
+          f);
+    }
+    else
     {
       // Compute RGBA texture with indirection from rgbaLUT
       TextureUtil::createTexture(&texData[0],
@@ -551,16 +533,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
           last,
           &(rgbaLUT[0])[0], // TODO: why rgbaLUT[0]?
           1/*bytes per RGBA channel*/,
-          f);
-    }
-    else
-    {
-      TextureUtil::createTexture(&texData[0],
-          vd,
-          first,
-          last,
-          pf,
-          TextureUtil::All,
           f);
     }
 
@@ -883,7 +855,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   vec3 releye = eye - pos;
 
   // Volume render a 3D texture:
-  if(voxelType == VV_PIX_SHD && _shader)
+  if(_postClassification && _shader)
   {
     enableShader(_shader.get());
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
@@ -1048,7 +1020,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
 
-  if (voxelType == VV_PIX_SHD && _shader)
+  if (_postClassification && _shader)
   {
     disableShader(_shader.get());
   }
@@ -1222,7 +1194,7 @@ void vvTexRend::setNumLights(const int numLights)
 bool vvTexRend::instantClassification() const
 {
   vvDebugMsg::msg(3, "vvTexRend::instantClassification()");
-  return (voxelType != VV_RGBA);
+  return _postClassification;
 }
 
 //----------------------------------------------------------------------------
@@ -1339,20 +1311,15 @@ void vvTexRend::updateLUT(const float dist)
 
     // Copy LUT to graphics card:
     vvGLTools::printGLError("enter updateLUT()");
-    switch (voxelType)
+    if (_postClassification)
     {
-    case VV_RGBA:
-      break;
-    case VV_PIX_SHD:
       glBindTexture(GL_TEXTURE_2D, pixLUTName[chan]);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
           GL_RGBA, GL_UNSIGNED_BYTE, &rgbaLUT[chan][0]);
-      break;
-    default: assert(0); break;
     }
   }
 
-  if (voxelType == VV_RGBA)
+  if (!_postClassification)
     makeTextures(false);// this mode doesn't use a hardware LUT, so every voxel has to be updated
 
   vvGLTools::printGLError("leave updateLUT()");
@@ -1436,6 +1403,10 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
   switch (param)
   {
+    case vvRenderer::VV_POST_CLASSIFICATION:
+      vvRenderer::setParameter(param, newValue);
+      setupClassification();
+      break;
     case vvRenderer::VV_GAMMA:
       // fall-through
     case vvRenderer::VV_GAMMA_CORRECTION:
@@ -1547,51 +1518,18 @@ vvParam vvTexRend::getParameter(ParameterType param) const
 }
 
 //----------------------------------------------------------------------------
-/** Get information on hardware support for rendering modes.
-  @param geom voxel type to get information about
-  @return true if the requested voxel type is supported by
-    the system's graphics hardware.
-*/
-bool vvTexRend::isSupported(const VoxelType voxel)
-{
-  vvDebugMsg::msg(3, "vvTexRend::isSupported(1)");
-
-  switch(voxel)
-  {
-    case VV_BEST:
-    case VV_RGBA:
-      return true;
-    case VV_PIX_SHD:
-      {
-        return (vvShaderFactory::isSupported("cg")
-          || vvShaderFactory::isSupported("glsl"));
-      }
-    default: return false;
-  }
-}
-
-//----------------------------------------------------------------------------
 /** Return true if a feature is supported.
  */
-bool vvTexRend::isSupported(const FeatureType feature) const
+bool vvTexRend::isSupported(const FeatureType feature)
 {
   vvDebugMsg::msg(3, "vvTexRend::isSupported()");
   switch(feature)
   {
     case VV_MIP: return true;
+    case VV_POST_CLASSIFICATION: return vvShaderFactory::isSupported("cg") || vvShaderFactory::isSupported("glsl");
     default: assert(0); break;
   }
   return false;
-}
-
-//----------------------------------------------------------------------------
-/** Return the currently used voxel type.
-  This is expecially useful if VV_AUTO was passed in the constructor.
-*/
-vvTexRend::VoxelType vvTexRend::getVoxelType() const
-{
-  vvDebugMsg::msg(3, "vvTexRend::getVoxelType()");
-  return voxelType;
 }
 
 //----------------------------------------------------------------------------
@@ -1633,14 +1571,14 @@ void vvTexRend::renderQualityDisplay() const
 //----------------------------------------------------------------------------
 void vvTexRend::enableTexture(const GLenum target) const
 {
-  if (voxelType != VV_PIX_SHD)
+  if (!_postClassification)
     glEnable(target);
 }
 
 //----------------------------------------------------------------------------
 void vvTexRend::disableTexture(const GLenum target) const
 {
-  if (voxelType != VV_PIX_SHD)
+  if (!_postClassification)
     glDisable(target);
 }
 
@@ -1654,7 +1592,7 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
 
   shader->enable();
 
-  if(VV_PIX_SHD == voxelType)
+  if (_postClassification)
   {
     if (_currentShader == ShaderMultiTF)
     {
@@ -1703,24 +1641,6 @@ void vvTexRend::disableShader(vvShaderProgram* shader) const
   vvGLTools::printGLError("Leaving vvTexRend::disableShader()");
 }
 
-void vvTexRend::initClassificationStage()
-{
-  if(voxelType==VV_PIX_SHD)
-  {
-    pixLUTName.resize(vd->tf.size());
-    glGenTextures(pixLUTName.size(), &pixLUTName[0]);
-  }
-}
-
-void vvTexRend::freeClassificationStage()
-{
-  if (voxelType==VV_PIX_SHD)
-  {
-    glDeleteTextures(pixLUTName.size(), &pixLUTName[0]);
-  }
-}
-
-
 //----------------------------------------------------------------------------
 /** @return Pointer of initialized ShaderProgram or NULL
  */
@@ -1729,7 +1649,7 @@ vvShaderProgram* vvTexRend::initShader()
   vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
   std::ostringstream fragName;
-  if(voxelType == VV_PIX_SHD)
+  if (_postClassification)
   {
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
@@ -1868,40 +1788,27 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
       for (size_t x = 0; x < width; x++)
     {
       index = y * width + x;
-      switch (voxelType)
-      {
-        case VV_PIX_SHD:
-          result[index] = data[texelsize*index];
-          break;
-        case VV_RGBA:
-          assert(0);
-          break;
-        default:
-          assert(0);
-          break;
-      }
+      if (_postClassification)
+        result[index] = data[texelsize*index];
+      else
+        assert(0);
       std::cerr << "Result: " << index << " " << (int) (result[index]) << endl;
     }
   }
   else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
   {
-    if ((voxelType == VV_RGBA) || (voxelType == VV_PIX_SHD))
-    {
-      result = new uint8_t[vd->chan * numPixels];
+    result = new uint8_t[vd->chan * numPixels];
 
-      for (size_t y = 0; y < height; y++)
-        for (size_t x = 0; x < width; x++)
+    for (size_t y = 0; y < height; y++)
+      for (size_t x = 0; x < width; x++)
+    {
+      index = (y * width + x) * vd->chan;
+      for (int c = 0; c < vd->chan; c++)
       {
-        index = (y * width + x) * vd->chan;
-        for (int c = 0; c < vd->chan; c++)
-        {
-          result[index + c] = data[index + c];
-          std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;
-        }
+        result[index + c] = data[index + c];
+        std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;
       }
     }
-    else
-      assert(0);
   }
 
   std::cerr << "result read" << endl;
@@ -1934,7 +1841,7 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
 
 void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& normal, float sliceThickness)
 {
-  if (voxelType == VV_PIX_SHD)
+  if (_postClassification)
   {
     shader->setParameter1i("lighting", _lighting ? 1 : 0);
 

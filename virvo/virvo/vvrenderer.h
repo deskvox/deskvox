@@ -70,6 +70,7 @@ public:
     VV_PADDING_REGION,
     VV_MIP_MODE,
     VV_ALPHA_MODE,
+    VV_POST_CLASSIFICATION,
     VV_LEAPEMPTY,                               ///< empty space leaping
     VV_CLIP_PERIMETER,
     VV_BOUNDARIES,
@@ -174,6 +175,7 @@ protected:
   float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
   int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
   int	  _alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
+  bool  _postClassification;                    ///< true = use post-classification transfer function lookup, false = use pre-classification
   bool  _emptySpaceLeaping;                     ///< true = don't render bricks without contribution
   bool  _boundaries;                            ///< true = display volume boundaries
   bool  _orientation;                           ///< true = display object orientation

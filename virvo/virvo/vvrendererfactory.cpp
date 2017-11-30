@@ -171,12 +171,10 @@ static void get_cpuid(int reg[4], int type)
 namespace {
 
 typedef std::map<std::string, vvRenderer::RendererType> RendererTypeMap;
-typedef std::map<std::string, vvTexRend::VoxelType> VoxelTypeMap;
 typedef std::map<std::string, std::string> RendererAliasMap;
 
 RendererAliasMap rendererAliasMap;
 RendererTypeMap rendererTypeMap;
-VoxelTypeMap voxelTypeMap;
 std::vector<std::string> rayRendArchs;
 
 void init()
@@ -213,10 +211,6 @@ void init()
   rendererAliasMap["tex"] = "planar";
   rendererAliasMap["tex3d"] = "planar";
   rendererAliasMap["brick"] = "serbrick";
-
-  voxelTypeMap["default"] = vvTexRend::VV_BEST;
-  voxelTypeMap["rgba"] = vvTexRend::VV_RGBA;
-  voxelTypeMap["shader"] = vvTexRend::VV_PIX_SHD;
 
   // TexRend
   rendererTypeMap["default"] = vvRenderer::TEXREND;
@@ -694,18 +688,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   // fall through
   case vvRenderer::TEXREND:
   default:
-    {
-      vvTexRend::VoxelType vox= vd->getBPV()<=4 ? vvTexRend::VV_BEST : vvTexRend::VV_RGBA;
-
-      if(vox == vvTexRend::VV_BEST)
-      {
-        VoxelTypeMap::iterator vit = voxelTypeMap.find(options.voxeltype);
-        if(vit != voxelTypeMap.end())
-          vox = vit->second;
-      }
-      return new vvTexRend(vd, rs, vox);
-    }
-    break;
+    return new vvTexRend(vd, rs);
   }
   return NULL; // fix warning
 }
