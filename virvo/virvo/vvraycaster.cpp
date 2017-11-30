@@ -202,64 +202,6 @@ inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
 
 
 //-------------------------------------------------------------------------------------------------
-// Volume texture reference (a variant managing various 3D texture types)
-//
-
-using generic_volume_ref = variant<
-    typename volume8_type::ref_type,
-    typename volume16_type::ref_type,
-    typename volume32_type::ref_type
-    >;
-
-struct volume_texture_ref : generic_volume_ref
-{
-    volume_texture_ref() = default;
-
-    template <typename Other>
-    volume_texture_ref(Other const& other)
-        : generic_volume_ref(other)
-    {
-    }
-};
-
-template <typename Coord>
-class tex3D_visitor
-{
-public:
-
-    using return_type = decltype(tex3D(typename volume8_type::ref_type{}, Coord{}));
-
-public:
-
-    VSNRAY_FUNC
-    tex3D_visitor(Coord coord)
-        : coord_(coord)
-    {
-    }
-
-    template <typename X>
-    VSNRAY_FUNC
-    return_type operator()(X const& ref) const
-    {
-        return tex3D(ref, coord_);
-    }
-
-private:
-
-    Coord coord_;
-
-};
-
-template <typename Coord>
-VSNRAY_FUNC
-auto tex3D(volume_texture_ref const& tex, Coord const& coord)
-    -> decltype(tex3D(typename volume8_type::ref_type{}, coord))
-{
-    return apply_visitor(tex3D_visitor<Coord>(coord), tex);
-}
-
-
-//-------------------------------------------------------------------------------------------------
 // Clip sphere, hit_record stores both tnear and tfar (in contrast to basic_sphere)!
 //
 
@@ -653,7 +595,6 @@ struct volume_kernel_params
     clip_box                    bbox;
     float                       delta;
     int                         num_channels;
-    volume_texture_ref const*   volumes;
     transfunc_ref const*        transfuncs;
     vec2 const*                 ranges;
     unsigned const*             depth_buffer;
@@ -679,13 +620,16 @@ struct volume_kernel_params
 // Visionaray volume rendering kernel
 //
 
+template <typename Volume>
 struct volume_kernel
 {
     using Params = volume_kernel_params;
+    using VolRef = typename Volume::ref_type;
 
     VSNRAY_FUNC
-    explicit volume_kernel(Params const& p)
+    explicit volume_kernel(Params const& p, VolRef const* vols)
         : params(p)
+        , volumes(vols)
     {
     }
 
@@ -787,7 +731,7 @@ struct volume_kernel
 
                 for (int i = 0; i < params.num_channels; ++i)
                 {
-                    S voxel  = tex3D(params.volumes[i], tex_coord);
+                    S voxel  = tex3D(volumes[i], tex_coord);
                     C colori = tex1D(params.transfuncs[i], voxel);
 
                     auto do_shade = params.local_shading && colori.w >= 0.1f;
@@ -806,7 +750,7 @@ struct volume_kernel
 
 
                         // calculate shading
-                        auto grad = gradient(params.volumes[i], tex_coord);
+                        auto grad = gradient(volumes[i], tex_coord);
                         auto normal = normalize(grad);
 
                         auto float_eq = [&](S const& a, S const& b) { return abs(a - b) < params.delta * S(0.5); };
@@ -916,6 +860,7 @@ struct volume_kernel
     }
 
     Params params;
+    VolRef const* volumes;
 };
 
 
@@ -1239,26 +1184,37 @@ void vvRayCaster::renderVolumeGL()
 
 #ifdef VV_ARCH_CUDA
     // TODO: consolidate!
-    thrust::device_vector<volume_texture_ref> device_volumes;
-    auto volumes_data = [&]()
+    thrust::device_vector<typename volume8_type::ref_type>  device_volumes8;
+    auto volumes8_data = [&]()
     {
-        device_volumes.resize(vd->chan);
+        device_volumes8.resize(vd->chan);
         for (int c = 0; c < vd->chan; ++c)
         {
-            if (impl_->texture_format == virvo::PF_R8)
-            {
-                device_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
-            }
-            else if (impl_->texture_format == virvo::PF_R16UI)
-            {
-                device_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
-            }
-            else if (impl_->texture_format == virvo::PF_R32F)
-            {
-                device_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
-            }
+            device_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
-        return thrust::raw_pointer_cast(device_volumes.data());
+        return thrust::raw_pointer_cast(device_volumes8.data());
+    };
+
+    thrust::device_vector<typename volume16_type::ref_type> device_volumes16;
+    auto volumes16_data = [&]()
+    {
+        device_volumes16.resize(vd->chan);
+        for (int c = 0; c < vd->chan; ++c)
+        {
+            device_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
+        }
+        return thrust::raw_pointer_cast(device_volumes16.data());
+    };
+
+    thrust::device_vector<typename volume32_type::ref_type> device_volumes32;
+    auto volumes32_data = [&]()
+    {
+        device_volumes32.resize(vd->chan);
+        for (int c = 0; c < vd->chan; ++c)
+        {
+            device_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
+        }
+        return thrust::raw_pointer_cast(device_volumes32.data());
     };
 
     std::vector<typename transfunc_type::ref_type> trefs;
@@ -1293,26 +1249,37 @@ void vvRayCaster::renderVolumeGL()
         return clip_objects_begin() + device_objects.size();
     };
 #else
-    aligned_vector<volume_texture_ref> host_volumes;
-    auto volumes_data = [&]()
+    aligned_vector<typename volume8_type::ref_type>  host_volumes8;
+    auto volumes8_data = [&]()
     {
-        host_volumes.resize(vd->chan);
+        host_volumes8.resize(vd->chan);
         for (int c = 0; c < vd->chan; ++c)
         {
-            if (impl_->texture_format == virvo::PF_R8)
-            {
-                host_volumes[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
-            }
-            else if (impl_->texture_format == virvo::PF_R16UI)
-            {
-                host_volumes[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
-            }
-            else if (impl_->texture_format == virvo::PF_R32F)
-            {
-                host_volumes[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
-            }
+            host_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
-        return host_volumes.data();
+        return host_volumes8.data();
+    };
+
+    aligned_vector<typename volume16_type::ref_type> host_volumes16;
+    auto volumes16_data = [&]()
+    {
+        host_volumes16.resize(vd->chan);
+        for (int c = 0; c < vd->chan; ++c)
+        {
+            host_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
+        }
+        return host_volumes16.data();
+    };
+
+    aligned_vector<typename volume32_type::ref_type> host_volumes32;
+    auto volumes32_data = [&]()
+    {
+        host_volumes32.resize(vd->chan);
+        for (int c = 0; c < vd->chan; ++c)
+        {
+            host_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
+        }
+        return host_volumes32.data();
     };
 
     aligned_vector<typename transfunc_type::ref_type> host_transfuncs(impl_->transfuncs.size());
@@ -1352,7 +1319,6 @@ void vvRayCaster::renderVolumeGL()
     impl_->params.bbox                      = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
     impl_->params.delta                     = delta;
     impl_->params.num_channels              = static_cast<int>(vd->chan);
-    impl_->params.volumes                   = volumes_data();
     impl_->params.transfuncs                = transfuncs_data();
     impl_->params.ranges                    = ranges_data();
     impl_->params.depth_buffer              = impl_->depth_buffer.data();
@@ -1368,8 +1334,21 @@ void vvRayCaster::renderVolumeGL()
     impl_->params.clip_objects.begin        = clip_objects_begin();
     impl_->params.clip_objects.end          = clip_objects_end();
 
-    volume_kernel kernel(impl_->params);
-    impl_->sched.frame(kernel, sparams);
+    if (impl_->texture_format == virvo::PF_R8)
+    {
+        volume_kernel<volume8_type> kernel(impl_->params, volumes8_data());
+        impl_->sched.frame(kernel, sparams);
+    }
+    else if (impl_->texture_format == virvo::PF_R16UI)
+    {
+        volume_kernel<volume16_type> kernel(impl_->params, volumes16_data());
+        impl_->sched.frame(kernel, sparams);
+    }
+    else if (impl_->texture_format == virvo::PF_R32F)
+    {
+        volume_kernel<volume32_type> kernel(impl_->params, volumes32_data());
+        impl_->sched.frame(kernel, sparams);
+    }
 
     if (depth_test)
     {
