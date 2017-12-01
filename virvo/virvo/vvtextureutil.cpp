@@ -20,6 +20,7 @@
 
 #include <bitset>
 #include <cstring> // memcpy
+#include <vector>
 
 #include "vvtextureutil.h"
 #include "vvvoldesc.h"
@@ -87,10 +88,7 @@ namespace virvo
     }
   }
 
-
-  //--- Interface -------------------------------------------------------------
-
-  size_t TextureUtil::computeTextureSize(vec3i first, vec3i last, PixelFormat tf)
+  size_t computeTextureSize(vec3i first, vec3i last, PixelFormat tf)
   {
     PixelFormatInfo info = mapPixelFormat(tf);
 
@@ -101,24 +99,44 @@ namespace virvo
     return size.x * size.y * size.z * info.size;
   }
 
-  TextureUtil::ErrorType TextureUtil::createTexture(uint8_t* dst,
-      const vvVolDesc* vd,
-      PixelFormat tf,
+
+  //--- Private impl ----------------------------------------------------------
+
+  struct TextureUtil::Impl
+  {
+    Impl(const vvVolDesc* vd) : vd(vd) {}
+
+    // The volume description
+    const vvVolDesc* vd;
+
+    // Memory to hold the texture, in case we need it
+    std::vector<uint8_t> mem;
+  };
+
+
+  //--- Interface -------------------------------------------------------------
+
+  TextureUtil::TextureUtil(const vvVolDesc* vd)
+    : impl_(new Impl(vd))
+  {
+  }
+
+  TextureUtil::~TextureUtil()
+  {
+  }
+
+  TextureUtil::Pointer TextureUtil::getTexture(PixelFormat tf,
       TextureUtil::Channels chans,
       int frame)
   {
-    return createTexture(dst,
-        vd,
-        vec3i(0),
-        vec3i(vd->vox),
+    return getTexture(vec3i(0),
+        vec3i(impl_->vd->vox),
         tf,
         chans,
         frame);
   }
 
-  TextureUtil::ErrorType TextureUtil::createTexture(uint8_t* dst,
-      const vvVolDesc* vd,
-      vec3i first,
+  TextureUtil::Pointer TextureUtil::getTexture(vec3i first,
       vec3i last,
       PixelFormat tf,
       TextureUtil::Channels chans,
@@ -126,46 +144,39 @@ namespace virvo
   {
     PixelFormatInfo info = mapPixelFormat(tf);
 
+    const vvVolDesc* vd = impl_->vd;
+
+
     //--- Sanity checks ---------------
 
     // More than 4 channels: user needs to explicitly state
     // which channels (s)he's interested in
     if (vd->chan > 4 && chans == All)
-      return NumChannelsMismatch;
+      return NULL;
 
     // TODO: requires C++11 std::bitset(ull) ctor!
     if (chans != All && info.components != std::bitset<64>(chans).count())
-      return NumChannelsMismatch;
+      return NULL;
 
 
     //--- Make texture ----------------
 
-    // Maybe we can just memcpy the whole frame
-    if (nativeFormat(vd) == tf && first == vec3i(0) && last == vec3i(vd->vox))
-    {
-      size_t size = computeTextureSize(first, last, tf);
-      memcpy(dst, vd->getRaw(frame), size);
-      return Ok;
-    }
-
-    // Maybe we can just memcpy consecutive slices
+    // Maybe we can just return a pointer from the voldesc
     if (nativeFormat(vd) == tf && first.xy() == vec2i(0) && last.xy() == vec2i(vd->vox.xy()))
     {
-      const uint8_t* raw = vd->getRaw(frame);
-      for (int z = first.z; z < last.z; ++z)
-      {
-        memcpy(dst + z * vd->getSliceBytes(),
-            raw + z * vd->getSliceBytes(),
-            vd->getSliceBytes());
-      }
-      return Ok;
+      return vd->getRaw(frame) + first.z * vd->getSliceBytes();
     }
 
     // Maybe the conversion operation is trivial and we can
-    // at least copy sections of the volume data
+    // copy over sections of the volume data
     if (nativeFormat(vd) == tf)
     {
+      // Reserve memory
+      impl_->mem.resize(computeTextureSize(first, last, tf));
+
       const uint8_t* raw = vd->getRaw(frame);
+      uint8_t* dst = &impl_->mem[0];
+
       for (int z = first.z; z < last.z; ++z)
       {
         for (int y = first.y; y < last.y; ++y)
@@ -178,14 +189,20 @@ namespace virvo
           }
         }
       }
-      return Ok;
+
+      return &impl_->mem[0];
     }
 
     // No use, have to iterate over all voxels
     // TODO: support N-byte
     if (info.size / info.components == 1/*byte*/)
     {
+      // Reserve memory
+      impl_->mem.resize(computeTextureSize(first, last, tf));
+
       const uint8_t* raw = vd->getRaw(frame);
+      uint8_t* dst = &impl_->mem[0];
+
       for (int z = first.z; z < last.z; ++z)
       {
         for (int y = first.y; y < last.y; ++y)
@@ -205,28 +222,34 @@ namespace virvo
         }
       }
 
-      return Ok;
+      return &impl_->mem[0];
     }
 
-    return Unknown;
+    // Unsupported, error unknown
+    return NULL;
   }
 
-  TextureUtil::ErrorType TextureUtil::createTexture(uint8_t* dst,
-      const vvVolDesc* vd,
-      vec3i first,
+  TextureUtil::Pointer TextureUtil::getTexture(vec3i first,
       vec3i last,
       const uint8_t* rgba,
       int bpcDst,
       int frame)
   {
+    const vvVolDesc* vd = impl_->vd;
+
     // This is only supported if volume has <= 4 channels
     if (vd->chan > 4)
-      return Unknown;
+      return NULL;
 
     // Single channel: rescale voxel to 8-bit, use as index into RGBA lut
     if (vd->chan == 1)
     {
+      // Reserve memory
+      impl_->mem.resize(computeTextureSize(first, last, PF_RGBA8));
+
       const uint8_t* raw = vd->getRaw(frame);
+      uint8_t* dst = &impl_->mem[0];
+
       for (int z = first.z; z < last.z; ++z)
       {
         for (int y = first.y; y < last.y; ++y)
@@ -244,7 +267,7 @@ namespace virvo
         }
       }
 
-      return Ok;
+      return &impl_->mem[0];
     }
 
     // Two or three channels: RG(B) values come from 3-D texture,
@@ -253,9 +276,14 @@ namespace virvo
     {
       // TODO: only implemented for RGBA8 lut!
       if (bpcDst != 1)
-        return Unknown;
+        return NULL;
+
+      // Reserve memory
+      impl_->mem.resize(computeTextureSize(first, last, PF_RGBA8));
 
       const uint8_t* raw = vd->getRaw(frame);
+      uint8_t* dst = &impl_->mem[0];
+
       for (int z = first.z; z != last.z; ++z)
       {
         for (int y = first.y; y != last.y; ++y)
@@ -277,23 +305,22 @@ namespace virvo
         }
       }
 
-      return Ok;
+      return &impl_->mem[0];
     }
 
     // Four channels: just skip the RGBA lut.
     // TODO: this is legacy behavior, but is it actually desired??
     if (vd->chan == 4)
     {
-      return createTexture(dst,
-          vd,
-          first,
+      return getTexture(first,
           last,
           nativeFormat(vd),
           RGBA,
           frame);
     }
 
-    return Unknown;
+    // Unsupported, error unknown
+    return NULL;
   }
 }
 

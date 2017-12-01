@@ -509,16 +509,15 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     cerr << "Cannot determine pixel format: unsupported number of channels." << endl;
     // TODO: out..
 
-  std::vector<uint8_t> texData(TextureUtil::computeTextureSize(first, last, pf));
-
   // Generate sub texture contents:
+  TextureUtil tu(vd);
   for (size_t f = 0; f < vd->frames; f++)
   {
+    TextureUtil::Pointer texData = NULL;
+
     if (_postClassification)
     {
-      TextureUtil::createTexture(&texData[0],
-          vd,
-          first,
+      texData = tu.getTexture(first,
           last,
           pf,
           TextureUtil::All,
@@ -527,9 +526,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     else
     {
       // Compute RGBA texture with indirection from rgbaLUT
-      TextureUtil::createTexture(&texData[0],
-          vd,
-          first,
+      texData = tu.getTexture(first,
           last,
           &(rgbaLUT[0])[0], // TODO: why rgbaLUT[0]?
           1/*bytes per RGBA channel*/,

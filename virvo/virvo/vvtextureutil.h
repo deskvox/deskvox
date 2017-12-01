@@ -21,6 +21,8 @@
 #ifndef VV_TEXTUREUTIL_H
 #define VV_TEXTUREUTIL_H
 
+#include <boost/scoped_ptr.hpp>
+
 #include "math/math.h"
 #include "vvexport.h"
 #include "vvinttypes.h"
@@ -34,6 +36,9 @@ namespace virvo
   class VIRVOEXPORT TextureUtil
   {
     public:
+
+      //--- Types -------------------------------------------------------------
+
       enum ErrorType
       {
         Ok = 0,
@@ -41,71 +46,69 @@ namespace virvo
         Unknown
       };
 
-      // Channels bitfield
+      /// Channels bitfield
       typedef uint64_t Channels;
 
-      // Use with Channels bitfield
+      /// Use with Channels bitfield
       enum { All=-1,
           R=1, G=2, B=4, A=8,
           RG=3, RB=5, GB=6, RA=9, GA=10, BA=12,
           RGB=7, RGA=11, RBA=13, GBA=14,
           RGBA=15 };
+
+      /// Return type for getTexture() functions
+      typedef const uint8_t* Pointer;
+
+
+      //--- Functions ---------------------------------------------------------
+
+      /**
+       * @brief Constructor
+       *
+       * @param vd volume description, must be valid throughout object lifetime
+       */
+      TextureUtil(const vvVolDesc* vd);
+
+      /**
+       * @brief Destructor, for pimpl
+       */
+     ~TextureUtil();
   
       /**
-       * @brief Compute texture size in bytes according to texel format,
-       *        where number of texels is specified by *right-open* interval
-       *          [first.x..last.x)
-       *          [first.y..last.y)
-       *          [first.z..last.z)
+       * @brief Obtain a memory pointer that can be used to
+       *        setup a 3D texture with a GPU API like OpenGL
        *
-       * @param first 3-D index of first voxel
-       * @param last 3-D index of last voxel
-       * @param tf texel format of the output texture
-       */
-      static size_t computeTextureSize(vec3i first, vec3i last, PixelFormat tf);
-
-
-      /**
-       * @brief Create a frame texture in *preallocated*, contiguous memory
-       *        that can be used with a 3D API like OpenGL
-       *
-       * @param dst output texture, pointer to preallocated array
-       * @param vd volume description
+       * @return output
        * @param tf texel format of the output texture
        * @param chans bitfield with channels to copy: default=all
        * @param frame animation frame to prepare texture for
        */
-      static ErrorType createTexture(uint8_t* dst,
-          const vvVolDesc* vd,
-          PixelFormat tf,
+      Pointer getTexture(PixelFormat tf,
           Channels chans = All,
           int frame = 0);
 
       /**
-       * @brief @see createTexture(), overload to update a section
+       * @brief @see getTexture(), overload to obtain only a section
        *        of the texture specified by the *right-open* interval
        *          [first.x..last.x)
        *          [first.y..last.y)
        *          [first.z..last.z)
        *
-       * @param dst output texture, pointer to preallocated array
-       * @param vd volume description
+       * @return output
        * @param first 3-D index of first voxel
        * @param last 3-D index of last voxel
        * @param tf texel format of the output texture
        * @param chans bitfield with channels to copy: default=all
        * @param frame animation frame to prepare texture for
        */
-      static ErrorType createTexture(uint8_t* dst,
-          const vvVolDesc* vd,
-          vec3i first,
+      Pointer getTexture(vec3i first,
           vec3i last,
           PixelFormat tf,
           Channels chans = All,
           int frame = 0);
 
       /**
-       * @brief @see createTexture(), overload to update a section
+       * @brief @see getTexture(), overload to obtain only a section
        *        of the texture specified by the *right-open* interval
        *          [first.x..last.x)
        *          [first.y..last.y)
@@ -113,7 +116,7 @@ namespace virvo
        *        This overload creates an RGBA texture by using
        *        individual voxels as an index into a 1-D RGBA lut
        *
-       * @param dst output texture, pointer to preallocated array
+       * @return output
        * @param vd volume description
        * @param first 3-D index of first voxel
        * @param last 3-D index of last voxel
@@ -122,13 +125,16 @@ namespace virvo
        *        (must match bpc in RGBA lut!)
        * @param frame animation frame to prepare texture for
        */
-      static ErrorType createTexture(uint8_t* dst,
-          const vvVolDesc* vd,
-          vec3i first,
+      Pointer getTexture(vec3i first,
           vec3i last,
           const uint8_t* rgba,
           int bpcDst,
           int frame = 0);
+
+    private:
+
+      struct Impl;
+      boost::scoped_ptr<Impl> impl_;
   };
 
 }

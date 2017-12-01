@@ -950,17 +950,16 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
 
     volumes.resize(vd->frames * vd->chan);
 
+    virvo::TextureUtil tu(vd);
     for (size_t f = 0; f < vd->frames; ++f)
     {
         for (int c = 0; c < vd->chan; ++c)
         {
-            std::vector<uint8_t> tex(virvo::TextureUtil::computeTextureSize(virvo::vec3i(0), virvo::vec3i(vd->vox), texture_format));
+            virvo::TextureUtil::Pointer tex_data = nullptr;
 
             virvo::TextureUtil::Channels channelbits = 1ULL << c;
 
-            virvo::TextureUtil::createTexture(&tex[0],
-                vd,
-                virvo::vec3i(0),
+            tex_data = tu.getTexture(virvo::vec3i(0),
                 virvo::vec3i(vd->vox),
                 texture_format,
                 channelbits,
@@ -969,7 +968,7 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
             size_t index = f * vd->chan + c;
 
             volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
-            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(tex.data()));
+            volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(tex_data));
             volumes[index].set_address_mode(address_mode);
             volumes[index].set_filter_mode(filter_mode);
         }
