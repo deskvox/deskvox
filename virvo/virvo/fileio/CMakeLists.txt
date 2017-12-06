@@ -1,5 +1,4 @@
 find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
-find_package(GDCM)
 find_package(Nifti)
 find_package(Teem)
 
@@ -13,7 +12,10 @@ if(DESKVOX_USE_CUDA)
 find_package(CUDA)
 deskvox_use_package(CUDA)
 endif()
+if(DESKVOX_USE_GDCM)
+find_package(GDCM)
 deskvox_use_package(GDCM)
+endif()
 deskvox_use_package(Nifti)
 deskvox_use_package(Teem)
 

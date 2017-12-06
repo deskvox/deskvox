@@ -137,6 +137,8 @@ if (NOT DEFINED DESKVOX_USE_CUDA)
   endif()
 endif()
 
+option(DESKVOX_USE_GDCM "Use gdcm if available" ON)
+
 if (NOT DEFINED DESKVOX_USE_QT4)
   # Make this an option only if the variable has not otherwise been set. Allows
   # other CMake modules to override the default value defined here.
