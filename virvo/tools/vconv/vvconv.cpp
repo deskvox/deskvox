@@ -2159,7 +2159,7 @@ void vvConv::displayHelpInfo()
   stream << " first slice, the second slice will be taken from halfway into the dataset." << endl;
   stream << endl;
   stream << "-dicomrename" << endl;
-  stream << " Rename DICOM files to reflect sequence number and slice location." << endl;
+  stream << " Rename DICOM files to reflect sequence number and image number." << endl;
   stream << " The source files must be named in ascending order, e.g., 'file001.dcm'," << endl;
   stream << " 'file002.dcm'..." << endl;
   stream << " After processing this command, the files will be called 'seq001-loc000001.dcm'" << endl;
@@ -2656,7 +2656,7 @@ int vvConv::run(int argc, char** argv)
     return error;
   }
 
-  if ((fileInfo || dstFile==NULL) && makeVolume==-1)    // info only mode
+  if ((fileInfo || dstFile==NULL) && makeVolume==-1 && !dicomRename)    // info only mode
   {
     vvFileIO::ErrorType et;
  
@@ -2744,7 +2744,7 @@ int vvConv::renameDicomFiles()
     }
     else
     {
-      sprintf(newName , "seq%03d-loc%06d.dcm", dcmSeq, int((dcmSLoc + 100.0f) * 1000.0f));
+      sprintf(newName , "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
       if (rename(oldName, newName) != 0)
       {
         cerr << "Could not rename " << oldName << " to " << newName << endl;
