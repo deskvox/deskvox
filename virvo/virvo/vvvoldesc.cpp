@@ -622,6 +622,12 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
       }
       vox[2] += src->vox[2];                      // update target slice number
       src->removeSequence();                      // delete copied frames from source
+      for (int c = 0; c < std::min(chan, src->chan); ++c)
+      {
+        range(c).x = std::min(range(c).x, src->range(c).x);
+        range(c).y = std::max(range(c).y, src->range(c).y);
+        mapping(c) = src->mapping(c);
+      }
       return OK;
     }
     else
