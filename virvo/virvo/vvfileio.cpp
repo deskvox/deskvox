@@ -3981,13 +3981,11 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     //bool v = defs.Verify( file );
     //std::cerr << "IOD Verification: " << (v ? "succeed" : "failed") << std::endl;
 #else
-  vvDicom* dicomReader;
   vvDicomProperties prop;
+  vvDicom dicomReader(&prop);
 
-  dicomReader = new vvDicom(&prop);
-  if (!dicomReader->readDicomFile((char*)vd->getFilename()))
+  if (!dicomReader.readDicomFile((char*)vd->getFilename()))
   {
-    delete dicomReader;
     vvDebugMsg::msg(1, "Error: Cannot open Dicom file.");
     return FILE_ERROR;
   }
@@ -4002,6 +4000,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   if (prop.width < 0 || prop.height < 0 || prop.bpp < 0)
   {
     VV_LOG(0) << "Conversion error: " << __FILE__ << " " << __LINE__ << std::endl;
+    return VD_ERROR;
   }
   vd->vox[0] = static_cast<size_t>(prop.width);
   vd->vox[1] = static_cast<size_t>(prop.height);
@@ -4033,8 +4032,8 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   // Shift bits so that most significant used bit is leftmost:
   vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), int(vd->frames-1));
 
-  float slope = dicomReader->slope_specified ? dicomReader->slope : 1.0f;
-  float inter = dicomReader->intercept_specified ? dicomReader->intercept : 0.0f;
+  float slope = dicomReader.slope_specified ? dicomReader.slope : 1.0f;
+  float inter = dicomReader.intercept_specified ? dicomReader.intercept : 0.0f;
 
   virvo::PixelFormat format = PF_R8;
   if (prop.isSigned && prop.bpp == 2)
@@ -4049,8 +4048,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   {
     format = PF_R32UI;
   }
-
-  delete dicomReader;
 #endif
 
   // TODO: consolidate w/ nifti
