@@ -3891,10 +3891,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     std::cout << "Encapsulated Stream was found to be: " << (lossy ? "lossy" : "lossless") << std::endl;
     
 
-  // Make sure variables are tested for NULL because they might be default:
-  /*if (dcmSeq   != NULL) *dcmSeq   = prop.sequence;
-  if (dcmSlice != NULL) *dcmSlice = prop.image;
-  if (dcmSPos  != NULL) *dcmSPos  = image.getSl;*/
   const unsigned int *dim = image.GetDimensions();
   vd->vox[0] = dim[0];
   vd->vox[1] = dim[1];
@@ -3920,9 +3916,21 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     default: assert(0); break;
   }
 
-  gdcm::Attribute<0x0020,0x0013> at;
-  at.Set(ds);
-  int imageNumber = at.GetValue();
+  gdcm::Attribute<0x0020,0x0011> attrSequenceNumber;
+  attrSequenceNumber.Set(ds);
+  int sequenceNumber = attrSequenceNumber.GetValue();
+  if (dcmSeq != NULL) *dcmSeq = sequenceNumber;
+
+  gdcm::Attribute<0x0020,0x0013> attrImageNumber;
+  attrImageNumber.Set(ds);
+  int imageNumber = attrImageNumber.GetValue();
+  if (dcmSlice != NULL) *dcmSlice = imageNumber;
+
+  gdcm::Attribute<0x0020,0x1041> attrSliceLocation;
+  attrSliceLocation.Set(ds);
+  float sliceLocation = attrSliceLocation.GetValue();
+  if (dcmSPos != NULL) *dcmSPos = sliceLocation;
+
   char *rawData = new char[image.GetBufferLength()];
   image.GetBuffer(rawData);
   vd->addFrame((uint8_t *)rawData, vvVolDesc::ARRAY_DELETE, imageNumber);
