@@ -61,6 +61,7 @@
 
 #include "vvfileio.h"
 #include "vvmacros.h"
+#include "vvpixelformat.h"
 #include "vvtoolshed.h"
 #include "vvdebugmsg.h"
 #include "vvtokenizer.h"
@@ -3870,6 +3871,10 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   uid.SetFromUID( ts.GetString() );
   std::cout << "TransferSyntax is " << ts << " [" << uid.GetName() <<  "]" << std::endl;
 
+  virvo::PixelFormat format = PF_R8;
+  float slope = 1.0f;
+  float inter = 0.0f;
+
   if( gdcm::MediaStorage::IsImage( ms ) )
     {
     gdcm::ImageReader reader;
@@ -3936,14 +3941,28 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->addFrame((uint8_t *)rawData, vvVolDesc::ARRAY_DELETE, imageNumber);
   ++vd->frames;
 
+  slope = static_cast<float>(image.GetSlope());
+  inter = static_cast<float>(image.GetIntercept());
+
+  if (pf == gdcm::PixelFormat::INT16)
+  {
+    format = PF_R16I;
+  }
+  else if (pf == gdcm::PixelFormat::INT32)
+  {
+    format = PF_R32I;
+  }
+  else if (pf == gdcm::PixelFormat::UINT32)
+  {
+    format = PF_R32UI;
+  }
+
   // Make big endian data:
   // TODO if (prop.littleEndian) vd->toggleEndianness(vd->frames-1);
 
   // Shift bits so that most significant used bit is leftmost:
-  vd->bitShiftData(pf.GetHighBit() - (pf.GetBitsAllocated() - 1), vd->frames-1);
+  //vd->bitShiftData(pf.GetHighBit() - (pf.GetBitsAllocated() - 1), vd->frames-1);
 
-  // Make unsigned data:
-  // TODO if (prop.isSigned) vd->toggleSign(vd->frames-1);
  /*   if( md5sum )
       {
       char *buffer = new char[ image.GetBufferLength() ];
@@ -3961,10 +3980,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
 // Do the IOD verification !
     //bool v = defs.Verify( file );
     //std::cerr << "IOD Verification: " << (v ? "succeed" : "failed") << std::endl;
-
-   
-
-  return OK;
 #else
   vvDicom* dicomReader;
   vvDicomProperties prop;
@@ -4009,14 +4024,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
       break;
     default: assert(0); break;
   }
-  for (int c = 0; c < vd->chan; ++c)
-  {
-    // TODO
-    vd->mapping(c)[0] = 0.f;
-    vd->mapping(c)[1] = 1.f;
-    vd->range(c)[0] = 0.f;
-    vd->range(c)[1] = 1.f;
-  }
   vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE,prop.image);
   ++vd->frames;
 
@@ -4026,12 +4033,105 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   // Shift bits so that most significant used bit is leftmost:
   vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), int(vd->frames-1));
 
-  // Make unsigned data:
-  if (prop.isSigned) vd->toggleSign(int(vd->frames-1));
+  float slope = dicomReader->slope_specified ? dicomReader->slope : 1.0f;
+  float inter = dicomReader->intercept_specified ? dicomReader->intercept : 0.0f;
+
+  virvo::PixelFormat format = PF_R8;
+  if (prop.isSigned && prop.bpp == 2)
+  {
+    format = PF_R16I;
+  }
+  else if (prop.isSigned && prop.bpp == 4)
+  {
+    format = PF_R32I;
+  }
+  else if (!prop.isSigned && prop.bpp == 4)
+  {
+    format = PF_R32UI;
+  }
 
   delete dicomReader;
-  return OK;
 #endif
+
+  // TODO: consolidate w/ nifti
+
+  // adapt data format
+
+  if (format == PF_R16I)
+  {
+    vd->mapping(0) = vec2(SHRT_MIN * slope + inter, SHRT_MAX * slope + inter);
+
+    int minval = 10000000;
+    int maxval = -11111111;
+    // Remap data
+    for (ssize_t z = 0; z < vd->vox[2]; ++z)
+    {
+      for (ssize_t y = 0; y < vd->vox[1]; ++y)
+      {
+        for (ssize_t x = 0; x < vd->vox[0]; ++x)
+        {
+          uint8_t* bytes = (*vd)(x, y, z); 
+          int32_t voxel = (int)*reinterpret_cast<int16_t*>(bytes);
+          voxel -= SHRT_MIN;
+          *reinterpret_cast<uint16_t*>(bytes) = voxel;
+
+          if (voxel > maxval) maxval = voxel;
+          if (voxel < minval) minval = voxel;
+        }
+      }
+    }
+  }
+  else if (format == PF_R32I)
+  {
+    vd->mapping(0) = vec2(INT_MIN * slope + inter, INT_MAX * slope + inter);
+
+    // Remap data to float
+    for (ssize_t z = 0; z < vd->vox[2]; ++z)
+    {
+      for (ssize_t y = 0; y < vd->vox[1]; ++y)
+      {
+        for (ssize_t x = 0; x < vd->vox[0]; ++x)
+        {
+          uint8_t* bytes = (*vd)(x, y, z);
+          int32_t i = *reinterpret_cast<int32_t*>(bytes);
+          float f = static_cast<float>(i);
+          *reinterpret_cast<float*>(bytes) = f;
+        }
+      }
+    }
+  }
+  else if (format == PF_R32UI)
+  {
+    vd->mapping(0) = vec2(inter, UINT_MAX * slope + inter);
+
+    // Remap data to float
+    for (ssize_t z = 0; z < vd->vox[2]; ++z)
+    {
+      for (ssize_t y = 0; y < vd->vox[1]; ++y)
+      {
+        for (ssize_t x = 0; x < vd->vox[0]; ++x)
+        {
+          uint8_t* bytes = (*vd)(x, y, z);
+          unsigned u = *reinterpret_cast<unsigned*>(bytes);
+          float f = static_cast<float>(u);
+          *reinterpret_cast<float*>(bytes) = f;
+        }
+      }
+    }
+  }
+  else
+  {
+    vd->mapping(0) *= slope;
+    vd->mapping(0) += inter;
+  }
+
+
+  for (int c = 0; c < vd->chan; ++c)
+  {
+    vd->findMinMax(c, vd->range(c)[0], vd->range(c)[1]);
+  }
+
+  return OK;
 }
 
 //----------------------------------------------------------------------------
