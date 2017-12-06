@@ -8,6 +8,7 @@
 #cmakedefine01 VV_HAVE_CG
 #cmakedefine01 VV_HAVE_CUDA
 #cmakedefine01 VV_HAVE_FFMPEG
+#cmakedefine01 VV_HAVE_GDCM
 #cmakedefine01 VV_HAVE_GLEW
 #cmakedefine01 VV_HAVE_JPEGTURBO
 #cmakedefine01 VV_HAVE_NIFTI
@@ -46,6 +47,9 @@
 #endif
 #if VV_HAVE_FFMPEG
 #define HAVE_FFMPEG
+#endif
+#if VV_HAVE_GDCM
+#define HAVE_GDCM
 #endif
 #if VV_HAVE_GLEW
 #define HAVE_GLEW

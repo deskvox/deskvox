@@ -25,7 +25,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#ifdef HAVE_GDCM
+#if VV_HAVE_GDCM
 #include "gdcmAttribute.h"
 #include "gdcmReader.h"
 #include "gdcmImageReader.h"
@@ -152,7 +152,7 @@ static std::map<std::string, Format> supported_formats()
 /// Try to guess format from file header etc.
 Format guessFormat(const vvVolDesc* vd)
 {
-#ifdef HAVE_GDCM
+#if VV_HAVE_GDCM
   // Dicom
 
   gdcm::Reader reader;
@@ -3836,7 +3836,7 @@ vvFileIO::ErrorType vvFileIO::loadPXMRawImage(vvVolDesc* vd)
 */
 vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcmSlice, float* dcmSPos)
 {
-#ifdef HAVE_GDCM
+#if VV_HAVE_GDCM
 
    
   //const char *filename = argv[1];

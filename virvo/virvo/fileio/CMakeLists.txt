@@ -4,7 +4,6 @@ find_package(Teem)
 
 if (GDCM_FOUND)
     include(${GDCM_USE_FILE})
-    add_definitions(-DHAVE_GDCM)
 endif()
 
 deskvox_use_package(Boost)
