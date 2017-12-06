@@ -36,6 +36,8 @@
 #include "vvtoolshed.h"
 #include <sstream>
 
+#include <boost/filesystem.hpp>
+
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -2724,7 +2726,7 @@ int vvConv::run(int argc, char** argv)
 int vvConv::renameDicomFiles()
 {
   char* oldName;
-  char newName[256];
+  char newName[4096];
   int dcmSeq, dcmSlice;   // DICOM sequence and slice IDs
   float dcmSLoc;
   bool done = false;
@@ -2744,7 +2746,15 @@ int vvConv::renameDicomFiles()
     }
     else
     {
-      sprintf(newName , "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
+      boost::filesystem::path p(srcFile);
+      p.remove_filename();
+      std::string basedir = p.string();
+#ifdef WIN32
+      const char* delim = "\\";
+#else
+      const char* delim = "/";
+#endif
+      sprintf(newName , "%s%sseq%03d-loc%06d.dcm", basedir.c_str(), delim, dcmSeq, dcmSlice);
       if (rename(oldName, newName) != 0)
       {
         cerr << "Could not rename " << oldName << " to " << newName << endl;
