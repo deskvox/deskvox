@@ -42,6 +42,7 @@ class VIRVO_FILEIOEXPORT vvDicomProperties
     bool   littleEndian;                          // true = data is little endian
     float  dist[3];                               // sample distance (x,y,z)
     float  slicePos;                              // slice position
+    float  sliceThickness;                        // slice thickness [mm]
 
     vvDicomProperties();
     void print();

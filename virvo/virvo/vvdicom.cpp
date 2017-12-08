@@ -518,7 +518,7 @@ void vvDicom::readDicomData(FILE* _fp)
             {
               cerr << "vvDicom::readDicomData: read error" << endl;
             }
-            if (d > 0.0f) info->dist[2] = d;
+            if (d > 0.0f) info->sliceThickness = d;
             delete[] buff;
           }
           break;
@@ -531,7 +531,27 @@ void vvDicom::readDicomData(FILE* _fp)
           case 0x85 :  infoText = "imaged nucleus";          t=VV_STRING; break;
           case 0x86 :  infoText = "echo number";             t=VV_STRING; break;
           case 0x87 :  infoText = "magnetic field strength"; t=VV_STRING; break;
-          case 0x88 :  infoText = "spacing between slices";  t=VV_STRING; break;
+          case 0x88 :  infoText = "spacing between slices";
+          {
+            t=VV_STRING;
+            char* buff = new char[e_len+1];
+            pos = ftell(_fp);
+            size_t n = fread(buff, e_len, 1, _fp);
+            if(n != 1)
+              cerr << "Returned value from fread is " << n << ", expected 1" << endl;
+            assert(n==1);
+            fseek(_fp, pos, SEEK_SET);
+            buff[e_len] = '\0';
+            float d = 0.0f;
+            int ret = sscanf(buff, "%f", &d);
+            if (ret != 1)
+            {
+              cerr << "vvDicom::readDicomData: read error" << endl;
+            }
+            if (d > 0.0f) info->dist[2] = d;
+            delete[] buff;
+          }
+          break;
           case 0x91 :  infoText = "echo train length";       t=VV_STRING; break;
           case 0x93 :  infoText = "percent sampling";        t=VV_STRING; break;
           case 0x94 :  infoText = "percent phase field of view"; t=VV_STRING; break;
