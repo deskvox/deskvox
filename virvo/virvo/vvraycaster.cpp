@@ -60,6 +60,10 @@
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
+#ifdef VV_ARCH_CUDA
+#include "cuda/utils.h"
+#endif
+
 using namespace visionaray;
 
 
@@ -989,6 +993,8 @@ vvRayCaster::vvRayCaster(vvVolDesc* vd, vvRenderState renderState)
     glewInit();
 
 #if defined(VV_ARCH_CUDA)
+    virvo::cuda::initGlInterop();
+
     virvo::RenderTarget* rt = virvo::PixelUnpackBufferRT::create(virvo::PF_RGBA32F, virvo::PF_UNSPECIFIED);
 
     // no direct rendering

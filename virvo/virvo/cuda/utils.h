@@ -70,24 +70,18 @@ bool isLaunchable(T* func, dim3 const& blockDim, size_t dynamicSharedMem = 0)
 }
 
 
-} // namespace cuda
-} // namespace virvo
-
-
-#ifndef __CUDACC__
-
-
-namespace virvo
-{
-namespace cuda
-{
 VVAPI bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
 VVAPI int deviceCount();
 VVAPI bool init();
 VVAPI bool initGlInterop();
-}
-}
 
+
+} // namespace cuda
+} // namespace virvo
+
+
+
+#ifndef __CUDACC__
 
 #include <cmath>
 
