@@ -695,6 +695,11 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames(ssize_t slicesPerFrame)
   vox[2] = slicesPerFrame;
   frames = rawFrames.size();
 
+  for (int c = 0; c < chan; ++c)
+  {
+    findMinMax(c, range(c).x, range(c).y);
+  }
+
   return OK;
 }
 
