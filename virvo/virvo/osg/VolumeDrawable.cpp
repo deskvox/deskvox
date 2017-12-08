@@ -328,7 +328,7 @@ void VolumeDrawable::setVolumeDescription(vvVolDesc *v)
 
     if (vd)
     {
-        osg::Vec3 diag = osg::Vec3(vd->vox[0] * vd->dist[0], vd->vox[1] * vd->dist[2], vd->vox[2] * vd->dist[2]);
+        osg::Vec3 diag = osg::Vec3(vd->vox[0] * vd->dist[0], vd->vox[1] * vd->dist[1], vd->vox[2] * vd->dist[2]);
         setInitialBound(BoundingBox(getPosition() - diag * .5, getPosition() + diag * .5));
     }
     else
