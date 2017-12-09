@@ -69,6 +69,8 @@ bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bo
   }
 
   std::string s(msg);
+  s += " ";
+  s += std::to_string(err);
   s += ": ";
   s += cudaGetErrorString(err);
   vvDebugMsg::msg(0, s.c_str());
