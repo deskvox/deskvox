@@ -86,6 +86,9 @@ bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bo
 
 int virvo::cuda::deviceCount()
 {
+  bool dummy = true;
+  virvo::cuda::checkError(&dummy, cudaGetLastError(), "virvo::cuda::deviceCount: previous error", true);
+
   int cnt = 0;
   bool ok = true;
   if (!virvo::cuda::checkError(&ok, cudaGetDeviceCount(&cnt), "virvo::cuda::deviceCount", false))
