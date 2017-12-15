@@ -287,8 +287,7 @@ void VolumeDrawable::setPosition(const osg::Vec3 &pos)
 void VolumeDrawable::getBoundingBox(osg::Vec3 *min, osg::Vec3 *max) const
 {
 #if OSG_VERSION_GREATER_OR_EQUAL(3, 3, 2)
-    BoundingBox bb;
-    bb.expandBy(computeBound());
+    const BoundingBox &bb = getInitialBound();
 #else
     const BoundingBox &bb = getBound();
 #endif
@@ -328,8 +327,10 @@ void VolumeDrawable::setVolumeDescription(vvVolDesc *v)
 
     if (vd)
     {
-        osg::Vec3 diag = osg::Vec3(vd->vox[0] * vd->dist[0], vd->vox[1] * vd->dist[1], vd->vox[2] * vd->dist[2]);
-        setInitialBound(BoundingBox(getPosition() - diag * .5, getPosition() + diag * .5));
+        osg::Vec3 offset(vd->vox[0] * vd->dist[0] * vd->_scale * 0.5f,
+                vd->vox[1] * vd->dist[1] * vd->_scale * 0.5f,
+                vd->vox[2] * vd->dist[2] * vd->_scale * 0.5f);
+        setInitialBound(BoundingBox(getPosition() - offset, getPosition() + offset));
     }
     else
     {
