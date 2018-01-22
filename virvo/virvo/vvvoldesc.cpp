@@ -884,22 +884,28 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
   memset(count, 0, totalBuckets * sizeof(int));   // initialize counter array
 
   //vvStopwatch sw;sw.start();
-  for (size_t i=0; i<getFrameVoxels(); ++i)       // count each voxel value
+  for (int f=0; f<(int)frames; ++f)
   {
-    int dstIndex = 0;                             // index into histogram array
-    int factor = 1;                               // multiplication factor for dstIndex
-    for (int c=0; c<numChan; ++c)
+    if (frame != -1 && frame != f)
+      continue; // only compute histogram for a specific frame
+
+    for (size_t i=0; i<getFrameVoxels(); ++i)     // count each voxel value
     {
-      float voxVal = getChannelValue(frame, i, chan1 + c);
+      int dstIndex = 0;                           // index into histogram array
+      int factor = 1;                             // multiplication factor for dstIndex
+      for (int c=0; c<numChan; ++c)
+      {
+        float voxVal = getChannelValue(frame, i, chan1 + c);
 
-      // Bucket index with respect to channel c
-      int bucketIndex = (int)((voxVal - min) / ((max-min) / buckets[c]));
-      bucketIndex = ts_clamp(bucketIndex, 0, buckets[c]-1);
+        // Bucket index with respect to channel c
+        int bucketIndex = (int)((voxVal - min) / ((max-min) / buckets[c]));
+        bucketIndex = ts_clamp(bucketIndex, 0, buckets[c]-1);
 
-      dstIndex += bucketIndex * factor;
-      factor *= buckets[c];
+        dstIndex += bucketIndex * factor;
+        factor *= buckets[c];
+      }
+      ++count[dstIndex];
     }
-    ++count[dstIndex];
   }
   //std::cout << sw.getTime() << '\n';
 }
