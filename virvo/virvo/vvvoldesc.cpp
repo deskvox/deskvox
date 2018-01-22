@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <functional>
 #include <limits>
+#include <numeric>
 #include <sstream>
 
 #include <boost/detail/endian.hpp>
@@ -867,15 +869,6 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
 */
 void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, int* count, float min, float max) const
 {
-  float* voxVal;                                  // voxel values
-  float* valPerBucket;                            // scalar data values per bucket
-  int c, m;                                       // counters
-  size_t dstIndex;                                // index into histogram array
-  size_t factor;                                  // multiplication factor for dstIndex
-  size_t numVoxels;                               // number of voxels per frame
-  int* bucket;                                    // bucket ID
-  int totalBuckets;                               // total number of buckets
-
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
 
   if (frame < 0 || frame >= (int)frames)
@@ -887,45 +880,28 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
   if (numChan < 1)
     return;
 
-  totalBuckets = 1;
-  for (c=0; c<numChan; ++c)
-  {
-    totalBuckets *= buckets[c];
-  }
+  int totalBuckets = std::accumulate(buckets, buckets+numChan, 1, std::multiplies<int>());
   memset(count, 0, totalBuckets * sizeof(int));   // initialize counter array
 
-  voxVal = new float[numChan];
-  bucket = new int[numChan];
-  valPerBucket = new float[numChan];
-  numVoxels = getFrameVoxels();
-  for (c=0; c<numChan; ++c)
-  {
-    valPerBucket[c] = (max-min) / float(buckets[c]);
-  }
   //vvStopwatch sw;sw.start();
-  for (size_t i=0; i<numVoxels; ++i)                   // count each voxel value
+  for (size_t i=0; i<getFrameVoxels(); ++i)       // count each voxel value
   {
-    dstIndex = 0;
+    int dstIndex = 0;                             // index into histogram array
+    int factor = 1;                               // multiplication factor for dstIndex
     for (int c=0; c<numChan; ++c)
     {
-      voxVal[c] = getChannelValue(frame, i, chan1 + c);
+      float voxVal = getChannelValue(frame, i, chan1 + c);
 
-      bucket[c] = (int)(float(voxVal[c] - min) / valPerBucket[c]);
-      bucket[c] = ts_clamp(bucket[c], 0, buckets[c]-1);
-      factor = 1;
-      for (m=0; m<c; ++m)
-      {
-        factor *= buckets[m];
-      }
-      dstIndex += bucket[c] * factor;
+      // Bucket index with respect to channel c
+      int bucketIndex = (int)((voxVal - min) / ((max-min) / buckets[c]));
+      bucketIndex = ts_clamp(bucketIndex, 0, buckets[c]-1);
+
+      dstIndex += bucketIndex * factor;
+      factor *= buckets[c];
     }
     ++count[dstIndex];
   }
   //std::cout << sw.getTime() << '\n';
-
-  delete[] valPerBucket;
-  delete[] bucket;
-  delete[] voxVal;
 }
 
 //----------------------------------------------------------------------------
