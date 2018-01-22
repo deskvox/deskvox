@@ -867,19 +867,19 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
 */
 void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* buckets, int* count, float min, float max) const
 {
-  uint8_t* raw;                                   // raw voxel data
   float* voxVal;                                  // voxel values
   float* valPerBucket;                            // scalar data values per bucket
   int c, m;                                       // counters
-  size_t srcIndex;                                // index into raw volume data
   size_t dstIndex;                                // index into histogram array
   size_t factor;                                  // multiplication factor for dstIndex
   size_t numVoxels;                               // number of voxels per frame
   unsigned int* bucket;                           // bucket ID
-  int srcChan;                                    // channel index in data set
   unsigned int totalBuckets;                      // total number of buckets
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
+
+  if (frame < 0 || frame >= frames)
+    return;
 
   totalBuckets = 1;
   for (c=0; c<numChan; ++c)
@@ -896,51 +896,27 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
   {
     valPerBucket[c] = (max-min) / float(buckets[c]);
   }
-  for (size_t f=0; f<frames; ++f)
+  //vvStopwatch sw;sw.start();
+  for (size_t i=0; i<numVoxels; ++i)                   // count each voxel value
   {
-    if (frame != -1 && frame != f)
-      continue; // only compute histogram for a specific frame
-
-    raw = getRaw(f);
-    for (size_t i=0; i<numVoxels; ++i)                   // count each voxel value
+    dstIndex = 0;
+    for (int c=0; c<numChan; ++c)
     {
-      srcIndex = i * getBPV();
-      dstIndex = 0;
-      for (int c=0; c<numChan; ++c)
-      {
-        srcChan = ts_min(c, chan-1);
-        switch (bpc)
-        {
-          case 1:
-            voxVal[c] = float(raw[srcIndex + chan1 + srcChan]);
-            voxVal[c] = lerp(mapping(chan1 + srcChan)[0], mapping(chan1 + srcChan)[1], voxVal[c] / 255);
-            break;
-          case 2:
-#ifdef BOOST_LITTLE_ENDIAN
-            voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan) + 1] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan)]));
-#else
-            voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan)] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan) + 1]));
-#endif
-            voxVal[c] = lerp(mapping(chan1 + srcChan)[0], mapping(chan1 + srcChan)[1], voxVal[c] / 65535);
-            break;
-          case 4:
-            voxVal[c] = *((float*)(raw + srcIndex + 4 * (chan1 + srcChan)));
-            break;
-          default: assert(0); break;
-        }
+      int srcChan = ts_min(c, chan-1);
+      voxVal[c] = getChannelValue(frame, i, chan1+srcChan);
 
-        bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
-        bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
-        factor = 1;
-        for (m=0; m<c; ++m)
-        {
-          factor *= buckets[m];
-        }
-        dstIndex += bucket[c] * factor;
+      bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
+      bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
+      factor = 1;
+      for (m=0; m<c; ++m)
+      {
+        factor *= buckets[m];
       }
-      ++count[dstIndex];
+      dstIndex += bucket[c] * factor;
     }
+    ++count[dstIndex];
   }
+  //std::cout << sw.getTime() << '\n';
 
   delete[] valPerBucket;
   delete[] bucket;
