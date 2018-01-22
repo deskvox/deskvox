@@ -913,7 +913,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
         {
           case 1:
             voxVal[c] = float(raw[srcIndex + chan1 + srcChan]);
-            voxVal[c] = lerp(mapping(c)[0], mapping(c)[1], voxVal[c] / 255);
+            voxVal[c] = lerp(mapping(chan1 + srcChan)[0], mapping(chan1 + srcChan)[1], voxVal[c] / 255);
             break;
           case 2:
 #ifdef BOOST_LITTLE_ENDIAN
@@ -921,7 +921,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
 #else
             voxVal[c] = float(int(raw[srcIndex + 2 * (chan1 + srcChan)] << 8) | int(raw[srcIndex + 2 * (chan1 + srcChan) + 1]));
 #endif
-            voxVal[c] = lerp(mapping(c)[0], mapping(c)[1], voxVal[c] / 65535);
+            voxVal[c] = lerp(mapping(chan1 + srcChan)[0], mapping(chan1 + srcChan)[1], voxVal[c] / 65535);
             break;
           case 4:
             voxVal[c] = *((float*)(raw + srcIndex + 4 * (chan1 + srcChan)));
