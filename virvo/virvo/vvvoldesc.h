@@ -299,7 +299,7 @@ public:
     void   addFrame(uint8_t*, DeleteType, int fd=-1);
     void   copyFrame(uint8_t*);
     void   removeSequence();
-    void   makeHistogram(int frame, int chan1, int numChan, unsigned int*, int*, float, float) const;
+    void   makeHistogram(int frame, int chan1, int numChan, int*, int*, float, float) const;
     void   normalizeHistogram(int, int*, float*, NormalizationType);
     void   makeHistogramTexture(int frame, int chan1, int numChan, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);

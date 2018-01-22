@@ -865,7 +865,7 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
   @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* buckets, int* count, float min, float max) const
+void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, int* count, float min, float max) const
 {
   float* voxVal;                                  // voxel values
   float* valPerBucket;                            // scalar data values per bucket
@@ -873,12 +873,12 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
   size_t dstIndex;                                // index into histogram array
   size_t factor;                                  // multiplication factor for dstIndex
   size_t numVoxels;                               // number of voxels per frame
-  unsigned int* bucket;                           // bucket ID
-  unsigned int totalBuckets;                      // total number of buckets
+  int* bucket;                                    // bucket ID
+  int totalBuckets;                               // total number of buckets
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
 
-  if (frame < 0 || frame >= frames)
+  if (frame < 0 || frame >= (int)frames)
     return;
 
   if (chan1+numChan > chan)
@@ -895,7 +895,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
   memset(count, 0, totalBuckets * sizeof(int));   // initialize counter array
 
   voxVal = new float[numChan];
-  bucket = new unsigned int[numChan];
+  bucket = new int[numChan];
   valPerBucket = new float[numChan];
   numVoxels = getFrameVoxels();
   for (c=0; c<numChan; ++c)
@@ -910,8 +910,8 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
     {
       voxVal[c] = getChannelValue(frame, i, chan1 + c);
 
-      bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
-      bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
+      bucket[c] = (int)(float(voxVal[c] - min) / valPerBucket[c]);
+      bucket[c] = ts_clamp(bucket[c], 0, buckets[c]-1);
       factor = 1;
       for (m=0; m<c; ++m)
       {
@@ -954,12 +954,12 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, size_t* 
   size_t texIndex;                                // index in TF texture
   size_t numValues;
   int    histIndex;
-  unsigned int*   buckets;                                 // histogram dimensions
+  int*   buckets;                                 // histogram dimensions
   int*   index;                                   // index in histogram array
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogramTexture()");
   assert(data);
-  buckets = new unsigned int[numChan];
+  buckets = new int[numChan];
   index = new int[numChan];
   numValues = 1;
   for (c=0; c<numChan; ++c)
@@ -1212,13 +1212,13 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
 {
   FILE* fp;
   int* hist;
-  unsigned int buckets[1];
+  int buckets[1];
 
   char* basePath = new char[strlen(filename) + 1];
   char* fileName = new char[strlen(filename) + 15];
   vvToolshed::extractBasePath(basePath, filename);
 
-  buckets[0] = (unsigned int)(getValueRange());
+  buckets[0] = (int)(getValueRange());
   hist = new int[buckets[0]];
 
   for (int m=0; m<chan; ++m)
@@ -1548,7 +1548,7 @@ void vvVolDesc::deleteChannel(int channel, bool verbose)
           {
             memcpy(dst+c*bpc, src+c*bpc, bpc);    // copy channels up to the one to delete
           }
-          for (size_t c=(channel+1); c<chan; ++c)
+          for (int c=(channel+1); c<chan; ++c)
           {
             memcpy(dst+(c-1)*bpc, src+c*bpc, bpc);// copy channels above the one to delete
           }
@@ -2960,7 +2960,7 @@ void vvVolDesc::printHistogram(int frame, int channel)
   int* hist;
   int i;
 
-  unsigned int buckets[1] = {32};
+  int buckets[1] = {32};
 
   hist = new int[buckets[0]];
   makeHistogram(frame, channel, 1, buckets, hist, range(channel)[0], range(channel)[1]);
@@ -3966,7 +3966,7 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax) cons
 float vvVolDesc::findClampValue(int frame, int channel, float threshold) const
 {
   int* hist;
-  unsigned int buckets[1] = {1000};
+  int buckets[1] = {1000};
   float fMin, fMax;
   float clampVal = 0.0f;
   size_t voxelCount=0;
