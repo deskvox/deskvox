@@ -871,9 +871,6 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
 {
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
 
-  if (frame < 0 || frame >= (int)frames)
-    return;
-
   if (chan1+numChan > chan)
     numChan = chan-chan1;
 
