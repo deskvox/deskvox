@@ -881,6 +881,12 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
   if (frame < 0 || frame >= frames)
     return;
 
+  if (chan1+numChan > chan)
+    numChan = chan-chan1;
+
+  if (numChan < 1)
+    return;
+
   totalBuckets = 1;
   for (c=0; c<numChan; ++c)
   {
@@ -902,8 +908,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, unsigned int* b
     dstIndex = 0;
     for (int c=0; c<numChan; ++c)
     {
-      int srcChan = ts_min(c, chan-1);
-      voxVal[c] = getChannelValue(frame, i, chan1+srcChan);
+      voxVal[c] = getChannelValue(frame, i, chan1 + c);
 
       bucket[c] = (unsigned int)(float(voxVal[c] - min) / valPerBucket[c]);
       bucket[c] = ts_clamp(bucket[c], 0U, buckets[c]-1);
