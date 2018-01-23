@@ -878,7 +878,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
     return;
 
   int totalBuckets = std::accumulate(buckets, buckets+numChan, 1, std::multiplies<int>());
-  memset(count, 0, totalBuckets * sizeof(int));   // initialize counter array
+  std::fill(count, count+totalBuckets, 0);        // initialize counter array
 
   //vvStopwatch sw;sw.start();
   for (int f=0; f<(int)frames; ++f)
@@ -892,10 +892,10 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
       int factor = 1;                             // multiplication factor for dstIndex
       for (int c=0; c<numChan; ++c)
       {
-        float voxVal = getChannelValue(frame, i, chan1 + c);
+        float voxVal = getChannelValue(f, i, chan1+c);
 
         // Bucket index with respect to channel c
-        int bucketIndex = (int)((voxVal - min) / ((max-min) / buckets[c]));
+        int bucketIndex = (int)((voxVal - min) * (buckets[c] / (max-min)));
         bucketIndex = ts_clamp(bucketIndex, 0, buckets[c]-1);
 
         dstIndex += bucketIndex * factor;
