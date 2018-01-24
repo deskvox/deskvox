@@ -331,6 +331,9 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
 VVTransferWindow::~VVTransferWindow()
 {
   delete _glVisual1D;
+  delete _glVisual2D;
+  delete _histoTexture1D;
+  delete _histoTexture2D;
 }
 
 void VVTransferWindow::initGL()
