@@ -741,7 +741,7 @@ long VVShell::onCmdReloadVolume(FXObject*,FXSelector,void*)
       vvDebugMsg::msg(2, "Loaded file: ", vd->getFilename());
       // Use previous pin list if loaded dataset has no pins:
       if (vd->tf[0].isEmpty()) vd->tf[0].copy(&vd->tf[0]._widgets, &_canvas->_vd->tf[0]._widgets);
-      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentVoxels);
+      setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -833,7 +833,7 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
         vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
         vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
       }
-      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentVoxels);
+      setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -1380,7 +1380,7 @@ long VVShell::onAllUpdate(FXObject*,FXSelector,void*)
   @param vd new volume, NULL if no change to volume data
   @param algorithm 0=no change, 1=textures, 2=Stingray, -1=suppress rendering
 */
-void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm, vvTexRend::VoxelType vt)
+void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm)
 {
   vvDebugMsg::msg(1, "VVShell::setCanvasRenderer()");
 
@@ -1393,7 +1393,7 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorith
     }
     else vd = _canvas->_vd;
   
-    _canvas->setRenderer(algorithm, vt);
+    _canvas->setRenderer(algorithm);
 
     if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
     else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();

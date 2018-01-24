@@ -78,7 +78,6 @@ vvCanvas::vvCanvas()
   _width = _height = 0;
   _vd = NULL;
   _currentAlgorithm = vvRenderer::TEXREND;
-  _currentVoxels = vvTexRend::VV_BEST;
 
 #ifdef VV_USE_ARTOOLKIT
   _arTracking = NULL;
@@ -450,13 +449,11 @@ void vvCanvas::transformObject(const vvMatrix& m)
   @param r  index of renderer
   @param v  volume description
 */
-void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::VoxelType vt)
+void vvCanvas::setRenderer(vvRenderer::RendererType alg)
 {
   vvRenderState renderState;
 
   vvDebugMsg::msg(1, "vvCanvas::setRenderer()");
-
-  _currentVoxels = vt;
 
   if (_renderer) 
   {
@@ -474,7 +471,7 @@ void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::VoxelType vt
     _renderer = new vvRenderer(_vd, renderState);
     break;
   case vvRenderer::TEXREND:
-    _renderer = new vvTexRend(_vd, renderState, _currentVoxels);
+    _renderer = new vvTexRend(_vd, renderState);
     break;
   case vvRenderer::SOFTSW:
     _renderer = new vvSoftShearWarp(_vd, renderState);

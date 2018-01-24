@@ -51,12 +51,12 @@ class VVPreferenceWindow : public FXDialogBox
       ID_STEREO,
       ID_ARTOOLKIT,
       ID_RENDERERTYPE,
-      ID_VOXELTYPE,
       ID_GEOMTYPE,
       ID_PIXEL_SHADER,
       ID_BRICK_SIZE,
       ID_OPTIONS,
       ID_LINTERP,
+      ID_POST_CLASS,
       ID_SHOWBRICKS,
       ID_COMPUTE_BRICKSIZE,
       ID_TEX_MEMORY,
@@ -78,13 +78,13 @@ class VVPreferenceWindow : public FXDialogBox
     FXTextField* _qualityMTField;
     FXTextField* _qualitySTField;
     FXComboBox* _rtCombo;                         ///< renderer type
-    FXComboBox* _vtCombo;                         ///< voxel type
     FXComboBox* _gtCombo;                         ///< geometry type
     FXComboBox* _psCombo;                         ///< pixel shader
     FXComboBox* _bsCombo;                         ///< brick size
     FXComboBox* _defCombo;                        ///< default data set
     FXComboBox* _stereoCombo;
     FXCheckButton* _linterpButton;
+    FXCheckButton* _postClassButton;              ///< post-classificaton [on|off]
     FXCheckButton* _showBricksButton;
     FXCheckButton* _computeBrickSizeButton;
     FXCheckButton* _mipButton;
@@ -99,6 +99,7 @@ class VVPreferenceWindow : public FXDialogBox
     void toggleMIP();
     void toggleBounds();
     void toggleInterpol();
+    void toggleClassification();
     void scaleQuality(float);
     float getQualitySDialValue();
     void  setQualitySDialValue(float);
@@ -116,12 +117,12 @@ class VVPreferenceWindow : public FXDialogBox
     long onARToolkitChange(FXObject*,FXSelector,void*);
     long onRTChange(FXObject*,FXSelector,void*);
     long onGTChange(FXObject*,FXSelector,void*);
-    long onVTChange(FXObject*,FXSelector,void*);
     long onPSChange(FXObject*,FXSelector,void*);
     long onBSChange(FXObject*, FXSelector, void*);
     long onDispBoundsChange(FXObject*,FXSelector,void*);
     long onMIPSelect(FXObject*,FXSelector,void*);
     long onInterpolationSelect(FXObject*,FXSelector,void*);
+    long onPostClassSelect(FXObject*,FXSelector,void*);
     long onShowBricksSelect(FXObject*, FXSelector, void*);
     long onComputeBricksizeSelect(FXObject*, FXSelector, void*);
     long onTexMemoryChange(FXObject*, FXSelector, void*);

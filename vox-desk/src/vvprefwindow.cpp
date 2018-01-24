@@ -45,12 +45,12 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_MOVING, VVPreferenceWindow::onQualityMChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_STILL,  VVPreferenceWindow::onQualitySChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_RENDERERTYPE,   VVPreferenceWindow::onRTChange),
-  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_VOXELTYPE,      VVPreferenceWindow::onVTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_GEOMTYPE,       VVPreferenceWindow::onGTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_PIXEL_SHADER,   VVPreferenceWindow::onPSChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_BRICK_SIZE,     VVPreferenceWindow::onBSChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_MIP,            VVPreferenceWindow::onMIPSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_LINTERP,        VVPreferenceWindow::onInterpolationSelect),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_POST_CLASS,     VVPreferenceWindow::onPostClassSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SHOWBRICKS,     VVPreferenceWindow::onShowBricksSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_COMPUTE_BRICKSIZE, VVPreferenceWindow::onComputeBricksizeSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_TEX_MEMORY,     VVPreferenceWindow::onTexMemoryChange),
@@ -81,9 +81,6 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
   new FXLabel(algoMatrix, "Geometry:", NULL,LABEL_NORMAL);
   _gtCombo=new FXComboBox(algoMatrix,1,this,ID_GEOMTYPE, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK | LAYOUT_FILL_X);
 
-  new FXLabel(algoMatrix, "Voxel type:", NULL,LABEL_NORMAL);
-  _vtCombo=new FXComboBox(algoMatrix,1,this,ID_VOXELTYPE, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK | LAYOUT_FILL_X);
-
   new FXLabel(algoMatrix, "Pixel shader:", NULL, LABEL_NORMAL);
   _psCombo=new FXComboBox(algoMatrix,1,this,ID_PIXEL_SHADER, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK | LAYOUT_FILL_X);
 
@@ -92,6 +89,7 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
 
   FXVerticalFrame* checkFrame = new FXVerticalFrame(algoGroup, LAYOUT_FILL_X);
   _linterpButton  = new FXCheckButton(checkFrame,"Linear interpolation",this,VVPreferenceWindow::ID_LINTERP, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
+  _postClassButton= new FXCheckButton(checkFrame,"Post-classification",this,VVPreferenceWindow::ID_POST_CLASS, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _mipButton      = new FXCheckButton(checkFrame,"Maximum intensity projection (MIP)",this,ID_MIP,ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _suppressButton = new FXCheckButton(checkFrame,"Suppress rendering",this,ID_SUPPRESS,ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _showBricksButton = new FXCheckButton(checkFrame, "Show Bricks", this, VVPreferenceWindow::ID_SHOWBRICKS, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
@@ -174,10 +172,10 @@ VVPreferenceWindow::~VVPreferenceWindow()
   delete _eyeTField;
   delete _rtCombo;
   delete _gtCombo;
-  delete _vtCombo;
   delete _psCombo;
   delete _bsCombo;
   delete _linterpButton;
+  delete _postClassButton;
   delete _mipButton;
 }
 
@@ -273,25 +271,19 @@ long VVPreferenceWindow::onRTChange(FXObject*,FXSelector,void*)
   case 4: alg = vvRenderer::VOLPACK; break;
 #endif
   }
-  _shell->setCanvasRenderer(NULL, alg, _canvas->_currentVoxels);
+  _shell->setCanvasRenderer(NULL, alg);
   return 1;
 }
 
 long VVPreferenceWindow::onGTChange(FXObject*,FXSelector,void*)
 {
-  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, _canvas->_currentVoxels);
+  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID);
   return 1;
 }
 
 long VVPreferenceWindow::onDefaultVolume(FXObject*,FXSelector,void*)
 {
   _shell->loadDefaultVolume(_defCombo->getCurrentItem(), 32, 32, 32);
-  return 1;
-}
-
-long VVPreferenceWindow::onVTChange(FXObject*,FXSelector,void*)
-{
-  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, vvTexRend::VoxelType(_vtCombo->getCurrentItem()));
   return 1;
 }
 
@@ -419,6 +411,14 @@ long VVPreferenceWindow::onInterpolationSelect(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
+long VVPreferenceWindow::onPostClassSelect(FXObject*,FXSelector,void* ptr)
+{
+  _shell->_glcanvas->makeCurrent();
+  _canvas->_renderer->setParameter(vvRenderer::VV_POST_CLASSIFICATION, (ptr != NULL));
+  _shell->_glcanvas->makeNonCurrent();
+  return 1;
+}
+
 long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void*)
 {
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
@@ -498,7 +498,7 @@ void VVPreferenceWindow::setBSCombo(int size)
 long VVPreferenceWindow::onSuppressRendering(FXObject*,FXSelector,void* ptr)
 {
   if (ptr != NULL) _shell->setCanvasRenderer(NULL, vvRenderer::GENERIC);
-  else _shell->setCanvasRenderer(NULL, vvRenderer::TEXREND, _canvas->_currentVoxels);
+  else _shell->setCanvasRenderer(NULL, vvRenderer::TEXREND);
   return 1;
 }
 
@@ -513,6 +513,13 @@ void VVPreferenceWindow::toggleInterpol()
   bool newState = !_linterpButton->getCheck();
   _linterpButton->setCheck(newState);
   onInterpolationSelect(this, ID_LINTERP, (void*)newState);
+}
+
+void VVPreferenceWindow::toggleClassification()
+{
+  bool newState = !_postClassButton->getCheck();
+  _postClassButton->setCheck(newState);
+  onPostClassSelect(this, ID_POST_CLASS, (void*)newState);
 }
 
 void VVPreferenceWindow::toggleMIP()
@@ -573,22 +580,12 @@ void VVPreferenceWindow::updateValues()
     {
       _linterpButton->setCheck(texrend->getParameter(vvRenderer::VV_SLICEINT).asInt() > 0);
     }
+    _postClassButton->setCheck(texrend->getParameter(vvRenderer::VV_POST_CLASSIFICATION).asBool());
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
     /*if (texrend)
     {
       _gtCombo->setCurrentItem(int(texrend->getGeomType()));
     }*/
-
-    // Voxel type:
-    _vtCombo->clearItems();
-    _vtCombo->appendItem("Autoselect");
-    _vtCombo->appendItem("RGBA");
-    _vtCombo->appendItem("SGI LUT");
-    _vtCombo->appendItem("OpenGL paletted textures");
-    _vtCombo->appendItem("Nvidia register combiners");
-    _vtCombo->appendItem("OpenGL/Cg fragment shader");
-    _vtCombo->setNumVisible(_vtCombo->getNumItems());
-    if (texrend) _vtCombo->setCurrentItem(int(texrend->getVoxelType()));
 
     // Pixel shader:
     _psCombo->clearItems();

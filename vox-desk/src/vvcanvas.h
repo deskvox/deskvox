@@ -78,7 +78,6 @@ class vvCanvas
     vvRenderer* _renderer;                        ///< current rendering engine
     vvVolDesc*  _vd;                              ///< currently used volume description
     vvRenderer::RendererType _currentAlgorithm;   ///< rendering algorithm/renderer type
-    vvTexRend::VoxelType _currentVoxels;          ///< current voxel type
     vox::vvObjView _ov;                           ///< object view instance for current volume viewing parameters
 
     vvCanvas();
@@ -99,7 +98,7 @@ class vvCanvas
     void setProjectionMode(bool, float, float, float);
     bool getPerspectiveMode();
     void resetObjectView();
-    void setRenderer(vvRenderer::RendererType = vvRenderer::INVALID, vvTexRend::VoxelType = vvTexRend::VV_BEST);
+    void setRenderer(vvRenderer::RendererType = vvRenderer::INVALID);
     int getRenderer() const;
     void setBackgroundColor(float, float, float);
     void getBackgroundColor(float&, float&, float&);

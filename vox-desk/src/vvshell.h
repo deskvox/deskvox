@@ -249,7 +249,7 @@ class VVShell : public FXMainWindow
     long onDispSpinChange(FXObject*,FXSelector,void*);
     long onIdle(FXObject*, FXSelector, void*);
 
-    void setCanvasRenderer(vvVolDesc* = NULL, vvRenderer::RendererType = vvRenderer::INVALID, vvTexRend::VoxelType = vvTexRend::VV_BEST);
+    void setCanvasRenderer(vvVolDesc* = NULL, vvRenderer::RendererType = vvRenderer::INVALID);
     void updateRendererVolume();
 
     void loadDefaultVolume(int, int, int, int);
