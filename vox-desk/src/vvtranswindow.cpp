@@ -324,7 +324,8 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _histoTexture2D = NULL;
   _dataZoom[0] = 0.0f;
   _dataZoom[1] = 1.0f;
-  _isHistogramDirty = true;
+  _is1DHistogramDirty = true;
+  _is2DHistogramDirty = true;
 }
 
 // Must delete the menus
@@ -955,44 +956,51 @@ void VVTransferWindow::drawHistogram()
 
 void VVTransferWindow::setDirtyHistogram()
 {
-  _isHistogramDirty = true;
+  _is1DHistogramDirty = true;
+  _is2DHistogramDirty = true;
 }
 
 void VVTransferWindow::computeHistogram()
 {
   size_t size[2];
 
-  if (_isHistogramDirty)
+  switch (_tfBook->getCurrent())
   {
-    std::cerr << "Calculating histogram...";
-    switch (_tfBook->getCurrent())
+    case 0:
     {
-      case 0:
-      {
-        vvColor col(0.4f, 0.4f, 0.4f);
-        delete[] _histoTexture1D;
-        size[0] = _glCanvas1D->getWidth();
-        size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
-        _histoTexture1D = new uchar[size[0] * size[1] * 4];
-        _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
-          (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
+      if (!_is1DHistogramDirty)
         break;
-      }
-      case 1:
-      {
-        vvColor col(1.0f, 1.0f, 1.0f);
-        delete[] _histoTexture2D;
-        size[0] = _glCanvas2D->getWidth();
-        size[1] = _glCanvas2D->getHeight();
-        _histoTexture2D = new uchar[size[0] * size[1] * 4];
-        _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
-          (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
-        break;
-      }
-      default: break;
+
+      std::cerr << "Calculating histogram...";
+      vvColor col(0.4f, 0.4f, 0.4f);
+      delete[] _histoTexture1D;
+      size[0] = _glCanvas1D->getWidth();
+      size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
+      _histoTexture1D = new uchar[size[0] * size[1] * 4];
+      _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
+      _is1DHistogramDirty = false;
+      std::cerr << "done" << std::endl;
+      break;
     }
-    std::cerr << "done" << std::endl;
-    _isHistogramDirty = false;
+    case 1:
+    {
+      if (!_is2DHistogramDirty)
+        break;
+
+      std::cerr << "Calculating histogram...";
+      vvColor col(1.0f, 1.0f, 1.0f);
+      delete[] _histoTexture2D;
+      size[0] = _glCanvas2D->getWidth();
+      size[1] = _glCanvas2D->getHeight();
+      _histoTexture2D = new uchar[size[0] * size[1] * 4];
+      _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
+      _is2DHistogramDirty = false;
+      std::cerr << "done" << std::endl;
+      break;
+    }
+    default: break;
   }
 }
 

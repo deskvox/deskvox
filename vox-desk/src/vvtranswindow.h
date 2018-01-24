@@ -222,8 +222,9 @@ class VVTransferWindow : public FXDialogBox
     uchar* _histoTexture2D;
     int _mouseButton;       ///< pressed mouse button: 0=none, 1=button 1, etc.
     float _dataZoom[2];     ///< min/max for zoom area on data range
-    bool _isHistogramDirty; ///< true if histogram needs to be recomputed
+    bool _is1DHistogramDirty; ///< true if 1-D histogram needs to be recomputed
 
+    bool _is2DHistogramDirty; ///< true if 2-D histogram needs to be recomputed
     VVTransferWindow(){}
     void initGL();
     void updateLabels();
