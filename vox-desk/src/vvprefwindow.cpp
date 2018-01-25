@@ -289,7 +289,9 @@ long VVPreferenceWindow::onDefaultVolume(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onPSChange(FXObject*,FXSelector,void*)
 {
+  _shell->_glcanvas->makeCurrent();
   _canvas->_renderer->setParameter(vvRenderer::VV_PIX_SHADER, _psCombo->getCurrentItem());
+  _shell->_glcanvas->makeNonCurrent();
   return 1;
 }
 
