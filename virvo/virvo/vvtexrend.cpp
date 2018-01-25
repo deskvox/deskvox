@@ -345,32 +345,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures(bool newTex)
   {
     updateTransferFunction();
     updateLUT(1.f);
-    makeLUTTexture();
   }
   return err;
-}
-
-//----------------------------------------------------------------------------
-/// Generate texture for look-up table.
-void vvTexRend::makeLUTTexture() const
-{
-  virvo::vector< 3, size_t > size;
-
-  vvGLTools::printGLError("enter makeLUTTexture");
-  for (size_t chan=0; chan<pixLUTName.size(); ++chan)
-  {
-    getLUTSize(size);
-    glBindTexture(GL_TEXTURE_2D, pixLUTName[chan]);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, &rgbaLUT[chan][0]);
-  }
-  vvGLTools::printGLError("leave makeLUTTexture");
 }
 
 void vvTexRend::setTexMemorySize(size_t newSize)
@@ -1311,6 +1287,12 @@ void vvTexRend::updateLUT(const float dist)
     if (_postClassification)
     {
       glBindTexture(GL_TEXTURE_2D, pixLUTName[chan]);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
           GL_RGBA, GL_UNSIGNED_BYTE, &rgbaLUT[chan][0]);
     }

@@ -110,7 +110,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     virvo::vec3 _eye;                             ///< the current eye position
 
     void setupClassification();
-    void makeLUTTexture() const;
     ErrorType makeTextures(bool newTex);
 
     void enableShader (vvShaderProgram* shader) const;
