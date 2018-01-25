@@ -5190,6 +5190,9 @@ void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
   lineBytes = bpv * vox[0];
   offset = bpc * (chan - srcChan - numNewChannels);
 
+  float minGradientMagnitude = 1.0f;
+  float maxGradientMagnitude = 0.0f;
+
   // Add gradient magnitudes to every frame:
   for (size_t f=0; f<frames; ++f)
   {
@@ -5238,6 +5241,9 @@ void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
               case 4: *((float*)dst) = grad; break;
               default: assert(0); break;
             }
+
+            minGradientMagnitude = ts_min(grad, minGradientMagnitude);
+            maxGradientMagnitude = ts_max(grad, maxGradientMagnitude);
           }
           else
           {
@@ -5268,6 +5274,14 @@ void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
       src += 2 * lineBytes;
     }
   }
+
+  if (gradType==GRADIENT_MAGNITUDE)
+  {
+    int c = chan - srcChan - numNewChannels;
+    mapping(c) = vec2(0.0f, 1.0f);
+    range(c) = vec2(minGradientMagnitude, maxGradientMagnitude);
+  }
+  // TODO: set mapping/range when calculating gradient vectors
 }
 
 //----------------------------------------------------------------------------
