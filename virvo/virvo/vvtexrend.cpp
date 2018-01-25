@@ -231,7 +231,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState)
 
   cerr << "Rendering algorithm: ";
   if (_postClassification)
-    cerr << "VV_PIX_SHD, vv_shader" << _currentShader+1;
+    cerr << "VV_PIX_SHD, vv_shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   else
     cerr << "VV_RGBA";
   cerr << endl;
@@ -556,7 +556,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       }
       else
       {
-        vvGLTools::printGLError("Tried to accomodate 3D textures");
+        vvGLTools::printGLError("Tried to accommodate 3D textures");
 
         cerr << "Insufficient texture memory for 3D texture(s)." << endl;
         err = TRAM_ERROR;
@@ -1622,7 +1622,7 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
     shader->setParameter1i("preintegration", usePreIntegration ? 1 : 0);
   }
 
-  vvGLTools::printGLError("Leaving vvTexRend::enablePixelShaders()");
+  vvGLTools::printGLError("Leaving vvTexRend::enableShader()");
 }
 
 //----------------------------------------------------------------------------
