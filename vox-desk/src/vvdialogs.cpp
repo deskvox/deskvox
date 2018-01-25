@@ -183,9 +183,9 @@ long VVVolumeDialog::onMakeIcon(FXObject*, FXSelector, void*)
 long VVVolumeDialog::onChannels(FXObject*, FXSelector, void*)
 {
   FXString info;
-  for (size_t c=0; c<_canvas->_vd->chan; ++c)
+  for (int c=0; c<_canvas->_vd->chan; ++c)
   {
-    info += "Channel " + FXStringFormat("%" VV_PRIdSIZE, c) + ": ";
+    info += "Channel " + FXStringFormat("%d", c) + ": ";
     std::string name = _canvas->_vd->getChannelName(c);
     if (!name.empty()) info += name.c_str();
     else info += "UNNAMED";
@@ -215,7 +215,7 @@ void VVVolumeDialog::updateValues()
   _slicesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2]));
   _framesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->frames));
   _bpcLabel->setText(FXStringFormat("%" VV_PRIdSIZE,    _canvas->_vd->bpc));
-  _chanLabel->setText(FXStringFormat("%" VV_PRIdSIZE,   _canvas->_vd->chan));
+  _chanLabel->setText(FXStringFormat("%d",   _canvas->_vd->chan));
   _voxelsLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->getFrameVoxels()));
   _bytesLabel->setText(FXStringFormat("%" VV_PRIdSIZE,  _canvas->_vd->getFrameBytes()));
   _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[0]));
@@ -2990,11 +2990,11 @@ void VVDataTypeDialog::updateValues()
   _channel1Combo->setNumVisible(_canvas->_vd->chan);
   _channel2Combo->setNumVisible(_canvas->_vd->chan);
   _channelCombo->setNumVisible(_canvas->_vd->chan);
-  for (size_t i=0; i<_canvas->_vd->chan; ++i)
+  for (int i=0; i<_canvas->_vd->chan; ++i)
   {
-    _channel1Combo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
-    _channel2Combo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
-    _channelCombo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
+    _channel1Combo->appendItem(FXStringFormat("%d", i+1));
+    _channel2Combo->appendItem(FXStringFormat("%d", i+1));
+    _channelCombo->appendItem(FXStringFormat("%d", i+1));
   }
   if (_canvas->_vd->chan==1) _swapChannelsButton->disable();
   else _swapChannelsButton->enable();

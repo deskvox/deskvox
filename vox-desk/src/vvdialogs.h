@@ -644,6 +644,7 @@ class VVChannel4Dialog : public FXDialogBox
     VVChannel4Dialog(){}
 
   public:
+    using FXDialogBox::show;
     enum
     {
       ID_HUE = FXDialogBox::ID_LAST,
@@ -678,6 +679,7 @@ class VVOpacityDialog : public FXDialogBox
     VVOpacityDialog(){}
 
   public:
+    using FXDialogBox::show;
     enum
     {
       ID_RED=FXDialogBox::ID_LAST,
@@ -752,6 +754,7 @@ class VVFloatRangeDialog : public FXDialogBox
     VVFloatRangeDialog(){};
 
   public:
+    using FXDialogBox::show;
     enum
     {
       ID_APPLY = FXDialogBox::ID_LAST,
