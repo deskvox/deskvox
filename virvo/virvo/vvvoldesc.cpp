@@ -1301,6 +1301,31 @@ size_t vvVolDesc::getBPV() const
 }
 
 //----------------------------------------------------------------------------
+/// Set number of channels per voxel.
+void vvVolDesc::setChan(int c)
+{
+  mapping_.resize(c);
+  zoomRange_.resize(c);
+  range_.resize(c);
+
+  for (int i=chan; i<c; ++i)
+  {
+    mapping_[i]   = vec2(0.0f, 1.0f);
+    zoomRange_[i] = vec2(0.0f, 1.0f);
+    range_[i]     = vec2(0.0f, 1.0f);
+  }
+
+  chan = c;
+}
+
+//----------------------------------------------------------------------------
+/// Get number of channels per voxel.
+int vvVolDesc::getChan() const
+{
+  return chan;
+}
+
+//----------------------------------------------------------------------------
 /** Get range of values in each channel. Depends only on setting of bpc.
     Useful for creating histograms.
  @return the range of values in each channel; returns 0.0f on error.
@@ -4779,6 +4804,21 @@ void vvVolDesc::setDist(float x, float y, float z)
 void vvVolDesc::setDist(vec3f const& d)
 {
   dist = d;
+}
+
+vec3f vvVolDesc::getDist() const
+{
+  return dist;
+}
+
+void vvVolDesc::setDt(float d)
+{
+  dt = d;
+}
+
+float vvVolDesc::getDt() const
+{
+  return dt;
 }
 
 

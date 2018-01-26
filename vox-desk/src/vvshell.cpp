@@ -616,7 +616,7 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
   if (vd->tf[0].isEmpty())
   {
     vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
-    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
+    vd->tf[0].setDefaultColors((vd->getChan()==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
   }
   setCanvasRenderer(vd, vvRenderer::INVALID);
   _transWindow->setDirtyHistogram();
@@ -660,7 +660,7 @@ void VVShell::loadVolumeFile(const char* filename)
       if (vd->tf[0].isEmpty())
       {
         vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
-        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
+        vd->tf[0].setDefaultColors((vd->getChan()==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
       }
       setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
@@ -831,7 +831,7 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
       if (vd->tf[0].isEmpty())
       {
         vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
-        vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
+        vd->tf[0].setDefaultColors((vd->getChan()==1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
       }
       setCanvasRenderer(vd, vvRenderer::INVALID);
       _transWindow->setDirtyHistogram();
@@ -1395,8 +1395,8 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorith
   
     _canvas->setRenderer(algorithm);
 
-    if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
-    else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();
+    if (vd->getChan()>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
+    else if (vd->getChan()==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();
     std::string str;
     vd->makeInfoString(&str);
     _statusBar->setText(str.c_str());
@@ -1511,7 +1511,7 @@ void VVShell::startAnimTimer()
 {
   vvDebugMsg::msg(1, "VVShell::startAnimTimer()");
 
-  float delay = fabs(_canvas->_vd->dt * 1000.0f);
+  float delay = fabs(_canvas->_vd->getDt() * 1000.0f);
   getApp()->addTimeout(this, ID_ANIM_TIMER, int(delay), NULL);
 }
 
@@ -1528,7 +1528,7 @@ long VVShell::onAnimTimerEvent(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onAnimTimerEvent()");
 
-  if (_canvas->_vd->dt > 0.0f) _tsDialog->stepForward();
+  if (_canvas->_vd->getDt() > 0.0f) _tsDialog->stepForward();
   else _tsDialog->stepBack();
   startAnimTimer();  // trigger next event for continuous events
   return 1;

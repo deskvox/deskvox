@@ -319,7 +319,7 @@ void VolumeDrawable::setVolumeDescription(vvVolDesc *v)
 
     if (vd && vd->tf[0].isEmpty())
     {
-        vd->tf[0].setDefaultColors(vd->chan == 1 ? 0 : 3, 0., 1.);
+        vd->tf[0].setDefaultColors(vd->getChan() == 1 ? 0 : 3, 0., 1.);
         vd->tf[0].setDefaultAlpha(0, 0., 1.);
     }
 
@@ -327,9 +327,9 @@ void VolumeDrawable::setVolumeDescription(vvVolDesc *v)
 
     if (vd)
     {
-        osg::Vec3 offset(vd->vox[0] * vd->dist[0] * vd->_scale * 0.5f,
-                vd->vox[1] * vd->dist[1] * vd->_scale * 0.5f,
-                vd->vox[2] * vd->dist[2] * vd->_scale * 0.5f);
+        osg::Vec3 offset(vd->vox[0] * vd->getDist()[0] * vd->_scale * 0.5f,
+                vd->vox[1] * vd->getDist()[1] * vd->_scale * 0.5f,
+                vd->vox[2] * vd->getDist()[2] * vd->_scale * 0.5f);
         setInitialBound(BoundingBox(getPosition() - offset, getPosition() + offset));
     }
     else

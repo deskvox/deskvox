@@ -183,7 +183,7 @@ long VVVolumeDialog::onMakeIcon(FXObject*, FXSelector, void*)
 long VVVolumeDialog::onChannels(FXObject*, FXSelector, void*)
 {
   FXString info;
-  for (int c=0; c<_canvas->_vd->chan; ++c)
+  for (int c=0; c<_canvas->_vd->getChan(); ++c)
   {
     info += "Channel " + FXStringFormat("%d", c) + ": ";
     std::string name = _canvas->_vd->getChannelName(c);
@@ -215,12 +215,12 @@ void VVVolumeDialog::updateValues()
   _slicesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2]));
   _framesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->frames));
   _bpcLabel->setText(FXStringFormat("%" VV_PRIdSIZE,    _canvas->_vd->bpc));
-  _chanLabel->setText(FXStringFormat("%d",   _canvas->_vd->chan));
+  _chanLabel->setText(FXStringFormat("%d",   _canvas->_vd->getChan()));
   _voxelsLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->getFrameVoxels()));
   _bytesLabel->setText(FXStringFormat("%" VV_PRIdSIZE,  _canvas->_vd->getFrameBytes()));
-  _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[0]));
-  _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[1]));
-  _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[2]));
+  _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[0]));
+  _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[1]));
+  _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[2]));
   _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[0]));
   _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[1]));
   _canvas->_vd->findMinMax(0, fMin, fMax);
@@ -891,7 +891,7 @@ long VVDimensionDialog::onResetSelect(FXObject*,FXSelector,void*)
 void VVDimensionDialog::scaleZ(float scale)
 {
   vvVector3 size;
-  _canvas->_vd->dist[2] *= scale;
+  _canvas->_vd->getDist()[2] *= scale;
   updateValues();
   _shell->_volumeDialog->updateValues();
   _shell->drawScene();
@@ -903,15 +903,15 @@ void VVDimensionDialog::initDefaultDistances()
   int i;
   for (i=0; i<3; ++i)
   {
-    defaultDist[i] = _canvas->_vd->dist[i];
+    defaultDist[i] = _canvas->_vd->getDist()[i];
   }
 }
 
 void VVDimensionDialog::updateValues()
 {
-  _xSpinner->setValue(_canvas->_vd->dist[0]);
-  _ySpinner->setValue(_canvas->_vd->dist[1]);
-  _zSpinner->setValue(_canvas->_vd->dist[2]);
+  _xSpinner->setValue(_canvas->_vd->getDist()[0]);
+  _ySpinner->setValue(_canvas->_vd->getDist()[1]);
+  _zSpinner->setValue(_canvas->_vd->getDist()[2]);
 }
 
 /*******************************************************************************/
@@ -1798,14 +1798,14 @@ void VVTimeStepDialog::scaleSpeed(float factor)
   }
   fps = FXFloatVal(_speedTField->getText().text());
   fps *= factor;
-  _canvas->_vd->dt = 1.0f / fps;
+  _canvas->_vd->setDt(1.0f / fps);
   _speedTField->setText(FXStringFormat("%.1f", fps));
 }
 
 void VVTimeStepDialog::playback()
 {
   FXString speed = _speedTField->getText();
-  _canvas->_vd->dt = 1.0f / FXFloatVal(speed.text());
+  _canvas->_vd->setDt(1.0f / FXFloatVal(speed.text()));
 
   FXString buttonText = _playButton->getText();
   if (buttonText==">")    // play?
@@ -1839,7 +1839,7 @@ void VVTimeStepDialog::updateValues()
   int numSteps = _canvas->_vd->frames;
   _stepSlider->setRange(1, numSteps);
   _stepSlider->setTickDelta((numSteps>=10) ? (numSteps / 10) : 1);
-  _speedTField->setText(FXStringFormat("%.2f", 1.0f / _canvas->_vd->dt));
+  _speedTField->setText(FXStringFormat("%.2f", 1.0f / _canvas->_vd->getDt()));
   setTimeStep(_canvas->_vd->getCurrentFrame());
 }
 
@@ -2568,7 +2568,7 @@ void VVChannelDialog::updateValues()
   _numSliders = 0;
   if (_canvas->_vd)
   {
-    _numSliders = _canvas->_vd->chan;
+    _numSliders = _canvas->_vd->getChan();
     if (_numSliders>0)
     {
       _sliders = new FXRealSlider*[_numSliders];
@@ -2917,7 +2917,7 @@ long VVDataTypeDialog::onDeleteChannel(FXObject*, FXSelector, void*)
 
 long VVDataTypeDialog::onAddChannel(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->convertChannels(_canvas->_vd->chan + 1);
+  _canvas->_vd->convertChannels(_canvas->_vd->getChan() + 1);
   _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
@@ -2987,18 +2987,18 @@ void VVDataTypeDialog::updateValues()
   _channel1Combo->clearItems();
   _channel2Combo->clearItems();
   _channelCombo->clearItems();
-  _channel1Combo->setNumVisible(_canvas->_vd->chan);
-  _channel2Combo->setNumVisible(_canvas->_vd->chan);
-  _channelCombo->setNumVisible(_canvas->_vd->chan);
-  for (int i=0; i<_canvas->_vd->chan; ++i)
+  _channel1Combo->setNumVisible(_canvas->_vd->getChan());
+  _channel2Combo->setNumVisible(_canvas->_vd->getChan());
+  _channelCombo->setNumVisible(_canvas->_vd->getChan());
+  for (int i=0; i<_canvas->_vd->getChan(); ++i)
   {
     _channel1Combo->appendItem(FXStringFormat("%d", i+1));
     _channel2Combo->appendItem(FXStringFormat("%d", i+1));
     _channelCombo->appendItem(FXStringFormat("%d", i+1));
   }
-  if (_canvas->_vd->chan==1) _swapChannelsButton->disable();
+  if (_canvas->_vd->getChan()==1) _swapChannelsButton->disable();
   else _swapChannelsButton->enable();
-  if (_canvas->_vd->chan==1) _delChannelButton->disable();
+  if (_canvas->_vd->getChan()==1) _delChannelButton->disable();
   else _delChannelButton->enable();
   if (_canvas->_vd->bpc==1) _swapEndianButton->disable();
   else _swapEndianButton->enable();
@@ -3229,7 +3229,7 @@ VVHeightFieldDialog::VVHeightFieldDialog(FXWindow* owner, vvCanvas* c) :
 
 long VVHeightFieldDialog::onOK(FXObject*, FXSelector, void*)
 {
-  if (_canvas->_vd->chan != 1 || _canvas->_vd->vox[2] != 1)
+  if (_canvas->_vd->getChan() != 1 || _canvas->_vd->vox[2] != 1)
   {
     FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "Height field requires a single slice, single channel data set.");
   }

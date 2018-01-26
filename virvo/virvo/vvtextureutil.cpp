@@ -33,51 +33,51 @@ namespace virvo
   // Determine native texel format of voldesc
   PixelFormat nativeFormat(const vvVolDesc* vd)
   {
-    if (vd->bpc == 1 && vd->chan == 1)
+    if (vd->bpc == 1 && vd->getChan() == 1)
     {
       return PF_R8;
     }
-    else if (vd->bpc == 1 && vd->chan == 2)
+    else if (vd->bpc == 1 && vd->getChan() == 2)
     {
       return PF_RG8;
     }
-    else if (vd->bpc == 1 && vd->chan == 3)
+    else if (vd->bpc == 1 && vd->getChan() == 3)
     {
       return PF_RGB8;
     }
-    else if (vd->bpc == 1 && vd->chan == 4)
+    else if (vd->bpc == 1 && vd->getChan() == 4)
     {
       return PF_RGBA8;
     }
-    else if (vd->bpc == 2 && vd->chan == 1)
+    else if (vd->bpc == 2 && vd->getChan() == 1)
     {
       return PF_R16UI;
     }
-    else if (vd->bpc == 2 && vd->chan == 2)
+    else if (vd->bpc == 2 && vd->getChan() == 2)
     {
       return PF_RG16UI;
     }
-    else if (vd->bpc == 2 && vd->chan == 3)
+    else if (vd->bpc == 2 && vd->getChan() == 3)
     {
       return PF_RGB16UI;
     }
-    else if (vd->bpc == 2 && vd->chan == 4)
+    else if (vd->bpc == 2 && vd->getChan() == 4)
     {
       return PF_RGBA16UI;
     }
-    else if (vd->bpc == 4 && vd->chan == 1)
+    else if (vd->bpc == 4 && vd->getChan() == 1)
     {
       return PF_R32F;
     }
-    else if (vd->bpc == 4 && vd->chan == 2)
+    else if (vd->bpc == 4 && vd->getChan() == 2)
     {
       return PF_RG32F;
     }
-    else if (vd->bpc == 4 && vd->chan == 3)
+    else if (vd->bpc == 4 && vd->getChan() == 3)
     {
       return PF_RGB32F;
     }
-    else if (vd->bpc == 4 && vd->chan == 4)
+    else if (vd->bpc == 4 && vd->getChan() == 4)
     {
       return PF_RGBA32F;
     }
@@ -151,7 +151,7 @@ namespace virvo
 
     // More than 4 channels: user needs to explicitly state
     // which channels (s)he's interested in
-    if (vd->chan > 4 && chans == All)
+    if (vd->getChan() > 4 && chans == All)
       return NULL;
 
     // TODO: requires C++11 std::bitset(ull) ctor!
@@ -209,7 +209,7 @@ namespace virvo
         {
           for (int x = first.x; x < last.x; ++x)
           {
-            for (int c = 0; c < vd->chan; ++c)
+            for (int c = 0; c < vd->getChan(); ++c)
             {
               if ((chans >> c) & 1)
               {
@@ -238,11 +238,11 @@ namespace virvo
     const vvVolDesc* vd = impl_->vd;
 
     // This is only supported if volume has <= 4 channels
-    if (vd->chan > 4)
+    if (vd->getChan() > 4)
       return NULL;
 
     // Single channel: rescale voxel to 8-bit, use as index into RGBA lut
-    if (vd->chan == 1)
+    if (vd->getChan() == 1)
     {
       // Reserve memory
       impl_->mem.resize(computeTextureSize(first, last, PF_RGBA8));
@@ -272,7 +272,7 @@ namespace virvo
 
     // Two or three channels: RG(B) values come from 3-D texture,
     // calculate alpha as mean of sum of RG(B) conversion table results
-    if (vd->chan == 2 || vd->chan == 3)
+    if (vd->getChan() == 2 || vd->getChan() == 3)
     {
       // TODO: only implemented for RGBA8 lut!
       if (bpcDst != 1)
@@ -291,7 +291,7 @@ namespace virvo
           for (int x = first.x; x != last.x; ++x)
           {
             int alpha = 0;
-            for (int c = 0; c < vd->chan; ++c)
+            for (int c = 0; c < vd->getChan(); ++c)
             {
               uint8_t index = vd->rescaleVoxel(raw, 1/*byte*/, c);
               alpha += static_cast<int>(rgba[index * 4 + c]);
@@ -299,7 +299,7 @@ namespace virvo
               raw += vd->bpc;
             }
 
-            dst[3] = static_cast<uint8_t>(alpha / vd->chan);
+            dst[3] = static_cast<uint8_t>(alpha / vd->getChan());
             dst += 4;
           }
         }
@@ -310,7 +310,7 @@ namespace virvo
 
     // Four channels: just skip the RGBA lut.
     // TODO: this is legacy behavior, but is it actually desired??
-    if (vd->chan == 4)
+    if (vd->getChan() == 4)
     {
       return getTexture(first,
           last,

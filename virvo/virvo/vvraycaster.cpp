@@ -953,12 +953,12 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
     tex_filter_mode filter_mode = renderer->getParameter(vvRenderer::VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     tex_address_mode address_mode = Clamp;
 
-    volumes.resize(vd->frames * vd->chan);
+    volumes.resize(vd->frames * vd->getChan());
 
     virvo::TextureUtil tu(vd);
     for (size_t f = 0; f < vd->frames; ++f)
     {
-        for (int c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             virvo::TextureUtil::Pointer tex_data = nullptr;
 
@@ -970,7 +970,7 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
                 channelbits,
                 f);
 
-            size_t index = f * vd->chan + c;
+            size_t index = f * vd->getChan() + c;
 
             volumes[index] = Volume(vd->vox[0], vd->vox[1], vd->vox[2]);
             volumes[index].reset(reinterpret_cast<typename Volume::value_type const*>(tex_data));
@@ -1193,8 +1193,8 @@ void vvRayCaster::renderVolumeGL()
     thrust::device_vector<typename volume8_type::ref_type>  device_volumes8;
     auto volumes8_data = [&]()
     {
-        device_volumes8.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        device_volumes8.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             device_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
@@ -1204,8 +1204,8 @@ void vvRayCaster::renderVolumeGL()
     thrust::device_vector<typename volume16_type::ref_type> device_volumes16;
     auto volumes16_data = [&]()
     {
-        device_volumes16.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        device_volumes16.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             device_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
         }
@@ -1215,8 +1215,8 @@ void vvRayCaster::renderVolumeGL()
     thrust::device_vector<typename volume32_type::ref_type> device_volumes32;
     auto volumes32_data = [&]()
     {
-        device_volumes32.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        device_volumes32.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             device_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
         }
@@ -1236,7 +1236,7 @@ void vvRayCaster::renderVolumeGL()
     thrust::device_vector<vec2> device_ranges;
     auto ranges_data = [&]()
     {
-        for (int c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             device_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
         }
@@ -1258,8 +1258,8 @@ void vvRayCaster::renderVolumeGL()
     aligned_vector<typename volume8_type::ref_type>  host_volumes8;
     auto volumes8_data = [&]()
     {
-        host_volumes8.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        host_volumes8.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             host_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
         }
@@ -1269,8 +1269,8 @@ void vvRayCaster::renderVolumeGL()
     aligned_vector<typename volume16_type::ref_type> host_volumes16;
     auto volumes16_data = [&]()
     {
-        host_volumes16.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        host_volumes16.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             host_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
         }
@@ -1280,8 +1280,8 @@ void vvRayCaster::renderVolumeGL()
     aligned_vector<typename volume32_type::ref_type> host_volumes32;
     auto volumes32_data = [&]()
     {
-        host_volumes32.resize(vd->chan);
-        for (int c = 0; c < vd->chan; ++c)
+        host_volumes32.resize(vd->getChan());
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             host_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
         }
@@ -1301,7 +1301,7 @@ void vvRayCaster::renderVolumeGL()
     aligned_vector<vec2> host_ranges;
     auto ranges_data = [&]()
     {
-        for (int c = 0; c < vd->chan; ++c)
+        for (int c = 0; c < vd->getChan(); ++c)
         {
             host_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
         }
@@ -1324,7 +1324,7 @@ void vvRayCaster::renderVolumeGL()
     // assemble volume kernel params and call kernel
     impl_->params.bbox                      = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
     impl_->params.delta                     = delta;
-    impl_->params.num_channels              = static_cast<int>(vd->chan);
+    impl_->params.num_channels              = vd->getChan();
     impl_->params.transfuncs                = transfuncs_data();
     impl_->params.ranges                    = ranges_data();
     impl_->params.depth_buffer              = impl_->depth_buffer.data();

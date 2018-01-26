@@ -268,19 +268,19 @@ void vvTexRend::setupClassification()
 {
   if (_postClassification)
   {
-    if (vd->chan == 1)
+    if (vd->getChan() == 1)
     {
       texelsize=1;
       internalTexFormat = GL_LUMINANCE;
       texFormat = GL_LUMINANCE;
     }
-    else if (vd->chan == 2)
+    else if (vd->getChan() == 2)
     {
       texelsize=2;
       internalTexFormat = GL_LUMINANCE_ALPHA;
       texFormat = GL_LUMINANCE_ALPHA;
     }
-    else if (vd->chan == 3)
+    else if (vd->getChan() == 3)
     {
       texelsize=3;
       internalTexFormat = GL_RGB;
@@ -473,13 +473,13 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   // Texrend uses 8-bit per color component for rendering!
   if (!_postClassification) // pre-classification
     pf = PF_RGBA8;
-  else if (vd->chan == 1)
+  else if (vd->getChan() == 1)
     pf = PF_R8;
-  else if (vd->chan == 2)
+  else if (vd->getChan() == 2)
     pf = PF_RG8;
-  else if (vd->chan == 3)
+  else if (vd->getChan() == 3)
     pf = PF_RGB8;
-  else if (vd->chan == 4)
+  else if (vd->getChan() == 4)
     pf = PF_RGBA8;
   else
     cerr << "Cannot determine pixel format: unsupported number of channels." << endl;
@@ -1185,7 +1185,7 @@ size_t vvTexRend::getLUTSize(virvo::vector< 3, size_t >& size) const
   else
   {
     x = 256;
-    if (vd->chan == 2 && vd->tf.size() == 1)
+    if (vd->getChan() == 2 && vd->tf.size() == 1)
     {
        y = x;
        z = 1;
@@ -1634,7 +1634,7 @@ vvShaderProgram* vvTexRend::initShader()
   }
 
   std::stringstream defines;
-  defines << "#define NUM_CHANNELS " << vd->chan << std::endl;
+  defines << "#define NUM_CHANNELS " << vd->getChan() << std::endl;
   if (_lighting)
   {
     defines << "#define LIGHTING 1" << std::endl;
@@ -1760,7 +1760,7 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
 
   std::cerr << "data read" << endl;
 
-  if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+  if (vd->getChan() == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
   {
     result = new uint8_t[numPixels];
     for (size_t y = 0; y < height; y++)
@@ -1776,13 +1776,13 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
   }
   else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
   {
-    result = new uint8_t[vd->chan * numPixels];
+    result = new uint8_t[vd->getChan() * numPixels];
 
     for (size_t y = 0; y < height; y++)
       for (size_t x = 0; x < width; x++)
     {
-      index = (y * width + x) * vd->chan;
-      for (int c = 0; c < vd->chan; c++)
+      index = (y * width + x) * vd->getChan();
+      for (int c = 0; c < vd->getChan(); c++)
       {
         result[index + c] = data[index + c];
         std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;

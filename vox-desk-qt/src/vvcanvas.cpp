@@ -418,7 +418,7 @@ void vvCanvas::init()
   if (_vd->tf[0].isEmpty())
   {
     _vd->tf[0].setDefaultAlpha(0, _vd->range(0)[0], _vd->range(0)[1]);
-    _vd->tf[0].setDefaultColors((_vd->chan == 1) ? 0 : 3, _vd->range(0)[0], _vd->range(0)[1]);
+    _vd->tf[0].setDefaultColors((_vd->getChan() == 1) ? 0 : 3, _vd->range(0)[0], _vd->range(0)[1]);
   }
 
   // init renderer
@@ -786,8 +786,8 @@ void vvCanvas::startAnimation(const double fps)
 {
   vvDebugMsg::msg(3, "vvCanvas::startAnimation()");
 
-  _vd->dt = 1.0f / static_cast<float>(fps);
-  const float delay = std::abs(_vd->dt * 1000.0f);
+  _vd->setDt(1.0f / static_cast<float>(fps));
+  const float delay = std::abs(_vd->getDt() * 1000.0f);
   _animTimer->start(static_cast<int>(delay));
 }
 

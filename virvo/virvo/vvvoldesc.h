@@ -132,10 +132,10 @@ class VIRVO_FILEIOEXPORT vvVolDesc
                                                   ///< <LI>1 = 1 unsigned char</LI>
                                                   ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
                                                   ///< <LI>4 = float</LI>
+private:
     int chan;                                     ///< number of channels (default = 1), each channel contains bpc bytes
     virvo::vec3f dist;                            ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
-private:
     std::vector<vec2> mapping_;                   ///< Mapping from internal data representation to floating point. Defaults: bpc=1|2: [0..1], bpc=4[-FLT_MAX..FLT_MAX]
     std::vector<vec2> zoomRange_;                 ///< (Possibly user specified) zoom range (zoomRange_ in mapping_)
     std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set (range_ in zoomRange_)
@@ -255,8 +255,13 @@ public:
     void   setIndexChannel(int ic);
     int    getIndexChannel() const;
     size_t getBPV() const;
+    void   setChan(int c);
+    int    getChan() const;
     void   setDist(float, float, float);
     void   setDist(virvo::vec3f const& d);
+    virvo::vec3f getDist() const;
+    void   setDt(float d);
+    float  getDt() const;
     virvo::vec3f getSize() const;
     size_t getStoredFrames() const;
     float  getValueRange(int channel = 0) const;

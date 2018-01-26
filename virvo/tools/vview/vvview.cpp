@@ -228,7 +228,7 @@ void vvView::mainLoop(int argc, char *argv[])
   if (vd->tf[0].isEmpty())
   {
     vd->tf[0].setDefaultAlpha(0, 0.0, 1.0);
-    vd->tf[0].setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+    vd->tf[0].setDefaultColors((vd->getChan()==1) ? 0 : 2, 0.0, 1.0);
   }
 
   if (servers.size() == 0 && rrMode != RR_NONE)
@@ -262,7 +262,7 @@ void vvView::mainLoop(int argc, char *argv[])
   mvScale = 1.0f / maxedge;
   cerr << "Scale modelview matrix by " << mvScale << endl;
 
-  animSpeed = vd->dt;
+  animSpeed = vd->getDt();
   createMenus();
 
   ov = new vvObjView();
@@ -1623,7 +1623,7 @@ void vvView::animMenuCallback(int item)
     cerr << "speed=" << ds->animSpeed << endl;
     break;
   case 6:                                     // reset speed
-    ds->animSpeed = ds->vd->dt;
+    ds->animSpeed = ds->vd->getDt();
     break;
   }
 }

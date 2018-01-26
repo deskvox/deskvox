@@ -999,7 +999,7 @@ void vvRenderer::renderPalette() const
 
   vvDebugMsg::msg(3, "vvRenderer::renderPalette()");
 
-  if (vd->chan > 1) return;                       // palette only makes sense with scalar data
+  if (vd->getChan() > 1) return;                       // palette only makes sense with scalar data
 
   // Get viewport size:
   glGetFloatv(GL_VIEWPORT, viewport);
@@ -1557,13 +1557,13 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
 
   vp[1] = vd->vox[1] - vp[1] - 1;
   vp[2] = vd->vox[2] - vp[2] - 1;
-  ptr = vd->getRaw(getCurrentFrame()) + vd->bpc * vd->chan * (vp[0] + vp[1] * vd->vox[0] + vp[2] * vd->vox[0] * vd->vox[1]);
+  ptr = vd->getRaw(getCurrentFrame()) + vd->bpc * vd->getChan() * (vp[0] + vp[1] * vd->vox[0] + vp[2] * vd->vox[0] * vd->vox[1]);
 
   // Determine index into alpha LUT:
   if (vd->bpc==1) index = float(*ptr) / 255.0f;
   else if (vd->bpc==2) index = (float(*(ptr+1)) + float(int(*ptr) << 8)) / 65535.0f;
-  else if (vd->bpc==1 && vd->chan==3) index = (float(*ptr) + float(*(ptr+1)) + float(*(ptr+2))) / (3.0f * 255.0f);
-  else if (vd->bpc==1 && vd->chan==4) index = float(*(ptr+3)) / 255.0f;
+  else if (vd->bpc==1 && vd->getChan()==3) index = (float(*ptr) + float(*(ptr+1)) + float(*(ptr+2))) / (3.0f * 255.0f);
+  else if (vd->bpc==1 && vd->getChan()==4) index = float(*(ptr+3)) / 255.0f;
   else return -2.0f;
 
   // Determine alpha value:

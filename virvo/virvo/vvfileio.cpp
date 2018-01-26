@@ -217,11 +217,9 @@ void vvFileIO::setDefaultValues(vvVolDesc* vd)
   vd->vox[2]     = 0;
   vd->frames     = 0;
   vd->bpc        = 1;
-  vd->chan       = 1;
-  vd->dist[0]    = 1.0f;
-  vd->dist[1]    = 1.0f;
-  vd->dist[2]    = 1.0f;
-  vd->dt         = 1.0f;
+  vd->setChan(1);
+  vd->setDist(1.0f, 1.0f, 1.0f);
+  vd->setDt(1.0f);
   vd->mapping(0) = vec2(0.0f, 1.0f);
   vd->range(0)   = vec2(0.0f, 1.0f);
 }
@@ -448,7 +446,7 @@ vvFileIO::ErrorType vvFileIO::saveRVFFile(const vvVolDesc* vd)
     cerr << "Converting data to 1 bpc" << endl;
     v->convertBPC(1);
   }
-  if (vd->chan!=1)
+  if (vd->getChan()!=1)
   {
     cerr << "Converting data to 1 channel" << endl;
     v->convertChannels(1);
@@ -516,7 +514,7 @@ vvFileIO::ErrorType vvFileIO::loadRVFFile(vvVolDesc* vd)
   vd->vox[2] = virvo::serialization::read16(fp);
   vd->frames = 1;
   vd->bpc    = 1;
-  vd->chan   = 1;
+  vd->setChan(1);
 
   // Create new data space for volume data:
   if ((_sections & RAW_DATA) != 0)
@@ -660,14 +658,14 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   if (vd->bpc==8 || vd->bpc==16 || vd->bpc==24 || vd->bpc==32) vd->bpc /= 8;
 
   // Interpret old style without channels correctly:
-  if (vd->chan==0)
+  if (vd->getChan()==0)
   {
     if (vd->bpc==3 || vd->bpc==4)
     {
-      vd->chan = vd->bpc;
+      vd->setChan(vd->bpc);
       vd->bpc = 1;
     }
-    else vd->chan = 1;
+    else vd->setChan(1);
   }
 
   // Verify bpc:
@@ -928,10 +926,10 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "VOXELS %d %d %d\n", static_cast<int32_t>(vd->vox[0]), static_cast<int32_t>(vd->vox[1]), static_cast<int32_t>(vd->vox[2]));
   fprintf(fp, "TIMESTEPS %d\n", static_cast<int32_t>(vd->frames));
   fprintf(fp, "BPC %d\n", static_cast<int32_t>(vd->bpc));
-  fprintf(fp, "CHANNELS %d\n", static_cast<int32_t>(vd->chan));
-  fprintf(fp, "DIST %g %g %g\n", vd->dist[0], vd->dist[1], vd->dist[2]);
+  fprintf(fp, "CHANNELS %d\n", vd->getChan());
+  fprintf(fp, "DIST %g %g %g\n", vd->getDist()[0], vd->getDist()[1], vd->getDist()[2]);
   fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
-  fprintf(fp, "DTIME %g\n", vd->dt);
+  fprintf(fp, "DTIME %g\n", vd->getDt());
   fprintf(fp, "MINMAX %g %g\n", vd->mapping(0)[0], vd->mapping(0)[1]);
 //fprintf(fp, "ZOOMRANGE %g %g\n", vd->zoomRange(0)[0], vd->zoomRange(0)[1]);
   fprintf(fp, "ZOOMRANGE %g %g\n", vd->mapping(0)[0], vd->mapping(0)[1]); // TODO
@@ -940,7 +938,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
 
   // Write channel names:
   fprintf(fp, "CHANNELNAMES");
-  for (int i=0; i<vd->chan; ++i)
+  for (int i=0; i<vd->getChan(); ++i)
   {
     if (vd->getChannelName(i).empty()) fprintf(fp, " UNNAMED");
     else fprintf(fp, " %s", vd->getChannelName(i).c_str());
@@ -1005,7 +1003,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     if (_compression)
     {
-      vvToolshed::ErrorType err = vvToolshed::encodeRLE(encoded, raw, frameSize, vd->bpc * vd->chan, frameSize, &encodedSize);
+      vvToolshed::ErrorType err = vvToolshed::encodeRLE(encoded, raw, frameSize, vd->bpc * vd->getChan(), frameSize, &encodedSize);
       if (err == vvToolshed::VV_OK)                         // compression possible?
       {
         virvo::serialization::write64(fp, encodedSize);     // write length of encoded frame
@@ -1149,16 +1147,18 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       {
         ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->chan = static_cast<size_t>(tok.nval);
+        vd->setChan(static_cast<size_t>(tok.nval));
       }
       else if (strcmp(tok.sval, "DIST")==0)
       {
+        vec3 dist = vd->getDist();
         for (size_t i=0; i<3; ++i)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->dist[i] = tok.nval;
+          dist[i] = tok.nval;
         }
+        vd->setDist(dist);
       }
       else if (strcmp(tok.sval, "ENDIAN")==0)
       {
@@ -1172,7 +1172,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       {
         ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->dt = tok.nval;
+        vd->setDt(tok.nval);
       }
       else if (strcmp(tok.sval, "MINMAX")==0)
       {
@@ -1180,7 +1180,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          for (int c = 0; c < vd->chan; ++c)
+          for (int c = 0; c < vd->getChan(); ++c)
             vd->mapping(c)[i] = tok.nval;
         }
       }
@@ -1190,7 +1190,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         {
           ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          for (int c = 0; c < vd->chan; ++c)
+          for (int c = 0; c < vd->getChan(); ++c)
             vd->range(c)[i] = tok.nval;
         }
       }
@@ -1205,10 +1205,10 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       }
       else if (strcmp(tok.sval, "CHANNELNAMES")==0)
       {
-        if (vd->chan<1) tok.nextLine();
+        if (vd->getChan()<1) tok.nextLine();
         else
         {
-          for (int i=0; i<vd->chan; ++i)
+          for (int i=0; i<vd->getChan(); ++i)
           {
             ttype = tok.nextToken();
             assert(ttype == vvTokenizer::VV_WORD);
@@ -1442,7 +1442,7 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
   ssize_t numPoints = -1;
   virvo::vec3 origin(0., 0., 0.);
   ssize_t numFields = -1;
-  size_t channels = 0;
+  int channels = 0;
   for (size_t count=0; count<20; ++count)
   {
     if (numFields == 0)
@@ -1523,7 +1523,7 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
       else if (key == "SPACING")
       {
         std::stringstream str(value);
-        str >> vd->dist[0] >> vd->dist[1] >> vd->dist[2];
+        str >> vd->getDist()[0] >> vd->getDist()[1] >> vd->getDist()[2];
       }
       else if (key == "LOOKUP_TABLE")
       {
@@ -1588,7 +1588,7 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
     return FILE_ERROR;
   }
 
-  virvo::vec3 size(vd->dist[0]*dim[0], vd->dist[1]*dim[1], vd->dist[2]*dim[2]);
+  vec3 size = vd->getDist() * vec3(dim[0], dim[1], dim[2]);
   vd->pos = origin + size * 0.5f;
 
   if (vvDebugMsg::isActive(1))
@@ -1678,7 +1678,7 @@ vvFileIO::ErrorType vvFileIO::saveNrrdFile(const vvVolDesc* vd)
   fputs("encoding: raw\n", fp);
 
   // Write spacings:
-  fprintf(fp, "spacings: %f %f %f\n", vd->dist[0], vd->dist[1], vd->dist[2]);
+  fprintf(fp, "spacings: %f %f %f\n", vd->getDist()[0], vd->getDist()[1], vd->getDist()[2]);
 
   // Write endianness:
   fputs("endian: big\n", fp);
@@ -1743,15 +1743,15 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
     vvDebugMsg::msg(1, "Error: cannot save avf file, invalid bpc.");
     return DATA_ERROR;
   }
-  fprintf(fp, "XDIST %g\n", vd->dist[0]);
-  fprintf(fp, "YDIST %g\n", vd->dist[1]);
-  fprintf(fp, "ZDIST %g\n", vd->dist[2]);
+  fprintf(fp, "XDIST %g\n", vd->getDist()[0]);
+  fprintf(fp, "YDIST %g\n", vd->getDist()[1]);
+  fprintf(fp, "ZDIST %g\n", vd->getDist()[2]);
   fprintf(fp, "XPOS %g\n", vd->pos[0]);
   fprintf(fp, "YPOS %g\n", vd->pos[1]);
   fprintf(fp, "ZPOS %g\n", vd->pos[2]);
-  fprintf(fp, "TIME %g\n", vd->dt);
+  fprintf(fp, "TIME %g\n", vd->getDt());
   fprintf(fp, "BPC %d\n", static_cast<int32_t>(vd->bpc));
-  fprintf(fp, "CHANNELS %d\n", static_cast<int32_t>(vd->chan));
+  fprintf(fp, "CHANNELS %d\n", static_cast<int32_t>(vd->getChan()));
 
   // Write voxel data:
   for (size_t f=0; f<vd->frames; ++f)
@@ -1765,7 +1765,7 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
       {
         for (ssize_t x=0; x<vd->vox[0]; ++x)
         {
-          for (int c=0; c<vd->chan; ++c)
+          for (int c=0; c<vd->getChan(); ++c)
           {
             switch(vd->bpc)
             {
@@ -1959,7 +1959,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
             || strcmp(tokenizer.sval, "SCALAR8")==0)
         {
           vd->bpc = 1;
-          vd->chan = 1;
+          vd->setChan(1);
           oldformat = true;
           continue;
         }
@@ -1985,6 +1985,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     ttype = tokenizer.nextToken();
     if (ttype == vvTokenizer::VV_NUMBER)
     {
+      vec3 dist = vd->getDist();
       switch (identifier)
       {
         case  0: vd->vox[0]     = int(tokenizer.nval); break;
@@ -1993,12 +1994,12 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         case  3: vd->frames     = int(tokenizer.nval); break;
         case  4: min            = tokenizer.nval; break;
         case  5: max            = tokenizer.nval; break;
-        case  6: vd->dist[0]    = tokenizer.nval; break;
-        case  7: vd->dist[1]    = tokenizer.nval; break;
-        case  8: vd->dist[2]    = tokenizer.nval; break;
-        case  9: vd->dt         = tokenizer.nval; break;
+        case  6: dist[0]        = tokenizer.nval; break;
+        case  7: dist[1]        = tokenizer.nval; break;
+        case  8: dist[2]        = tokenizer.nval; break;
+        case  9: vd->setDt(tokenizer.nval); break;
         case 10: vd->bpc        = int(tokenizer.nval); break;
-        case 11: vd->chan       = int(tokenizer.nval); break;
+        case 11: vd->setChan(int(tokenizer.nval)); break;
         case 12: vd->pos[0]     = tokenizer.nval; break;
         case 13: vd->pos[1]     = tokenizer.nval; break;
         case 14: vd->pos[2]     = tokenizer.nval; break;
@@ -2008,6 +2009,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
           error = done = true;
           break;
       }
+      vd->setDist(dist);
     }
     else error = done = true;
   }
@@ -2047,7 +2049,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         {
           for (ssize_t x=0; x<vd->vox[0]; ++x)
           {
-            for (int c=0; c<vd->chan; ++c)
+            for (int c=0; c<vd->getChan(); ++c)
             {
               ttype = tokenizer.nextToken();
               if (ttype != vvTokenizer::VV_NUMBER)
@@ -2171,8 +2173,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
 
   // Set default values:
   vd->bpc = 2;
-  vd->chan = 1;
-  vd->dt = 0.1f;
+  vd->setChan(1);
+  vd->setDt(0.1f);
 
   // Initialize tokenizer:
   vvTokenizer tokenizer(file);
@@ -2301,10 +2303,9 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     vd->vox[i] = ssize_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
     vd->vox[i] = ts_clamp(vd->vox[i], ssize_t(1), ssize_t(maxEdgeLength));
   }
-  for (size_t i=0; i<3; ++i)
-  {
-    vd->dist[i] = boxSize[i] / float(vd->vox[i]);
-  }
+  vd->setDist(boxSize[0] / float(vd->vox[0]),
+              boxSize[1] / float(vd->vox[1]),
+              boxSize[2] / float(vd->vox[2]));
 
   frameSize = vd->getFrameBytes();
   timesteps.first();
@@ -2416,8 +2417,8 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
 
   // Set default values:
   vd->bpc = 2;
-  vd->chan = 1;
-  vd->dt = 0.1f;
+  vd->setChan(1);
+  vd->setDt(0.1f);
 
   // Initialize variables:
   for (size_t i=0; i<3; ++i)
@@ -2526,10 +2527,9 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     vd->vox[i] = ssize_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
     vd->vox[i] = ts_clamp(vd->vox[i], ssize_t(1), ssize_t(maxEdgeLength));
   }
-  for (size_t i=0; i<3; ++i)
-  {
-    vd->dist[i] = boxSize[i] / float(vd->vox[i]);
-  }
+  vd->setDist(boxSize[0] / float(vd->vox[0]),
+              boxSize[1] / float(vd->vox[1]),
+              boxSize[2] / float(vd->vox[2]));
 
   frameSize = vd->getFrameBytes();
   timesteps.first();
@@ -2729,24 +2729,26 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   fclose(fp);
 
   tifData.parseDescription();
+  vec3 dist = vd->getDist();
   if (tifData.resolutionUnit > 0.f)
   {
       if (tifData.resolutionX > 0.f)
-          vd->dist[0] = tifData.resolutionUnit / tifData.resolutionX;
+          dist[0] = tifData.resolutionUnit / tifData.resolutionX;
       if (tifData.resolutionY > 0.f)
-          vd->dist[1] = tifData.resolutionUnit / tifData.resolutionY;
+          dist[1] = tifData.resolutionUnit / tifData.resolutionY;
   }
   if (tifData.haveResolutionZ && tifData.resolutionUnit > 0.f && tifData.resolutionZ > 0.f)
   {
-    vd->dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
-    if (vd->dist[2] <= 0.)
-        vd->dist[2] = 1.;
+    dist[2] = tifData.resolutionUnit / tifData.resolutionZ;
+    if (dist[2] <= 0.)
+        dist[2] = 1.;
   }
   else
   {
-    vd->dist[2] = sqrtf(vd->dist[0] * vd->dist[1]);
-    VV_LOG(1) << "TIF: no slice spacing specified, assuming " << vd->dist[2] << std::endl;
+    dist[2] = sqrtf(dist[0] * dist[1]);
+    VV_LOG(1) << "TIF: no slice spacing specified, assuming " << dist[2] << std::endl;
   }
+  vd->setDist(dist);
 
   ssize_t slicesPerFrame = -1;
   if (tifData.isHyperstack)
@@ -2894,7 +2896,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
         fseek(fp, where, SEEK_SET);
       }
       break;
-      case 0x115: vd->chan = value;               // SamplesPerPixel (=channels)
+      case 0x115: vd->setChan(value);               // SamplesPerPixel (=channels)
       break;
       case 0x116: rowsPerStrip = value; break;    // RowsPerStrip
       case 0x117:                                 // StripByteCounts
@@ -2987,7 +2989,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     ++vd->frames;
     if (machineBigEndian != fileBigEndian) vd->toggleEndianness((int)vd->frames-1);
     if (planarConfiguration==2) vd->convertRGBPlanarToRGBInterleaved();
-    if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
+    if (vd->getChan()==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
     {
       // Preset alpha:
       vd->convertChannels(3, (int)(vd->frames-1));       // convert to RGB (drops alpha)
@@ -3089,7 +3091,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
 
   // Normalize voxel data:
   tmpVD = new vvVolDesc(vd, 0);                   // create temporary VD with first frame only
-  if (tmpVD->chan != 1) tmpVD->convertChannels(3);
+  if (tmpVD->getChan() != 1) tmpVD->convertChannels(3);
   if (tmpVD->bpc != 1) tmpVD->convertBPC(1);
 
   // Write files:
@@ -3118,7 +3120,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
 
     // Compute IFD location:
                                                   // grayscale image
-    if (tmpVD->chan==1) imgBytes = tmpVD->getSliceVoxels();
+    if (tmpVD->getChan()==1) imgBytes = tmpVD->getSliceVoxels();
     else imgBytes = tmpVD->getSliceVoxels() * 3;  // RGB image
     ifdOffset = imgBytes + 8 + 6 + 8;             // 8 for header; 6 for 8,8,8; 8 for RESOLUTION
                                                   // advance to next word boundary
@@ -3152,7 +3154,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
 #else
     fseek(fp, ifdOffset, SEEK_SET);
 #endif
-    virvo::serialization::write16(fp, uint16_t((tmpVD->chan==1) ? 11 : 12), virvo::serialization::VV_BIG_END);
+    virvo::serialization::write16(fp, uint16_t((tmpVD->getChan()==1) ? 11 : 12), virvo::serialization::VV_BIG_END);
 
     // ImageWidth:
     virvo::serialization::write16(fp, 0x100, ENDIAN_TYPE);
@@ -3168,7 +3170,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
 
     // BitsPerSample:
     virvo::serialization::write16(fp, 0x102, ENDIAN_TYPE);
-    if (tmpVD->chan==1)
+    if (tmpVD->getChan()==1)
     {
       virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
       virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
@@ -3193,7 +3195,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     virvo::serialization::write16(fp, 0x106, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 3, ENDIAN_TYPE);      // SHORT
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    if (tmpVD->chan > 1)
+    if (tmpVD->getChan() > 1)
     {
       virvo::serialization::write16(fp, 2, ENDIAN_TYPE);    // RGB
     }
@@ -3210,7 +3212,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     virvo::serialization::write32(fp, uint32_t(imgOffset), ENDIAN_TYPE);
 
     // SamplesPerPixel:
-    if (tmpVD->chan>1)
+    if (tmpVD->getChan()>1)
     {
       virvo::serialization::write16(fp, 0x115, ENDIAN_TYPE);
       virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
@@ -3229,7 +3231,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     virvo::serialization::write16(fp, 0x117, ENDIAN_TYPE);
     virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
     virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
-    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->chan), ENDIAN_TYPE);
+    virvo::serialization::write32(fp, uint32_t(tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->getChan()), ENDIAN_TYPE);
 
     // XResolution:
     virvo::serialization::write16(fp, 0x11a, ENDIAN_TYPE);
@@ -3295,7 +3297,7 @@ vvFileIO::ErrorType vvFileIO::loadRGBFile(vvVolDesc* vd)
   vd->vox[0] = virvo::serialization::read16(fp);
   vd->vox[1] = virvo::serialization::read16(fp);
   vd->bpc    = 1;
-  vd->chan    = 1;
+  vd->setChan(1);
   vd->vox[2] = 1;
 
   // Read data:
@@ -3467,12 +3469,12 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
     case 1:
     case 2:
       vd->bpc = imagePixelSize/8;
-      vd->chan = 1;
+      vd->setChan(1);
       break;
     case 3:
     case 4:
       vd->bpc = 1;
-      vd->chan = imagePixelSize/8;
+      vd->setChan(imagePixelSize/8);
       break;
     default: assert(0); break;
   }
@@ -3500,9 +3502,9 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
 
   // Byte per pixel value of 3 or 4 implies that the image is RGB(A).
   // However TGA stores it as BGR(A) so we'll have to swap R and B.
-  if (vd->chan >= 3)
+  if (vd->getChan() >= 3)
   {
-    for (size_t i=0; i < total; i += vd->chan)
+    for (size_t i=0; i < total; i += vd->getChan())
     {
       aux = rawData[i];
       rawData[i] = rawData[i+2];
@@ -3711,7 +3713,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd, size_t w, size_t h, siz
   vd->vox[1] = h;
   vd->vox[2] = s;
   vd->bpc    = b;
-  vd->chan   = c;
+  vd->setChan(c);
 
   fseek(fp, static_cast<long>(header), SEEK_SET);                    // skip header
   rawData = new uint8_t[vd->getFrameBytes()];
@@ -3809,8 +3811,8 @@ vvFileIO::ErrorType vvFileIO::loadPXMRawImage(vvVolDesc* vd)
 
   // Read image data:
   vd->vox[2] = 1;
-  if (isPGM) { vd->bpc = vd->chan = 1; }
-  else       { vd->bpc = 1; vd->chan = 3; }
+  if (isPGM) { vd->bpc = 1; vd->setChan(1); }
+  else       { vd->bpc = 1; vd->setChan(3); }
   rawData = new uint8_t[vd->getFrameBytes()];
   read = fread(rawData, vd->getFrameBytes(), 1, fp);
   if (read != 1)
@@ -3901,22 +3903,21 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->vox[1] = dim[1];
   vd->vox[2] = 1;
   const double *spacing = image.GetSpacing();
-  for (size_t i=0; i<3; ++i)
-  {
-    vd->dist[i] =spacing[i];
-  }
+  vd->setDist(static_cast<float>(spacing[0]),
+              static_cast<float>(spacing[1]),
+              static_cast<float>(spacing[2]));
   gdcm::PixelFormat pf = image.GetPixelFormat();
   switch(pf.GetBitsAllocated()/8)
   {
     case 1:
     case 2:
       vd->bpc = pf.GetBitsAllocated()/8;
-      vd->chan = 1;
+      vd->setChan(1);
       break;
     case 3:
     case 4:
       vd->bpc = 1;
-      vd->chan = pf.GetBitsAllocated()/8;
+      vd->setChan(pf.GetBitsAllocated()/8);
       break;
     default: assert(0); break;
   }
@@ -4005,21 +4006,18 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->vox[0] = static_cast<size_t>(prop.width);
   vd->vox[1] = static_cast<size_t>(prop.height);
   vd->vox[2] = 1;
-  for (size_t i=0; i<3; ++i)
-  {
-    vd->dist[i] = prop.dist[i];
-  }
+  vd->setDist(prop.dist[0], prop.dist[1], prop.dist[2]);
   switch(prop.bpp)
   {
     case 1:
     case 2:
       vd->bpc = static_cast<size_t>(prop.bpp);
-      vd->chan = static_cast<size_t>(prop.chan);
+      vd->setChan(prop.chan);
       break;
     case 3:
     case 4:
       vd->bpc = 1;
-      vd->chan = static_cast<size_t>(prop.bpp);
+      vd->setChan(prop.bpp);
       break;
     default: assert(0); break;
   }
@@ -4123,7 +4121,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   }
 
 
-  for (int c = 0; c < vd->chan; ++c)
+  for (int c = 0; c < vd->getChan(); ++c)
   {
     vd->findMinMax(c, vd->range(c)[0], vd->range(c)[1]);
   }
@@ -4212,7 +4210,7 @@ vvFileIO::ErrorType vvFileIO::loadVMRFile(vvVolDesc* vd)
   vd->vox[2] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   vd->frames = 1;
   vd->bpc    = 1;
-  vd->chan    = 1;
+  vd->setChan(1);
 
   // Create new data space for volume data:
   if ((_sections & RAW_DATA) != 0)
@@ -4290,7 +4288,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
 
   // Read header:
   vd->bpc = 2;
-  vd->chan = 1;
+  vd->setChan(1);
                                                   // read version number
   version = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   // ignore FMR file name string
@@ -4300,12 +4298,12 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
   while (fgetc(fp)!=0)
      ;
   vd->frames = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
-  vd->dist[0] = vd->dist[1] = vd->dist[2] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  vd->setDist(vec3(virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END)));
   for (size_t i=0; i<3; ++i)
   {
     start      = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
     end        = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
-    vd->vox[i] = size_t((end - start) / vd->dist[0]);
+    vd->vox[i] = size_t((end - start) / vd->getDist()[0]);
   }
   if (version==2)                                 // the following parameters are only in the header if version equals 2
   {
@@ -4496,8 +4494,8 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
       else
       {
         ttype = tokenizer.nextToken();
-        if (strcmp(tokenizer.sval, "char")==0) { vd->bpc = vd->chan = 1; }
-        else if (strcmp(tokenizer.sval, "short")==0) { vd->bpc = 2; vd->chan = 1; }
+        if (strcmp(tokenizer.sval, "char")==0) { vd->bpc = 1; vd->setChan(1); }
+        else if (strcmp(tokenizer.sval, "short")==0) { vd->bpc = 2; vd->setChan(1); }
         else cerr << "unknown type" << endl;
       }
     }
@@ -4530,14 +4528,14 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
             case 2:
             case 3:
             case 4: vd->bpc = 1;
-            vd->chan = size_t(tokenizer.nval);
+            vd->setChan(tokenizer.nval);
             break;
             default: vd->vox[0] = size_t(tokenizer.nval); break;
           }
         }
         else
         {
-          if (vd->chan>=2 && vd->chan<=4) vd->vox[i-1] = size_t(tokenizer.nval);
+          if (vd->getChan()>=2 && vd->getChan()<=4) vd->vox[i-1] = size_t(tokenizer.nval);
           else if (i==3) vd->frames = size_t(tokenizer.nval);
           else vd->vox[i] = size_t(tokenizer.nval);
         }
@@ -4546,23 +4544,25 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
     else if (strcmp(tokenizer.sval, "spacings")==0)
     {
       bool multiModal = false;
+      vec3 dist = vd->getDist();
       for (size_t i=0; i<dimension; ++i)
       {
         ttype = tokenizer.nextToken();
         if (i==0 && ttype==vvTokenizer::VV_WORD)  // if first value is NaN, expect multi-modal data
         {
-          vd->dt = 0.0f;
+          vd->setDt(0.0f);
           multiModal = true;
         }
         else if (i>0 && multiModal)               // still multi-modal data
         {
-          vd->dist[i-1] = tokenizer.nval;
+          dist[i-1] = tokenizer.nval;
         }
         else                                      // only one channel
         {
-          if (i==3) vd->dt = tokenizer.nval;
-          else vd->dist[i] = tokenizer.nval;
+          if (i==3) vd->setDt(tokenizer.nval);
+          else dist[i] = tokenizer.nval;
         }
+        vd->setDist(dist);
       }
     }
     else if (strcmp(tokenizer.sval, "endian")==0)
@@ -4659,12 +4659,12 @@ vvFileIO::ErrorType vvFileIO::loadXIMGFile(vvVolDesc* vd)
     case 1:
     case 2:
       vd->bpc = bytes;
-      vd->chan = 1;
+      vd->setChan(1);
       break;
     case 3:
     case 4:
       vd->bpc = 1;
-      vd->chan = bytes;
+      vd->setChan(bytes);
       break;
     default: assert(0); break;
   }
@@ -4825,12 +4825,14 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "SPACING:")==0)
     {
+      vec3 dist = vd->getDist();
       for (i=0; i<3; ++i)
       {
         ttype = tokenizer.nextToken();
-        if (ttype == vvTokenizer::VV_NUMBER) vd->dist[i] = tokenizer.nval;
+        if (ttype == vvTokenizer::VV_NUMBER) dist[i] = tokenizer.nval;
       }
-      cerr << "hdr file: Spacing=" << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << endl;
+      vd->setDist(dist);
+      cerr << "hdr file: Spacing=" << vd->getDist()[0] << " x " << vd->getDist()[1] << " x " << vd->getDist()[2] << endl;
     }
     else if (vvToolshed::strCompare(tokenizer.sval, "VOXELTYPE:")==0)
     {
@@ -4839,8 +4841,8 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
       {
         if (vvToolshed::strCompare(tokenizer.sval, "SCALAR")==0)
         {
-          vd->chan = 1;
-          cerr << "hdr file: Voxeltype=" << vd->chan << endl;
+          vd->setChan(1);
+          cerr << "hdr file: Voxeltype=" << vd->getChan() << endl;
         }
         else cerr << "hdr file: unknown Voxeltype" << endl;
       }
@@ -4921,7 +4923,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
     return DATA_ERROR;
   }
 
-  err = loadRawFile(vd, vd->vox[0], vd->vox[1], vd->vox[2], vd->bpc, vd->chan, skipBytes);
+  err = loadRawFile(vd, vd->vox[0], vd->vox[1], vd->vox[2], vd->bpc, vd->getChan(), skipBytes);
   vd->setFilename(filenameBak);
   delete[] filenameBak;
   if (err != OK) return err;
@@ -4988,7 +4990,7 @@ vvFileIO::ErrorType vvFileIO::loadVOLBFile(vvVolDesc* vd)
   vd->removeSequence();
   setDefaultValues(vd);
   vd->bpc = 1;
-  vd->chan = 4;   // files are RGBA
+  vd->setChan(4);   // files are RGBA
 
   // Read header:
   blocksRead = fread(buf, strlen(VOLB_V1_STRING), 1, fp);
@@ -5150,7 +5152,7 @@ vvFileIO::ErrorType vvFileIO::loadDDSFile(vvVolDesc* vd)
   vd->vox[1] = dwHeight;
   vd->vox[2] = (dwDepth==0) ? 1 : dwDepth;
   vd->bpc = 1;
-  vd->chan = dwPitchOrLinearSize / dwWidth;
+  vd->setChan(dwPitchOrLinearSize / dwWidth);
   rawData = new uint8_t[vd->getFrameBytes()];
   size_t blocksRead = fread(rawData, vd->getFrameBytes(), 1, fp);
   if (blocksRead != 1)
@@ -5188,7 +5190,7 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
   vd->vox[0] = WIDTH;
   vd->vox[1] = HEIGHT;
   vd->vox[2] = 1;
-  vd->chan = 1;
+  vd->setChan(1);
   vd->bpc = 4;
 
   // Read image data:
@@ -5281,7 +5283,7 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   tok.setParseNumbers(true);
   tok.setWhitespaceCharacter(' ');
 
-  vd->chan = NUM_CHANNELS;   // channels are u, v, w, r
+  vd->setChan(NUM_CHANNELS);   // channels are u, v, w, r
   vd->bpc = 4;
 
   // Read header:
@@ -5290,11 +5292,13 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
     if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
     vd->vox[i] = size_t(tok.nval);
   }
+  vec3 dist = vd->getDist();
   for (size_t i=0; i<3; ++i)   // read distance between gridpoints
   {  
     if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
-    vd->dist[i] = tok.nval;
+    dist[i] = tok.nval;
   }
+  vd->setDist(dist);
   for (int i=0; i<3; ++i)   // read lower grid corner 
   {  
     if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
@@ -5355,7 +5359,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
   vvDebugMsg::msg(1, "vvFileIO::savePXMSlices()");
 
   if (vd->frames<1 || vd->vox[2]<1) return DATA_ERROR;
-  if (vd->bpc * vd->chan > 4) return DATA_ERROR;
+  if (vd->bpc * vd->getChan() > 4) return DATA_ERROR;
 
   // Generate file names:
   digits = 1 + uint32_t(log((double)vd->vox[2]) / log(10.0));
@@ -5374,7 +5378,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
       strcat(filenames[i], buffer);
     }
     else strcat(filenames[i], ".");
-    if (vd->chan==1) strcat(filenames[i], "pgm");
+    if (vd->getChan()==1) strcat(filenames[i], "pgm");
     else strcat(filenames[i], "ppm");
   }
 
@@ -5393,7 +5397,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
 
   // Write files:
   sliceSize = vd->getSliceBytes();
-  if (vd->bpc==2 || vd->chan==4)
+  if (vd->bpc==2 || vd->getChan()==4)
   {
     size_t bytes;
     if (vd->bpc==2) bytes = 1;
@@ -5411,7 +5415,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
     }
 
     // Write header:
-    if (vd->chan==1) fprintf(fp, "P5\n");         // grayscale
+    if (vd->getChan()==1) fprintf(fp, "P5\n");         // grayscale
     else fprintf(fp, "P6\n");                     // RGB
 
                                                   // write dimensions
@@ -5420,17 +5424,17 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
 
     // Write data:
     slice = vd->getRaw() + i * sliceSize;
-    if (vd->bpc==1 && (vd->chan==1 || vd->chan==3))
+    if (vd->bpc==1 && (vd->getChan()==1 || vd->getChan()==3))
     {
       if (fwrite(slice, sliceSize, 1, fp) != 1) err = FILE_ERROR;
     }
-    else if (vd->bpc==2 || vd->chan==4)
+    else if (vd->bpc==2 || vd->getChan()==4)
     {
       for (size_t j=0; j<vd->getSliceVoxels(); ++j)
       {
-        for (size_t k=0; k<(vd->bpc*vd->chan)-1; ++k)
+        for (size_t k=0; k<(vd->bpc*vd->getChan())-1; ++k)
         {
-          tmpSlice[j * ((vd->bpc*vd->chan)-1) + k] = slice[j * (vd->bpc*vd->chan) + k];
+          tmpSlice[j * ((vd->bpc*vd->getChan())-1) + k] = slice[j * (vd->bpc*vd->getChan()) + k];
         }
       }
       if ((int)fwrite(tmpSlice, tmpSliceSize, 1, fp) != 1) err = FILE_ERROR;
@@ -5440,7 +5444,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
   }
 
   // Free memory:
-  if (vd->bpc==2 || vd->chan==4) delete[] tmpSlice;
+  if (vd->bpc==2 || vd->getChan()==4) delete[] tmpSlice;
   for (ssize_t i=0; i<vd->vox[2]; ++i) delete[] filenames[i];
   delete[] filenames;
 
@@ -5686,11 +5690,13 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   if (err == OK)
   {
+    vec3 dist = vd->getDist();
     for (int c=0; c<3; ++c)
     {
-      if (vd->dist[c] <= 0.f)
-        vd->dist[c] = 1.f;
+      if (dist[c] <= 0.f)
+        dist[c] = 1.f;
     }
+    vd->setDist(dist);
   }
 
   return err;

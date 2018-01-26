@@ -119,7 +119,7 @@ void vvCanvas::initCanvas()
   if (_vd->tf[0].isEmpty())
   {
     _vd->tf[0].setDefaultAlpha(0, _vd->range(0)[0], _vd->range(0)[1]);
-    _vd->tf[0].setDefaultColors((_vd->chan==1) ? 0 : 3, _vd->range(0)[0], _vd->range(0)[1]);
+    _vd->tf[0].setDefaultColors((_vd->getChan()==1) ? 0 : 3, _vd->range(0)[0], _vd->range(0)[1]);
   }
 
  #ifdef USE_STINGRAY

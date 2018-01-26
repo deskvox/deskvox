@@ -216,12 +216,12 @@ bool vvConv::readVolumeData()
       vvTokenizer* tok = new vvTokenizer(file);
       tok->setParseNumbers(true);
       
-      laser = new int[vd->chan];
-      intensity = new int[vd->chan];
-      gain = new int[vd->chan];
-      offset = new int[vd->chan];
+      laser = new int[vd->getChan()];
+      intensity = new int[vd->getChan()];
+      gain = new int[vd->getChan()];
+      offset = new int[vd->getChan()];
 
-      for (int i = 0; i < vd->chan; i++)
+      for (int i = 0; i < vd->getChan(); i++)
       {
         laser[i] = 0;
         intensity[i] = 0;
@@ -511,13 +511,13 @@ bool vvConv::readVolumeData()
     else
        cerr << "Error: Cannot open " << seriesname << " file.";
     
-    if (vd->chan == 1)
+    if (vd->getChan() == 1)
     {
-      vd->convertChannels(vd->chan + 1);
-      vd->convertChannels(vd->chan + 1);
+      vd->convertChannels(vd->getChan() + 1);
+      vd->convertChannels(vd->getChan() + 1);
     }
-    if (vd->chan == 2)
-      vd->convertChannels(vd->chan + 1);
+    if (vd->getChan() == 2)
+      vd->convertChannels(vd->getChan() + 1);
 
     int red = chan[0];
     int green = chan[1];
@@ -741,7 +741,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (autoRealRange)
   {
     cerr << "Automatically setting physical data value range." << endl;
-    for (int c = 0; c < v->chan; ++c)
+    for (int c = 0; c < v->getChan(); ++c)
       v->findMinMax(c, v->range(c)[0], v->range(c)[1]);
   }
   if (invertVoxelOrder)
@@ -779,8 +779,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (setDist)
   {
     cerr << "Setting distance values." << endl;
-    for (int i=0; i<3; ++i)
-      v->dist[i] = newDist[i];
+    vd->setDist(newDist[0], newDist[1], newDist[2]);
   }
   if (setPos)
   {
@@ -813,7 +812,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (drawLine)
   {
-    if (v->bpc==1 && v->chan==1)
+    if (v->bpc==1 && v->getChan()==1)
     {
       uint8_t col = uint8_t(lineColor);
       cerr << "Drawing line." << endl;
@@ -847,7 +846,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (animTime>0.0f)
   {
-    v->dt = animTime;
+    v->setDt(animTime);
   }
   if (deinterlace)
   {
@@ -899,7 +898,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
       uint8_t* raw = iconVD->getRaw();
       delete[] v->iconData;
       v->iconData = new uint8_t[v->iconSize * v->iconSize * vvVolDesc::ICON_BPP];
-      vvToolshed::resample(raw, iconVD->vox[0], iconVD->vox[1], iconVD->bpc * iconVD->chan, 
+      vvToolshed::resample(raw, iconVD->vox[0], iconVD->vox[1], iconVD->bpc * iconVD->getChan(), 
         v->iconData, v->iconSize, v->iconSize, vvVolDesc::ICON_BPP);
     }
     delete fio;
@@ -2508,9 +2507,9 @@ int vvConv::run(int argc, char** argv)
     else if (histType==0)   // ASCII on screen
     {
       cerr << endl;
-      for (int m=0; m<tmpVD->chan; ++m)
+      for (int m=0; m<tmpVD->getChan(); ++m)
       {
-        if (tmpVD->chan>1) cerr << "Channel " << m << ":" << endl;
+        if (tmpVD->getChan()>1) cerr << "Channel " << m << ":" << endl;
         tmpVD->printHistogram(0, m);
         cerr << endl;
       }
@@ -2520,9 +2519,9 @@ int vvConv::run(int argc, char** argv)
       char* basePath = new char[strlen(srcFile) + 1];
       vvToolshed::extractBasePath(basePath, srcFile);
       char* imgFileName = new char[strlen(srcFile) + 15];
-      for (int m=0; m<tmpVD->chan; ++m)
+      for (int m=0; m<tmpVD->getChan(); ++m)
       {
-        if (tmpVD->chan>1)
+        if (tmpVD->getChan()>1)
         {
           sprintf(imgFileName, "%s-hist-ch%02d.ppm", basePath, static_cast<int32_t>(m));
         }
@@ -2535,7 +2534,7 @@ int vvConv::run(int argc, char** argv)
         imgVD->vox[1] = 256;
         imgVD->vox[2] = 1;
         imgVD->bpc = 1;
-        imgVD->chan = 3;
+        imgVD->setChan(3);
         uint8_t* imgData = new uint8_t[imgVD->vox[0] * imgVD->vox[1] * 3];
         size_t size[2] = { static_cast<size_t>(imgVD->vox[0]), static_cast<size_t>(imgVD->vox[1]) };
         vvColor col(1.0f, 1.0f, 1.0f);
@@ -2628,7 +2627,7 @@ int vvConv::run(int argc, char** argv)
     iconVD->vox[2] = 1;
     iconVD->setFilename(iconFile);
     iconVD->bpc = 1;
-    iconVD->chan = vvVolDesc::ICON_BPP;
+    iconVD->setChan(vvVolDesc::ICON_BPP);
     uint8_t* iconData = new uint8_t[iconVD->getSliceBytes()];
     memcpy(iconData, tmpVD->iconData, iconVD->getSliceBytes());
     iconVD->addFrame(iconData, vvVolDesc::ARRAY_DELETE);

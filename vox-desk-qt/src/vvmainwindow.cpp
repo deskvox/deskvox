@@ -395,10 +395,10 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
     if (vd->tf[0].isEmpty())
     {
       vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
+      vd->tf[0].setDefaultColors((vd->getChan() == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
     }
     impl_->canvas->setVolDesc(vd);
-    impl_->dimensionDialog->setInitialDist(vd->dist);
+    impl_->dimensionDialog->setInitialDist(vd->getDist());
 
     impl_->ui->menuRecentVolumes->clear();
     std::vector<std::string> recents = getRecentFiles();
@@ -444,7 +444,7 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
     if (vd->tf[0].isEmpty())
     {
       vd->tf[0].setDefaultAlpha(0, vd->range(0)[0], vd->range(0)[1]);
-      vd->tf[0].setDefaultColors((vd->chan == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
+      vd->tf[0].setDefaultColors((vd->getChan() == 1) ? 0 : 2, vd->range(0)[0], vd->range(0)[1]);
     }
     impl_->canvas->setVolDesc(vd);
     break;

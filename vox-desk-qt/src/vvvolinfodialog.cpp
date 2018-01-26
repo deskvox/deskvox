@@ -62,12 +62,12 @@ void vvVolInfoDialog::onNewVolDesc(vvVolDesc* vd)
     impl_->ui->slicesDepthLabel->setText(QString::number(vd->vox[2]));
     impl_->ui->timeStepsLabel->setText(QString::number(vd->frames));
     impl_->ui->bpsLabel->setText(QString::number(vd->bpc));
-    impl_->ui->channelsLabel->setText(QString::number(vd->chan));
+    impl_->ui->channelsLabel->setText(QString::number(vd->getChan()));
     impl_->ui->voxelsLabel->setText(QString::number(vd->getFrameVoxels()));
     impl_->ui->bytesLabel->setText(QString::number(vd->getFrameBytes()));
-    impl_->ui->distXLabel->setText(QString::number(vd->dist[0]));
-    impl_->ui->distYLabel->setText(QString::number(vd->dist[1]));
-    impl_->ui->distZLabel->setText(QString::number(vd->dist[2]));
+    impl_->ui->distXLabel->setText(QString::number(vd->getDist()[0]));
+    impl_->ui->distYLabel->setText(QString::number(vd->getDist()[1]));
+    impl_->ui->distZLabel->setText(QString::number(vd->getDist()[2]));
     impl_->ui->pminLabel->setText(QString::number(vd->range(0)[0]));
     impl_->ui->pmaxLabel->setText(QString::number(vd->range(0)[1]));
     float fmin;

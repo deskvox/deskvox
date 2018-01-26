@@ -59,9 +59,7 @@ void load(vvVolDesc* vd)
     vd->vox[1] = header->ny;
     vd->vox[2] = header->nz;
 
-    vd->dist[0] = header->dx;
-    vd->dist[1] = header->dy;
-    vd->dist[2] = header->dz;
+    vd->setDist(header->dx, header->dy, header->dz);
 
     // no support for animation
 
@@ -69,19 +67,19 @@ void load(vvVolDesc* vd)
 
     // bytes per pixel and num channels
 
-    vd->chan = 1; // default
+    vd->setChan(1); // default
 
     // Determine chan and bpc, set default mapping
     switch (header->datatype)
     {
     case NIFTI_TYPE_RGB24:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_RGB24\n";
-        vd->chan = 3;
+        vd->setChan(3);
         vd->bpc = header->nbyper / 3;
         break;
     case NIFTI_TYPE_RGBA32:
         if (verbose) std::cout << "Datatype: NIFTI_TYPE_RGB32\n";
-        vd->chan = 4;
+        vd->setChan(4);
         vd->bpc = header->nbyper / 4;
         break;
     case NIFTI_TYPE_INT8:
@@ -222,10 +220,10 @@ void load(vvVolDesc* vd)
     }
 
 
-    for (int c = 0; c < vd->chan; ++c)
+    for (int c = 0; c < vd->getChan(); ++c)
     {
         vd->findMinMax(c, vd->range(c)[0], vd->range(c)[1]);
-        vd->tf[c].setDefaultColors(vd->chan == 1 ? 0 : 4 + c, vd->range(c)[0], vd->range(c)[1]);
+        vd->tf[c].setDefaultColors(vd->getChan() == 1 ? 0 : 4 + c, vd->range(c)[0], vd->range(c)[1]);
         vd->tf[c].setDefaultAlpha(0, vd->range(c)[0], vd->range(c)[1]);
     }
 }
@@ -246,9 +244,9 @@ void save(const vvVolDesc* vd)
 
     nifti_set_filenames(img, vd->getFilename(), 0, 0);
 
-    img->dx = vd->dist[0];
-    img->dy = vd->dist[1];
-    img->dz = vd->dist[2];
+    img->dx = vd->getDist()[0];
+    img->dy = vd->getDist()[1];
+    img->dz = vd->getDist()[2];
 
     img->data = vd->getRaw();
 
