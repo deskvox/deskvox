@@ -789,6 +789,7 @@ struct volume_kernel
                         sr.isect_pos = pos;
                         sr.light = params.light;
                         sr.normal = normal;
+                        sr.geometric_normal = normal;
                         sr.view_dir = -ray.dir;
                         sr.light_dir = normalize(sr.light.position());
 
