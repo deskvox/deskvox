@@ -64,17 +64,17 @@ void nrrd::load(vvVolDesc* vd)
   case nrrdTypeChar:
   case nrrdTypeUChar:
     vd->bpc  = 1;
-    vd->chan = 1;
+    vd->setChan(1);
     break;
   case nrrdTypeShort:
   case nrrdTypeUShort:
     vd->bpc  = 2;
-    vd->chan = 1;
+    vd->setChan(1);
     break;
   case nrrdTypeInt:
   case nrrdTypeUInt:
     vd->bpc  = 4;
-    vd->chan = 1;
+    vd->setChan(1);
     break;
   default:
     throw fileio::unsupported_datatype();
