@@ -785,13 +785,13 @@ struct volume_kernel
 
                         do_shade &= length(grad) != 0.0f;
 
-                        shade_record<point_light<float>, S> sr;
-                        sr.isect_pos = pos;
-                        sr.light = params.light;
+                        shade_record<S> sr;
                         sr.normal = normal;
                         sr.geometric_normal = normal;
                         sr.view_dir = -ray.dir;
-                        sr.light_dir = normalize(sr.light.position());
+                        sr.tex_color = vector<3, S>(1.0);
+                        sr.light_dir = normalize(params.light.position());
+                        sr.light_intensity = params.light.intensity(pos);
 
                         auto shaded_clr = mat.shade(sr);
 
