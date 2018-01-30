@@ -57,6 +57,7 @@ class VVPreferenceWindow : public FXDialogBox
       ID_OPTIONS,
       ID_LINTERP,
       ID_POST_CLASS,
+      ID_HEADLIGHT,
       ID_SHOWBRICKS,
       ID_COMPUTE_BRICKSIZE,
       ID_TEX_MEMORY,
@@ -85,6 +86,7 @@ class VVPreferenceWindow : public FXDialogBox
     FXComboBox* _stereoCombo;
     FXCheckButton* _linterpButton;
     FXCheckButton* _postClassButton;              ///< post-classificaton [on|off]
+    FXCheckButton* _headlightButton;              ///< turn gradient-based headlight [on|off]
     FXCheckButton* _showBricksButton;
     FXCheckButton* _computeBrickSizeButton;
     FXCheckButton* _mipButton;
@@ -100,6 +102,7 @@ class VVPreferenceWindow : public FXDialogBox
     void toggleBounds();
     void toggleInterpol();
     void toggleClassification();
+    void toggleHeadlight();
     void scaleQuality(float);
     float getQualitySDialValue();
     void  setQualitySDialValue(float);
@@ -123,6 +126,7 @@ class VVPreferenceWindow : public FXDialogBox
     long onMIPSelect(FXObject*,FXSelector,void*);
     long onInterpolationSelect(FXObject*,FXSelector,void*);
     long onPostClassSelect(FXObject*,FXSelector,void*);
+    long onHeadlightSelect(FXObject*,FXSelector,void*);
     long onShowBricksSelect(FXObject*, FXSelector, void*);
     long onComputeBricksizeSelect(FXObject*, FXSelector, void*);
     long onTexMemoryChange(FXObject*, FXSelector, void*);

@@ -50,7 +50,7 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_BRICK_SIZE,     VVPreferenceWindow::onBSChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_MIP,            VVPreferenceWindow::onMIPSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_LINTERP,        VVPreferenceWindow::onInterpolationSelect),
-  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_POST_CLASS,     VVPreferenceWindow::onPostClassSelect),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_HEADLIGHT,      VVPreferenceWindow::onHeadlightSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SHOWBRICKS,     VVPreferenceWindow::onShowBricksSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_COMPUTE_BRICKSIZE, VVPreferenceWindow::onComputeBricksizeSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_TEX_MEMORY,     VVPreferenceWindow::onTexMemoryChange),
@@ -90,6 +90,7 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
   FXVerticalFrame* checkFrame = new FXVerticalFrame(algoGroup, LAYOUT_FILL_X);
   _linterpButton  = new FXCheckButton(checkFrame,"Linear interpolation",this,VVPreferenceWindow::ID_LINTERP, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _postClassButton= new FXCheckButton(checkFrame,"Post-classification",this,VVPreferenceWindow::ID_POST_CLASS, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
+  _headlightButton= new FXCheckButton(checkFrame,"Headlight",this,VVPreferenceWindow::ID_HEADLIGHT, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _mipButton      = new FXCheckButton(checkFrame,"Maximum intensity projection (MIP)",this,ID_MIP,ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _suppressButton = new FXCheckButton(checkFrame,"Suppress rendering",this,ID_SUPPRESS,ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
   _showBricksButton = new FXCheckButton(checkFrame, "Show Bricks", this, VVPreferenceWindow::ID_SHOWBRICKS, ICON_BEFORE_TEXT | LAYOUT_FILL_ROW);
@@ -421,6 +422,27 @@ long VVPreferenceWindow::onPostClassSelect(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
+long VVPreferenceWindow::onHeadlightSelect(FXObject*,FXSelector,void* ptr)
+{
+  _shell->_glcanvas->makeCurrent();
+  if (ptr != NULL)
+  {
+    virvo::vec4 eye(_canvas->_renderer->getEyePosition(), 1.0f);
+    glEnable(GL_LIGHTING);
+    glLightfv(GL_LIGHT0, GL_POSITION, eye.data());
+    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);
+    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0f);
+    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);
+  }
+  else
+  {
+    glDisable(GL_LIGHTING);
+  }
+  _canvas->_renderer->setParameter(vvRenderer::VV_LIGHTING, (ptr != NULL));
+  _shell->_glcanvas->makeNonCurrent();
+  return 1;
+}
+
 long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void*)
 {
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
@@ -522,6 +544,13 @@ void VVPreferenceWindow::toggleClassification()
   bool newState = !_postClassButton->getCheck();
   _postClassButton->setCheck(newState);
   onPostClassSelect(this, ID_POST_CLASS, (void*)newState);
+}
+
+void VVPreferenceWindow::toggleHeadlight()
+{
+  bool newState = !_headlightButton->getCheck();
+  _postClassButton->setCheck(newState);
+  onPostClassSelect(this, ID_HEADLIGHT, (void*)newState);
 }
 
 void VVPreferenceWindow::toggleMIP()
