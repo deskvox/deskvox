@@ -62,6 +62,7 @@ using namespace virvo;
 
 enum {
   Shader1Chan = 0,
+  Shader2DTF = 8,
   ShaderPreInt = 11,
   ShaderLighting = 12,
   ShaderMultiTF = 13,
@@ -1824,7 +1825,7 @@ void vvTexRend::initLight(vvShaderProgram* shader, mat4 const& mv, vec3 const& n
   {
     shader->setParameter1i("lighting", _lighting ? 1 : 0);
 
-    if (_currentShader == ShaderLighting || _currentShader == ShaderMultiTF)
+    if (_currentShader == ShaderLighting || _currentShader == ShaderMultiTF || _currentShader == Shader2DTF)
     {
       // Local illumination based on blinn-phong shading.
       gl::light l = gl::getLight(GL_LIGHT0);
