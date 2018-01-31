@@ -301,7 +301,8 @@ void vvRenderVP::renderVolume(int w, int h)
   vpCurrentMatrix(vpc, VP_MODEL);
   vpSeti(vpc, VP_CONCAT_MODE, VP_CONCAT_RIGHT);
   vpTranslate(vpc, vd->pos[0], vd->pos[1], vd->pos[2]);
-  vpScale(vpc, vd->dist[0]*vd->vox[0], -vd->dist[1]*vd->vox[1], vd->dist[2]*vd->vox[2]);  // adjust object to screen
+  virvo::vec3f dist = vd->getDist();
+  vpScale(vpc, dist[0]*vd->vox[0], -dist[1]*vd->vox[1], dist[2]*vd->vox[2]);  // adjust object to screen
 
   // Recompute shade table if light is moving:
   if (stickyLights == false)

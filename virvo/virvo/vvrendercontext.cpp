@@ -498,6 +498,7 @@ void vvRenderContext::init()
         _options.type = vvContextOptions::VV_WINDOW;
       }
       // no pbuffer created - fall through
+      // fall through
     case vvContextOptions::VV_WINDOW:
       // fall through
     default:
