@@ -1,3 +1,4 @@
+find_package(Boost REQUIRED)
 find_package(OpenSceneGraph)
 
 if (NOT OPENSCENEGRAPH_FOUND)
@@ -5,6 +6,7 @@ if (NOT OPENSCENEGRAPH_FOUND)
     return()
 endif()
 
+deskvox_use_package(Boost)
 deskvox_use_package(OpenSceneGraph)
 
 deskvox_link_libraries(virvo)
