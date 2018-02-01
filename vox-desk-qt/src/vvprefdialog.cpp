@@ -21,6 +21,9 @@
 #include <GL/glew.h>
 #include <QUrl>
 
+// Make sure that winsock2.h is included before windows:
+#include <virvo/vvplatform.h>
+
 #include "vvcanvas.h"
 #include "vvprefdialog.h"
 #include "vvstereomode.h"
