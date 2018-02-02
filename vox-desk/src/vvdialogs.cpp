@@ -221,11 +221,11 @@ void VVVolumeDialog::updateValues()
   _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[0]));
   _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[1]));
   _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->getDist()[2]));
-  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[0]));
-  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[1]));
+  _realMinLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->mapping(0)[0]));
+  _realMaxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->mapping(0)[1]));
   _canvas->_vd->findMinMax(0, fMin, fMax);
-  _minLabel->setText(FXStringFormat("%.9g",  fMin));
-  _maxLabel->setText(FXStringFormat("%.9g",  fMax));
+  _minLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[0]));
+  _maxLabel->setText(FXStringFormat("%.9g",  _canvas->_vd->range(0)[1]));
 }
 
 /*******************************************************************************/
