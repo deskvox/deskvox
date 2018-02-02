@@ -408,7 +408,7 @@ long VVPreferenceWindow::onInterpolationSelect(FXObject*,FXSelector,void* ptr)
   if (texrend)
   {
     _shell->_glcanvas->makeCurrent();
-    _canvas->_renderer->setParameter(vvRenderer::VV_SLICEINT, (ptr != NULL));
+    _canvas->_renderer->setParameter(vvRenderer::VV_SLICEINT, (ptr != NULL) ? 1 : 0);
     _shell->_glcanvas->makeNonCurrent();
   }
   return 1;
