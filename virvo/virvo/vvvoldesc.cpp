@@ -1304,6 +1304,7 @@ size_t vvVolDesc::getBPV() const
 /// Set number of channels per voxel.
 void vvVolDesc::setChan(int c)
 {
+  channelNames.resize(c);
   mapping_.resize(c);
   zoomRange_.resize(c);
   range_.resize(c);
@@ -1507,12 +1508,12 @@ void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
     else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
-  // Adjust channel names:
   if (newChan != chan)
   {
-    channelNames.resize(newChan);
+    // Adjust per-channel data:
+    setChan(chan);
+    chan = newChan;
   }
-  chan = newChan;
 }
 
 //----------------------------------------------------------------------------
@@ -1568,6 +1569,9 @@ void vvVolDesc::deleteChannel(int channel, bool verbose)
     raw.next();
   }
   channelNames.erase(channelNames.begin() + channel);
+  mapping_.erase(mapping_.begin() + channel);
+  zoomRange_.erase(zoomRange_.begin() + channel);
+  range_.erase(range_.begin() + channel);
   --chan;
 }
 
