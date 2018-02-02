@@ -342,8 +342,8 @@ public:
     float  findClampValue(int, int channel, float) const;
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
-    float  getChannelValue(int frame, size_t indexXYZ, int chan) const;
-    float  getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const;
+    float  getChannelValue(int frame, size_t indexXYZ, int channel) const;
+    float  getChannelValue(int frame, size_t x, size_t y, size_t z, int channel) const;
     void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
     void   findAndSetRange(int channel = 0);
     void   addGradient(size_t srcChan, GradientType);

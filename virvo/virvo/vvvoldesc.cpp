@@ -4843,7 +4843,7 @@ void vvVolDesc::resizeEdgeMax(float len)
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int chan) const
+float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int channel) const
 {
   uint8_t* data = getRaw(frame);
   float fval;
@@ -4856,7 +4856,7 @@ float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int chan) const
     case 1:
     {
       fval = float(data[index]);
-      fval = lerp(mapping(chan)[0], mapping(chan)[1], fval / 255);
+      fval = lerp(mapping(channel)[0], mapping(channel)[1], fval / 255);
       break;
     }
     case 2:
@@ -4867,7 +4867,7 @@ float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int chan) const
       unsigned short ival = ((unsigned short)data[index] << 8) | data[index+1]; fval = float(ival);
 #endif
       fval = (float)ival;
-      fval = lerp(mapping(chan)[0], mapping(chan)[1], fval / 65535);
+      fval = lerp(mapping(channel)[0], mapping(channel)[1], fval / 65535);
       break;
     }
     case 4: fval = *((float*)(data + index)); break;
@@ -4877,9 +4877,9 @@ float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int chan) const
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int chan) const
+float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, int channel) const
 {
-  return getChannelValue(frame, x + y * vox[0] + z * vox[0] * vox[1], chan);
+  return getChannelValue(frame, x + y * vox[0] + z * vox[0] * vox[1], channel);
 }
 
 //----------------------------------------------------------------------------
