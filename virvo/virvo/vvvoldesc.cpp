@@ -4850,7 +4850,7 @@ float vvVolDesc::getChannelValue(int frame, size_t indexXYZ, int channel) const
   size_t index;
   size_t bpv = getBPV();
 
-  index = bpv * indexXYZ + chan * bpc;
+  index = bpv * indexXYZ + channel * bpc;
   switch(bpc)
   {
     case 1:
