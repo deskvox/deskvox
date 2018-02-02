@@ -1511,8 +1511,7 @@ void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
   if (newChan != chan)
   {
     // Adjust per-channel data:
-    setChan(chan);
-    chan = newChan;
+    setChan(newChan);
   }
 }
 
