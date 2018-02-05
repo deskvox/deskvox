@@ -309,25 +309,11 @@ void vvToolshed::RGBtoHSB(float r, float g, float b, float* h, float* s, float* 
 */
 void vvToolshed::strcpyTail(char* suffix, const char* str, char c)
 {
-  size_t i, j;
-
-  // Search for c in pathname:
-  i = strlen(str) - 1;
-  while (i>=0 && str[i]!=c)
-    --i;
-
-  // Extract tail string:
-  if (i<0)                                        // c not found?
-  {
-    //strcpy(suffix, str);
-    strcpy(suffix, "");
-  }
+  const char *p = strrchr(str, c);
+  if (p)
+    strcpy(suffix, p+1);
   else
-  {
-    for (j=i+1; j<(int)strlen(str); ++j)
-      suffix[j-i-1] = str[j];
-    suffix[j-i-1] = '\0';
-  }
+    strcpy(suffix, "");
 }
 
 //----------------------------------------------------------------------------
