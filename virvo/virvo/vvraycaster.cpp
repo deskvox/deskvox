@@ -36,7 +36,6 @@
 #include <visionaray/math/math.h>
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
-#include <visionaray/array.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
 #include <visionaray/pixel_format.h>
