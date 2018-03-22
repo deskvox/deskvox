@@ -140,12 +140,12 @@ private:
     std::vector<vec2> zoomRange_;                 ///< (Possibly user specified) zoom range (zoomRange_ in mapping_)
     std::vector<vec2> range_;                     ///< Mapped data value min/max actually present in data set (range_ in zoomRange_)
 public:
-    vec2& mapping(int chan) { return mapping_[chan]; }
-    const vec2& mapping(int chan) const { return mapping_[chan]; }
-    vec2& zoomRange(int chan) { return zoomRange_[chan]; }
-    const vec2& zoomRange(int chan) const { return zoomRange_[chan]; }
-    vec2& range(int chan) { return range_[chan]; }
-    const vec2& range(int chan) const { return range_[chan]; }
+    vec2& mapping(int _chan) { return mapping_[_chan]; }
+    const vec2& mapping(int _chan) const { return mapping_[_chan]; }
+    vec2& zoomRange(int _chan) { return zoomRange_[_chan]; }
+    const vec2& zoomRange(int _chan) const { return zoomRange_[_chan]; }
+    vec2& range(int _chan) { return range_[_chan]; }
+    const vec2& range(int _chan) const { return range_[_chan]; }
     std::vector<float> channelWeights;            ///< scalar weight for each channel, default: 1.0f
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     virvo::vec3f pos;                             ///< location of volume center [mm]

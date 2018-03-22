@@ -193,7 +193,7 @@ bool vvConv::readVolumeData()
     vd = new vvVolDesc(filename);
 
     string tempname = srcFile;
-    int start = tempname.find("_Series",0);
+    size_t start = tempname.find("_Series",0);
 
     if (start == -1)
       start = tempname.find("_Image", 0);
@@ -207,13 +207,13 @@ bool vvConv::readVolumeData()
 
 
    
-    std::ifstream file(seriesname); 
-    if (file.is_open())
+    std::ifstream sfile(seriesname); 
+    if (sfile.is_open())
     {
       // File found.  Now to determine values
       cerr << "Opened: " << seriesname << endl;
 
-      vvTokenizer* tok = new vvTokenizer(file);
+      vvTokenizer* tok = new vvTokenizer(sfile);
       tok->setParseNumbers(true);
       
       laser = new int[vd->getChan()];
@@ -229,7 +229,7 @@ bool vvConv::readVolumeData()
         offset[i] = 0;
       }
       
-      bool done = false;
+      done = false;
       while(!done) {
         if (strcmp(tok->sval, "SCANNER") == 0)
         {
@@ -509,7 +509,7 @@ bool vvConv::readVolumeData()
       delete tok;
     }
     else
-       cerr << "Error: Cannot open " << seriesname << " file.";
+       cerr << "Error: Cannot open " << seriesname << " sfile.";
     
     if (vd->getChan() == 1)
     {
@@ -632,11 +632,11 @@ bool vvConv::readVolumeData()
   // Import transfer functions:
   if (importTF)
   {
-    bool error=false;
+    bool error_=false;
 
     vvVolDesc vdTF(importFile); // VD for the transfer functions
-    vvFileIO fio;
-    switch (fio.loadVolumeData(&vdTF, vvFileIO::TRANSFER))
+    vvFileIO fio_;
+    switch (fio_.loadVolumeData(&vdTF, vvFileIO::TRANSFER))
     {
       case vvFileIO::OK:
         if (!vd->tf.empty() && vd->tf.back()._widgets.empty())
@@ -646,14 +646,14 @@ bool vvConv::readVolumeData()
         break;
       case vvFileIO::FILE_NOT_FOUND:
         cerr << "Transfer functions file not found: " << importFile << endl;
-        error = true;
+        error_ = true;
         break;
       default:
         cerr << "Cannot load transfer functions file: " << importFile << endl;
-        error = true;
+        error_ = true;
         break;
     }
-    if (error) return false;
+    if (error_) return false;
   }
   return true;
 }
@@ -899,7 +899,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
       delete[] v->iconData;
       v->iconData = new uint8_t[v->iconSize * v->iconSize * vvVolDesc::ICON_BPP];
       vvToolshed::resample(raw, iconVD->vox[0], iconVD->vox[1], iconVD->bpc * iconVD->getChan(), 
-        v->iconData, v->iconSize, v->iconSize, vvVolDesc::ICON_BPP);
+        v->iconData, (int)v->iconSize, (int)v->iconSize, vvVolDesc::ICON_BPP);
     }
     delete fio;
     delete iconVD;

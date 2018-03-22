@@ -662,7 +662,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   {
     if (vd->bpc==3 || vd->bpc==4)
     {
-      vd->setChan(vd->bpc);
+      vd->setChan((int)vd->bpc);
       vd->bpc = 1;
     }
     else vd->setChan(1);
@@ -1588,7 +1588,7 @@ vvFileIO::ErrorType vvFileIO::loadVTKFile(vvVolDesc *vd)
     return FILE_ERROR;
   }
 
-  vec3 size = vd->getDist() * vec3(dim[0], dim[1], dim[2]);
+  vec3 size = vd->getDist() * vec3((float)dim[0], (float)dim[1], (float)dim[2]);
   vd->pos = origin + size * 0.5f;
 
   if (vvDebugMsg::isActive(1))
@@ -1877,8 +1877,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   uint8_t* raw;                                   // raw volume data
   int ival=0;                                     // integer data value
   size_t frameSize;                               // size of a frame in bytes
-  float min;                                      // either mapping.min or range.min
-  float max;                                      // either mapping.max or range.max
+  float min=0.0;                                      // either mapping.min or range.min
+  float max=1.0;                                      // either mapping.max or range.max
   bool done;
   bool error;
   bool oldformat = false;
@@ -3713,7 +3713,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd, size_t w, size_t h, siz
   vd->vox[1] = h;
   vd->vox[2] = s;
   vd->bpc    = b;
-  vd->setChan(c);
+  vd->setChan((int)c);
 
   fseek(fp, static_cast<long>(header), SEEK_SET);                    // skip header
   rawData = new uint8_t[vd->getFrameBytes()];
@@ -4030,8 +4030,8 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   // Shift bits so that most significant used bit is leftmost:
   vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), int(vd->frames-1));
 
-  float slope = dicomReader.slope_specified ? dicomReader.slope : 1.0f;
-  float inter = dicomReader.intercept_specified ? dicomReader.intercept : 0.0f;
+  float slope = dicomReader.slope_specified ? (float)dicomReader.slope : 1.0f;
+  float inter = dicomReader.intercept_specified ? (float)dicomReader.intercept : 0.0f;
 
   virvo::PixelFormat format = PF_R8;
   if (prop.isSigned && prop.bpp == 2)
@@ -4068,7 +4068,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
           uint8_t* bytes = (*vd)(x, y, z); 
           int32_t voxel = (int)*reinterpret_cast<int16_t*>(bytes);
           voxel -= SHRT_MIN;
-          *reinterpret_cast<uint16_t*>(bytes) = voxel;
+          *reinterpret_cast<uint16_t*>(bytes) = (int16_t)voxel;
 
           if (voxel > maxval) maxval = voxel;
           if (voxel < minval) minval = voxel;
@@ -4528,7 +4528,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
             case 2:
             case 3:
             case 4: vd->bpc = 1;
-            vd->setChan(tokenizer.nval);
+            vd->setChan((int)tokenizer.nval);
             break;
             default: vd->vox[0] = size_t(tokenizer.nval); break;
           }
