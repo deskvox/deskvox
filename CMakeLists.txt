@@ -148,7 +148,7 @@ include(Qt4-5)
 
 option(DESKVOX_USE_SSE "Use SSE intrinsic code if possible" ON)
 
-option(DESKVOX_USE_ASIO "Use Boost.ASIO" OFF)
+option(DESKVOX_USE_ASIO "Use Boost.ASIO" ON)
 
 option(DESKVOX_USE_RAYREND_BSPLINE "Enable B-spline interpolation in RayRend" ON)
 option(DESKVOX_USE_RAYREND_CSPLINE "Enable C-spline interpolation in RayRend" ON)
