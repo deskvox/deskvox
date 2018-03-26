@@ -184,7 +184,7 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
         float max = volume_->real[1];
 
         volume_->tf.setDefaultAlpha(0, min, max);
-        volume_->tf.setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
+        volume_->tf.setDefaultColors(volume_->getChan() == 1 ? 0 : 2, min, max);
     }
 #endif
 
@@ -453,18 +453,18 @@ void vvSimpleServer::handleNewVolume()
     if (volume_.get() == 0)
         return;
 
-    float min = volume_->real[0];
-    float max = volume_->real[1];
+    float min = volume_->range(0)[0];
+    float max = volume_->range(0)[1];
 
     if (volume_->tf[0].isEmpty())
     {
         volume_->tf[0].setDefaultAlpha(0, min, max);
-        volume_->tf[0].setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
+        volume_->tf[0].setDefaultColors(volume_->getChan() == 1 ? 0 : 2, min, max);
     }
 
     if (volume_->bpc == 4 && min == 0.0f && max == 1.0f)
     {
-        volume_->setDefaultRealMinMax();
+        volume_->findAndSetRange();
     }
 
     if (renderer_.get())

@@ -36,7 +36,7 @@ class WorkQueue
     // Prevents the io_service from exiting if it has nothing to do
     boost::asio::io_service::work work_;
     // Provides serialised handler execution
-    boost::asio::strand strand_;
+    boost::asio::io_service::strand strand_;
     // The worker thread
     boost::thread thread_;
 

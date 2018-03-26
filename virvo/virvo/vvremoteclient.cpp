@@ -20,6 +20,10 @@
 
 #include "vvremoteclient.h"
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #ifdef DESKVOX_USE_ASIO
 #include "remote/v2/vvremoteclient.cpp"
 #endif

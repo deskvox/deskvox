@@ -25,10 +25,13 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 #include "math/math.h"
 #include "mem/allocator.h"
 #include "vvexport.h"
+
+class vvSocketIO;
 
 //============================================================================
 // Clip object base
@@ -36,16 +39,21 @@
 
 class VIRVOEXPORT vvClipObj
 {
+  friend class ::vvSocketIO; // Serialize/Deserialize
+
 public:
 
   virtual ~vvClipObj() {}
-
-protected:
 
   vvClipObj() {}
   vvClipObj(vvClipObj const&);
   vvClipObj& operator=(vvClipObj const&);
 
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+  }
 };
 
 
@@ -57,16 +65,23 @@ class VIRVOEXPORT vvClipPlane
     : public vvClipObj
     , public virvo::basic_plane<3, float>
 {
+  friend class ::vvSocketIO; // Serialize/Deserialize
+
 public:
 
   static boost::shared_ptr<vvClipPlane> create();
-
-protected:
 
   vvClipPlane() {}
   vvClipPlane(vvClipPlane const&);
   vvClipPlane& operator=(vvClipPlane const&);
 
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & boost::serialization::base_object<vvClipObj>(*this);
+    a & boost::serialization::base_object<virvo::basic_plane<3, float> >(*this);
+  }
 };
 
 
@@ -76,6 +91,8 @@ protected:
 
 class VIRVOEXPORT vvClipSphere : public vvClipObj
 {
+  friend class ::vvSocketIO; // Serialize/Deserialize
+
 public:
 
   static boost::shared_ptr<vvClipSphere> create();
@@ -85,12 +102,18 @@ public:
   virvo::vec3 center;
   float radius;
 
-protected:
-
   vvClipSphere() {}
   vvClipSphere(vvClipSphere const&);
   vvClipSphere& operator=(vvClipSphere const&);
 
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & boost::serialization::base_object<vvClipObj>(*this);
+    a & center;
+    a & radius;
+  }
 };
 
 
@@ -100,6 +123,8 @@ protected:
 
 class VIRVOEXPORT vvClipCone : public vvClipObj
 {
+  friend class ::vvSocketIO; // Serialize/Deserialize
+
 public:
 
   static boost::shared_ptr<vvClipCone> create();
@@ -110,12 +135,21 @@ public:
   virvo::vec3 axis; // unit vector pointing from tip into the cone
   float theta;      // *half* angle between axis and cone surface
 
-protected:
+public:
 
   vvClipCone() {}
   vvClipCone(vvClipCone const&);
   vvClipCone& operator=(vvClipCone const&);
 
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & boost::serialization::base_object<vvClipObj>(*this);
+    a & tip;
+    a & axis;
+    a & theta;
+  }
 };
 
 
@@ -125,6 +159,8 @@ protected:
 
 class VIRVOEXPORT vvClipTriangleList : public vvClipObj
 {
+  friend class ::vvSocketIO; // Serialize/Deserialize
+
 public:
 
   static boost::shared_ptr<vvClipTriangleList> create();
@@ -156,7 +192,7 @@ public:
   const Matrix&   transform() const;
         Matrix&   transform();
 
-protected:
+public:
 
   vvClipTriangleList() {}
   vvClipTriangleList(vvClipTriangleList const&);
@@ -167,6 +203,14 @@ private:
   Triangles triangles_;
   virvo::mat4 transform_;
 
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & boost::serialization::base_object<vvClipObj>(*this);
+    a & triangles_;
+    a & transform_;
+  }
 };
 
 #endif
