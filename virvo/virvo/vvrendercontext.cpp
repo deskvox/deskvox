@@ -50,7 +50,7 @@
 namespace gl = virvo::gl;
 
 
-#ifdef HAVE_X11
+#if defined(HAVE_X11) && defined(USE_X11)
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #endif
