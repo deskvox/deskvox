@@ -90,7 +90,7 @@ void vvCocoaGLContext::init()
                            static_cast<float>(_options.height));
   _win = [[NSWindow alloc]
     initWithContentRect:rect
-    styleMask: NSTitledWindowMask
+    styleMask: NSWindowStyleMaskTitled
     backing: NSBackingStoreBuffered
     defer:NO];
 
