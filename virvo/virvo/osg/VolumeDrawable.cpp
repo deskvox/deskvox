@@ -433,11 +433,6 @@ bool VolumeDrawable::have3DTextures() const
     return false;
 }
 
-bool VolumeDrawable::wasCulled() const
-{
-    return false;
-}
-
 void VolumeDrawable::setTransferFunctions(const std::vector<vvTransFunc> &tf)
 {
     if (vd)

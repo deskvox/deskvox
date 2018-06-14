@@ -89,7 +89,6 @@ public:
     void setBoundariesActive(bool value);
     void setQuality(float quality);
     float getQuality() const;
-    bool wasCulled() const;
     void enableFlatDisplay(bool enable);
 
     void setTransferFunction(const vvTransFunc &tf, int chan = 0);
