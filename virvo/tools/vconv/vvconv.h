@@ -40,6 +40,7 @@ class vvConv
     vvVolDesc* vd;      ///< description of processed volume
     char* srcFile;      ///< source file name
     char* dstFile;      ///< destination file name
+    int   entry;        ///< number of entry to process (only when reading DICOM files with GDCM)
     int   files;        ///< number of files for slice reading or transient data, 1 is default
     int   increment;    ///< file name increment (default: 1)
     bool  showHelp;     ///< display help information

@@ -46,6 +46,7 @@ vvConv::vvConv()
     : vd(NULL)
     , srcFile(NULL)
     , dstFile(NULL)
+    , entry(-1)
     , files(1)
     , increment(1)
     , showHelp(false)
@@ -1196,6 +1197,21 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       }
     }
 
+    else if (vvToolshed::strCompare(argv[arg], "-entry")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Number of entry missing." << endl;
+        return false;
+      }
+      entry = atoi(argv[arg]);
+      if (entry<0)
+      {
+        cerr << "Selecting entry with largest number of slices (default)." << endl;
+        return true;
+      }
+    }
+
     else if (vvToolshed::strCompare(argv[arg], "-files")==0)
     {
       if ((++arg)>=argc) 
@@ -2183,6 +2199,9 @@ void vvConv::displayHelpInfo()
   stream << " The line starts at position (start_x|start_y|start_z) and extends to position" << endl;
   stream << " (end_x|end_y|end_z) The scalar value of the voxels on the line will be <value>." << endl;
   stream << endl;
+  stream << "-entry <num>" << endl;
+  stream << " Read entry <num> from a DICOMDIR file" << endl;
+  stream << endl;
   stream << "-extractchannel <r> <g> <b>" << endl;
   stream << " Extract a channel from an RGB data set and make it the 4th channel." << endl;
   stream << " r,g,b indicate the color component weights that characterize the channel." << endl;
@@ -2422,6 +2441,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-dist <dx> <dy> <dz>               set voxel sampling distance" << endl;
     cerr << "-drawbox <a> <b> <c> <d> <e> <f> <v> draw a 3D box of voxels" << endl;
     cerr << "-drawline <a> <b> <c> <d> <e> <f> <v> draw a 3D line of voxels" << endl;
+    cerr << "-entry <n>                         extract the <n>th sequence from DICOM" << endl;
     cerr << "-extractchannel <r> <g> <b>        extract 4th channel from RGB" << endl;
     cerr << "-files <num>                       merge multiple files" << endl;
     cerr << "-fillrange                         expand data range" << endl;
@@ -2493,6 +2513,7 @@ int vvConv::run(int argc, char** argv)
   {
     cerr << "Reading volume file: " << srcFile << endl;
   	vvVolDesc* tmpVD = new vvVolDesc(srcFile);
+    tmpVD->setEntry(entry);
     vvFileIO* fio = new vvFileIO();
     error = 0;
     if (fio->loadVolumeData(tmpVD) != vvFileIO::OK)
@@ -2576,6 +2597,7 @@ int vvConv::run(int argc, char** argv)
   {
     cerr << "Reading volume file: " << srcFile << endl;
   	vvVolDesc* tmpVD = new vvVolDesc(srcFile);
+    tmpVD->setEntry(entry);
     vvFileIO* fio = new vvFileIO();
     error = 0;
     if (fio->loadVolumeData(tmpVD) != vvFileIO::OK)
@@ -2607,6 +2629,7 @@ int vvConv::run(int argc, char** argv)
     // Load icon from volume file:
     cerr << "Reading volume file: " << srcFile << endl;
   	vvVolDesc* tmpVD = new vvVolDesc(srcFile);
+    tmpVD->setEntry(entry);
     vvFileIO* fio = new vvFileIO();
     if (fio->loadVolumeData(tmpVD, vvFileIO::ICON) != vvFileIO::OK)
     {
@@ -2663,6 +2686,7 @@ int vvConv::run(int argc, char** argv)
  
     cerr << "Reading header information from file: " << argv[1] << endl;
   	vd = new vvVolDesc(srcFile);
+    vd->setEntry(entry);
     vvFileIO* fio = new vvFileIO();
     error = 0;
     if ((et=fio->loadVolumeData(vd, vvFileIO::HEADER)) != vvFileIO::OK)

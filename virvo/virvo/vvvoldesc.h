@@ -250,6 +250,8 @@ public:
     uint8_t* getRaw(size_t) const;
     const char* getFilename() const;
     void   setFilename(const char*);
+    void   setEntry(int entry); //< entry to read from DICOMDIR (<0: entry with largest number of slices)
+    int    getEntry() const;
     void   setCurrentFrame(size_t);
     size_t getCurrentFrame() const;
     void   setIndexChannel(int ic);
@@ -366,6 +368,7 @@ public:
 
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
+    int entry;                                    ///< number of entry to read from a DICOMDIR file (<0: entry with largest number of slices)
     size_t currentFrame;                          ///< current animation frame
     int indexChannel;                             ///< assign one designated channel to contain an index volume (default: none, indexChannel == -1)
     mutable vvSLList<uint8_t*> raw;               ///< pointer list to raw volume data - mutable because of Java style iterators

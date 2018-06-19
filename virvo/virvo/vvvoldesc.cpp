@@ -369,6 +369,7 @@ void vvVolDesc::initialize()
   currentFrame = 0;
   indexChannel = -1;
   filename = NULL;
+  entry = -1;
   _mask = NULL;
   _radius = 0;
   if (tf.empty())
@@ -1252,6 +1253,16 @@ void vvVolDesc::setFilename(const char* fn)
     strcpy(filename, fn);
   }
   return;
+}
+
+void vvVolDesc::setEntry(int e)
+{
+    entry = e;
+}
+
+int vvVolDesc::getEntry() const
+{
+    return entry;
 }
 
 //----------------------------------------------------------------------------

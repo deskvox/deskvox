@@ -3910,7 +3910,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
     int maxItem = -1; 
     int numSeq = 0;
     int readSeq = -1;
-    int wantSeq = -1;
+    int wantSeq = vd->getEntry();
 
     ConstIterator it = ds.GetDES().begin();
     ConstIterator maxDataSet = ds.GetDES().end();
