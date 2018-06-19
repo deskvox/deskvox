@@ -826,7 +826,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
         return DATA_ERROR;
       }
       size_t outsize;
-      vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, c_encoded, encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
+      vvToolshed::ErrorType err = vvToolshed::decodeRLE(vd->iconData, c_encoded, c_encodedSize, vvVolDesc::ICON_BPP, iconBytes, &outsize);
       if (err != vvToolshed::VV_OK)
       {
         cerr << "Error: Decoding exceeds icon size." << endl;
