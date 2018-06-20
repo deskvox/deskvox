@@ -204,7 +204,7 @@ if(COVISE_BUILD)
 
   # Copy shaders
   install(DIRECTORY ${VIRVO_SHADER_DIR}/
-    DESTINATION shader
+    DESTINATION share/covise/shaders
     FILES_MATCHING
       PATTERN "*.fsh"
       PATTERN "*.gsh"
