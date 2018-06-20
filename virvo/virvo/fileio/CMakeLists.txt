@@ -33,6 +33,7 @@ set(VIRVO_FILEIO_HEADERS
     ${VIRVO_SOURCE_DIR}/vvtransfunc.h
     ${VIRVO_SOURCE_DIR}/vvvoldesc.h
 
+    gdcm.h
     feature.h
     nifti.h
     nrrd.h
@@ -52,6 +53,7 @@ set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/vvtransfunc.cpp
     ${VIRVO_SOURCE_DIR}/vvvoldesc.cpp
 
+    gdcm.cpp
     feature.cpp
     nifti.cpp
     nrrd.cpp
