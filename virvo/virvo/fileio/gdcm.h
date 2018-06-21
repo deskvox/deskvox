@@ -40,7 +40,7 @@ struct dicom_meta
     float intercept = 0.0;
     int sequence = -1;
     int slice = -1;
-    float spos = 0.0;
+    double spos = 0.0;
 };
 
 bool can_load(const vvVolDesc *vd);
