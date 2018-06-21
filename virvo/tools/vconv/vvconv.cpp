@@ -946,11 +946,10 @@ bool vvConv::writeVolumeData()
 
   if (leicaRename)
   {
-    char* temp = new char[strlen(dstFile) - 3];
-    strncpy(temp, dstFile, strlen(dstFile) - 4);
-    temp[strlen(dstFile) - 4] = '\0';
-
-    string str = temp;
+    size_t len = strlen(dstFile);
+    if (len >= 4)
+        len -= 4;
+    string str(dstFile, len);
 
     assert(lineAverage >= 0 && lineAverage <= 16);
     str += "-L";
