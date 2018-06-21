@@ -553,6 +553,7 @@ bool vvConv::readVolumeData()
     // Load current file:
     cerr << "Loading file " << (file+1) << ": " << filename << endl;
     vvVolDesc* newVD = new vvVolDesc(filename);
+    newVD->setEntry(entry);
     if (loadRaw)
     {
       error = fio->loadRawFile(newVD, rawWidth, rawHeight, rawSlices, rawBPC, rawCh, rawSkip);
@@ -859,6 +860,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     vvFileIO* fio;
     fio = new vvFileIO();
     blendVD = new vvVolDesc(blendFile);
+    blendVD->setEntry(entry);
     fio->loadVolumeData(blendVD);
     cerr << "Blending data: ";
     v->blend(blendVD, blendType, true);    
@@ -868,6 +870,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   if (mask)
   {
     vvVolDesc maskVD(maskFile);
+    maskVD.setEntry(entry);
     vvFileIO fio;
     fio.loadVolumeData(&maskVD);
     cerr << "Applying mask: ";
@@ -909,6 +912,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   {
     cerr << "Adding channel(s) from file: " << addFile << endl;
     vvVolDesc* addVD = new vvVolDesc(addFile);
+    addVD->setEntry(entry);
     vvFileIO* fio = new vvFileIO();
     if (fio->loadVolumeData(addVD) != vvFileIO::OK)
     {

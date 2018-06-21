@@ -276,6 +276,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(7)");
   initialize();
   setFilename(v->filename);
+  setEntry(v->getEntry());
   for (size_t i=0; i<3; ++i)
   {
     vox[i]  = v->vox[i];
