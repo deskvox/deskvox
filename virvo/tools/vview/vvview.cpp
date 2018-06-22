@@ -829,8 +829,8 @@ void vvView::keyboardCallback(unsigned char key, int, int)
       ds->viewMenuCallback(5);
     }
     break;
-  case '<': ds->transferMenuCallback(12);  break;
-  case '>': ds->transferMenuCallback(13);  break;
+  case '<': ds->transferMenuCallback(13);  break;
+  case '>': ds->transferMenuCallback(14);  break;
   case '[': ds->roiMenuCallback(98); break;
   case ']': ds->roiMenuCallback(99); break;
   case '{': ds->optionsMenuCallback(11); break;
