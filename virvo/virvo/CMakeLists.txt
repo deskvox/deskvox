@@ -397,7 +397,7 @@ else()
   endif()
 endif()
 
-if(GDCM_FOUND)
+if(DESKVOX_USE_GDCM AND GDCM_FOUND)
    deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon)
 endif()
 
