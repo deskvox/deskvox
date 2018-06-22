@@ -3828,8 +3828,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   try
   {
     meta = virvo::gdcm::load(vd);
-
-    return OK;
   }
   catch (std::exception& e)
   {
@@ -3920,9 +3918,8 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   if (format == PF_R16I)
   {
     vd->mapping(0) = vec2(SHRT_MIN * slope + inter, SHRT_MAX * slope + inter);
+    VV_LOG(1) << "int16 voxels: value range is " << vd->mapping(0).x << "-" << vd->mapping(0).y;
 
-    int minval = 10000000;
-    int maxval = -11111111;
     // Remap data
     for (ssize_t z = 0; z < vd->vox[2]; ++z)
     {
@@ -3932,11 +3929,8 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
         {
           uint8_t* bytes = (*vd)(x, y, z); 
           int32_t voxel = (int)*reinterpret_cast<int16_t*>(bytes);
-          voxel -= SHRT_MIN;
-          *reinterpret_cast<uint16_t*>(bytes) = (int16_t)voxel;
-
-          if (voxel > maxval) maxval = voxel;
-          if (voxel < minval) minval = voxel;
+          voxel += SHRT_MIN;
+          *reinterpret_cast<uint16_t*>(bytes) = voxel;
         }
       }
     }
@@ -3944,6 +3938,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   else if (format == PF_R32I)
   {
     vd->mapping(0) = vec2(INT_MIN * slope + inter, INT_MAX * slope + inter);
+    VV_LOG(1) << "int32 voxels mapped to float: value range is " << vd->mapping(0).x << "-" << vd->mapping(0).y;
 
     // Remap data to float
     for (ssize_t z = 0; z < vd->vox[2]; ++z)
@@ -3963,6 +3958,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   else if (format == PF_R32UI)
   {
     vd->mapping(0) = vec2(inter, UINT_MAX * slope + inter);
+    VV_LOG(1) << "uint32 voxels mapped to float: value range is " << vd->mapping(0).x << "-" << vd->mapping(0).y;
 
     // Remap data to float
     for (ssize_t z = 0; z < vd->vox[2]; ++z)
@@ -3983,6 +3979,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   {
     vd->mapping(0) *= slope;
     vd->mapping(0) += inter;
+    VV_LOG(1) << "value range is " << vd->mapping(0).x << "-" << vd->mapping(0).y;
   }
 
 

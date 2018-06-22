@@ -465,10 +465,21 @@ void load_dicom_image(vvVolDesc *vd, virvo::gdcm::dicom_meta &meta, bool verbose
   meta.slope = image.GetSlope();
   meta.intercept = image.GetIntercept();
 
-  meta.format = virvo::PF_R8;
+  if (pf == gdcm::PixelFormat::INT8)
+  {
+      meta.format = virvo::PF_R8;
+  }
+  else if (pf == gdcm::PixelFormat::UINT8)
+  {
+      meta.format = virvo::PF_R8;
+  }
   if (pf == gdcm::PixelFormat::INT16)
   {
     meta.format = virvo::PF_R16I;
+  }
+  else if (pf == gdcm::PixelFormat::UINT16)
+  {
+    meta.format = virvo::PF_R16UI;
   }
   else if (pf == gdcm::PixelFormat::INT32)
   {
@@ -477,6 +488,10 @@ void load_dicom_image(vvVolDesc *vd, virvo::gdcm::dicom_meta &meta, bool verbose
   else if (pf == gdcm::PixelFormat::UINT32)
   {
     meta.format = virvo::PF_R32UI;
+  }
+  else
+  {
+      VV_LOG(0) << "unsupported pixel format";
   }
 }
 
