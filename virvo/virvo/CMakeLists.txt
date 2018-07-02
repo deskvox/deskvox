@@ -388,6 +388,7 @@ endif(APPLE)
 
 if(WIN32)
   deskvox_link_libraries(ws2_32)
+  deskvox_link_libraries(bcrypt)
   if(MINGW)
     deskvox_link_libraries(mswsock)
   endif()
