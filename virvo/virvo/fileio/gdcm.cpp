@@ -28,6 +28,9 @@
 #include <unordered_map>
 #include <iostream>
 #include <memory>
+#include <functional>
+#include <algorithm>
+#include <cctype>
 
 namespace {
 
