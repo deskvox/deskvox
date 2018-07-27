@@ -9,9 +9,13 @@ elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   set(DESKVOX_COMPILER_IS_GCC_COMPATIBLE ON)
 endif()
 
-#if(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
-#    add_definitions(-std=c++0x)
-#endif()
+if (CMAKE_VERSION VERSION_LESS "3.1")
+  if (DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  endif ()
+else ()
+  set (CMAKE_CXX_STANDARD 11)
+endif ()
 
 
 #---------------------------------------------------------------------------------------------------
