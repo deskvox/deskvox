@@ -55,6 +55,7 @@
 #include "gl/util.h"
 #include "vvcudarendertarget.h"
 #include "vvraycaster.h"
+#include "vvspaceskip.h"
 #include "vvtextureutil.h"
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
@@ -882,6 +883,7 @@ struct vvRayCaster::Impl
 #else
     Impl()
         : sched(vvToolshed::getNumProcessors())
+        , space_skip_tree(virvo::SkipTree::SVTKdTree)
     {
         char* num_threads = getenv("VV_NUM_THREADS");
         if (num_threads != nullptr)
@@ -901,6 +903,9 @@ struct vvRayCaster::Impl
     std::vector<volume32_type>      volumes32;
     std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
+
+    bool                            space_skipping = false;
+    virvo::SkipTree                 space_skip_tree;
 
     // Internal storage format for textures
     virvo::PixelFormat              texture_format = virvo::PF_R8;
@@ -927,6 +932,11 @@ void vvRayCaster::Impl::updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer
     {
         updateVolumeTexturesImpl(vd, renderer, volumes32);
     }
+
+    if (space_skipping)
+    {
+        space_skip_tree.updateVolume(*vd);
+    }
 }
 
 void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*renderer*/)
@@ -941,6 +951,16 @@ void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*rend
         transfuncs[i].reset(tf.data());
         transfuncs[i].set_address_mode(Clamp);
         transfuncs[i].set_filter_mode(Nearest);
+
+        if (space_skipping)
+        {
+            space_skip_tree.updateTransfunc(
+                    reinterpret_cast<const uint8_t*>(tf.data()),
+                    256,
+                    1,
+                    1,
+                    virvo::PF_RGBA32F);
+        }
     }
 }
 
@@ -1319,6 +1339,8 @@ void vvRayCaster::renderVolumeGL()
     };
 #endif
 
+//  virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
+//  impl_->space_skip_tree.getSortedBricks(eye).size();
 
     // assemble volume kernel params and call kernel
     impl_->params.bbox                      = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );

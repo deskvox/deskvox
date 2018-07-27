@@ -20,6 +20,7 @@
 #cmakedefine01 VV_HAVE_PTHREADS
 #cmakedefine01 VV_HAVE_SNAPPY
 #cmakedefine01 VV_HAVE_TEEM
+#cmakedefine01 VV_HAVE_VISIONARAY
 #cmakedefine01 VV_HAVE_VOLPACK
 #cmakedefine01 VV_HAVE_X11
 
@@ -81,6 +82,9 @@
 #endif
 #if VV_HAVE_TEEM
 #define HAVE_TEEM
+#endif
+#if VV_HAVE_VISIONARAY
+#define HAVE_VISIONARAY
 #endif
 #if VV_HAVE_VOLPACK
 #define HAVE_VOLPACK
