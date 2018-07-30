@@ -6,6 +6,7 @@
 #include <virvo/vvmacros.h>
 
 #include <cmath>
+#include <type_traits>
 
 #undef min
 #undef max
@@ -33,6 +34,27 @@ template < typename T >
 VV_FORCE_INLINE T max(T const& x, T const& y)
 {
     return x < y ? y : x;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Round (a) up to the nearest multiple of (b), then divide by (b)
+//
+
+template <typename T>
+inline typename std::enable_if<std::is_integral<T>::value, T>::type div_up(T a, T b)
+{
+    return (a + b - 1) / b;
+}
+
+//-------------------------------------------------------------------------------------------------
+// Round (a) up to the nearest multiple of (b)
+//
+
+template <typename T>
+inline typename std::enable_if<std::is_integral<T>::value, T>::type round_up(T a, T b)
+{
+    return div_up(a, b) * b;
 }
 
 

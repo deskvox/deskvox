@@ -39,6 +39,15 @@ public:
 
     vec_type center() const;
     vec_type size() const;
+    vec_type safe_size() const;
+
+    void invalidate();
+
+    bool invalid() const;
+    bool valid() const;
+
+    bool empty() const;
+
 
     bool contains(vec_type const& v) const;
 
