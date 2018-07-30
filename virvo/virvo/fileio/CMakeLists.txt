@@ -1,6 +1,7 @@
 find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
 find_package(Nifti)
 find_package(Teem)
+find_package(cfitsio)
 
 if(DESKVOX_USE_GDCM)
     find_package(GDCM)
@@ -19,6 +20,7 @@ deskvox_use_package(GDCM)
 endif()
 deskvox_use_package(Nifti)
 deskvox_use_package(Teem)
+deskvox_use_package(cfitsio)
 
 set(VIRVO_FILEIO_HEADERS
     ${VIRVO_SOURCE_DIR}/private/vvlog.h
@@ -37,8 +39,8 @@ set(VIRVO_FILEIO_HEADERS
     feature.h
     nifti.h
     nrrd.h
+    fits.h
 )
-
 
 set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/private/vvlog.cpp
@@ -57,6 +59,7 @@ set(VIRVO_FILEIO_SOURCES
     feature.cpp
     nifti.cpp
     nrrd.cpp
+    fits.cpp
 )
 
 if(DESKVOX_USE_CUDA)
