@@ -55,6 +55,10 @@
 #include "fileio/nifti.h"
 #endif
 
+#ifdef VV_HAVE_CFITSIO
+#include "fileio/fits.h"
+#endif
+
 #if VV_HAVE_TEEM
 #include "fileio/nrrd.h"
 #endif
@@ -85,7 +89,7 @@ using namespace virvo;
 enum Format
 {
     WL, RVF, XVF, AVF, XB7, ASC, TGA, TIFF, VTK, VHDCT, VHDMRI, RGB, PGM,
-    VHD, DAT, DCOM, VMR, VTC, NII, NRRD, XIMG, IEEE, HDR, VOLB, DDS, GKENT,
+    VHD, DAT, DCOM, VMR, VTC, NII, FITS, NRRD,  XIMG, IEEE, HDR, VOLB, DDS, GKENT,
     SYNTH, Incomplete, Unknown
 };
 
@@ -120,6 +124,7 @@ static std::map<std::string, Format> supported_formats()
     result.insert(std::make_pair("vtc",     VTC));
     result.insert(std::make_pair("nii",     NII));
     result.insert(std::make_pair("nii.gz",  NII));
+    result.insert(std::make_pair("fits",    FITS));
     result.insert(std::make_pair("nrd",     NRRD));
     result.insert(std::make_pair("nrrd",    NRRD));
     result.insert(std::make_pair("ximg",    XIMG));
@@ -4272,7 +4277,28 @@ vvFileIO::ErrorType vvFileIO::saveNiftiFile(const vvVolDesc* vd)
 #endif
   return FILE_ERROR;
 }
- 
+
+//----------------------------------------------------------------------------
+/** Loader for voxel file in Fits format.
+ */
+vvFileIO::ErrorType vvFileIO::loadFitsFile(vvVolDesc *vd)
+{
+#if VV_HAVE_CFITSIO
+    try
+    {
+        virvo::fits::load(vd);
+        return OK;
+    }
+    catch (std::exception& e)
+    {
+        VV_LOG(0) << e.what();
+    }
+#else
+    VV_UNUSED(vd);
+#endif
+    return FILE_ERROR;
+}
+
 //----------------------------------------------------------------------------
 /** Loader for voxel file in nrrd (teem volume file) format.
  */
@@ -5513,6 +5539,10 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
                                                   // Nifti1 file
   else if (format == NII)
     err = loadNiftiFile(vd);
+
+                                                  // FITS file = Flexible Image Transport System
+  else if (format == FITS)
+    err = loadFitsFile(vd);
 
                                                   // NRRD file = Teem nrrd volume file
   else if (format == NRRD)

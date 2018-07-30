@@ -5,6 +5,7 @@
 
 #cmakedefine01 VV_HAVE_BONJOUR
 #cmakedefine01 VV_HAVE_BOOST
+#cmakedefine01 VV_HAVE_CFITSIO
 #cmakedefine01 VV_HAVE_CG
 #cmakedefine01 VV_HAVE_CUDA
 #cmakedefine01 VV_HAVE_FFMPEG
