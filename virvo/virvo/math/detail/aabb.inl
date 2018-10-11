@@ -93,6 +93,12 @@ inline bool basic_aabb< T >::contains(typename basic_aabb< T >::vec_type const& 
         && v.z >= min.z && v.z <= max.z;
 }
 
+template <typename T>
+inline bool basic_aabb<T>::contains(basic_aabb<T> const& b) const
+{
+    return contains(b.min) && contains(b.max);
+}
+
 
 //--------------------------------------------------------------------------------------------------
 // Geometric functions

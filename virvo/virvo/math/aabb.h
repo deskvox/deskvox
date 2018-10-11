@@ -48,8 +48,8 @@ public:
 
     bool empty() const;
 
-
     bool contains(vec_type const& v) const;
+    bool contains(basic_aabb const& b) const;
 
 };
 
