@@ -36,6 +36,7 @@
 #include <visionaray/math/math.h>
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
+#include <visionaray/blending.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
 #include <visionaray/pixel_format.h>
@@ -597,6 +598,7 @@ struct volume_kernel_params
     using transfunc_ref  = typename transfunc_type::ref_type;
 
     clip_box                    bbox;
+    clip_box                    roi;
     float                       delta;
     int                         num_channels;
     transfunc_ref const*        transfuncs;
@@ -650,7 +652,7 @@ struct volume_kernel
         result_record<S> result;
         result.color = C(0.0);
 
-        auto hit_rec = intersect(ray, params.bbox);
+        auto hit_rec = intersect(ray, params.roi);
         auto tmax = hit_rec.tfar;
 
         // convert depth buffer(x,y) to "t" coordinates
@@ -1056,12 +1058,6 @@ void vvRayCaster::renderVolumeGL()
         static_cast<virvo_render_target::depth_type*>(rt->deviceDepth())
         );
 
-    auto sparams = make_sched_params(
-        view_matrix,
-        proj_matrix,
-        virvo_rt
-        );
-
     // determine ray integration step size (aka delta)
     int axis = 0;
     if (vd->getSize()[1] / vd->vox[1] < vd->getSize()[axis] / vd->vox[axis])
@@ -1339,42 +1335,72 @@ void vvRayCaster::renderVolumeGL()
     };
 #endif
 
-//  virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
-//  impl_->space_skip_tree.getSortedBricks(eye).size();
+    std::vector<virvo::aabb> boxes;
 
-    // assemble volume kernel params and call kernel
-    impl_->params.bbox                      = clip_box( vec3(bbox.min.data()), vec3(bbox.max.data()) );
-    impl_->params.delta                     = delta;
-    impl_->params.num_channels              = vd->getChan();
-    impl_->params.transfuncs                = transfuncs_data();
-    impl_->params.ranges                    = ranges_data();
-    impl_->params.depth_buffer              = impl_->depth_buffer.data();
-    impl_->params.depth_format              = depth_format;
-    impl_->params.mode                      = Impl::params_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
-    impl_->params.depth_test                = depth_test;
-    impl_->params.opacity_correction        = getParameter(VV_OPCORR);
-    impl_->params.early_ray_termination     = getParameter(VV_TERMINATEEARLY);
-    impl_->params.local_shading             = getParameter(VV_LIGHTING);
-    impl_->params.camera_matrix_inv         = inverse(proj_matrix * view_matrix);
-    impl_->params.viewport                  = viewport;
-    impl_->params.light                     = light;
-    impl_->params.clip_objects.begin        = clip_objects_begin();
-    impl_->params.clip_objects.end          = clip_objects_end();
+    if (impl_->space_skipping)
+    {
+        virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
+        bool frontToBack = false;
+        auto bricks = impl_->space_skip_tree.getSortedBricks(eye, frontToBack);
 
-    if (impl_->texture_format == virvo::PF_R8)
-    {
-        volume_kernel<volume8_type> kernel(impl_->params, volumes8_data());
-        impl_->sched.frame(kernel, sparams);
+        boxes.insert(boxes.end(), bricks.begin(), bricks.end());
     }
-    else if (impl_->texture_format == virvo::PF_R16UI)
+    else
     {
-        volume_kernel<volume16_type> kernel(impl_->params, volumes16_data());
-        impl_->sched.frame(kernel, sparams);
+        boxes.emplace_back(virvo::vec3(bbox.min.data()), virvo::vec3(bbox.max.data()));
     }
-    else if (impl_->texture_format == virvo::PF_R32F)
+
+    for (unsigned i = 0; i < boxes.size(); ++i)
     {
-        volume_kernel<volume32_type> kernel(impl_->params, volumes32_data());
-        impl_->sched.frame(kernel, sparams);
+        const virvo::aabb& b = boxes[i];
+
+        // Assemble volume kernel params and call kernel
+        impl_->params.bbox                      = clip_box(vec3(bbox.min.data()), vec3(bbox.max.data()));
+        impl_->params.roi                       = clip_box(vec3(b.min.data()), vec3(b.max.data()));
+        impl_->params.delta                     = delta;
+        impl_->params.num_channels              = vd->getChan();
+        impl_->params.transfuncs                = transfuncs_data();
+        impl_->params.ranges                    = ranges_data();
+        impl_->params.depth_buffer              = impl_->depth_buffer.data();
+        impl_->params.depth_format              = depth_format;
+        impl_->params.mode                      = Impl::params_type::projection_mode(getParameter(VV_MIP_MODE).asInt());
+        impl_->params.depth_test                = depth_test;
+        impl_->params.opacity_correction        = getParameter(VV_OPCORR);
+        impl_->params.early_ray_termination     = getParameter(VV_TERMINATEEARLY);
+        impl_->params.local_shading             = getParameter(VV_LIGHTING);
+        impl_->params.camera_matrix_inv         = inverse(proj_matrix * view_matrix);
+        impl_->params.viewport                  = viewport;
+        impl_->params.light                     = light;
+        impl_->params.clip_objects.begin        = clip_objects_begin();
+        impl_->params.clip_objects.end          = clip_objects_end();
+
+        // Composite bricks in back-to-front order
+        pixel_sampler::basic_uniform_blend_type<blending::scale_factor> blend_params;
+        blend_params.sfactor = blending::One;
+        blend_params.dfactor = blending::OneMinusSrcAlpha;
+
+        auto sparams = make_sched_params(
+            blend_params,
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        if (impl_->texture_format == virvo::PF_R8)
+        {
+            volume_kernel<volume8_type> kernel(impl_->params, volumes8_data());
+            impl_->sched.frame(kernel, sparams);
+        }
+        else if (impl_->texture_format == virvo::PF_R16UI)
+        {
+            volume_kernel<volume16_type> kernel(impl_->params, volumes16_data());
+            impl_->sched.frame(kernel, sparams);
+        }
+        else if (impl_->texture_format == virvo::PF_R32F)
+        {
+            volume_kernel<volume32_type> kernel(impl_->params, volumes32_data());
+            impl_->sched.frame(kernel, sparams);
+        }
     }
 
     if (depth_test)
