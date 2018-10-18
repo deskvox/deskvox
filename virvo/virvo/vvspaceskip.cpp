@@ -22,6 +22,7 @@
 
 #undef MATH_NAMESPACE
 
+#include <visionaray/detail/parallel_for.h> // detail!
 #include <visionaray/math/aabb.h>
 #include <visionaray/math/forward.h>
 #include <visionaray/math/matrix.h>
@@ -340,12 +341,17 @@ struct PartialSVT
 {
   typedef SVT<uint16_t> svt_t;
 
+  PartialSVT()
+    : pool(std::thread::hardware_concurrency())
+  {
+  }
+
   void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
 
   template <typename Tex>
-    void build(Tex transfunc);
+  void build(Tex transfunc);
 
-  aabbi boundary(aabbi bbox) const;
+  aabbi boundary(aabbi bbox);
 
   uint64_t get_count(aabbi bounds) const;
 
@@ -353,6 +359,8 @@ struct PartialSVT
 
   vec3i num_svts;
   std::vector<svt_t> svts;
+
+  thread_pool pool;
 };
 
 void PartialSVT::reset(vvVolDesc const& vd, aabbi bbox, int channel)
@@ -394,14 +402,13 @@ void PartialSVT::reset(vvVolDesc const& vd, aabbi bbox, int channel)
 template <typename Tex>
 void PartialSVT::build(Tex transfunc)
 {
-    #pragma omp parallel for
-    for (size_t i = 0; i < svts.size(); ++i)
+    parallel_for(pool, range1d<size_t>(0, svts.size()), [this, transfunc](size_t i)
     {
         svts[i].build(transfunc);
-    }
+    });
 }
 
-aabbi PartialSVT::boundary(aabbi bbox) const
+aabbi PartialSVT::boundary(aabbi bbox)
 {
   aabbi bounds = bbox;
 
@@ -412,39 +419,37 @@ aabbi PartialSVT::boundary(aabbi bbox) const
   vec3i max_bpos = bounds.max - max_brick * bricksize;
 
   vec3i num_bricks = max_brick - min_brick + vec3i(1);
-  std::vector<aabbi> brick_boundaries(num_bricks.x * num_bricks.y * num_bricks.z);
+  int n = num_bricks.x * num_bricks.y * num_bricks.z;
+  std::vector<aabbi> brick_boundaries(n);
 
-  #pragma omp parallel for collapse(3)
-  for (int bz = min_brick.z; bz <= max_brick.z; ++bz)
+  parallel_for(pool, range1d<int>(0, n), [&](int b)
   {
-    for (int by = min_brick.y; by <= max_brick.y; ++by)
-    {
-      for (int bx = min_brick.x; bx <= max_brick.x; ++bx)
-      {
-        int minz = bz == min_brick.z ? min_bpos.z : 0;
-        int maxz = bz == max_brick.z ? max_bpos.z : bricksize.z;
+    int bz = min_brick.z + b / (num_bricks.x * num_bricks.y);
+    int by = min_brick.y + (b / num_bricks.x) % num_bricks.y;
+    int bx = min_brick.x + b % num_bricks.x;//std::cout << bx << ' ' << by << ' ' << bz << '\n';
 
-        int miny = by == min_brick.y ? min_bpos.y : 0;
-        int maxy = by == max_brick.y ? max_bpos.y : bricksize.y;
+    int minz = bz == min_brick.z ? min_bpos.z : 0;
+    int maxz = bz == max_brick.z ? max_bpos.z : bricksize.z;
 
-        int minx = bx == min_brick.x ? min_bpos.x : 0;
-        int maxx = bx == max_brick.x ? max_bpos.x : bricksize.x;
+    int miny = by == min_brick.y ? min_bpos.y : 0;
+    int maxy = by == max_brick.y ? max_bpos.y : bricksize.y;
 
-        int i = (bz - min_brick.z) * num_bricks.x * num_bricks.y + (by - min_brick.y) * num_bricks.x + (bx - min_brick.x);
+    int minx = bx == min_brick.x ? min_bpos.x : 0;
+    int maxx = bx == max_brick.x ? max_bpos.x : bricksize.x;
 
-        auto& svt = svts[bz * num_svts.x * num_svts.y + by * num_svts.x + bx];
-        aabbi test(vec3i(minx, miny, minz), vec3i(maxx, maxy, maxz));
+    int i = (bz - min_brick.z) * num_bricks.x * num_bricks.y + (by - min_brick.y) * num_bricks.x + (bx - min_brick.x);
 
-        if (svt.get_count(test) != 0)
-          brick_boundaries[i] = svt.boundary(test);
-        else
-          brick_boundaries[i] = aabbi(vec3i(0), vec3i(0));
+    auto& svt = svts[bz * num_svts.x * num_svts.y + by * num_svts.x + bx];
+    aabbi test(vec3i(minx, miny, minz), vec3i(maxx, maxy, maxz));
 
-        brick_boundaries[i].min += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
-        brick_boundaries[i].max += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
-      }
-    }
-  }
+    if (svt.get_count(test) != 0)
+      brick_boundaries[i] = svt.boundary(test);
+    else
+      brick_boundaries[i] = aabbi(vec3i(0), vec3i(0));
+
+    brick_boundaries[i].min += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
+    brick_boundaries[i].max += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
+  });
 
   bounds.invalidate();
 
