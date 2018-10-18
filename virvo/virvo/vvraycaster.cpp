@@ -877,24 +877,23 @@ struct volume_kernel
 
 struct vvRayCaster::Impl
 {
+    Impl()
 #if defined(VV_ARCH_CUDA)
-    Impl()
         : sched(8, 8)
-    {
-    }
 #else
-    Impl()
         : sched(vvToolshed::getNumProcessors())
+#endif
         , space_skip_tree(virvo::SkipTree::SVTKdTree)
     {
+#if !defined(VV_ARCH_CUDA)
         char* num_threads = getenv("VV_NUM_THREADS");
         if (num_threads != nullptr)
         {
             std::string str(num_threads);
             sched.reset(std::stoi(str));
         }
-    }
 #endif
+    }
 
     using params_type = volume_kernel_params;
 
