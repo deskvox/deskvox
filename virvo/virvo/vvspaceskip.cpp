@@ -529,33 +529,33 @@ struct KdTree
   };
 
   template <typename Func>
-    void traverse(NodePtr const& n, vec3 eye, Func f) const
+  void traverse(NodePtr const& n, vec3 eye, Func f, bool frontToBack = true) const
+  {
+    if (n != nullptr)
     {
-      if (n != nullptr)
+      f(n);
+
+      if (n->axis >= 0)
       {
-        f(n);
+        int spi = n->splitpos;
+        if (n->axis == 1 || n->axis == 2)
+          spi = vox[n->axis] - spi - 1;
+        float splitpos = (spi - vox[n->axis]/2.f) * dist[n->axis] * scale;
 
-        if (n->axis >= 0)
+        // TODO: puh..
+        if (n->axis == 0 && eye[n->axis] < splitpos || n->axis == 1 && eye[n->axis] >= splitpos || n->axis == 2 && eye[n->axis] >= splitpos)
         {
-          int spi = n->splitpos;
-          if (n->axis == 1 || n->axis == 2)
-            spi = vox[n->axis] - spi - 1;
-          float splitpos = (spi - vox[n->axis]/2.f) * dist[n->axis] * scale;
-
-          // TODO: puh..
-          if (n->axis == 0 && eye[n->axis] < splitpos || n->axis == 1 && eye[n->axis] >= splitpos || n->axis == 2 && eye[n->axis] >= splitpos)
-          {
-            traverse(n->left, eye, f);
-            traverse(n->right, eye, f);
-          }
-          else
-          {
-            traverse(n->right, eye, f);
-            traverse(n->left, eye, f);
-          }
+          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
+          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+        }
+        else
+        {
+          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
         }
       }
     }
+  }
 
   PartialSVT psvt;
   //SVT<uint64_t> psvt;
@@ -573,7 +573,7 @@ struct KdTree
 
   void node_splitting(NodePtr& n);
 
-  std::vector<aabb> get_leaf_nodes(vec3 eye) const;
+  std::vector<aabb> get_leaf_nodes(vec3 eye, bool frontToBack) const;
 
   // Need OpenGL context!
   void renderGL() const;
@@ -697,7 +697,7 @@ void KdTree::node_splitting(KdTree::NodePtr& n)
   node_splitting(n->right);
 }
 
-std::vector<aabb> KdTree::get_leaf_nodes(vec3 eye) const
+std::vector<aabb> KdTree::get_leaf_nodes(vec3 eye, bool frontToBack) const
 {
   std::vector<aabb> result;
 
@@ -716,7 +716,7 @@ std::vector<aabb> KdTree::get_leaf_nodes(vec3 eye) const
 
       result.push_back(aabb(bmin, bmax));
     }
-  });
+  }, frontToBack);
 
   return result;
 }
@@ -835,13 +835,16 @@ void SkipTree::updateTransfunc(const uint8_t* data,
   }
 }
 
-std::vector<aabb> SkipTree::getSortedBricks(vec3 eye)
+std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
 {
   std::vector<aabb> result;
 
   if (impl_->technique == SVTKdTree)
   {
-    auto leaves = impl_->kdtree.get_leaf_nodes(visionaray::vec3(eye.x, eye.y, eye.z));
+    auto leaves = impl_->kdtree.get_leaf_nodes(
+        visionaray::vec3(eye.x, eye.y, eye.z),
+        frontToBack
+        );
 
     result.resize(leaves.size());
 

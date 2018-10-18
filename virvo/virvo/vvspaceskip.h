@@ -59,7 +59,7 @@ namespace virvo
     /**
      * @brief Produce a sorted list of bricks that contain non-empty voxels
      */
-    VVAPI std::vector<aabb> getSortedBricks(vec3 eye);
+    VVAPI std::vector<aabb> getSortedBricks(vec3 eye, bool frontToBack = true);
 
   private:
 
