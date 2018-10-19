@@ -26,6 +26,7 @@
 
 #include "math/aabb.h"
 #include "math/vector.h"
+#include "vvcolor.h"
 #include "vvexport.h"
 #include "vvpixelformat.h"
 
@@ -60,6 +61,12 @@ namespace virvo
      * @brief Produce a sorted list of bricks that contain non-empty voxels
      */
     VVAPI std::vector<aabb> getSortedBricks(vec3 eye, bool frontToBack = true);
+
+
+    /**
+     * @brief Render with OpenGL (need an OpenGL context)
+     */
+    VVAPI void renderGL(vvColor color = vvColor(1.0f, 1.0f, 1.0f));
 
   private:
 

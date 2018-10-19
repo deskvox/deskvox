@@ -576,9 +576,9 @@ struct KdTree
   std::vector<aabb> get_leaf_nodes(vec3 eye, bool frontToBack) const;
 
   // Need OpenGL context!
-  void renderGL() const;
+  void renderGL(vvColor color) const;
   // Need OpenGL context!
-  void renderGL(NodePtr const& n) const;
+  void renderGL(NodePtr const& n, vvColor color) const;
 };
 
 void KdTree::updateVolume(vvVolDesc const& vd, int channel)
@@ -721,12 +721,12 @@ std::vector<aabb> KdTree::get_leaf_nodes(vec3 eye, bool frontToBack) const
   return result;
 }
 
-void KdTree::renderGL() const
+void KdTree::renderGL(vvColor color) const
 {
-  renderGL(root);
+  renderGL(root, color);
 }
 
-void KdTree::renderGL(KdTree::NodePtr const& n) const
+void KdTree::renderGL(KdTree::NodePtr const& n, vvColor color) const
 {
   if (n != nullptr)
   {
@@ -741,7 +741,7 @@ void KdTree::renderGL(KdTree::NodePtr const& n) const
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
 
       glBegin(GL_LINES);
-      glColor3f(0,0,0);
+      glColor3f(color[0], color[1], color[2]);
 
       glVertex3f(bmin.x, bmin.y, bmin.z);
       glVertex3f(bmax.x, bmin.y, bmin.z);
@@ -783,8 +783,8 @@ void KdTree::renderGL(KdTree::NodePtr const& n) const
       glEnd();
     }
 
-    renderGL(n->left);
-    renderGL(n->right);
+    renderGL(n->left, color);
+    renderGL(n->right, color);
   }
 }
 
@@ -858,6 +858,11 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
   }
 
   return result;
+}
+
+void SkipTree::renderGL(vvColor color)
+{
+  impl_->kdtree.renderGL(color);
 }
 
 } // namespace virvo
