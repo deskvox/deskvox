@@ -149,15 +149,20 @@ GLuint PixelUnpackBufferRT::texture() const
 
 bool PixelUnpackBufferRT::BeginFrameImpl(unsigned clearMask)
 {
+    void* devPtr = impl->Resource.map();
+
+    if (devPtr == 0)
+        return false;
+
+    PixelFormatInfo cf = mapPixelFormat(impl->ColorFormat);
+
     if (clearMask & CLEAR_COLOR)
-    {
-    }
+        cudaMemset(devPtr, 0, width() * height() * cf.size);
 
     if (clearMask & CLEAR_DEPTH)
-    {
-    }
+        impl->DepthBuffer.fill(0);
 
-    return impl->Resource.map() != 0;
+    return true;
 }
 
 
