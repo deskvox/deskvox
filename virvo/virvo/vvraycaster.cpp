@@ -1418,6 +1418,17 @@ void vvRayCaster::updateVolumeData()
     impl_->updateVolumeTextures(vd, this);
 }
 
+void vvRayCaster::setCurrentFrame(size_t frame)
+{
+    vvRenderer::setCurrentFrame(frame);
+
+    if (impl_->space_skipping)
+    {
+        impl_->space_skip_tree.updateVolume(*vd);
+        impl_->updateTransfuncTexture(vd, this);
+    }
+}
+
 bool vvRayCaster::checkParameter(ParameterType param, vvParam const& value) const
 {
     switch (param)

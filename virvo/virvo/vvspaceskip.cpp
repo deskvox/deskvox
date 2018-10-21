@@ -146,7 +146,7 @@ void SVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
       for (int x = 0; x < width; ++x)
       {
         size_t index = z * width * height + y * width + x;
-        voxels_[index] = vd.getChannelValue(0,
+        voxels_[index] = vd.getChannelValue(vd.getCurrentFrame(),
                 bbox.min.x + x,
                 bbox.min.y + y,
                 bbox.min.z + z,
