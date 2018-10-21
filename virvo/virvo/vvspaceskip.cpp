@@ -259,7 +259,7 @@ aabbi SVT<T>::boundary(aabbi bbox) const
 
 
   // X boundary
-  int x = (bounds.min.x + bounds.max.x) / 2;
+  int x = (bounds.max.x - bounds.min.x) / 2;
 
   while (x >= 1)
   {
@@ -283,7 +283,7 @@ aabbi SVT<T>::boundary(aabbi bbox) const
   }
 
   // Y boundary from left
-  int y = (bounds.min.y + bounds.max.y) / 2;
+  int y = (bounds.max.y - bounds.min.y) / 2;
 
   while (y >= 1)
   {
@@ -307,7 +307,7 @@ aabbi SVT<T>::boundary(aabbi bbox) const
   }
 
   // Z boundary from left
-  int z = (bounds.min.z + bounds.max.z) / 2;
+  int z = (bounds.max.z - bounds.min.z) / 2;
 
   while (z >= 1)
   {
