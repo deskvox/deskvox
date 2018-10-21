@@ -54,7 +54,7 @@ struct SVT
   void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
 
   template <typename Tex>
-    void build(Tex transfunc);
+  void build(Tex transfunc);
 
   aabbi boundary(aabbi bbox) const;
 
@@ -569,7 +569,7 @@ struct KdTree
   void updateVolume(vvVolDesc const& vd, int channel = 0);
 
   template <typename Tex>
-    void updateTransfunc(Tex transfunc);
+  void updateTransfunc(Tex transfunc);
 
   void node_splitting(NodePtr& n);
 
@@ -701,18 +701,17 @@ std::vector<aabb> KdTree::get_leaf_nodes(vec3 eye, bool frontToBack) const
 {
   std::vector<aabb> result;
 
-  traverse(root, eye, [&result,this,eye](NodePtr const& n)
+  traverse(root, eye, [&result,this](NodePtr const& n)
   {
     if (n->left == nullptr && n->right == nullptr)
     {
       auto bbox = n->bbox;
-      bbox.max.y = vox[1] - bbox.max.y - 1;
-      bbox.min.y = vox[1] - bbox.min.y - 1;
-      bbox.max.z = vox[2] - bbox.max.z - 1;
-      bbox.min.z = vox[2] - bbox.min.z - 1;
+      bbox.min.y = vox[1] - n->bbox.max.y;
+      bbox.max.y = vox[1] - n->bbox.min.y;
+      bbox.min.z = vox[2] - n->bbox.max.z;
+      bbox.max.z = vox[2] - n->bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
-//std::cout << length(aabb(bmin, bmax).center() - eye) << '\n';
 
       result.push_back(aabb(bmin, bmax));
     }
@@ -733,10 +732,10 @@ void KdTree::renderGL(KdTree::NodePtr const& n, vvColor color) const
     if (n->left == nullptr && n->right == nullptr)
     {
       auto bbox = n->bbox;
-      bbox.max.y = vox[1] - bbox.max.y - 1;
-      bbox.min.y = vox[1] - bbox.min.y - 1;
-      bbox.max.z = vox[2] - bbox.max.z - 1;
-      bbox.min.z = vox[2] - bbox.min.z - 1;
+      bbox.min.y = vox[1] - n->bbox.max.y;
+      bbox.max.y = vox[1] - n->bbox.min.y;
+      bbox.min.z = vox[2] - n->bbox.max.z;
+      bbox.max.z = vox[2] - n->bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
 
@@ -822,7 +821,8 @@ void SkipTree::updateTransfunc(const uint8_t* data,
 {
   using namespace visionaray;
 
-  assert(numEntriesX == 1 && numEntriesY == 1); // Currently only 1D TF support
+  (void)numEntriesY; (void)numEntriesZ;
+  assert(numEntriesY == 1 && numEntriesZ == 1); // Currently only 1D TF support
 
   if (format == PF_RGBA32F)
   {
