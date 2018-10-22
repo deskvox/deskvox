@@ -905,7 +905,7 @@ struct vvRayCaster::Impl
     std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
 
-    bool                            space_skipping = false;
+    bool                            space_skipping = true;
     virvo::SkipTree                 space_skip_tree;
 
     // Internal storage format for textures
@@ -1406,6 +1406,8 @@ void vvRayCaster::renderVolumeGL()
     {
         impl_->depth_buffer.unmap();
     }
+
+    impl_->space_skip_tree.renderGL();
 }
 
 void vvRayCaster::updateTransferFunction()
