@@ -142,6 +142,8 @@ set(VIRVO_HEADERS
   mem/new.h
   mem/swap.h
 
+  spaceskip/cudakdtree.h
+
   texture/detail/prefilter.h
   texture/detail/sampler1d.h
   texture/detail/sampler3d.h
@@ -310,6 +312,7 @@ set(VIRVO_SOURCES
 
 if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
+  spaceskip/cudakdtree.cu
   vvcudatransfunc.cu
 )
 endif(DESKVOX_USE_CUDA)

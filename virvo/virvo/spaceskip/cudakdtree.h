@@ -18,59 +18,37 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_SPACESKIP_H
-#define VV_SPACESKIP_H
+#ifndef VV_SPACESKIP_CUDA_KDTREE_H
+#define VV_SPACESKIP_CUDA_KDTREE_H
 
 #include <memory>
-#include <vector>
 
-#include "math/aabb.h"
-#include "math/vector.h"
-#include "vvcolor.h"
-#include "vvexport.h"
-#include "vvpixelformat.h"
+#undef MATH_NAMESPACE
+
+#include <visionaray/math/aabb.h>
+#include <visionaray/math/forward.h>
+
+#include <visionaray/texture/texture.h>
+
+#undef MATH_NAMESPACE
 
 class vvVolDesc;
 
 namespace virvo
 {
 
-  class SkipTree
+  class CudaKdTree
   {
   public:
 
-    enum Technique
-    {
-      /** Space skipping k-d tree technique from
-       * "Rapid k-d Tree Construction for Sparse Volume Data"
-       */
-      SVTKdTree,
+    CudaKdTree();
+   ~CudaKdTree();
 
-      /** Rapid k-d Tree Construction, with CUDA
-       */
-      SVTKdTreeCU,
-    };
+    void updateVolume(vvVolDesc const& vd, int channel = 0);
 
-    VVAPI SkipTree(Technique tech);
-    VVAPI ~SkipTree();
+    void updateTransfunc(const visionaray::texture_ref<visionaray::vec4, 1>& transfunc);
 
-    VVAPI void updateVolume(const vvVolDesc& vd);
-    VVAPI void updateTransfunc(const uint8_t* data,
-        int numEntriesX,
-        int numEntriesY = 1, // for 2D TF
-        int numEntriesZ = 1, // for 3D TF
-        PixelFormat format = PF_RGBA32F);
-
-    /**
-     * @brief Produce a sorted list of bricks that contain non-empty voxels
-     */
-    VVAPI std::vector<aabb> getSortedBricks(vec3 eye, bool frontToBack = true);
-
-
-    /**
-     * @brief Render with OpenGL (need an OpenGL context)
-     */
-    VVAPI void renderGL(vvColor color = vvColor(1.0f, 1.0f, 1.0f));
+    std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 
   private:
 
@@ -81,7 +59,7 @@ namespace virvo
 
 } // virvo
 
-#endif // VV_SPACESKIP_H
+#endif // VV_SPACESKIP_CUDA_KDTREE_H
 
 //============================================================================
 // End of File

@@ -883,7 +883,7 @@ struct vvRayCaster::Impl
 #else
         : sched(vvToolshed::getNumProcessors())
 #endif
-        , space_skip_tree(virvo::SkipTree::SVTKdTree)
+        , space_skip_tree(virvo::SkipTree::SVTKdTreeCU)
     {
 #if !defined(VV_ARCH_CUDA)
         char* num_threads = getenv("VV_NUM_THREADS");

@@ -32,6 +32,7 @@
 
 #undef MATH_NAMESPACE
 
+#include "spaceskip/cudakdtree.h"
 #include "vvclock.h"
 #include "vvopengl.h"
 #include "vvspaceskip.h"
@@ -795,6 +796,7 @@ struct SkipTree::Impl
   SkipTree::Technique technique;
 
   KdTree kdtree;
+  CudaKdTree cuda_kdtree;
 };
 
 SkipTree::SkipTree(SkipTree::Technique tech)
@@ -811,6 +813,8 @@ void SkipTree::updateVolume(const vvVolDesc& vd)
 {
   if (impl_->technique == SVTKdTree)
     impl_->kdtree.updateVolume(vd);
+  else if (impl_->technique == SVTKdTreeCU)
+    impl_->cuda_kdtree.updateVolume(vd);
 }
 
 void SkipTree::updateTransfunc(const uint8_t* data,
@@ -831,7 +835,10 @@ void SkipTree::updateTransfunc(const uint8_t* data,
     transfunc.set_address_mode(Clamp);
     transfunc.set_filter_mode(Nearest);
 
-    impl_->kdtree.updateTransfunc(transfunc);
+    if (impl_->technique == SVTKdTree)
+      impl_->kdtree.updateTransfunc(transfunc);
+    else if (impl_->technique == SVTKdTreeCU)
+      impl_->cuda_kdtree.updateTransfunc(transfunc);
   }
 }
 
