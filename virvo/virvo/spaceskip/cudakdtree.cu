@@ -168,29 +168,6 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     __syncthreads();
   }
 
-  // Reduction over y
-  for (int l = 1; l < BY; l *= 2)
-  {
-    if (threadIdx.y >= l)
-    {
-      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y - l][threadIdx.z];
-    }
-
-    __syncthreads();
-  }
-
-  // Reduction over z
-  for (int l = 1; l < BZ; l *= 2)
-  {
-
-    if (threadIdx.z >= l)
-    {
-      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z - l];
-    }
-
-    __syncthreads();
-  }
-
   // Copy back to global memory
 
   index = z * width * height + y * width + x;
@@ -354,39 +331,41 @@ void CudaSVT<T>::build(Tex transfunc)
   }
 #else
   // Test
-//  {
-//    std::vector<uint16_t> data(4*4*4);
-//    std::fill(data.begin(), data.end(), 1);
-//
-//    thrust::device_vector<uint16_t> d_data(data);
-//
-//    dim3 block_size(BX, BY, BZ);
-//    dim3 grid_size(div_up(4, (int)block_size.x),
-//                   div_up(4, (int)block_size.y),
-//                   div_up(4, (int)block_size.z));
-//    svt_build<<<grid_size, block_size>>>(
-//            thrust::raw_pointer_cast(d_data.data()),
-//            4,
-//            4,
-//            4);
-//
-//    thrust::host_vector<uint16_t> h_data(d_data);
-//
-//    int idx = 0;
-//    for (int i = 0; i < 4; ++i)
-//    {
-//      for (int j = 0; j < 4; ++j)
-//      {
-//        for (int k = 0; k < 4; ++k)
-//        {
-//          std::cout << h_data[idx++];
-//        }
-//        std::cout << '\n';
-//      }
-//      std::cout << '\n';
-//      std::cout << '\n';
-//    }
-//  }
+#if 1
+  {
+    std::vector<uint16_t> data(4*4*4);
+    std::fill(data.begin(), data.end(), 1);
+
+    thrust::device_vector<uint16_t> d_data(data);
+
+    dim3 block_size(BX, BY, BZ);
+    dim3 grid_size(div_up(4, (int)block_size.x),
+                   div_up(4, (int)block_size.y),
+                   div_up(4, (int)block_size.z));
+    svt_build<<<grid_size, block_size>>>(
+            thrust::raw_pointer_cast(d_data.data()),
+            4,
+            4,
+            4);
+
+    thrust::host_vector<uint16_t> h_data(d_data);
+
+    int idx = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+      for (int j = 0; j < 4; ++j)
+      {
+        for (int k = 0; k < 4; ++k)
+        {
+          std::cout << h_data[idx++];
+        }
+        std::cout << '\n';
+      }
+      std::cout << '\n';
+      std::cout << '\n';
+    }
+  }
+#endif
 
   {
     dim3 block_size(BX, BY, BZ);
