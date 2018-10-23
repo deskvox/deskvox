@@ -139,9 +139,9 @@ __global__ void svt_build_z(T* data, int width, int height, int depth)
 template <typename T>
 __global__ void svt_build(T* data, int width, int height, int depth)
 {
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-  int z = blockIdx.z * blockDim.z + threadIdx.z;
+  int x = blockIdx.x * blockDim.x + threadIdx.x * 2;
+  int y = blockIdx.y * blockDim.y + threadIdx.y * 2;
+  int z = blockIdx.z * blockDim.z + threadIdx.z * 2;
 
   if (x >= width || y >= height || z >= depth)
     return;
@@ -170,6 +170,43 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   __syncthreads();
 
   // Reduction over x
+  for (int l = 1; l < BX; l *= 2)
+  {
+    smem[threadIdx.x + 1][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
+  }
+
+  __syncthreads();
+
+  // Reduction over y
+  for (int l = 1; l < BY; l *= 2)
+  {
+    smem[threadIdx.x][threadIdx.y + 1][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
+  }
+
+  __syncthreads();
+
+  // Reduction over z
+  for (int l = 1; l < BZ; l *= 2)
+  {
+    smem[threadIdx.x][threadIdx.y][threadIdx.z + 1] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
+  }
+
+  __syncthreads();
+
+  // Copy back to global memory
+
+  #pragma unroll
+  for (int k = 0; k < 2; ++k)
+  {
+    for (int j = 0; j < 2; ++j)
+    {
+      for (int i = 0; i < 2; ++i)
+      {
+        int index = (z+k)* width * height + (y+j) * width + (x+i);
+        data[index] = smem[threadIdx.x + i][threadIdx.y + j][threadIdx.z + k];
+      }
+    }
+  }
 }
 
 template <typename T>
@@ -330,9 +367,9 @@ void CudaSVT<T>::build(Tex transfunc)
 #else
   {
     dim3 block_size(16, 8, 8);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y),
-                   div_up(depth,  (int)block_size.z));
+    dim3 grid_size(div_up(width/2,  (int)block_size.x),
+                   div_up(height/2, (int)block_size.y),
+                   div_up(depth/2,  (int)block_size.z));
 
     svt_build<<<grid_size, block_size>>>(
             thrust::raw_pointer_cast(data_.data()),
