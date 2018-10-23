@@ -35,7 +35,6 @@
 
 #undef MATH_NAMESPACE
 
-#include <virvo/vvclock.h>
 #include <virvo/vvvoldesc.h>
 
 #include "cudakdtree.h"
@@ -43,6 +42,11 @@
 using namespace visionaray;
 
 #define BUILD_TIMING 1
+
+// Blocks of 16*8*8=1024 threads
+#define BX 16
+#define BY 8
+#define BZ 8
 
 //-------------------------------------------------------------------------------------------------
 // CUDA Summed-volume table
@@ -139,74 +143,58 @@ __global__ void svt_build_z(T* data, int width, int height, int depth)
 template <typename T>
 __global__ void svt_build(T* data, int width, int height, int depth)
 {
-  int x = blockIdx.x * blockDim.x + threadIdx.x * 2;
-  int y = blockIdx.y * blockDim.y + threadIdx.y * 2;
-  int z = blockIdx.z * blockDim.z + threadIdx.z * 2;
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+  int z = blockIdx.z * blockDim.z + threadIdx.z;
 
   if (x >= width || y >= height || z >= depth)
     return;
 
-#define BX 16
-#define BY 8
-#define BZ 8
+  __shared__ T smem[BX][BY][BZ];
 
-  __shared__ T smem[BX*2][BY*2][BZ*2];
-
-  // Copy 2x2x2 neighborhood to shared memory
-
-  #pragma unroll
-  for (int k = 0; k < 2; ++k)
-  {
-    for (int j = 0; j < 2; ++j)
-    {
-      for (int i = 0; i < 2; ++i)
-      {
-        int index = (z+k)* width * height + (y+j) * width + (x+i);
-        smem[threadIdx.x + i][threadIdx.y + j][threadIdx.z + k] = data[index];
-      }
-    }
-  }
+  int index = z * width * height + y * width + x;
+  smem[threadIdx.x][threadIdx.y][threadIdx.z] = data[index];
 
   __syncthreads();
 
   // Reduction over x
   for (int l = 1; l < BX; l *= 2)
   {
-    smem[threadIdx.x + 1][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
-  }
+    if (threadIdx.x >= l)
+    {
+      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x - l][threadIdx.y][threadIdx.z];
+    }
 
-  __syncthreads();
+    __syncthreads();
+  }
 
   // Reduction over y
   for (int l = 1; l < BY; l *= 2)
   {
-    smem[threadIdx.x][threadIdx.y + 1][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
-  }
+    if (threadIdx.y >= l)
+    {
+      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y - l][threadIdx.z];
+    }
 
-  __syncthreads();
+    __syncthreads();
+  }
 
   // Reduction over z
   for (int l = 1; l < BZ; l *= 2)
   {
-    smem[threadIdx.x][threadIdx.y][threadIdx.z + 1] += smem[threadIdx.x][threadIdx.y][threadIdx.z];
-  }
 
-  __syncthreads();
+    if (threadIdx.z >= l)
+    {
+      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x][threadIdx.y][threadIdx.z - l];
+    }
+
+    __syncthreads();
+  }
 
   // Copy back to global memory
 
-  #pragma unroll
-  for (int k = 0; k < 2; ++k)
-  {
-    for (int j = 0; j < 2; ++j)
-    {
-      for (int i = 0; i < 2; ++i)
-      {
-        int index = (z+k)* width * height + (y+j) * width + (x+i);
-        data[index] = smem[threadIdx.x + i][threadIdx.y + j][threadIdx.z + k];
-      }
-    }
-  }
+  index = z * width * height + y * width + x;
+  data[index] = smem[threadIdx.x][threadIdx.y][threadIdx.z];
 }
 
 template <typename T>
@@ -309,7 +297,7 @@ void CudaSVT<T>::build(Tex transfunc)
   {
     // Launch blocks of size 16x8x8 to e.g.
     // meet 1024 thread limit on Kepler
-    dim3 block_size(16, 8, 8);
+    dim3 block_size(BX, BY, BZ);
     dim3 grid_size(div_up(width,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
                    div_up(depth,  (int)block_size.z));
@@ -365,11 +353,46 @@ void CudaSVT<T>::build(Tex transfunc)
     cudaDeviceSynchronize();
   }
 #else
+  // Test
+//  {
+//    std::vector<uint16_t> data(4*4*4);
+//    std::fill(data.begin(), data.end(), 1);
+//
+//    thrust::device_vector<uint16_t> d_data(data);
+//
+//    dim3 block_size(BX, BY, BZ);
+//    dim3 grid_size(div_up(4, (int)block_size.x),
+//                   div_up(4, (int)block_size.y),
+//                   div_up(4, (int)block_size.z));
+//    svt_build<<<grid_size, block_size>>>(
+//            thrust::raw_pointer_cast(d_data.data()),
+//            4,
+//            4,
+//            4);
+//
+//    thrust::host_vector<uint16_t> h_data(d_data);
+//
+//    int idx = 0;
+//    for (int i = 0; i < 4; ++i)
+//    {
+//      for (int j = 0; j < 4; ++j)
+//      {
+//        for (int k = 0; k < 4; ++k)
+//        {
+//          std::cout << h_data[idx++];
+//        }
+//        std::cout << '\n';
+//      }
+//      std::cout << '\n';
+//      std::cout << '\n';
+//    }
+//  }
+
   {
-    dim3 block_size(16, 8, 8);
-    dim3 grid_size(div_up(width/2,  (int)block_size.x),
-                   div_up(height/2, (int)block_size.y),
-                   div_up(depth/2,  (int)block_size.z));
+    dim3 block_size(BX, BY, BZ);
+    dim3 grid_size(div_up(width,  (int)block_size.x),
+                   div_up(height, (int)block_size.y),
+                   div_up(depth,  (int)block_size.z));std::cout << grid_size.x << ' ' << grid_size.y << ' ' << grid_size.z << '\n';
 
     svt_build<<<grid_size, block_size>>>(
             thrust::raw_pointer_cast(data_.data()),
@@ -384,14 +407,43 @@ void CudaSVT<T>::build(Tex transfunc)
 namespace virvo
 {
 
+//-------------------------------------------------------------------------------------------------
+// Private implementation
+//
+
 struct CudaKdTree::Impl
 {
+  void node_splitting();
+
   CudaSVT<uint16_t> svt;
 
   visionaray::vec3i vox;
   visionaray::vec3 dist;
   float scale;
+
+  // Array with one bbox per partial SVT
+  thrust::device_vector<aabbi> bounds_;
+
 };
+
+void CudaKdTree::Impl::node_splitting()
+{
+  // We maintain one bbox per partial SVT in global
+  // memory that is updated during splitting
+  {
+    dim3 block_size(BX, BY, BZ);
+    dim3 grid_size(div_up(vox[0]/2, (int)block_size.x),
+                   div_up(vox[1]/2, (int)block_size.y),
+                   div_up(vox[2]/2, (int)block_size.z));
+
+    bounds_.resize(grid_size.x * grid_size.y * grid_size.z);
+  }
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// (Semi-)public interface
+//
 
 CudaKdTree::CudaKdTree()
   : impl_(new Impl)
@@ -421,13 +473,12 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
       transfunc.width(),
       transfunc.get_address_mode(),
       transfunc.get_filter_mode());
+
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
-  for (int i=0; i<10; ++i) {
 #ifdef BUILD_TIMING
   cudaEventRecord(start);
-  //vvStopwatch sw; sw.start();
 #endif
   impl_->svt.build(cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc));
 #ifdef BUILD_TIMING
@@ -435,12 +486,21 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   cudaEventSynchronize(stop);
   float ms = 0.0f;
   cudaEventElapsedTime(&ms, start, stop);
-  ms /= 1000.0f;
-  std::cout << std::fixed << std::setprecision(3) << "svt update: " << ms << " sec.\n";
+  float sec = ms / 1000.0f;
+  std::cout << std::fixed << std::setprecision(3) << "svt update: " << sec << " sec.\n";
+  cudaEventRecord(start);
+  cudaEventRecord(stop);
 #endif
-  }
+  impl_->node_splitting();
+#ifdef BUILD_TIMING
+  cudaEventSynchronize(stop);
+  ms = 0.0f;
+  cudaEventElapsedTime(&ms, start, stop);
+  sec = ms / 1000.0f;
+  std::cout << "splitting: " << sec << " sec.\n";
   cudaEventDestroy(stop);
   cudaEventDestroy(start);
+#endif
 }
 
 } // virvo
