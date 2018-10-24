@@ -44,7 +44,7 @@ using namespace visionaray;
 #define BUILD_TIMING 1
 
 // Blocks of 16*8*8=1024 threads
-#define BX 16
+#define BX 8
 #define BY 8
 #define BZ 8
 
@@ -147,31 +147,58 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-  if (x >= width || y >= height || z >= depth)
+  if (x >= width/2 || y >= height || z >= depth)
     return;
 
-  __shared__ T smem[BX][BY][BZ];
+  __shared__ T smem[BX*2][BY][BZ];
 
-  int index = z * width * height + y * width + x;
-  smem[threadIdx.x][threadIdx.y][threadIdx.z] = data[index];
+  int index = z * width * height + y * width + x * 2;
+  smem[threadIdx.x*2][threadIdx.y][threadIdx.z] = data[index];
+  smem[threadIdx.x*2+1][threadIdx.y][threadIdx.z] = data[index+1];
 
-  __syncthreads();
+  // Scan
+  int thid = threadIdx.x;
+  int ty = threadIdx.y;
+  int tz = threadIdx.z;
+  int offset = 1;
 
-  // Reduction over x
-  for (int l = 1; l < BX; l *= 2)
-  {
-    if (threadIdx.x >= l)
-    {
-      smem[threadIdx.x][threadIdx.y][threadIdx.z] += smem[threadIdx.x - l][threadIdx.y][threadIdx.z];
+    for (int d = BX>>1; d > 0; d >>= 1)
+    { 
+        __syncthreads();
+        if (thid < d)
+        {
+
+            int ai = offset*(2*thid+1)-1;
+            int bi = offset*(2*thid+2)-1;
+
+            smem[bi][ty][tz] += smem[ai][ty][tz];
+        }
+        offset *= 2;
     }
 
+    if (thid == 0) { smem[BX - 1][ty][tz] = smem[0][ty][tz]; } // clear the last element
+
+    for (int d = 1; d < BX; d *= 2)
+    {
+        offset >>= 1;
+        __syncthreads();
+        if (thid < d)                     
+        {
+            int ai = offset*(2*thid+1)-1;
+            int bi = offset*(2*thid+2)-1;
+
+            float t = smem[ai][ty][tz];
+            smem[ai][ty][tz] = smem[bi][ty][tz];
+            smem[bi][ty][tz] += t; 
+        }
+    }
     __syncthreads();
-  }
 
   // Copy back to global memory
 
-  index = z * width * height + y * width + x;
-  data[index] = smem[threadIdx.x][threadIdx.y][threadIdx.z];
+  index = z * width * height + y * width + (x * 2);
+  data[index] = smem[threadIdx.x*2][threadIdx.y][threadIdx.z];
+  data[index+1] = smem[threadIdx.x*2+1][threadIdx.y][threadIdx.z];
 }
 
 template <typename T>
@@ -333,29 +360,29 @@ void CudaSVT<T>::build(Tex transfunc)
   // Test
 #if 1
   {
-    std::vector<uint16_t> data(4*4*4);
+    std::vector<uint16_t> data(8*8*8);
     std::fill(data.begin(), data.end(), 1);
 
     thrust::device_vector<uint16_t> d_data(data);
 
     dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(4, (int)block_size.x),
-                   div_up(4, (int)block_size.y),
-                   div_up(4, (int)block_size.z));
+    dim3 grid_size(div_up(8/2, (int)block_size.x),
+                   div_up(8, (int)block_size.y),
+                   div_up(8, (int)block_size.z));
     svt_build<<<grid_size, block_size>>>(
             thrust::raw_pointer_cast(d_data.data()),
-            4,
-            4,
-            4);
+            8,
+            8,
+            8);
 
     thrust::host_vector<uint16_t> h_data(d_data);
 
     int idx = 0;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 8; ++i)
     {
-      for (int j = 0; j < 4; ++j)
+      for (int j = 0; j < 8; ++j)
       {
-        for (int k = 0; k < 4; ++k)
+        for (int k = 0; k < 8; ++k)
         {
           std::cout << h_data[idx++];
         }
@@ -369,9 +396,9 @@ void CudaSVT<T>::build(Tex transfunc)
 
   {
     dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
+    dim3 grid_size(div_up(width/2,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
-                   div_up(depth,  (int)block_size.z));std::cout << grid_size.x << ' ' << grid_size.y << ' ' << grid_size.z << '\n';
+                   div_up(depth,  (int)block_size.z));
 
     svt_build<<<grid_size, block_size>>>(
             thrust::raw_pointer_cast(data_.data()),
