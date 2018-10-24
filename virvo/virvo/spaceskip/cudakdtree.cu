@@ -143,62 +143,76 @@ __global__ void svt_build_z(T* data, int width, int height, int depth)
 template <typename T>
 __global__ void svt_build(T* data, int width, int height, int depth)
 {
+#define NUM_BANKS 16
+#define LOG_NUM_BANKS 4
+#define CONFLICT_FREE_OFFSET(n) \
+    ((n) >> NUM_BANKS + (n) >> (2 * LOG_NUM_BANKS))
+
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-  if (x >= width/2 || y >= height || z >= depth)
+  if (x >= width || y >= height || z >= depth)
     return;
 
   __shared__ T smem[BX*2][BY][BZ];
 
-  int index = z * width * height + y * width + x * 2;
-  smem[threadIdx.x*2][threadIdx.y][threadIdx.z] = data[index];
-  smem[threadIdx.x*2+1][threadIdx.y][threadIdx.z] = data[index+1];
-
-  // Scan
   int thid = threadIdx.x;
   int ty = threadIdx.y;
   int tz = threadIdx.z;
+
+  // Scan
   int offset = 1;
 
+  int base = z * width * height + y * width;
+  int ai = thid;
+  int bi = thid + (BX/2);
+  smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz] = data[base + ai];
+  smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
+
+  for (int i = 0; i < 3; ++i)
+  {
     for (int d = BX>>1; d > 0; d >>= 1)
     { 
-        __syncthreads();
-        if (thid < d)
-        {
+      __syncthreads();
+      if (thid < d)
+      {
 
-            int ai = offset*(2*thid+1)-1;
-            int bi = offset*(2*thid+2)-1;
+        int ai = offset*(2*thid+1)-1;
+        int bi = offset*(2*thid+2)-1;
+        ai += CONFLICT_FREE_OFFSET(ai);
+        bi += CONFLICT_FREE_OFFSET(bi);
 
-            smem[bi][ty][tz] += smem[ai][ty][tz];
-        }
-        offset *= 2;
+        smem[bi][ty][tz] += smem[ai][ty][tz];
+      }
+      offset *= 2;
     }
 
-    if (thid == 0) { smem[BX - 1][ty][tz] = smem[0][ty][tz]; } // clear the last element
+    if (thid == 0) { smem[BX - 1 + CONFLICT_FREE_OFFSET(BX-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
 
     for (int d = 1; d < BX; d *= 2)
     {
-        offset >>= 1;
-        __syncthreads();
-        if (thid < d)                     
-        {
-            int ai = offset*(2*thid+1)-1;
-            int bi = offset*(2*thid+2)-1;
+      offset >>= 1;
+      __syncthreads();
+      if (thid < d)
+      {
+        int ai = offset*(2*thid+1)-1;
+        int bi = offset*(2*thid+2)-1;
+        ai += CONFLICT_FREE_OFFSET(ai);
+        bi += CONFLICT_FREE_OFFSET(bi);
 
-            float t = smem[ai][ty][tz];
-            smem[ai][ty][tz] = smem[bi][ty][tz];
-            smem[bi][ty][tz] += t; 
-        }
+        float t = smem[ai][ty][tz];
+        smem[ai][ty][tz] = smem[bi][ty][tz];
+        smem[bi][ty][tz] += t;
+      }
     }
     __syncthreads();
+  }
 
   // Copy back to global memory
 
-  index = z * width * height + y * width + (x * 2);
-  data[index] = smem[threadIdx.x*2][threadIdx.y][threadIdx.z];
-  data[index+1] = smem[threadIdx.x*2+1][threadIdx.y][threadIdx.z];
+  data[base + ai] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
+  data[base + bi] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
 }
 
 template <typename T>
@@ -358,7 +372,7 @@ void CudaSVT<T>::build(Tex transfunc)
   }
 #else
   // Test
-#if 1
+#if 0
   {
     std::vector<uint16_t> data(8*8*8);
     std::fill(data.begin(), data.end(), 1);
