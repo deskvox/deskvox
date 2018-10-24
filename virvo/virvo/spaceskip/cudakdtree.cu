@@ -44,7 +44,7 @@ using namespace visionaray;
 #define BUILD_TIMING 1
 
 // Blocks of 16*8*8=1024 threads
-#define BX 8
+#define BX 4
 #define BY 8
 #define BZ 8
 
@@ -170,8 +170,10 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz] = data[base + ai];
   smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
 
+  #pragma unroll
   for (int i = 0; i < 3; ++i)
   {
+    #pragma unroll
     for (int d = BX>>1; d > 0; d >>= 1)
     { 
       __syncthreads();
@@ -190,6 +192,7 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 
     if (thid == 0) { smem[BX - 1 + CONFLICT_FREE_OFFSET(BX-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
 
+    #pragma unroll
     for (int d = 1; d < BX; d *= 2)
     {
       offset >>= 1;
@@ -205,6 +208,17 @@ __global__ void svt_build(T* data, int width, int height, int depth)
         smem[ai][ty][tz] = smem[bi][ty][tz];
         smem[bi][ty][tz] += t;
       }
+    }
+
+    if (i == 0)
+    {
+      smem[ty][ai + CONFLICT_FREE_OFFSET(ai)][tz] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
+      smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
+    }
+    else if (i == 1)
+    {
+      smem[tz][ty][ai + CONFLICT_FREE_OFFSET(ai)] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
+      smem[tz][ty][bi + CONFLICT_FREE_OFFSET(bi)] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
     }
     __syncthreads();
   }
