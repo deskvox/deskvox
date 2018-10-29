@@ -49,6 +49,20 @@ using namespace visionaray;
 #define BZ 8
 
 //-------------------------------------------------------------------------------------------------
+//
+//
+
+template <typename T>
+__host__ __device__
+void swap(T& a, T& b)
+{
+  T t(a);
+  a = b;
+  b = t;
+}
+
+
+//-------------------------------------------------------------------------------------------------
 // CUDA Summed-volume table
 //
 
@@ -148,11 +162,10 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 #define CONFLICT_FREE_OFFSET(n) \
     ((n) >> NUM_BANKS + (n) >> (2 * LOG_NUM_BANKS))
 
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-  if (x >= width || y >= height || z >= depth)
+  if (y >= height || z >= depth)
     return;
 
   __shared__ T smem[BX*2][BY][BZ];
@@ -164,17 +177,22 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   // Scan
   int offset = 1;
 
-  int base = z * width * height + y * width;
+  int W = min(BX*2, width);
+
+  if (threadIdx.x >= W/2)
+    return;
+
+  int base = z * width * height + y * width + blockIdx.x * BX * 2;
   int ai = thid;
-  int bi = thid + (BX/2);
+  int bi = thid + W/2;
   smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz] = data[base + ai];
   smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
 
   #pragma unroll
-  for (int i = 0; i < 3; ++i)
+  for (int i = 0; i < 1; ++i)
   {
     #pragma unroll
-    for (int d = BX>>1; d > 0; d >>= 1)
+    for (int d = W>>1; d > 0; d >>= 1)
     { 
       __syncthreads();
       if (thid < d)
@@ -190,10 +208,10 @@ __global__ void svt_build(T* data, int width, int height, int depth)
       offset *= 2;
     }
 
-    if (thid == 0) { smem[BX - 1 + CONFLICT_FREE_OFFSET(BX-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
+    if (thid == 0) { smem[W - 1 + CONFLICT_FREE_OFFSET(W-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
 
     #pragma unroll
-    for (int d = 1; d < BX; d *= 2)
+    for (int d = 1; d < W; d *= 2)
     {
       offset >>= 1;
       __syncthreads();
@@ -204,23 +222,32 @@ __global__ void svt_build(T* data, int width, int height, int depth)
         ai += CONFLICT_FREE_OFFSET(ai);
         bi += CONFLICT_FREE_OFFSET(bi);
 
-        float t = smem[ai][ty][tz];
+        T t = smem[ai][ty][tz];
         smem[ai][ty][tz] = smem[bi][ty][tz];
         smem[bi][ty][tz] += t;
       }
     }
 
-    if (i == 0)
-    {
-      smem[ty][ai + CONFLICT_FREE_OFFSET(ai)][tz] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
-      smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
-    }
-    else if (i == 1)
-    {
-      smem[tz][ty][ai + CONFLICT_FREE_OFFSET(ai)] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
-      smem[tz][ty][bi + CONFLICT_FREE_OFFSET(bi)] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
-    }
     __syncthreads();
+
+    if ( 0)
+    {
+      int ai = offset*(2*thid+1)-1;
+      int bi = offset*(2*thid+2)-1;
+      ai += CONFLICT_FREE_OFFSET(ai);
+      bi += CONFLICT_FREE_OFFSET(bi);
+
+      swap(smem[ai][ty][tz], smem[ty][ai][tz]);
+      swap(smem[bi][ty][tz], smem[ty][bi][tz]);
+      //swap(smem[ty][threadIdx.x * 2 + 1][tz], smem[threadIdx.x][ty * 2 + 1][tz]);
+      //swap(smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
+      //swap(smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
+    }
+    //else if (i == 1)
+    //{
+    //  swap(smem[tz][ty][ai + CONFLICT_FREE_OFFSET(ai)], smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz]);
+    //  swap(smem[tz][ty][bi + CONFLICT_FREE_OFFSET(bi)], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
+    //}
   }
 
   // Copy back to global memory
@@ -386,31 +413,32 @@ void CudaSVT<T>::build(Tex transfunc)
   }
 #else
   // Test
-#if 0
+#if 1
   {
-    std::vector<uint16_t> data(8*8*8);
+    int W=16,H=4,D=4;
+    std::vector<uint16_t> data(W*H*D);
     std::fill(data.begin(), data.end(), 1);
 
     thrust::device_vector<uint16_t> d_data(data);
 
     dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(8/2, (int)block_size.x),
-                   div_up(8, (int)block_size.y),
-                   div_up(8, (int)block_size.z));
+    dim3 grid_size(div_up(W/2, (int)block_size.x),
+                   div_up(D, (int)block_size.y),
+                   div_up(H, (int)block_size.z));
     svt_build<<<grid_size, block_size>>>(
             thrust::raw_pointer_cast(d_data.data()),
-            8,
-            8,
-            8);
+            W,
+            D,
+            H);
 
     thrust::host_vector<uint16_t> h_data(d_data);
 
     int idx = 0;
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < D; ++i)
     {
-      for (int j = 0; j < 8; ++j)
+      for (int j = 0; j < H; ++j)
       {
-        for (int k = 0; k < 8; ++k)
+        for (int k = 0; k < W; ++k)
         {
           std::cout << h_data[idx++];
         }
@@ -419,6 +447,7 @@ void CudaSVT<T>::build(Tex transfunc)
       std::cout << '\n';
       std::cout << '\n';
     }
+    exit(0);
   }
 #endif
 
