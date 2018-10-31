@@ -174,9 +174,6 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   int ty = threadIdx.y;
   int tz = threadIdx.z;
 
-  // Scan
-  int offset = 1;
-
   int W = min(BX*2, width);
 
   if (threadIdx.x >= W/2)
@@ -189,8 +186,10 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
 
   #pragma unroll
-  for (int i = 0; i < 1; ++i)
+  for (int i = 0; i < 2; ++i)
   {
+    int offset = 1;
+
     #pragma unroll
     for (int d = W>>1; d > 0; d >>= 1)
     { 
@@ -230,23 +229,27 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 
     __syncthreads();
 
-    if ( 0)
+    if (i == 0)
     {
-      int ai = offset*(2*thid+1)-1;
-      int bi = offset*(2*thid+2)-1;
-      ai += CONFLICT_FREE_OFFSET(ai);
-      bi += CONFLICT_FREE_OFFSET(bi);
-
-      swap(smem[ai][ty][tz], smem[ty][ai][tz]);
-      swap(smem[bi][ty][tz], smem[ty][bi][tz]);
-      //swap(smem[ty][threadIdx.x * 2 + 1][tz], smem[threadIdx.x][ty * 2 + 1][tz]);
-      //swap(smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
-      //swap(smem[ty][bi + CONFLICT_FREE_OFFSET(bi)][tz], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
+      if (ai > ty)
+        swap(smem[ai][ty][tz], smem[ty][ai][tz]);
+      if (bi > ty)
+        swap(smem[bi][ty][tz], smem[ty][bi][tz]);
     }
     //else if (i == 1)
     //{
-    //  swap(smem[tz][ty][ai + CONFLICT_FREE_OFFSET(ai)], smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz]);
-    //  swap(smem[tz][ty][bi + CONFLICT_FREE_OFFSET(bi)], smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz]);
+    //  if (ai > tz)
+    //    swap(smem[ai][ty][tz], smem[tz][ty][ai]);
+    //  if (bi > tz)
+    //    swap(smem[bi][ty][tz], smem[tz][ty][bi]);
+    //}
+    //else if (i == 2)
+    //{
+
+    //  if (ai > thid)
+    //    swap(smem[ai][ty][tz], smem[ai][ty][tz]);
+    //  if (bi > thid)
+    //    swap(smem[bi][ty][tz], smem[bi][ty][tz]);
     //}
   }
 
@@ -415,7 +418,7 @@ void CudaSVT<T>::build(Tex transfunc)
   // Test
 #if 1
   {
-    int W=16,H=4,D=4;
+    int W=8,H=8,D=8;
     std::vector<uint16_t> data(W*H*D);
     std::fill(data.begin(), data.end(), 1);
 
@@ -440,7 +443,7 @@ void CudaSVT<T>::build(Tex transfunc)
       {
         for (int k = 0; k < W; ++k)
         {
-          std::cout << h_data[idx++];
+          std::cout << h_data[idx++] << ' ';
         }
         std::cout << '\n';
       }
