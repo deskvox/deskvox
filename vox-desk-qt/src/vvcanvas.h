@@ -71,7 +71,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event);
 private:
   struct Impl;
-  std::auto_ptr<Impl> impl;
+  std::unique_ptr<Impl> impl;
 
   vvVolDesc* _vd;
   vvRenderer* _renderer;

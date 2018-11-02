@@ -43,7 +43,7 @@ struct vvDimensionDialog::Impl
   {
   }
 
-  std::auto_ptr<Ui::DimensionDialog> ui;
+  std::unique_ptr<Ui::DimensionDialog> ui;
   vec3f initialDist; ///< should be assigned when a new file is loaded
 
 private:

@@ -145,7 +145,7 @@ struct vvTFDialog::Impl
     return NULL;
   }
 
-  std::auto_ptr<Ui::TFDialog> ui;
+  std::unique_ptr<Ui::TFDialog> ui;
 
   MouseGraphicsScene* colorscene;
   QGraphicsPixmapItem* coloritem;

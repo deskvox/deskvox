@@ -43,7 +43,7 @@ struct vvSliceViewer::Impl
   {
   }
  
-  std::auto_ptr<Ui::SliceViewer> ui;
+  std::unique_ptr<Ui::SliceViewer> ui;
   size_t slice;
   virvo::cartesian_axis< 3 > axis;
 
@@ -97,6 +97,10 @@ vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
 
   paint();
   updateUi();
+}
+
+vvSliceViewer::~vvSliceViewer()
+{
 }
 
 void vvSliceViewer::paint()

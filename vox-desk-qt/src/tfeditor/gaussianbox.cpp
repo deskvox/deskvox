@@ -38,7 +38,7 @@ struct tf::GaussianBox::Impl
   {
   }
 
-  std::auto_ptr<Ui::GaussianBox> ui;
+  std::unique_ptr<Ui::GaussianBox> ui;
   vec2 zoomRange;
   bool hascolor;
   vvColor color;

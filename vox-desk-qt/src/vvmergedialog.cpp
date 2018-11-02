@@ -34,7 +34,7 @@ struct vvMergeDialog::Impl
 {
   Impl() : ui(new Ui::MergeDialog) {}
 
-  std::auto_ptr<Ui::MergeDialog> ui;
+  std::unique_ptr<Ui::MergeDialog> ui;
 
 private:
 

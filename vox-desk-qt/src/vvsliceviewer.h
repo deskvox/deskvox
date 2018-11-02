@@ -35,9 +35,10 @@ class vvSliceViewer : public QDialog
 
 public:
   vvSliceViewer(vvVolDesc* vd, QWidget* parent = 0);
+ ~vvSliceViewer();
 private:
   struct Impl;
-  std::auto_ptr<Impl> impl_;
+  std::unique_ptr<Impl> impl_;
 
   vvVolDesc* _vd;
 

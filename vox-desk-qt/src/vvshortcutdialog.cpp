@@ -28,7 +28,7 @@ struct vvShortcutDialog::Impl
 {
   Impl() : ui(new Ui::ShortcutDialog) {}
 
-  std::auto_ptr<Ui::ShortcutDialog> ui;
+  std::unique_ptr<Ui::ShortcutDialog> ui;
 
 private:
 
@@ -44,5 +44,9 @@ vvShortcutDialog::vvShortcutDialog(QWidget* parent)
   vvDebugMsg::msg(1, "vvShortcutDialog::vvShortcutDialog()");
 
   impl_->ui->setupUi(this);
+}
+
+vvShortcutDialog::~vvShortcutDialog()
+{
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

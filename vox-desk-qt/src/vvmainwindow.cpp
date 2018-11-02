@@ -61,7 +61,7 @@ struct vvMainWindow::Impl
 {
   Impl() : ui(new Ui::MainWindow) {}
 
-  std::auto_ptr<Ui::MainWindow> ui;
+  std::unique_ptr<Ui::MainWindow> ui;
 
   QList<vvPlugin*> plugins;
 

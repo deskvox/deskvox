@@ -38,7 +38,7 @@ struct tf::PyramidBox::Impl
   {
   }
 
-  std::auto_ptr<Ui::PyramidBox> ui;
+  std::unique_ptr<Ui::PyramidBox> ui;
   bool hascolor;
   vvColor color;
   vec3f top;

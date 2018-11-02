@@ -37,7 +37,7 @@ struct vvLightDialog::Impl
 {
   Impl() : ui(new Ui::LightDialog) {}
 
-  std::auto_ptr<Ui::LightDialog> ui;
+  std::unique_ptr<Ui::LightDialog> ui;
 
 private:
 

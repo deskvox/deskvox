@@ -53,7 +53,7 @@ public:
   ~vvMainWindow();
 private:
   struct Impl;
-  std::auto_ptr<Impl> impl_;
+  std::unique_ptr<Impl> impl_;
 
   void loadVolumeFile(const QString& filename);
   void mergeFiles(const QString& firstFile, int num, int increment, vvVolDesc::MergeType mergeType);

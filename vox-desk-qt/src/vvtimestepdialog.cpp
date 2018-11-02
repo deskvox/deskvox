@@ -35,7 +35,7 @@ struct vvTimeStepDialog::Impl
   {
   }
 
-  std::auto_ptr<Ui::TimeStepDialog> ui;
+  std::unique_ptr<Ui::TimeStepDialog> ui;
   bool playing;
 
 private:

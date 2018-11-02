@@ -51,7 +51,7 @@ public:
 private:
 
   struct Impl;
-  std::auto_ptr< Impl > impl_;
+  std::unique_ptr< Impl > impl_;
 
 private slots:
 

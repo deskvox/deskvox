@@ -36,7 +36,7 @@ struct tf::SkipBox::Impl
   {
   }
 
-  std::auto_ptr<Ui_SkipBox> ui;
+  std::unique_ptr<Ui_SkipBox> ui;
   vec2 zoomRange;
   vec3f size;
 

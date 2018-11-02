@@ -35,7 +35,7 @@ struct vvScreenshotDialog::Impl
 {
   Impl() : ui(new Ui::ScreenshotDialog) {}
 
-  std::auto_ptr<Ui::ScreenshotDialog> ui;
+  std::unique_ptr<Ui::ScreenshotDialog> ui;
 
 private:
 

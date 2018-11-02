@@ -97,9 +97,9 @@ struct vvIbrClient::Impl
     // The mutex to protect the members below
     boost::mutex lock;
     // The current image to render
-    std::auto_ptr<virvo::IbrImage> curr;
+    std::unique_ptr<virvo::IbrImage> curr;
     // The next image
-    std::auto_ptr<virvo::IbrImage> next;
+    std::unique_ptr<virvo::IbrImage> next;
     // OpenGL objects
     gl::Buffer pointVBO;
     // OpenGL objects
@@ -107,7 +107,7 @@ struct vvIbrClient::Impl
     // OpenGL objects
     gl::Texture texDepth;
     // The IBR shader
-    std::auto_ptr<vvShaderProgram> shader;
+    std::unique_ptr<vvShaderProgram> shader;
     // The current viewport
     recti viewport;
     // Current image matrix
@@ -393,7 +393,7 @@ void vvIbrClient::processIbrImage(virvo::MessagePointer message)
 #endif
 
     // Create a new image
-    std::auto_ptr<virvo::IbrImage> image(new virvo::IbrImage);
+    std::unique_ptr<virvo::IbrImage> image(new virvo::IbrImage);
 
     // Extract the image from the message
     //

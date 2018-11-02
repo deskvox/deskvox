@@ -44,9 +44,9 @@ struct vvImageClient::Impl
     // The mutex to protect the members below
     boost::mutex lock;
     // The current image to render
-    std::auto_ptr<virvo::Image> curr;
+    std::unique_ptr<virvo::Image> curr;
     // The next image
-    std::auto_ptr<virvo::Image> next;
+    std::unique_ptr<virvo::Image> next;
 
     void setNextImage(virvo::Image* image)
     {
@@ -169,7 +169,7 @@ void vvImageClient::processImage(virvo::MessagePointer message)
 #endif
 
     // Create a new image
-    std::auto_ptr<virvo::Image> image(new virvo::Image);
+    std::unique_ptr<virvo::Image> image(new virvo::Image);
 
     // Extract the image from the message
     //

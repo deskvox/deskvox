@@ -30,9 +30,10 @@ class vvShortcutDialog : public QDialog
   Q_OBJECT
 public:
   vvShortcutDialog(QWidget* parent = 0);
+ ~vvShortcutDialog();
 private:
   struct Impl;
-  std::auto_ptr<Impl> impl_;
+  std::unique_ptr<Impl> impl_;
 
 private:
 

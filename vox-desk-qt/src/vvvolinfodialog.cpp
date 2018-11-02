@@ -31,7 +31,7 @@ struct vvVolInfoDialog::Impl
 {
   Impl() : ui(new Ui::VolInfoDialog) {}
 
-  std::auto_ptr<Ui::VolInfoDialog> ui;
+  std::unique_ptr<Ui::VolInfoDialog> ui;
 
 private:
 

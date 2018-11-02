@@ -97,13 +97,13 @@ private:
     // Whether to stop processing messages
     bool cancel_;
     // The current volume
-    std::auto_ptr<vvVolDesc> volume_;
+    std::unique_ptr<vvVolDesc> volume_;
     // The current render context
-    std::auto_ptr<vvRenderContext> renderContext_;
+    std::unique_ptr<vvRenderContext> renderContext_;
     // The current remote server (IBR or Image)
-    std::auto_ptr<vvRemoteServer> server_;
+    std::unique_ptr<vvRemoteServer> server_;
     // The current renderer
-    std::auto_ptr<vvRenderer> renderer_;
+    std::unique_ptr<vvRenderer> renderer_;
     // The current renderer type
     vvRenderer::RendererType rendererType_;
     // Work queue (to compress images)

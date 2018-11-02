@@ -33,7 +33,7 @@ struct vvClipDialog::Impl
 {
   Impl() : ui(new Ui::ClipDialog) {}
 
-  std::auto_ptr< Ui::ClipDialog > ui;
+  std::unique_ptr< Ui::ClipDialog > ui;
 
 private:
 

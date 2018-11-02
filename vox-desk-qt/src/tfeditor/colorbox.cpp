@@ -30,7 +30,7 @@ struct tf::ColorBox::Impl
 {
   Impl() : ui(new Ui::ColorBox) {}
 
-  std::auto_ptr<Ui::ColorBox> ui;
+  std::unique_ptr<Ui::ColorBox> ui;
   vvColor color;
 
 private:
