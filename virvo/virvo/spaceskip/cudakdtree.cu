@@ -182,52 +182,28 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   int base = z * width * height + y * width + blockIdx.x * BX * 2;
   int ai = tx;
   int bi = tx + W/2;
-  smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz] = data[base + ai];
-  smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
+  smem[ai/* + CONFLICT_FREE_OFFSET(ai)*/][ty][tz] = data[base + ai];
+  smem[bi/* + CONFLICT_FREE_OFFSET(bi)*/][ty][tz] = data[base + bi];
 
   #pragma unroll
   for (int i = 0; i < 3; ++i)
   {
-    int offset = 1;
-
-    #pragma unroll
-    for (int d = W>>1; d > 0; d >>= 1)
-    { 
+    // Reduction
+    int stride;
+    for (stride = 1; stride <= BX; stride <<= 1) {
+      int index = (tx + 1) * stride * 2 - 1;
+      if (index < 2 * BX)
+        smem[index][ty][tz] += smem[index - stride][ty][tz];
       __syncthreads();
-      if (tx < d)
-      {
-
-        int ai = offset*(2*tx+1)-1;
-        int bi = offset*(2*tx+2)-1;
-        ai += CONFLICT_FREE_OFFSET(ai);
-        bi += CONFLICT_FREE_OFFSET(bi);
-
-        smem[bi][ty][tz] += smem[ai][ty][tz];
-      }
-      offset *= 2;
     }
 
-    if (tx == 0) { smem[W - 1 + CONFLICT_FREE_OFFSET(W-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
-
-    #pragma unroll
-    for (int d = 1; d < W; d *= 2)
-    {
-      offset >>= 1;
+    // Post reduction
+    for (stride = BX >> 1; stride; stride >>= 1) {
+      int index = (tx + 1) * stride * 2 - 1;
+      if (index + stride < 2 * BX)
+        smem[index + stride][ty][tz] += smem[index][ty][tz];
       __syncthreads();
-      if (tx < d)
-      {
-        int ai = offset*(2*tx+1)-1;
-        int bi = offset*(2*tx+2)-1;
-        ai += CONFLICT_FREE_OFFSET(ai);
-        bi += CONFLICT_FREE_OFFSET(bi);
-
-        T t = smem[ai][ty][tz];
-        smem[ai][ty][tz] = smem[bi][ty][tz];
-        smem[bi][ty][tz] += t;
-      }
     }
-
-    __syncthreads();
 
     if (i == 0)
     {
@@ -245,13 +221,17 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     }
     else if (i == 2)
     {
+      if (ty > ai)
+        swap(smem[ty][ai][tz], smem[ai][ty][tz]);
+      if (ty > bi)
+        swap(smem[ty][bi][tz], smem[bi][ty][tz]);
     }
   }
 
   // Copy back to global memory
 
-  data[base + ai] = smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz];
-  data[base + bi] = smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz];
+  data[base + ai] = smem[ai/* + CONFLICT_FREE_OFFSET(ai)*/][ty][tz];
+  data[base + bi] = smem[bi/* + CONFLICT_FREE_OFFSET(bi)*/][ty][tz];
 }
 
 template <typename T>
@@ -415,7 +395,9 @@ void CudaSVT<T>::build(Tex transfunc)
   {
     int W=8,H=8,D=8;
     std::vector<uint16_t> data(W*H*D);
-    std::fill(data.begin(), data.end(), 1);
+    std::fill(data.begin(), data.end(), 0);
+    int x=1,y=0,z=0;
+    data[z*W*H + y*W + x] = 1;
 
     thrust::device_vector<uint16_t> d_data(data);
 
