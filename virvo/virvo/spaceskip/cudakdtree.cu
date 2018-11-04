@@ -170,7 +170,7 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 
   __shared__ T smem[BX*2][BY][BZ];
 
-  int thid = threadIdx.x;
+  int tx = threadIdx.x;
   int ty = threadIdx.y;
   int tz = threadIdx.z;
 
@@ -180,8 +180,8 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     return;
 
   int base = z * width * height + y * width + blockIdx.x * BX * 2;
-  int ai = thid;
-  int bi = thid + W/2;
+  int ai = tx;
+  int bi = tx + W/2;
   smem[ai + CONFLICT_FREE_OFFSET(ai)][ty][tz] = data[base + ai];
   smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
 
@@ -194,11 +194,11 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     for (int d = W>>1; d > 0; d >>= 1)
     { 
       __syncthreads();
-      if (thid < d)
+      if (tx < d)
       {
 
-        int ai = offset*(2*thid+1)-1;
-        int bi = offset*(2*thid+2)-1;
+        int ai = offset*(2*tx+1)-1;
+        int bi = offset*(2*tx+2)-1;
         ai += CONFLICT_FREE_OFFSET(ai);
         bi += CONFLICT_FREE_OFFSET(bi);
 
@@ -207,17 +207,17 @@ __global__ void svt_build(T* data, int width, int height, int depth)
       offset *= 2;
     }
 
-    if (thid == 0) { smem[W - 1 + CONFLICT_FREE_OFFSET(W-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
+    if (tx == 0) { smem[W - 1 + CONFLICT_FREE_OFFSET(W-1)][ty][tz] = smem[0][ty][tz]; } // clear the last element
 
     #pragma unroll
     for (int d = 1; d < W; d *= 2)
     {
       offset >>= 1;
       __syncthreads();
-      if (thid < d)
+      if (tx < d)
       {
-        int ai = offset*(2*thid+1)-1;
-        int bi = offset*(2*thid+2)-1;
+        int ai = offset*(2*tx+1)-1;
+        int bi = offset*(2*tx+2)-1;
         ai += CONFLICT_FREE_OFFSET(ai);
         bi += CONFLICT_FREE_OFFSET(bi);
 
