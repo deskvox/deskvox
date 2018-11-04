@@ -150,10 +150,18 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     }
     else if (i == 2)
     {
-      if (ty > ai)
-        swap(smem[ty][ai][tz], smem[ai][ty][tz]);
-      if (ty > bi)
-        swap(smem[ty][bi][tz], smem[bi][ty][tz]);
+      if (tz > ai)
+        swap(smem[tz][ty][ai], smem[ai][ty][tz]);
+      if (tz >= bi)
+        swap(smem[tz][ty][bi], smem[bi][ty][tz]);
+
+      __syncthreads();
+
+      if (ai > ty)
+        swap(smem[ai][ty][tz], smem[ty][ai][tz]);
+      if (bi >= ty)
+        swap(smem[bi][ty][tz], smem[ty][bi][tz]);
+
     }
   }
 
@@ -263,7 +271,7 @@ void CudaSVT<T>::build(Tex transfunc)
   {
     // Launch blocks of size 16x8x8 to e.g.
     // meet 1024 thread limit on Kepler
-    dim3 block_size(18, 8, 8);
+    dim3 block_size(BX, BY, BZ);
     dim3 grid_size(div_up(width,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
                    div_up(depth,  (int)block_size.z));
@@ -281,10 +289,14 @@ void CudaSVT<T>::build(Tex transfunc)
   // Test
 #if 0
   {
-    int W=16,H=8,D=8;
+    int W=8,H=8,D=8;
     std::vector<uint16_t> data(W*H*D);
     std::fill(data.begin(), data.end(), 0);
-    int x=1,y=0,z=0;
+    int x=3,y=1,z=2;
+    data[z*W*H + y*W + x] = 1;
+    x=4,y=1,z=2;
+    data[z*W*H + y*W + x] = 1;
+    x=7,y=7,z=7;
     data[z*W*H + y*W + x] = 1;
 
     thrust::device_vector<uint16_t> d_data(data);
@@ -320,6 +332,7 @@ void CudaSVT<T>::build(Tex transfunc)
 #endif
 
   {
+    thrust::host_vector<uint16_t> before(data_);
     dim3 block_size(BX, BY, BZ);
     dim3 grid_size(div_up(width/2,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
@@ -331,6 +344,31 @@ void CudaSVT<T>::build(Tex transfunc)
             height,
             depth);
     cudaDeviceSynchronize();
+    thrust::host_vector<uint16_t> after(data_);
+
+#if 0
+    int bx = 7;
+    int by = 7;
+    int bz = 7;
+
+    for (int k=0; k<8; ++k)
+    {
+      for (int j=0; j<8; ++j)
+      {
+        for (int i=0; i<8; ++i)
+        {
+          int x = bx * 8 + i;
+          int y = by * 8 + j;
+          int z = bz * 8 + k;
+
+          std::cout << before[z*width*height + y*width+x] << ' ';
+        }
+        std::cout << '\n';
+      }
+      std::cout << '\n';
+      std::cout << '\n';
+    }exit(0);
+#endif
   }
 }
 
