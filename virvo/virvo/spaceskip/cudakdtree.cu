@@ -89,79 +89,8 @@ __global__ void svt_apply_transfunc(Tex transfunc,
 }
 
 template <typename T>
-__global__ void svt_build_x(T* data, int width, int height, int depth)
-{
-  int y = blockIdx.x * blockDim.x + threadIdx.x;
-  int z = blockIdx.y * blockDim.y + threadIdx.y;
-
-  if (y >= height || z >= depth)
-    return;
-
-  int off = 16;//32;
-
-  for (int bx = 0; bx < width; bx += off)
-  {
-    for (int x = bx + 1; x < min(bx + off, width); ++x)
-    {
-      int i1 = z * width * height + y * width + x;
-      int i2 = z * width * height + y * width + (x - 1);
-      data[i1] += data[i2];
-    }
-  }
-}
-
-template <typename T>
-__global__ void svt_build_y(T* data, int width, int height, int depth)
-{
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int z = blockIdx.y * blockDim.y + threadIdx.y;
-
-  if (x >= width || z >= depth)
-    return;
-
-  int off = 8;//32;
-
-  for (int by = 0; by < height; by += off)
-  {
-    for (int y = by + 1; y < min(by + off, height); ++y)
-    {
-      int i1 = z * width * height + y * width + x;
-      int i2 = z * width * height + (y - 1) * width + x;
-      data[i1] += data[i2];
-    }
-  }
-}
-
-template <typename T>
-__global__ void svt_build_z(T* data, int width, int height, int depth)
-{
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-  if (x >= width || y >= height)
-    return;
-
-  int off = 8;//24;
-
-  for (int bz = 0; bz < depth; bz += off)
-  {
-    for (int z = bz + 1; z < min(bz + off, depth); ++z)
-    {
-      int i1 = z * width * height + y * width + x;
-      int i2 = (z - 1) * width * height + y * width + x;
-      data[i1] += data[i2];
-    }
-  }
-}
-
-template <typename T>
 __global__ void svt_build(T* data, int width, int height, int depth)
 {
-#define NUM_BANKS 16
-#define LOG_NUM_BANKS 4
-#define CONFLICT_FREE_OFFSET(n) \
-    ((n) >> NUM_BANKS + (n) >> (2 * LOG_NUM_BANKS))
-
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
 
@@ -182,8 +111,8 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   int base = z * width * height + y * width + blockIdx.x * BX * 2;
   int ai = tx;
   int bi = tx + W/2;
-  smem[ai/* + CONFLICT_FREE_OFFSET(ai)*/][ty][tz] = data[base + ai];
-  smem[bi/* + CONFLICT_FREE_OFFSET(bi)*/][ty][tz] = data[base + bi];
+  smem[ai][ty][tz] = data[base + ai];
+  smem[bi][ty][tz] = data[base + bi];
 
   #pragma unroll
   for (int i = 0; i < 3; ++i)
@@ -230,8 +159,8 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 
   // Copy back to global memory
 
-  data[base + ai] = smem[ai/* + CONFLICT_FREE_OFFSET(ai)*/][ty][tz];
-  data[base + bi] = smem[bi/* + CONFLICT_FREE_OFFSET(bi)*/][ty][tz];
+  data[base + ai] = smem[ai][ty][tz];
+  data[base + bi] = smem[bi][ty][tz];
 }
 
 template <typename T>
@@ -334,7 +263,7 @@ void CudaSVT<T>::build(Tex transfunc)
   {
     // Launch blocks of size 16x8x8 to e.g.
     // meet 1024 thread limit on Kepler
-    dim3 block_size(BX, BY, BZ);
+    dim3 block_size(18, 8, 8);
     dim3 grid_size(div_up(width,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
                    div_up(depth,  (int)block_size.z));
@@ -349,51 +278,10 @@ void CudaSVT<T>::build(Tex transfunc)
     cudaDeviceSynchronize();
   }
 
-  // Build SVT
+  // Test
 #if 0
   {
-    dim3 block_size(8, 8);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y));
-
-    svt_build_x<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(data_.data()),
-            width,
-            height,
-            depth);
-    cudaDeviceSynchronize();
-  }
-
-  {
-    dim3 block_size(16, 8);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y));
-
-    svt_build_y<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(data_.data()),
-            width,
-            height,
-            depth);
-    cudaDeviceSynchronize();
-  }
-
-  {
-    dim3 block_size(16, 8);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y));
-
-    svt_build_z<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(data_.data()),
-            width,
-            height,
-            depth);
-    cudaDeviceSynchronize();
-  }
-#else
-  // Test
-#if 1
-  {
-    int W=8,H=8,D=8;
+    int W=16,H=8,D=8;
     std::vector<uint16_t> data(W*H*D);
     std::fill(data.begin(), data.end(), 0);
     int x=1,y=0,z=0;
@@ -444,7 +332,6 @@ void CudaSVT<T>::build(Tex transfunc)
             depth);
     cudaDeviceSynchronize();
   }
-#endif
 }
 
 namespace virvo
