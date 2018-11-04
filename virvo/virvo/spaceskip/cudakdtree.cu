@@ -186,7 +186,7 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   smem[bi + CONFLICT_FREE_OFFSET(bi)][ty][tz] = data[base + bi];
 
   #pragma unroll
-  for (int i = 0; i < 2; ++i)
+  for (int i = 0; i < 3; ++i)
   {
     int offset = 1;
 
@@ -233,24 +233,19 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     {
       if (ai > ty)
         swap(smem[ai][ty][tz], smem[ty][ai][tz]);
-      if (bi > ty)
+      if (bi >= ty)
         swap(smem[bi][ty][tz], smem[ty][bi][tz]);
     }
-    //else if (i == 1)
-    //{
-    //  if (ai > tz)
-    //    swap(smem[ai][ty][tz], smem[tz][ty][ai]);
-    //  if (bi > tz)
-    //    swap(smem[bi][ty][tz], smem[tz][ty][bi]);
-    //}
-    //else if (i == 2)
-    //{
-
-    //  if (ai > thid)
-    //    swap(smem[ai][ty][tz], smem[ai][ty][tz]);
-    //  if (bi > thid)
-    //    swap(smem[bi][ty][tz], smem[bi][ty][tz]);
-    //}
+    else if (i == 1)
+    {
+      if (tz > ai)
+        swap(smem[tz][ty][ai], smem[ai][ty][tz]);
+      if (tz >= bi)
+        swap(smem[tz][ty][bi], smem[bi][ty][tz]);
+    }
+    else if (i == 2)
+    {
+    }
   }
 
   // Copy back to global memory
