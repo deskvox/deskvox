@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <cassert>
 #include <iostream>
 #include <ostream>
 
@@ -179,36 +180,37 @@ struct CudaSVT
   template <typename Tex>
   void build(Tex transfunc);
 
+  VSNRAY_FUNC
   aabbi boundary(aabbi bbox) const;
 
+  VSNRAY_FUNC
   T& operator()(int x, int y, int z)
   {
-    return data_[z * width * height + y * width + x];
+    return data_pointer_[z * width * height + y * width + x];
   }
 
+  VSNRAY_FUNC
   T& at(int x, int y, int z)
   {
-    return data_[z * width * height + y * width + x];
+    return data_pointer_[z * width * height + y * width + x];
   }
 
+  VSNRAY_FUNC
   T const& at(int x, int y, int z) const
   {
-    return data_[z * width * height + y * width + x];
+    return data_pointer_[z * width * height + y * width + x];
   }
 
+  VSNRAY_FUNC
   T border_at(int x, int y, int z) const
   {
     if (x < 0 || y < 0 || z < 0)
       return 0;
 
-    return data_[z * width * height + y * width + x];
+    return data_pointer_[z * width * height + y * width + x];
   }
 
-  T last() const
-  {
-    return data_.back();
-  }
-
+  VSNRAY_FUNC
   T get_count(basic_aabb<int> bounds) const
   {
     bounds.min -= vec3i(1);
@@ -228,6 +230,9 @@ struct CudaSVT
   thrust::device_vector<float> voxels_;
   // SVT array
   thrust::device_vector<T> data_;
+  // Data pointer
+  T* data_pointer_ = nullptr;
+
   int width;
   int height;
   int depth;
@@ -261,12 +266,16 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   }
 
   voxels_ = host_voxels;
+
+  data_pointer_ = thrust::raw_pointer_cast(data_.data());
 }
 
 template <typename T>
 template <typename Tex>
 void CudaSVT<T>::build(Tex transfunc)
 {
+  assert(data_pointer_ && "Call reset() first!");
+
   // Apply transfer function
   {
     // Launch blocks of size 16x8x8 to e.g.
@@ -278,7 +287,7 @@ void CudaSVT<T>::build(Tex transfunc)
 
     svt_apply_transfunc<<<grid_size, block_size>>>(
             transfunc,
-            thrust::raw_pointer_cast(data_.data()),
+            data_pointer_,
             thrust::raw_pointer_cast(voxels_.data()),
             width,
             height,
@@ -286,89 +295,19 @@ void CudaSVT<T>::build(Tex transfunc)
     cudaDeviceSynchronize();
   }
 
-  // Test
-#if 0
+  // Build 8x8x8 SVTs
   {
-    int W=8,H=8,D=8;
-    std::vector<uint16_t> data(W*H*D);
-    std::fill(data.begin(), data.end(), 0);
-    int x=3,y=1,z=2;
-    data[z*W*H + y*W + x] = 1;
-    x=4,y=1,z=2;
-    data[z*W*H + y*W + x] = 1;
-    x=7,y=7,z=7;
-    data[z*W*H + y*W + x] = 1;
-
-    thrust::device_vector<uint16_t> d_data(data);
-
-    dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(W/2, (int)block_size.x),
-                   div_up(D, (int)block_size.y),
-                   div_up(H, (int)block_size.z));
-    svt_build<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(d_data.data()),
-            W,
-            D,
-            H);
-
-    thrust::host_vector<uint16_t> h_data(d_data);
-
-    int idx = 0;
-    for (int i = 0; i < D; ++i)
-    {
-      for (int j = 0; j < H; ++j)
-      {
-        for (int k = 0; k < W; ++k)
-        {
-          std::cout << h_data[idx++] << ' ';
-        }
-        std::cout << '\n';
-      }
-      std::cout << '\n';
-      std::cout << '\n';
-    }
-    exit(0);
-  }
-#endif
-
-  {
-    thrust::host_vector<uint16_t> before(data_);
     dim3 block_size(BX, BY, BZ);
     dim3 grid_size(div_up(width/2,  (int)block_size.x),
                    div_up(height, (int)block_size.y),
                    div_up(depth,  (int)block_size.z));
 
     svt_build<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(data_.data()),
+            data_pointer_,
             width,
             height,
             depth);
     cudaDeviceSynchronize();
-    thrust::host_vector<uint16_t> after(data_);
-
-#if 0
-    int bx = 7;
-    int by = 7;
-    int bz = 7;
-
-    for (int k=0; k<8; ++k)
-    {
-      for (int j=0; j<8; ++j)
-      {
-        for (int i=0; i<8; ++i)
-        {
-          int x = bx * 8 + i;
-          int y = by * 8 + j;
-          int z = bz * 8 + k;
-
-          std::cout << before[z*width*height + y*width+x] << ' ';
-        }
-        std::cout << '\n';
-      }
-      std::cout << '\n';
-      std::cout << '\n';
-    }exit(0);
-#endif
   }
 }
 
