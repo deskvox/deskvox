@@ -22,8 +22,10 @@
 #include <iostream>
 #include <ostream>
 
+#include <thrust/execution_policy.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/reduce.h>
 
 #undef MATH_NAMESPACE
 
@@ -36,6 +38,7 @@
 
 #undef MATH_NAMESPACE
 
+#include <virvo/vvopengl.h>
 #include <virvo/vvvoldesc.h>
 
 #include "cudakdtree.h"
@@ -64,7 +67,7 @@ void swap(T& a, T& b)
 
 
 //-------------------------------------------------------------------------------------------------
-// CUDA Summed-volume table
+// CUDA kernels
 //
 
 template <typename Tex, typename T>
@@ -164,6 +167,8 @@ __global__ void svt_build(T* data, int width, int height, int depth)
         swap(smem[bi][ty][tz], smem[ty][bi][tz]);
 
     }
+
+    __syncthreads();
   }
 
   // Copy back to global memory
@@ -172,46 +177,67 @@ __global__ void svt_build(T* data, int width, int height, int depth)
   data[base + bi] = smem[bi][ty][tz];
 }
 
+// The two bounding boxes the node splitting phase produces
+__device__ aabbi split_boxes[2];
+
+// Each partial SVT calculates its boundary
 template <typename T>
-struct CudaSVT
+__global__ void calculate_local_boundaries(
+        aabbi node,
+        aabbi* boxes, // calc. one box per partial SVT
+        const T* data,
+        int width,
+        int height,
+        int depth)
 {
-  void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
+  const int W = 8, H = 8, D = 8;
+  assert(blockDim.x == W && blockDim.y == H && blockDim.z == D);
 
-  template <typename Tex>
-  void build(Tex transfunc);
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+  int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-  VSNRAY_FUNC
-  aabbi boundary(aabbi bbox) const;
+  int tx = threadIdx.x;
+  int ty = threadIdx.y;
+  int tz = threadIdx.z;
 
-  VSNRAY_FUNC
-  T& operator()(int x, int y, int z)
+  if (tx >= W || ty >= H || tz >= D)
+    return;
+
+  aabbi bbox(
+        { blockIdx.x * W, blockIdx.y * H, blockIdx.z * D },
+        { blockIdx.x * W + W, blockIdx.y * H + H, blockIdx.z * D + D });
+
+  bbox = intersect(bbox, node);
+  if (bbox.empty())
+    bbox.invalidate();
+
+  int block_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
+
+  if (bbox.invalid())
   {
-    return data_pointer_[z * width * height + y * width + x];
+    boxes[block_index] = bbox;
+    return;
   }
 
-  VSNRAY_FUNC
-  T& at(int x, int y, int z)
-  {
-    return data_pointer_[z * width * height + y * width + x];
-  }
+  int index = z * width * height + y * width + x;
 
-  VSNRAY_FUNC
-  T const& at(int x, int y, int z) const
-  {
-    return data_pointer_[z * width * height + y * width + x];
-  }
+  __shared__ T smem[W][H][D];
 
-  VSNRAY_FUNC
-  T border_at(int x, int y, int z) const
+  smem[tx][ty][tz] = data[index];
+  smem[tx][ty][tz] = data[index];
+
+  __syncthreads();
+
+  auto border_at = [&](int x, int y, int z)
   {
     if (x < 0 || y < 0 || z < 0)
-      return 0;
+      return T(0);
+    else
+      return smem[x][y][z];
+  };
 
-    return data_pointer_[z * width * height + y * width + x];
-  }
-
-  VSNRAY_FUNC
-  T get_count(basic_aabb<int> bounds) const
+  auto get_count = [&](aabbi bounds)
   {
     bounds.min -= vec3i(1);
     bounds.max -= vec3i(1);
@@ -224,7 +250,115 @@ struct CudaSVT
          + border_at(bounds.min.x, bounds.max.y, bounds.min.z)
          + border_at(bounds.max.x, bounds.min.y, bounds.min.z)
          - border_at(bounds.min.x, bounds.min.y, bounds.min.z);
+  };
+
+  if (tx == 0)
+  {
+    aabbi bounds = bbox;
+    bounds.min -= vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
+    bounds.max -= vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
+
+    // Search for the minimal volume bounding box
+    // that contains #voxels contained in bbox!
+    uint16_t voxels = get_count(bounds);
+
+    // X boundary
+    int x = (bounds.max.x - bounds.min.x) / 2;
+
+    while (x >= 1)
+    {
+      aabbi lbox = bounds;
+      lbox.min.x += x;
+
+      if (get_count(lbox) == voxels)
+      {
+        bounds = lbox;
+      }
+
+      aabbi rbox = bounds;
+      rbox.max.x -= x;
+
+      if (get_count(rbox) == voxels)
+      {
+        bounds = rbox;
+      }
+
+      x /= 2;
+    }
+
+    // Y boundary from left
+    int y = (bounds.max.y - bounds.min.y) / 2;
+
+    while (y >= 1)
+    {
+      aabbi lbox = bounds;
+      lbox.min.y += y;
+
+      if (get_count(lbox) == voxels)
+      {
+        bounds = lbox;
+      }
+
+      aabbi rbox = bounds;
+      rbox.max.y -= y;
+
+      if (get_count(rbox) == voxels)
+      {
+        bounds = rbox;
+      }
+
+      y /= 2;
+    }
+
+    // Z boundary from left
+    int z = (bounds.max.z - bounds.min.z) / 2;
+
+    while (z >= 1)
+    {
+      aabbi lbox = bounds;
+      lbox.min.z += z;
+
+      if (get_count(lbox) == voxels)
+      {
+        bounds = lbox;
+      }
+
+      aabbi rbox = bounds;
+      rbox.max.z -= z;
+
+      if (get_count(rbox) == voxels)
+      {
+        bounds = rbox;
+      }
+
+      z /= 2;
+    }
+
+    if (bounds.valid())
+    {
+      bounds.min += vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
+      bounds.max += vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
+      boxes[block_index] = bounds;
+    }
+    else
+      boxes[block_index].invalidate();
   }
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// CUDA Summed-volume table
+//
+
+template <typename T>
+struct CudaSVT
+{
+  void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
+
+  template <typename Tex>
+  void build(Tex transfunc);
+
+  aabbi boundary(aabbi bbox) const;
 
   // Channel values from volume description
   thrust::device_vector<float> voxels_;
@@ -298,9 +432,9 @@ void CudaSVT<T>::build(Tex transfunc)
   // Build 8x8x8 SVTs
   {
     dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(width/2,  (int)block_size.x),
-                   div_up(height, (int)block_size.y),
-                   div_up(depth,  (int)block_size.z));
+    dim3 grid_size(div_up(width/2, (int)block_size.x),
+                   div_up(height,  (int)block_size.y),
+                   div_up(depth,   (int)block_size.z));
 
     svt_build<<<grid_size, block_size>>>(
             data_pointer_,
@@ -308,6 +442,51 @@ void CudaSVT<T>::build(Tex transfunc)
             height,
             depth);
     cudaDeviceSynchronize();
+  }
+}
+
+struct device_combine
+{
+  __device__
+  aabbi operator()(aabbi l, aabbi r)
+  {
+    return combine(l, r);
+  }
+};
+
+template <typename T>
+aabbi CudaSVT<T>::boundary(aabbi bbox) const
+{
+  assert(data_pointer_ && "Call reset() first!");
+
+  // Calculate bounding boxes inside all 8x8x8 SVTs
+  {
+    // TODO: not w/h/d but bbox.w/h/d!!
+    dim3 block_size(8, 8, 8);
+    dim3 grid_size(div_up(width,  (int)block_size.x),
+                   div_up(height, (int)block_size.y),
+                   div_up(depth,  (int)block_size.z));
+
+    // TODO: dito!
+    thrust::device_vector<aabbi> boxes(grid_size.x * grid_size.y * grid_size.z);
+
+    calculate_local_boundaries<<<grid_size, block_size>>>(
+            bbox,
+            thrust::raw_pointer_cast(boxes.data()),
+            data_pointer_,
+            width,
+            height,
+            depth);
+
+    aabbi init;
+    init.invalidate();
+
+    return thrust::reduce(
+            thrust::device,
+            boxes.begin(),
+            boxes.end(),
+            init,
+            device_combine());
   }
 }
 
@@ -320,7 +499,50 @@ namespace virvo
 
 struct CudaKdTree::Impl
 {
-  void node_splitting();
+  struct Node;
+  typedef std::unique_ptr<Node> NodePtr;
+
+  struct Node
+  {
+    visionaray::aabbi bbox;
+    NodePtr left  = nullptr;
+    NodePtr right = nullptr;
+    int axis = -1;
+    int splitpos = -1;
+    int depth;
+  };
+
+  template <typename Func>
+  void traverse(NodePtr const& n, visionaray::vec3 eye, Func f, bool frontToBack = true) const
+  {
+    if (n != nullptr)
+    {
+      f(n);
+
+      if (n->axis >= 0)
+      {
+        int spi = n->splitpos;
+        if (n->axis == 1 || n->axis == 2)
+          spi = vox[n->axis] - spi - 1;
+        float splitpos = (spi - vox[n->axis]/2.f) * dist[n->axis] * scale;
+
+        // TODO: puh..
+        if (n->axis == 0 && eye[n->axis] < splitpos || n->axis == 1 && eye[n->axis] >= splitpos || n->axis == 2 && eye[n->axis] >= splitpos)
+        {
+          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
+          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+        }
+        else
+        {
+          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
+        }
+      }
+    }
+  }
+
+  void node_splitting(NodePtr& n);
+  void renderGL(NodePtr const& n, vvColor color) const;
 
   CudaSVT<uint16_t> svt;
 
@@ -328,22 +550,157 @@ struct CudaKdTree::Impl
   visionaray::vec3 dist;
   float scale;
 
-  // Array with one bbox per partial SVT
-  thrust::device_vector<aabbi> bounds_;
-
+  NodePtr root = nullptr;
 };
 
-void CudaKdTree::Impl::node_splitting()
+void CudaKdTree::Impl::node_splitting(NodePtr& n)
 {
-  // We maintain one bbox per partial SVT in global
-  // memory that is updated during splitting
-  {
-    dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(vox[0]/2, (int)block_size.x),
-                   div_up(vox[1]/2, (int)block_size.y),
-                   div_up(vox[2]/2, (int)block_size.z));
+  using visionaray::aabbi;
+  using visionaray::vec3i;
 
-    bounds_.resize(grid_size.x * grid_size.y * grid_size.z);
+  // Halting criterion 1.)
+  if (volume(n->bbox) < volume(root->bbox) / 10)
+    return;
+
+  // Split along longest axis
+  vec3i len = n->bbox.max - n->bbox.min;
+
+  int axis = 0;
+  if (len.y > len.x && len.y > len.z)
+    axis = 1;
+  else if (len.z > len.x && len.z > len.y)
+    axis = 2;
+
+  int lmax = len[axis];
+
+  static const int dl = 4; // ``we set dl to be 4 for 256^3 data sets..''
+  //  static const int dl = 8; // ``.. and 8 for 512^3 data sets.''
+
+  // Halting criterion 1.b) (should not really get here..)
+  if (lmax < dl)
+    return;
+
+  int num_planes = lmax / dl;
+
+  int min_cost = INT_MAX;
+  int best_p = -1;
+
+  aabbi lbox = n->bbox;
+  aabbi rbox = n->bbox;
+
+  int first = lbox.min[axis];
+
+  int vol = volume(n->bbox);
+
+  for (int p = 1; p < num_planes; ++p)
+  {
+    aabbi ltmp = n->bbox;
+    aabbi rtmp = n->bbox;
+
+    ltmp.max[axis] = first + dl * p;
+    rtmp.min[axis] = first + dl * p;
+
+    ltmp = svt.boundary(ltmp);
+    rtmp = svt.boundary(rtmp);
+
+    int c = volume(ltmp) + volume(rtmp);
+
+    // empty-space volume
+    int ev = vol - c;
+
+    // Halting criterion 2.)
+    if (ev <= vol / 20)
+      continue;
+
+    if (c < min_cost)
+    {
+      min_cost = c;
+      lbox = ltmp;
+      rbox = rtmp;
+      best_p = p;
+    }
+  }
+
+  // Halting criterion 2.)
+  if (best_p < 0)
+    return;
+
+  // Store split plane for traversal
+  n->axis = axis;
+  n->splitpos = first + dl * best_p;
+
+  n->left.reset(new Node);
+  n->left->bbox = lbox;
+  n->left->depth = n->depth + 1;
+  node_splitting(n->left);
+
+  n->right.reset(new Node);
+  n->right->bbox = rbox;
+  n->right->depth = n->depth + 1;
+  node_splitting(n->right);
+}
+
+void CudaKdTree::Impl::renderGL(CudaKdTree::Impl::NodePtr const& n, vvColor color) const
+{
+  using visionaray::vec3;
+
+  if (n != nullptr)
+  {
+    if (n->left == nullptr && n->right == nullptr)
+    {
+      auto bbox = n->bbox;
+      bbox.min.y = vox[1] - n->bbox.max.y;
+      bbox.max.y = vox[1] - n->bbox.min.y;
+      bbox.min.z = vox[2] - n->bbox.max.z;
+      bbox.max.z = vox[2] - n->bbox.min.z;
+      vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
+      vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+
+      glBegin(GL_LINES);
+      glColor3f(color[0], color[1], color[2]);
+
+      glVertex3f(bmin.x, bmin.y, bmin.z);
+      glVertex3f(bmax.x, bmin.y, bmin.z);
+
+      glVertex3f(bmax.x, bmin.y, bmin.z);
+      glVertex3f(bmax.x, bmax.y, bmin.z);
+
+      glVertex3f(bmax.x, bmax.y, bmin.z);
+      glVertex3f(bmin.x, bmax.y, bmin.z);
+
+      glVertex3f(bmin.x, bmax.y, bmin.z);
+      glVertex3f(bmin.x, bmin.y, bmin.z);
+
+      //
+      glVertex3f(bmin.x, bmin.y, bmax.z);
+      glVertex3f(bmax.x, bmin.y, bmax.z);
+
+      glVertex3f(bmax.x, bmin.y, bmax.z);
+      glVertex3f(bmax.x, bmax.y, bmax.z);
+
+      glVertex3f(bmax.x, bmax.y, bmax.z);
+      glVertex3f(bmin.x, bmax.y, bmax.z);
+
+      glVertex3f(bmin.x, bmax.y, bmax.z);
+      glVertex3f(bmin.x, bmin.y, bmax.z);
+
+      //
+      glVertex3f(bmin.x, bmin.y, bmin.z);
+      glVertex3f(bmin.x, bmin.y, bmax.z);
+
+      glVertex3f(bmax.x, bmin.y, bmin.z);
+      glVertex3f(bmax.x, bmin.y, bmax.z);
+
+      glVertex3f(bmax.x, bmax.y, bmin.z);
+      glVertex3f(bmax.x, bmax.y, bmax.z);
+
+      glVertex3f(bmin.x, bmax.y, bmin.z);
+      glVertex3f(bmin.x, bmax.y, bmax.z);
+      glEnd();
+    }
+
+    renderGL(n->left, color);
+    renderGL(n->right, color);
   }
 }
 
@@ -396,10 +753,15 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   float sec = ms / 1000.0f;
   std::cout << std::fixed << std::setprecision(3) << "svt update: " << sec << " sec.\n";
   cudaEventRecord(start);
-  cudaEventRecord(stop);
 #endif
-  impl_->node_splitting();
+  impl_->root.reset(new Impl::Node);
+  impl_->root->bbox = impl_->svt.boundary(visionaray::aabbi(
+        visionaray::vec3i(0),
+        visionaray::vec3i(impl_->vox[0], impl_->vox[1], impl_->vox[2])));
+  impl_->root->depth = 0;
+  impl_->node_splitting(impl_->root);
 #ifdef BUILD_TIMING
+  cudaEventRecord(stop);
   cudaEventSynchronize(stop);
   ms = 0.0f;
   cudaEventElapsedTime(&ms, start, stop);
@@ -408,6 +770,37 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   cudaEventDestroy(stop);
   cudaEventDestroy(start);
 #endif
+}
+
+std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const
+{
+  using visionaray::aabb;
+  using visionaray::vec3;
+
+  std::vector<aabb> result;
+
+  impl_->traverse(impl_->root, eye, [&result,this](Impl::NodePtr const& n)
+  {
+    if (n->left == nullptr && n->right == nullptr)
+    {
+      auto bbox = n->bbox;
+      bbox.min.y = impl_->vox[1] - n->bbox.max.y;
+      bbox.max.y = impl_->vox[1] - n->bbox.min.y;
+      bbox.min.z = impl_->vox[2] - n->bbox.max.z;
+      bbox.max.z = impl_->vox[2] - n->bbox.min.z;
+      vec3 bmin = (vec3(bbox.min) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
+      vec3 bmax = (vec3(bbox.max) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
+
+      result.push_back(aabb(bmin, bmax));
+    }
+  }, frontToBack);
+
+  return result;
+}
+
+void CudaKdTree::renderGL(vvColor color) const
+{
+  impl_->renderGL(impl_->root, color);
 }
 
 } // virvo

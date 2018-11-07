@@ -863,13 +863,34 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
       result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
     }
   }
+  // TODO: dedup!
+  else if (impl_->technique == SVTKdTreeCU)
+  {
+    auto leaves = impl_->cuda_kdtree.get_leaf_nodes(
+        visionaray::vec3(eye.x, eye.y, eye.z),
+        frontToBack
+        );
+
+    result.resize(leaves.size());
+
+    for (size_t i = 0; i < leaves.size(); ++i)
+    {
+      const auto& leaf = leaves[i];
+
+      result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
+      result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
+    }
+  }
 
   return result;
 }
 
 void SkipTree::renderGL(vvColor color)
 {
-  impl_->kdtree.renderGL(color);
+  if (impl_->technique == SVTKdTree)
+    impl_->kdtree.renderGL(color);
+  else if (impl_->technique == SVTKdTreeCU)
+    impl_->cuda_kdtree.renderGL(color);
 }
 
 } // namespace virvo

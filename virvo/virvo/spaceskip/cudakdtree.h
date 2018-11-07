@@ -32,6 +32,8 @@
 
 #undef MATH_NAMESPACE
 
+#include <virvo/vvcolor.h>
+
 class vvVolDesc;
 
 namespace virvo
@@ -49,6 +51,8 @@ namespace virvo
     void updateTransfunc(const visionaray::texture_ref<visionaray::vec4, 1>& transfunc);
 
     std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
+
+    void renderGL(vvColor color) const;
 
   private:
 
