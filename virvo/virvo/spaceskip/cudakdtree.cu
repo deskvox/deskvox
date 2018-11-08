@@ -193,9 +193,19 @@ __global__ void calculate_local_boundaries(
   const int W = 8, H = 8, D = 8;
   assert(blockDim.x == W && blockDim.y == H && blockDim.z == D);
 
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-  int z = blockIdx.z * blockDim.z + threadIdx.z;
+  int offset_x = node.min.x / blockDim.x;
+  int offset_y = node.min.y / blockDim.y;
+  int offset_z = node.min.z / blockDim.z;
+
+  // Block indices w.r.t. node!
+  // (grid spans only node's box, not the whole volume!)
+  int bx = offset_x + blockIdx.x;
+  int by = offset_y + blockIdx.y;
+  int bz = offset_z + blockIdx.z;
+
+  int x = bx * blockDim.x + threadIdx.x;
+  int y = by * blockDim.y + threadIdx.y;
+  int z = bz * blockDim.z + threadIdx.z;
 
   int tx = threadIdx.x;
   int ty = threadIdx.y;
@@ -205,20 +215,12 @@ __global__ void calculate_local_boundaries(
     return;
 
   aabbi bbox(
-        { blockIdx.x * W, blockIdx.y * H, blockIdx.z * D },
-        { blockIdx.x * W + W, blockIdx.y * H + H, blockIdx.z * D + D });
+        { bx * W, by * H, bz * D },
+        { bx * W + W, by * H + H, bz * D + D });
+
+  int box_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
 
   bbox = intersect(bbox, node);
-  if (bbox.empty())
-    bbox.invalidate();
-
-  int block_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
-
-  if (bbox.invalid())
-  {
-    boxes[block_index] = bbox;
-    return;
-  }
 
   int index = z * width * height + y * width + x;
 
@@ -255,8 +257,8 @@ __global__ void calculate_local_boundaries(
   if (tx == 0)
   {
     aabbi bounds = bbox;
-    bounds.min -= vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
-    bounds.max -= vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
+    bounds.min -= vec3i(bx * W, by * H, bz * D);
+    bounds.max -= vec3i(bx * W, by * H, bz * D);
 
     // Search for the minimal volume bounding box
     // that contains #voxels contained in bbox!
@@ -336,12 +338,12 @@ __global__ void calculate_local_boundaries(
 
     if (bounds.valid())
     {
-      bounds.min += vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
-      bounds.max += vec3i(blockIdx.x * W, blockIdx.y * H, blockIdx.z * D);
-      boxes[block_index] = bounds;
+      bounds.min += vec3i(bx * W, by * H, bz * D);
+      bounds.max += vec3i(bx * W, by * H, bz * D);
+      boxes[box_index] = bounds;
     }
     else
-      boxes[block_index].invalidate();
+      boxes[box_index].invalidate();
   }
 }
 
@@ -459,15 +461,19 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
 {
   assert(data_pointer_ && "Call reset() first!");
 
-  // Calculate bounding boxes inside all 8x8x8 SVTs
+  // Calculate bounding boxes inside the 8x8x8 SVTs
   {
-    // TODO: not w/h/d but bbox.w/h/d!!
     dim3 block_size(8, 8, 8);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y),
-                   div_up(depth,  (int)block_size.z));
 
-    // TODO: dito!
+    auto box_size = bbox.size();
+    int offset_x = bbox.min.x % block_size.x;
+    int offset_y = bbox.min.y % block_size.y;
+    int offset_z = bbox.min.z % block_size.z;
+
+    dim3 grid_size(div_up(offset_x + box_size.x, (int)block_size.x),
+                   div_up(offset_y + box_size.y, (int)block_size.y),
+                   div_up(offset_z + box_size.z, (int)block_size.z));
+
     thrust::device_vector<aabbi> boxes(grid_size.x * grid_size.y * grid_size.z);
 
     calculate_local_boundaries<<<grid_size, block_size>>>(
