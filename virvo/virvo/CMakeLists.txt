@@ -47,9 +47,12 @@ deskvox_use_package(Protokit)
 deskvox_use_package(Pthreads)
 deskvox_use_package(SNAPPY)
 deskvox_use_package(Teem)
-deskvox_use_package(Visionaray)
 deskvox_use_package(VolPack)
 deskvox_use_package(X11)
+
+if(VISIONARAY_FOUND)
+    deskvox_use_package(Visionaray)
+endif()
 
 
 if(MSVC)
@@ -294,7 +297,6 @@ set(VIRVO_SOURCES
   vvsoftper.cpp
   vvsoftsw.cpp
   vvsoftvr.cpp
-  vvspaceskip.cpp
   vvstingray.cpp
   vvtcpserver.cpp
   vvtcpsocket.cpp
@@ -307,6 +309,13 @@ set(VIRVO_SOURCES
   vvvirvo.cpp
   vvvisitor.cpp
 )
+
+if(VISIONARAY_FOUND)
+  set(VIRVO_SOURCES
+    ${VIRVO_SOURCES}
+    vvspaceskip.cpp
+  )
+endif(VISIONARAY_FOUND)
 
 if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
