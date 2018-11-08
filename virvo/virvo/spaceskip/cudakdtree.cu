@@ -56,6 +56,46 @@ using namespace visionaray;
 //
 //
 
+class CudaTimer
+{
+public:
+
+    CudaTimer()
+    {
+        cudaEventCreate(&start_);
+        cudaEventCreate(&stop_);
+
+        reset();
+    }
+
+    ~CudaTimer()
+    {
+        cudaEventDestroy(stop_);
+        cudaEventDestroy(start_);
+    }
+
+    void reset()
+    {
+        cudaEventRecord(start_);
+    }
+
+    double elapsed() const
+    {
+        cudaEventRecord(stop_);
+        cudaEventSynchronize(stop_);
+        float ms = 0.0f;
+        cudaEventElapsedTime(&ms, start_, stop_);
+        return static_cast<double>(ms) / 1000.0;
+    }
+
+private:
+
+    cudaEvent_t start_;
+    cudaEvent_t stop_;
+
+};
+
+
 template <typename T>
 __host__ __device__
 void swap(T& a, T& b)
@@ -254,97 +294,212 @@ __global__ void calculate_local_boundaries(
          - border_at(bounds.min.x, bounds.min.y, bounds.min.z);
   };
 
-  if (tx == 0)
+  aabbi bounds = bbox;
+  bounds.min -= vec3i(bx * W, by * H, bz * D);
+  bounds.max -= vec3i(bx * W, by * H, bz * D);
+
+  uint16_t voxels = get_count(bounds);
+
+  if (voxels == 0)
   {
-    aabbi bounds = bbox;
-    bounds.min -= vec3i(bx * W, by * H, bz * D);
-    bounds.max -= vec3i(bx * W, by * H, bz * D);
-
-    // Search for the minimal volume bounding box
-    // that contains #voxels contained in bbox!
-    uint16_t voxels = get_count(bounds);
-
-    // X boundary
-    int x = (bounds.max.x - bounds.min.x) / 2;
-
-    while (x >= 1)
-    {
-      aabbi lbox = bounds;
-      lbox.min.x += x;
-
-      if (get_count(lbox) == voxels)
-      {
-        bounds = lbox;
-      }
-
-      aabbi rbox = bounds;
-      rbox.max.x -= x;
-
-      if (get_count(rbox) == voxels)
-      {
-        bounds = rbox;
-      }
-
-      x /= 2;
-    }
-
-    // Y boundary from left
-    int y = (bounds.max.y - bounds.min.y) / 2;
-
-    while (y >= 1)
-    {
-      aabbi lbox = bounds;
-      lbox.min.y += y;
-
-      if (get_count(lbox) == voxels)
-      {
-        bounds = lbox;
-      }
-
-      aabbi rbox = bounds;
-      rbox.max.y -= y;
-
-      if (get_count(rbox) == voxels)
-      {
-        bounds = rbox;
-      }
-
-      y /= 2;
-    }
-
-    // Z boundary from left
-    int z = (bounds.max.z - bounds.min.z) / 2;
-
-    while (z >= 1)
-    {
-      aabbi lbox = bounds;
-      lbox.min.z += z;
-
-      if (get_count(lbox) == voxels)
-      {
-        bounds = lbox;
-      }
-
-      aabbi rbox = bounds;
-      rbox.max.z -= z;
-
-      if (get_count(rbox) == voxels)
-      {
-        bounds = rbox;
-      }
-
-      z /= 2;
-    }
-
-    if (bounds.valid())
-    {
-      bounds.min += vec3i(bx * W, by * H, bz * D);
-      bounds.max += vec3i(bx * W, by * H, bz * D);
-      boxes[box_index] = bounds;
-    }
-    else
-      boxes[box_index].invalidate();
+    boxes[box_index].invalidate();
+    return;
   }
+
+  // Construct {i,o_min} and {i,o_max}
+  uint16_t i = tz * W * H + ty * W + tx;
+  uint16_t o_min = get_count(aabbi(bounds.min, vec3i(tx + 1, ty + 1, tz + 1)));
+  uint16_t o_max = get_count(aabbi(vec3i(tx, ty, tz), bounds.max));
+
+  struct pair { uint16_t i, o; };
+  __shared__ pair mins[W * H * D];
+  __shared__ pair maxs[W * H * D];
+
+  const int N = W*H*D;
+
+  mins[i] = { i, o_min };
+  maxs[i] = { i, o_max };
+
+  __syncthreads();
+
+#if 0
+  if (i == 0)
+  {
+    for (int j = 0; j < N; ++j)
+    {
+      if (mins[j].o == voxels)
+      {
+        //int z = j / (W*H);
+        //int y = (j / W) % H;
+        int z = j >> 6;
+        int y = (j >> 3) % H;
+        int x = j % W;
+        bounds.min = vec3i(x,y,z);
+      }
+      else
+        break;
+    }
+
+    for (int j = N-1; j >= 0; --j)
+    {
+      if (maxs[j].o == voxels)
+      {
+        //int z = j / (W*H);
+        //int y = (j / W) % H;
+        int z = j >> 6;
+        int y = (j >> 3) % H;
+        int x = j % W;
+        bounds.max = vec3i(x+1,y+1,z+1);
+      }
+      else
+        break;
+    }
+
+    bounds.min += vec3i(bx * W, by * H, bz * D);
+    bounds.max += vec3i(bx * W, by * H, bz * D);
+    boxes[box_index] = bounds;
+  }
+#else
+
+  int stride;
+  for (stride = 1; stride < N; stride <<= 1) {
+    int index = (i + 1) * stride * 2 - 1;
+    if (index < N) {
+      auto min1 = mins[index];
+      auto min2 = mins[index - stride];
+
+      // Swap if we can
+      if (min2.o == voxels)
+        mins[index] = min2;
+
+      auto max1 = maxs[index];
+      auto max2 = maxs[index - stride];
+
+      // Swap if we have to
+      if (max2.o == voxels && max1.o != voxels)
+        maxs[index] = max2;
+    }
+    __syncthreads();
+  }
+
+  if (i == N-1)
+  {
+    int min_i = mins[i].i;
+    int max_i = maxs[i].i;
+
+    //if (mins[i].o == voxels)
+    {
+      int z = min_i >> 6;
+      int y = (min_i >> 3) % H;
+      int x = min_i % W;
+      bounds.min = vec3i(x,y,z);
+    }
+
+    //if (maxs[i].o == voxels)
+    {
+      int z = max_i >> 6;
+      int y = (max_i >> 3) % H;
+      int x = max_i % W;
+      bounds.max = vec3i(x+1,y+1,z+1);
+    }
+
+    bounds.min += vec3i(bx * W, by * H, bz * D);
+    bounds.max += vec3i(bx * W, by * H, bz * D);
+    boxes[box_index] = bounds;
+  }
+#endif
+
+  //if (tx == 0)
+  //{
+  //  aabbi bounds = bbox;
+  //  bounds.min -= vec3i(bx * W, by * H, bz * D);
+  //  bounds.max -= vec3i(bx * W, by * H, bz * D);
+
+  //  // Search for the minimal volume bounding box
+  //  // that contains #voxels contained in bbox!
+  //  uint16_t voxels = get_count(bounds);
+
+  //  // X boundary
+  //  int x = (bounds.max.x - bounds.min.x) / 2;
+
+  //  while (x >= 1)
+  //  {
+  //    aabbi lbox = bounds;
+  //    lbox.min.x += x;
+
+  //    if (get_count(lbox) == voxels)
+  //    {
+  //      bounds = lbox;
+  //    }
+
+  //    aabbi rbox = bounds;
+  //    rbox.max.x -= x;
+
+  //    if (get_count(rbox) == voxels)
+  //    {
+  //      bounds = rbox;
+  //    }
+
+  //    x /= 2;
+  //  }
+
+  //  // Y boundary from left
+  //  int y = (bounds.max.y - bounds.min.y) / 2;
+
+  //  while (y >= 1)
+  //  {
+  //    aabbi lbox = bounds;
+  //    lbox.min.y += y;
+
+  //    if (get_count(lbox) == voxels)
+  //    {
+  //      bounds = lbox;
+  //    }
+
+  //    aabbi rbox = bounds;
+  //    rbox.max.y -= y;
+
+  //    if (get_count(rbox) == voxels)
+  //    {
+  //      bounds = rbox;
+  //    }
+
+  //    y /= 2;
+  //  }
+
+  //  // Z boundary from left
+  //  int z = (bounds.max.z - bounds.min.z) / 2;
+
+  //  while (z >= 1)
+  //  {
+  //    aabbi lbox = bounds;
+  //    lbox.min.z += z;
+
+  //    if (get_count(lbox) == voxels)
+  //    {
+  //      bounds = lbox;
+  //    }
+
+  //    aabbi rbox = bounds;
+  //    rbox.max.z -= z;
+
+  //    if (get_count(rbox) == voxels)
+  //    {
+  //      bounds = rbox;
+  //    }
+
+  //    z /= 2;
+  //  }
+
+  //  if (bounds.valid())
+  //  {
+  //    bounds.min += vec3i(bx * W, by * H, bz * D);
+  //    bounds.max += vec3i(bx * W, by * H, bz * D);
+  //    boxes[box_index] = bounds;
+  //  }
+  //  else
+  //    boxes[box_index].invalidate();
+  //}
 }
 
 
@@ -744,21 +899,16 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
       transfunc.get_address_mode(),
       transfunc.get_filter_mode());
 
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
 #ifdef BUILD_TIMING
-  cudaEventRecord(start);
+  CudaTimer timer;
 #endif
   impl_->svt.build(cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc));
 #ifdef BUILD_TIMING
-  cudaEventRecord(stop);
-  cudaEventSynchronize(stop);
-  float ms = 0.0f;
-  cudaEventElapsedTime(&ms, start, stop);
-  float sec = ms / 1000.0f;
-  std::cout << std::fixed << std::setprecision(3) << "svt update: " << sec << " sec.\n";
-  cudaEventRecord(start);
+  std::cout << std::fixed << std::setprecision(3) << "svt update: " << timer.elapsed() << " sec.\n";
+#endif
+
+#ifdef BUILD_TIMING
+  timer.reset();
 #endif
   impl_->root.reset(new Impl::Node);
   impl_->root->bbox = impl_->svt.boundary(visionaray::aabbi(
@@ -767,14 +917,7 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   impl_->root->depth = 0;
   impl_->node_splitting(impl_->root);
 #ifdef BUILD_TIMING
-  cudaEventRecord(stop);
-  cudaEventSynchronize(stop);
-  ms = 0.0f;
-  cudaEventElapsedTime(&ms, start, stop);
-  sec = ms / 1000.0f;
-  std::cout << "splitting: " << sec << " sec.\n";
-  cudaEventDestroy(stop);
-  cudaEventDestroy(start);
+  std::cout << "splitting: " << timer.elapsed() << " sec.\n";
 #endif
 }
 
