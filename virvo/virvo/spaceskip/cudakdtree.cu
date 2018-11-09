@@ -325,25 +325,11 @@ __global__ void calculate_local_boundaries(
 
   __syncthreads();
 
-#if 0
+#if 1
   if (i == 0)
   {
+    int k = 0, l = 0;
     for (int j = 0; j < N; ++j)
-    {
-      if (mins[j].valid)
-      {
-        //int z = j / (W*H);
-        //int y = (j / W) % H;
-        int z = j >> 6;
-        int y = (j >> 3) % H;
-        int x = j % W;
-        bounds.min = vec3i(x,y,z);
-      }
-      else
-        break;
-    }
-
-    for (int j = N-1; j >= 0; --j)
     {
       if (maxs[j].valid)
       {
@@ -352,7 +338,24 @@ __global__ void calculate_local_boundaries(
         int z = j >> 6;
         int y = (j >> 3) % H;
         int x = j % W;
+        bounds.min = vec3i(x,y,z);
+        k = j;
+      }
+      else
+        break;
+    }
+
+    for (int j = N-1; j >= 0; --j)
+    {
+      if (mins[j].valid)
+      {
+        //int z = j / (W*H);
+        //int y = (j / W) % H;
+        int z = j >> 6;
+        int y = (j >> 3) % H;
+        int x = j % W;
         bounds.max = vec3i(x+1,y+1,z+1);
+        l = j;
       }
       else
         break;
@@ -378,14 +381,14 @@ __global__ void calculate_local_boundaries(
       auto min2 = mins[index - stride];
 
       // Swap if we have to
-      if (min2.valid && !min1.valid)
+      if (min2.valid)
         mins[index] = min2;
 
       auto max1 = maxs[index];
       auto max2 = maxs[index - stride];
 
       // Swap if we can
-      if (max2.valid)
+      if (max2.valid && !max1.valid)
         maxs[index] = max2;
     }
     __syncthreads();
@@ -393,8 +396,10 @@ __global__ void calculate_local_boundaries(
 
   if (i == N-1)
   {
-    int min_i = mins[i].i;
-    int max_i = maxs[i].i;
+    int min_i = maxs[i].i;
+    int max_i = mins[i].i;
+
+    //printf("%d %d %d %d\n", min_i, k, max_i, l);
 
     //if (min_i > max_i) printf("%d\n", min_i - max_i);
 
