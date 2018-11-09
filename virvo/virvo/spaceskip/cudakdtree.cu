@@ -302,7 +302,7 @@ __global__ void calculate_local_boundaries(
 
   if (voxels == 0)
   {
-    boxes[box_index].invalidate();
+    //boxes[0].invalidate();
     return;
   }
 
@@ -322,7 +322,7 @@ __global__ void calculate_local_boundaries(
 
   __syncthreads();
 
-#if 0
+#if 1
   if (i == 0)
   {
     for (int j = 0; j < N; ++j)
@@ -357,7 +357,13 @@ __global__ void calculate_local_boundaries(
 
     bounds.min += vec3i(bx * W, by * H, bz * D);
     bounds.max += vec3i(bx * W, by * H, bz * D);
-    boxes[box_index] = bounds;
+    //boxes[box_index] = bounds;
+    atomicMin(&boxes[0].min.x, bounds.min.x);
+    atomicMin(&boxes[0].min.y, bounds.min.y);
+    atomicMin(&boxes[0].min.z, bounds.min.z);
+    atomicMax(&boxes[0].max.x, bounds.max.x);
+    atomicMax(&boxes[0].max.y, bounds.max.y);
+    atomicMax(&boxes[0].max.z, bounds.max.z);
   }
 #else
 
@@ -405,7 +411,13 @@ __global__ void calculate_local_boundaries(
 
     bounds.min += vec3i(bx * W, by * H, bz * D);
     bounds.max += vec3i(bx * W, by * H, bz * D);
-    boxes[box_index] = bounds;
+    //boxes[box_index] = bounds;
+    atomicMin(&boxes[0].min.x, bounds.min.x);
+    atomicMin(&boxes[0].min.y, bounds.min.y);
+    atomicMin(&boxes[0].min.z, bounds.min.z);
+    atomicMax(&boxes[0].max.x, bounds.max.x);
+    atomicMax(&boxes[0].max.y, bounds.max.y);
+    atomicMax(&boxes[0].max.z, bounds.max.z);
   }
 #endif
 
@@ -629,9 +641,11 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
                    div_up(offset_y + box_size.y, (int)block_size.y),
                    div_up(offset_z + box_size.z, (int)block_size.z));
 
-    thrust::device_vector<aabbi> boxes(grid_size.x * grid_size.y * grid_size.z);
+    thrust::host_vector<aabbi> h_boxes(1);
+    h_boxes[0].invalidate();
+    thrust::device_vector<aabbi> boxes(h_boxes);//grid_size.x * grid_size.y * grid_size.z);
 
-    CudaTimer timer;
+    //CudaTimer timer;
     calculate_local_boundaries<<<grid_size, block_size>>>(
             bbox,
             thrust::raw_pointer_cast(boxes.data()),
@@ -639,20 +653,23 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
             width,
             height,
             depth);
-    std::cout << "bounds: " << timer.elapsed() << '\n';
+    //std::cout << "bounds: " << timer.elapsed() << '\n';
 
-    aabbi init;
-    init.invalidate();
+    h_boxes = boxes;
+    return h_boxes[0];
 
-    timer.reset();
-    auto result = thrust::reduce(
-            thrust::device,
-            boxes.begin(),
-            boxes.end(),
-            init,
-            device_combine());
-    std::cout << "reduce: " << timer.elapsed() << '\n';
-    return result;
+    //aabbi init;
+    //init.invalidate();
+
+    //timer.reset();
+    //auto result = thrust::reduce(
+    //        thrust::device,
+    //        boxes.begin(),
+    //        boxes.end(),
+    //        init,
+    //        device_combine());
+    //std::cout << "reduce: " << timer.elapsed() << '\n';
+    //return result;
   }
 }
 
