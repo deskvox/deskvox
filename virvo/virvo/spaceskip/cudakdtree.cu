@@ -269,6 +269,17 @@ __global__ void calculate_local_boundaries(
   smem[tx][ty][tz] = data[index];
   smem[tx][ty][tz] = data[index];
 
+  uint16_t i = tz * W * H + ty * W + tx;
+
+  const int N = W*H*D;
+
+  struct pair { uint16_t i; bool valid; };
+  __shared__ pair mins[N];
+  __shared__ pair maxs[N];
+
+  mins[i] = { i, true };
+  maxs[i] = { i, true };
+
   __syncthreads();
 
   auto border_at = [&](int x, int y, int z)
@@ -302,32 +313,24 @@ __global__ void calculate_local_boundaries(
 
   if (voxels == 0)
   {
-    //boxes[0].invalidate();
     return;
   }
 
   // Construct {i,o_min} and {i,o_max}
-  uint16_t i = tz * W * H + ty * W + tx;
   uint16_t o_min = get_count(aabbi(bounds.min, vec3i(tx + 1, ty + 1, tz + 1)));
   uint16_t o_max = get_count(aabbi(vec3i(tx, ty, tz), bounds.max));
 
-  struct pair { uint16_t i, o; };
-  __shared__ pair mins[W * H * D];
-  __shared__ pair maxs[W * H * D];
-
-  const int N = W*H*D;
-
-  mins[i] = { i, o_min };
-  maxs[i] = { i, o_max };
+  mins[i] = { i, o_min == voxels };
+  maxs[i] = { i, o_max == voxels };
 
   __syncthreads();
 
-#if 1
+#if 0
   if (i == 0)
   {
     for (int j = 0; j < N; ++j)
     {
-      if (mins[j].o == voxels)
+      if (mins[j].valid)
       {
         //int z = j / (W*H);
         //int y = (j / W) % H;
@@ -342,7 +345,7 @@ __global__ void calculate_local_boundaries(
 
     for (int j = N-1; j >= 0; --j)
     {
-      if (maxs[j].o == voxels)
+      if (maxs[j].valid)
       {
         //int z = j / (W*H);
         //int y = (j / W) % H;
@@ -374,15 +377,15 @@ __global__ void calculate_local_boundaries(
       auto min1 = mins[index];
       auto min2 = mins[index - stride];
 
-      // Swap if we can
-      if (min2.o == voxels)
+      // Swap if we have to
+      if (min2.valid && !min1.valid)
         mins[index] = min2;
 
       auto max1 = maxs[index];
       auto max2 = maxs[index - stride];
 
-      // Swap if we have to
-      if (max2.o == voxels && max1.o != voxels)
+      // Swap if we can
+      if (max2.valid)
         maxs[index] = max2;
     }
     __syncthreads();
@@ -393,7 +396,8 @@ __global__ void calculate_local_boundaries(
     int min_i = mins[i].i;
     int max_i = maxs[i].i;
 
-    //if (mins[i].o == voxels)
+    //if (min_i > max_i) printf("%d\n", min_i - max_i);
+
     {
       int z = min_i >> 6;
       int y = (min_i >> 3) % H;
@@ -401,7 +405,6 @@ __global__ void calculate_local_boundaries(
       bounds.min = vec3i(x,y,z);
     }
 
-    //if (maxs[i].o == voxels)
     {
       int z = max_i >> 6;
       int y = (max_i >> 3) % H;
