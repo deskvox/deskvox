@@ -631,6 +631,7 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
 
     thrust::device_vector<aabbi> boxes(grid_size.x * grid_size.y * grid_size.z);
 
+    CudaTimer timer;
     calculate_local_boundaries<<<grid_size, block_size>>>(
             bbox,
             thrust::raw_pointer_cast(boxes.data()),
@@ -638,16 +639,20 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
             width,
             height,
             depth);
+    std::cout << "bounds: " << timer.elapsed() << '\n';
 
     aabbi init;
     init.invalidate();
 
-    return thrust::reduce(
+    timer.reset();
+    auto result = thrust::reduce(
             thrust::device,
             boxes.begin(),
             boxes.end(),
             init,
             device_combine());
+    std::cout << "reduce: " << timer.elapsed() << '\n';
+    return result;
   }
 }
 
@@ -904,7 +909,7 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #endif
   impl_->svt.build(cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc));
 #ifdef BUILD_TIMING
-  std::cout << std::fixed << std::setprecision(3) << "svt update: " << timer.elapsed() << " sec.\n";
+  std::cout << std::fixed << std::setprecision(8) << "svt update: " << timer.elapsed() << " sec.\n";
 #endif
 
 #ifdef BUILD_TIMING
