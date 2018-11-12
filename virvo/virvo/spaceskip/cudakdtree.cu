@@ -133,7 +133,7 @@ __global__ void svt_apply_transfunc(Tex transfunc,
 }
 
 template <typename T>
-__global__ void svt_build(T* data, int width, int height, int depth)
+__global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, int depth)
 {
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -143,11 +143,17 @@ __global__ void svt_build(T* data, int width, int height, int depth)
 
   __shared__ T smem[BX*2][BY][BZ];
 
+  int bx = blockIdx.x;
+  int by = blockIdx.y;
+  int bz = blockIdx.z;
+
   int tx = threadIdx.x;
   int ty = threadIdx.y;
   int tz = threadIdx.z;
 
   int W = min(BX*2, width);
+  int H = BY;
+  int D = BZ;
 
   if (threadIdx.x >= W/2)
     return;
@@ -211,76 +217,7 @@ __global__ void svt_build(T* data, int width, int height, int depth)
     __syncthreads();
   }
 
-  // Copy back to global memory
-
-  data[base + ai] = smem[ai][ty][tz];
-  data[base + bi] = smem[bi][ty][tz];
-}
-
-// The two bounding boxes the node splitting phase produces
-__device__ aabbi split_boxes[2];
-
-// Each partial SVT calculates its boundary
-template <typename T>
-__global__ void calculate_local_boundaries(
-        aabbi node,
-        aabbi* boxes, // calc. one box per partial SVT
-        const T* data,
-        int width,
-        int height,
-        int depth)
-{
-  const int W = 8, H = 8, D = 8;
-  assert(blockDim.x == W && blockDim.y == H && blockDim.z == D);
-
-  int offset_x = node.min.x / blockDim.x;
-  int offset_y = node.min.y / blockDim.y;
-  int offset_z = node.min.z / blockDim.z;
-
-  // Block indices w.r.t. node!
-  // (grid spans only node's box, not the whole volume!)
-  int bx = offset_x + blockIdx.x;
-  int by = offset_y + blockIdx.y;
-  int bz = offset_z + blockIdx.z;
-
-  int x = bx * blockDim.x + threadIdx.x;
-  int y = by * blockDim.y + threadIdx.y;
-  int z = bz * blockDim.z + threadIdx.z;
-
-  int tx = threadIdx.x;
-  int ty = threadIdx.y;
-  int tz = threadIdx.z;
-
-  if (tx >= W || ty >= H || tz >= D)
-    return;
-
-  aabbi bbox(
-        { bx * W, by * H, bz * D },
-        { bx * W + W, by * H + H, bz * D + D });
-
-  int box_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
-
-  bbox = intersect(bbox, node);
-
-  int index = z * width * height + y * width + x;
-
-  __shared__ T smem[W][H][D];
-
-  smem[tx][ty][tz] = data[index];
-  smem[tx][ty][tz] = data[index];
-
-  uint16_t i = tz * W * H + ty * W + tx;
-
-  const int N = W*H*D;
-
-  struct pair { uint16_t i; bool valid; };
-  __shared__ pair mins[N];
-  __shared__ pair maxs[N];
-
-  mins[i] = { i, true };
-  maxs[i] = { i, true };
-
-  __syncthreads();
+  // Calculate local bounding boxes
 
   auto border_at = [&](int x, int y, int z)
   {
@@ -305,221 +242,100 @@ __global__ void calculate_local_boundaries(
          - border_at(bounds.min.x, bounds.min.y, bounds.min.z);
   };
 
-  aabbi bounds = bbox;
-  bounds.min -= vec3i(bx * W, by * H, bz * D);
-  bounds.max -= vec3i(bx * W, by * H, bz * D);
+  aabbi bounds(vec3i(0,0,0), vec3i(8,8,8));
 
   uint16_t voxels = get_count(bounds);
 
+  int box_index = bz * gridDim.x * gridDim.y + by * gridDim.x + bx;
+
   if (voxels == 0)
+    boxes[box_index].invalidate();
+  else if (tx == 0 && ty == 0 && tz == 0)
   {
-    return;
-  }
+    // Search for the minimal volume bounding box
+    // that contains #voxels contained in bbox!
 
-  // Construct {i,o_min} and {i,o_max}
-  uint16_t o_min = get_count(aabbi(bounds.min, vec3i(tx + 1, ty + 1, tz + 1)));
-  uint16_t o_max = get_count(aabbi(vec3i(tx, ty, tz), bounds.max));
+    vec3i min_corner = bounds.min;
+    vec3i max_corner = bounds.max;
 
-  mins[i] = { i, o_min == voxels };
-  maxs[i] = { i, o_max == voxels };
+    // X boundary
+    int x = (bounds.max.x - bounds.min.x) / 2;
 
-  __syncthreads();
-
-#if 1
-  if (i == 0)
-  {
-    int k = 0, l = 0;
-    for (int j = 0; j < N; ++j)
+    while (x >= 1)
     {
-      if (maxs[j].valid)
+      aabbi lbox(min_corner, bounds.max);
+      lbox.min.x += x;
+
+      if (get_count(lbox) == voxels)
       {
-        //int z = j / (W*H);
-        //int y = (j / W) % H;
-        int z = j >> 6;
-        int y = (j >> 3) % H;
-        int x = j % W;
-        bounds.min = vec3i(x,y,z);
-        k = j;
+        min_corner = lbox.min;
       }
-      else
-        break;
+
+      aabbi rbox(bounds.min, max_corner);
+      rbox.max.x -= x;
+
+      if (get_count(rbox) == voxels)
+      {
+        max_corner = rbox.max;
+      }
+
+      x /= 2;
     }
 
-    for (int j = N-1; j >= 0; --j)
+    // Y boundary from left
+    int y = (bounds.max.y - bounds.min.y) / 2;
+
+    while (y >= 1)
     {
-      if (mins[j].valid)
+      aabbi lbox(min_corner, bounds.max);
+      lbox.min.y += y;
+
+      if (get_count(lbox) == voxels)
       {
-        //int z = j / (W*H);
-        //int y = (j / W) % H;
-        int z = j >> 6;
-        int y = (j >> 3) % H;
-        int x = j % W;
-        bounds.max = vec3i(x+1,y+1,z+1);
-        l = j;
+        min_corner = lbox.min;
       }
-      else
-        break;
+
+      aabbi rbox(bounds.min, max_corner);
+      rbox.max.y -= y;
+
+      if (get_count(rbox) == voxels)
+      {
+        max_corner = rbox.max;
+      }
+
+      y /= 2;
     }
+
+    // Z boundary from left
+    int z = (bounds.max.z - bounds.min.z) / 2;
+
+    while (z >= 1)
+    {
+      aabbi lbox(min_corner, bounds.max);
+      lbox.min.z += z;
+
+      if (get_count(lbox) == voxels)
+      {
+        min_corner = lbox.min;
+      }
+
+      aabbi rbox(bounds.min, max_corner);
+      rbox.max.z -= z;
+
+      if (get_count(rbox) == voxels)
+      {
+        max_corner = rbox.max;
+      }
+
+      z /= 2;
+    }
+
+    bounds = aabbi(min_corner, max_corner);
 
     bounds.min += vec3i(bx * W, by * H, bz * D);
     bounds.max += vec3i(bx * W, by * H, bz * D);
-    //boxes[box_index] = bounds;
-    atomicMin(&boxes[0].min.x, bounds.min.x);
-    atomicMin(&boxes[0].min.y, bounds.min.y);
-    atomicMin(&boxes[0].min.z, bounds.min.z);
-    atomicMax(&boxes[0].max.x, bounds.max.x);
-    atomicMax(&boxes[0].max.y, bounds.max.y);
-    atomicMax(&boxes[0].max.z, bounds.max.z);
+    boxes[box_index] = bounds;
   }
-#else
-
-  int stride;
-  for (stride = 1; stride < N; stride <<= 1) {
-    int index = (i + 1) * stride * 2 - 1;
-    if (index < N) {
-      auto min1 = mins[index];
-      auto min2 = mins[index - stride];
-
-      // Swap if we have to
-      if (min2.valid)
-        mins[index] = min2;
-
-      auto max1 = maxs[index];
-      auto max2 = maxs[index - stride];
-
-      // Swap if we can
-      if (max2.valid && !max1.valid)
-        maxs[index] = max2;
-    }
-    __syncthreads();
-  }
-
-  if (i == N-1)
-  {
-    int min_i = maxs[i].i;
-    int max_i = mins[i].i;
-
-    //printf("%d %d %d %d\n", min_i, k, max_i, l);
-
-    //if (min_i > max_i) printf("%d\n", min_i - max_i);
-
-    {
-      int z = min_i >> 6;
-      int y = (min_i >> 3) % H;
-      int x = min_i % W;
-      bounds.min = vec3i(x,y,z);
-    }
-
-    {
-      int z = max_i >> 6;
-      int y = (max_i >> 3) % H;
-      int x = max_i % W;
-      bounds.max = vec3i(x+1,y+1,z+1);
-    }
-
-    bounds.min += vec3i(bx * W, by * H, bz * D);
-    bounds.max += vec3i(bx * W, by * H, bz * D);
-    //boxes[box_index] = bounds;
-    atomicMin(&boxes[0].min.x, bounds.min.x);
-    atomicMin(&boxes[0].min.y, bounds.min.y);
-    atomicMin(&boxes[0].min.z, bounds.min.z);
-    atomicMax(&boxes[0].max.x, bounds.max.x);
-    atomicMax(&boxes[0].max.y, bounds.max.y);
-    atomicMax(&boxes[0].max.z, bounds.max.z);
-  }
-#endif
-
-  //if (tx == 0)
-  //{
-  //  aabbi bounds = bbox;
-  //  bounds.min -= vec3i(bx * W, by * H, bz * D);
-  //  bounds.max -= vec3i(bx * W, by * H, bz * D);
-
-  //  // Search for the minimal volume bounding box
-  //  // that contains #voxels contained in bbox!
-  //  uint16_t voxels = get_count(bounds);
-
-  //  // X boundary
-  //  int x = (bounds.max.x - bounds.min.x) / 2;
-
-  //  while (x >= 1)
-  //  {
-  //    aabbi lbox = bounds;
-  //    lbox.min.x += x;
-
-  //    if (get_count(lbox) == voxels)
-  //    {
-  //      bounds = lbox;
-  //    }
-
-  //    aabbi rbox = bounds;
-  //    rbox.max.x -= x;
-
-  //    if (get_count(rbox) == voxels)
-  //    {
-  //      bounds = rbox;
-  //    }
-
-  //    x /= 2;
-  //  }
-
-  //  // Y boundary from left
-  //  int y = (bounds.max.y - bounds.min.y) / 2;
-
-  //  while (y >= 1)
-  //  {
-  //    aabbi lbox = bounds;
-  //    lbox.min.y += y;
-
-  //    if (get_count(lbox) == voxels)
-  //    {
-  //      bounds = lbox;
-  //    }
-
-  //    aabbi rbox = bounds;
-  //    rbox.max.y -= y;
-
-  //    if (get_count(rbox) == voxels)
-  //    {
-  //      bounds = rbox;
-  //    }
-
-  //    y /= 2;
-  //  }
-
-  //  // Z boundary from left
-  //  int z = (bounds.max.z - bounds.min.z) / 2;
-
-  //  while (z >= 1)
-  //  {
-  //    aabbi lbox = bounds;
-  //    lbox.min.z += z;
-
-  //    if (get_count(lbox) == voxels)
-  //    {
-  //      bounds = lbox;
-  //    }
-
-  //    aabbi rbox = bounds;
-  //    rbox.max.z -= z;
-
-  //    if (get_count(rbox) == voxels)
-  //    {
-  //      bounds = rbox;
-  //    }
-
-  //    z /= 2;
-  //  }
-
-  //  if (bounds.valid())
-  //  {
-  //    bounds.min += vec3i(bx * W, by * H, bz * D);
-  //    bounds.max += vec3i(bx * W, by * H, bz * D);
-  //    boxes[box_index] = bounds;
-  //  }
-  //  else
-  //    boxes[box_index].invalidate();
-  //}
 }
 
 
@@ -543,6 +359,8 @@ struct CudaSVT
   thrust::device_vector<T> data_;
   // Data pointer
   T* data_pointer_ = nullptr;
+  // Local bounding boxes
+  thrust::device_vector<aabbi> boxes_;
 
   int width;
   int height;
@@ -613,12 +431,15 @@ void CudaSVT<T>::build(Tex transfunc)
                    div_up(height,  (int)block_size.y),
                    div_up(depth,   (int)block_size.z));
 
-    svt_build<<<grid_size, block_size>>>(
+    boxes_.resize(grid_size.x * grid_size.y * grid_size.z);
+
+    svt_build_boxes<<<grid_size, block_size>>>(
             data_pointer_,
+            thrust::raw_pointer_cast(boxes_.data()),
             width,
             height,
             depth);
-    cudaDeviceSynchronize();
+    thrust::host_vector<aabbi> h_boxes(boxes_);
   }
 }
 
@@ -634,51 +455,6 @@ struct device_combine
 template <typename T>
 aabbi CudaSVT<T>::boundary(aabbi bbox) const
 {
-  assert(data_pointer_ && "Call reset() first!");
-
-  // Calculate bounding boxes inside the 8x8x8 SVTs
-  {
-    dim3 block_size(8, 8, 8);
-
-    auto box_size = bbox.size();
-    int offset_x = bbox.min.x % block_size.x;
-    int offset_y = bbox.min.y % block_size.y;
-    int offset_z = bbox.min.z % block_size.z;
-
-    dim3 grid_size(div_up(offset_x + box_size.x, (int)block_size.x),
-                   div_up(offset_y + box_size.y, (int)block_size.y),
-                   div_up(offset_z + box_size.z, (int)block_size.z));
-
-    thrust::host_vector<aabbi> h_boxes(1);
-    h_boxes[0].invalidate();
-    thrust::device_vector<aabbi> boxes(h_boxes);//grid_size.x * grid_size.y * grid_size.z);
-
-    //CudaTimer timer;
-    calculate_local_boundaries<<<grid_size, block_size>>>(
-            bbox,
-            thrust::raw_pointer_cast(boxes.data()),
-            data_pointer_,
-            width,
-            height,
-            depth);
-    //std::cout << "bounds: " << timer.elapsed() << '\n';
-
-    h_boxes = boxes;
-    return h_boxes[0];
-
-    //aabbi init;
-    //init.invalidate();
-
-    //timer.reset();
-    //auto result = thrust::reduce(
-    //        thrust::device,
-    //        boxes.begin(),
-    //        boxes.end(),
-    //        init,
-    //        device_combine());
-    //std::cout << "reduce: " << timer.elapsed() << '\n';
-    //return result;
-  }
 }
 
 namespace virvo
