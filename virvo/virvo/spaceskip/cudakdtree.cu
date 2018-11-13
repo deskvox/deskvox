@@ -576,7 +576,7 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
     axis = 2;
 
   // Halting criterion (new):
-  if (len[axis] == 8)
+  if (len[axis] <= 8)
     return;
 
   static const int NumBins = 16;
