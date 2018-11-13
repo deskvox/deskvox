@@ -357,7 +357,7 @@ struct CudaSVT
   template <typename Tex>
   void build(Tex transfunc);
 
-  aabbi boundary(aabbi bbox) const;
+  aabbi boundary(aabbi bbox, const cudaStream_t& stream = 0) const;
 
   // Channel values from volume description
   thrust::device_vector<float> voxels_;
@@ -485,7 +485,7 @@ struct device_combine
 };
 
 template <typename T>
-aabbi CudaSVT<T>::boundary(aabbi bbox) const
+aabbi CudaSVT<T>::boundary(aabbi bbox, const cudaStream_t& stream) const
 {
   bbox.min.x = std::max(0, round_down(bbox.min.x, 8));
   bbox.min.y = std::max(0, round_down(bbox.min.y, 8));
@@ -512,10 +512,8 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
   aabbi init;
   init.invalidate();
 
-  cudaStream_t streams[1];
   return thrust::reduce(
-      thrust::cuda::par.on(streams[0]),
-//      thrust::device,
+      thrust::cuda::par.on(stream),
       boxes_.begin() + min_index,
       boxes_.begin() + max_index + 1,
       init,
@@ -638,16 +636,23 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
 
   int vol = volume(n->bbox);
 
+  cudaStream_t streams[NumBins * 2];
+  int s = 0;
   for (int p = 1; p < num_planes; ++p)
   {
+    cudaStreamCreate(&streams[s]);
+    cudaStreamCreate(&streams[s+1]);
+
     aabbi ltmp = n->bbox;
     aabbi rtmp = n->bbox;
 
     ltmp.max[axis] = first + dl * p;
     rtmp.min[axis] = first + dl * p;
 
-    ltmp = svt.boundary(ltmp);
-    rtmp = svt.boundary(rtmp);
+    ltmp = svt.boundary(ltmp, streams[s]);
+    rtmp = svt.boundary(rtmp, streams[s+1]);
+
+    s += 2;
 
     int c = volume(ltmp) + volume(rtmp);
 
