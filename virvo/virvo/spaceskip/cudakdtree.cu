@@ -35,6 +35,7 @@
 #include <visionaray/math/forward.h>
 #include <visionaray/math/io.h>
 #include <visionaray/math/vector.h>
+#include <visionaray/morton.h>
 
 #undef MATH_NAMESPACE
 
@@ -249,7 +250,12 @@ __global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, in
   int box_index = bz * gridDim.x * gridDim.y + by * gridDim.x + bx;
 
   if (voxels == 0)
-    boxes[box_index].invalidate();
+  {
+    // Make an invalid bounding box that we however can
+    // identify as belonging to this brick!
+    boxes[box_index].min = vec3i(4,4,4) + vec3i(bx * W, by * H, bz * D);
+    boxes[box_index].max = vec3i(3,3,3) + vec3i(bx * W, by * H, bz * D);
+  }
   else if (tx == 0 && ty == 0 && tz == 0)
   {
     // Search for the minimal volume bounding box
@@ -396,6 +402,21 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   voxels_ = host_voxels;
 }
 
+struct device_compare_morton
+{
+  __device__
+  bool operator()(aabbi l, aabbi r)
+  {
+    auto cl = l.min / vec3i(8,8,8);
+    auto cr = r.min / vec3i(8,8,8);
+
+    auto ml = morton_encode3D(cl.x, cl.y, cl.z);
+    auto mr = morton_encode3D(cr.x, cr.y, cr.z);
+
+    return ml < mr;
+  }
+};
+
 template <typename T>
 template <typename Tex>
 void CudaSVT<T>::build(Tex transfunc)
@@ -416,7 +437,6 @@ void CudaSVT<T>::build(Tex transfunc)
             width,
             height,
             depth);
-    cudaDeviceSynchronize();
   }
 
   // Build 8x8x8 SVTs
@@ -434,8 +454,14 @@ void CudaSVT<T>::build(Tex transfunc)
             width,
             height,
             depth);
-    thrust::host_vector<aabbi> h_boxes(boxes_);
   }
+
+  thrust::stable_sort(
+        thrust::device,
+        boxes_.begin(),
+        boxes_.end(),
+        device_compare_morton()
+        );
 }
 
 struct device_combine
@@ -461,13 +487,22 @@ struct device_combine
 template <typename T>
 aabbi CudaSVT<T>::boundary(aabbi bbox) const
 {
-  bbox.min.x = max(0, round_down(bbox.min.x, 8));
-  bbox.min.y = max(0, round_down(bbox.min.y, 8));
-  bbox.min.z = max(0, round_down(bbox.min.z, 8));
+  bbox.min.x = std::max(0, round_down(bbox.min.x, 8));
+  bbox.min.y = std::max(0, round_down(bbox.min.y, 8));
+  bbox.min.z = std::max(0, round_down(bbox.min.z, 8));
 
-  bbox.max.x = min(width,  round_up(bbox.max.x, 8));
-  bbox.max.y = min(height, round_up(bbox.max.y, 8));
-  bbox.max.z = min(depth,  round_up(bbox.max.z, 8));
+  bbox.max.x = std::min(width,  round_up(bbox.max.x, 8));
+  bbox.max.y = std::min(height, round_up(bbox.max.y, 8));
+  bbox.max.z = std::min(depth,  round_up(bbox.max.z, 8));
+
+  // Calculate minimum and maximum morton indices of box
+  // So we can restrict the range of the ensuing reduction
+  vec3i min(bbox.min.x / 8, bbox.min.y / 8, bbox.min.z / 8);
+  vec3i max(bbox.max.x / 8, bbox.max.y / 8, bbox.max.z / 8);
+//std::cout << min << max << '\n';
+  auto min_index = morton_encode3D(min.x, min.y, min.z);
+  auto max_index = std::min(morton_encode3D(max.x, max.y, max.z), (unsigned)boxes_.size());
+//std::cout << min_index << ' ' << max_index << '\n';
 
   thrust::device_vector<aabbi> check(1);
   thrust::copy(&bbox, &bbox + 1, check.begin());
@@ -477,10 +512,12 @@ aabbi CudaSVT<T>::boundary(aabbi bbox) const
   aabbi init;
   init.invalidate();
 
+  cudaStream_t streams[1];
   return thrust::reduce(
-      thrust::device,
-      boxes_.begin(),
-      boxes_.end(),
+      thrust::cuda::par.on(streams[0]),
+//      thrust::device,
+      boxes_.begin() + min_index,
+      boxes_.begin() + max_index + 1,
       init,
       comb);
 }
@@ -579,7 +616,7 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
   if (len[axis] <= 8)
     return;
 
-  static const int NumBins = 16;
+  static const int NumBins = 8;
 
   int dl = len[axis] / NumBins;
 
