@@ -357,8 +357,6 @@ struct CudaSVT
   thrust::device_vector<float> voxels_;
   // SVT array
   thrust::device_vector<T> data_;
-  // Data pointer
-  T* data_pointer_ = nullptr;
   // Local bounding boxes
   thrust::device_vector<aabbi> boxes_;
 
@@ -370,6 +368,7 @@ struct CudaSVT
 template <typename T>
 void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
 {
+  std::cout << cudaGetLastError() << '\n';
   size_t size = bbox.size().x * bbox.size().y * bbox.size().z;
   data_.resize(size);
   width  = bbox.size().x;
@@ -395,16 +394,12 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   }
 
   voxels_ = host_voxels;
-
-  data_pointer_ = thrust::raw_pointer_cast(data_.data());
 }
 
 template <typename T>
 template <typename Tex>
 void CudaSVT<T>::build(Tex transfunc)
 {
-  assert(data_pointer_ && "Call reset() first!");
-
   // Apply transfer function
   {
     // Launch blocks of size 16x8x8 to e.g.
@@ -416,7 +411,7 @@ void CudaSVT<T>::build(Tex transfunc)
 
     svt_apply_transfunc<<<grid_size, block_size>>>(
             transfunc,
-            data_pointer_,
+            thrust::raw_pointer_cast(data_.data()),
             thrust::raw_pointer_cast(voxels_.data()),
             width,
             height,
@@ -434,7 +429,7 @@ void CudaSVT<T>::build(Tex transfunc)
     boxes_.resize(grid_size.x * grid_size.y * grid_size.z);
 
     svt_build_boxes<<<grid_size, block_size>>>(
-            data_pointer_,
+            thrust::raw_pointer_cast(data_.data()),
             thrust::raw_pointer_cast(boxes_.data()),
             width,
             height,
@@ -448,13 +443,46 @@ struct device_combine
   __device__
   aabbi operator()(aabbi l, aabbi r)
   {
+    l = intersect(l, *check);
+    r = intersect(r, *check);
+
+    if (l.empty())
+      l.invalidate();
+
+    if (r.empty())
+      r.invalidate();
+
     return combine(l, r);
   }
+
+  aabbi* check = nullptr;
 };
 
 template <typename T>
 aabbi CudaSVT<T>::boundary(aabbi bbox) const
 {
+  bbox.min.x = max(0, round_down(bbox.min.x, 8));
+  bbox.min.y = max(0, round_down(bbox.min.y, 8));
+  bbox.min.z = max(0, round_down(bbox.min.z, 8));
+
+  bbox.max.x = min(width,  round_up(bbox.max.x, 8));
+  bbox.max.y = min(height, round_up(bbox.max.y, 8));
+  bbox.max.z = min(depth,  round_up(bbox.max.z, 8));
+
+  thrust::device_vector<aabbi> check(1);
+  thrust::copy(&bbox, &bbox + 1, check.begin());
+  device_combine comb;
+  comb.check = thrust::raw_pointer_cast(check.data());
+
+  aabbi init;
+  init.invalidate();
+
+  return thrust::reduce(
+      thrust::device,
+      boxes_.begin(),
+      boxes_.end(),
+      init,
+      comb);
 }
 
 namespace virvo
@@ -525,6 +553,15 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
   using visionaray::aabbi;
   using visionaray::vec3i;
 
+  // Expand node's bounding box so it falls on multiples of eights
+  n->bbox.min.x = max(0, round_down(n->bbox.min.x, 8));
+  n->bbox.min.y = max(0, round_down(n->bbox.min.y, 8));
+  n->bbox.min.z = max(0, round_down(n->bbox.min.z, 8));
+
+  n->bbox.max.x = min(vox[0], round_up(n->bbox.max.x, 8));
+  n->bbox.max.y = min(vox[1], round_up(n->bbox.max.y, 8));
+  n->bbox.max.z = min(vox[2], round_up(n->bbox.max.z, 8));
+
   // Halting criterion 1.)
   if (volume(n->bbox) < volume(root->bbox) / 10)
     return;
@@ -538,10 +575,15 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  int lmax = len[axis];
+  // Halting criterion (new):
+  if (len[axis] == 8)
+    return;
 
-  static const int dl = 4; // ``we set dl to be 4 for 256^3 data sets..''
-  //  static const int dl = 8; // ``.. and 8 for 512^3 data sets.''
+  static const int NumBins = 16;
+
+  int dl = len[axis] / NumBins;
+
+  int lmax = len[axis];
 
   // Halting criterion 1.b) (should not really get here..)
   if (lmax < dl)
