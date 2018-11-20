@@ -265,6 +265,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       REMOTE_IMAGE,                               ///< image based remote renderer
       SERBRICKREND,                               ///< serial brick renderer
       PARBRICKREND,                               ///< parallel brick renderer
+      RAYRENDSIMPLE,                              ///< simple raycaster
       NUM_RENDERERS                               ///< keep last
     };
 

@@ -206,6 +206,7 @@ set(VIRVO_HEADERS
   vvserialization.h
   vvshaderfactory.h
   vvshaderprogram.h
+  vvsimplecaster.h
   vvsllist.h
   vvsocket.h
   vvsocketio.h
@@ -327,6 +328,7 @@ endif(VISIONARAY_FOUND)
 if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
   vvcudatransfunc.cu
+  vvsimplecaster.cu
 )
 endif(DESKVOX_USE_CUDA)
 

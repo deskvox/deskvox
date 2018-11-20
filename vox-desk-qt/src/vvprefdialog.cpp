@@ -137,6 +137,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   impl->rendererDescriptions.insert(std::make_pair("planar", "OpenGL textures"));
   impl->rendererDescriptions.insert(std::make_pair("spherical", "OpenGL textures"));
   impl->rendererDescriptions.insert(std::make_pair("rayrend", "Ray casting"));
+  impl->rendererDescriptions.insert(std::make_pair("rayrendsimple", "Simple Ray casting"));
 
   impl->algoDescriptions.insert(std::make_pair("default", "Autoselect"));
   impl->algoDescriptions.insert(std::make_pair("slices", "2D textures (slices)"));
@@ -157,6 +158,13 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   {
     ui->rendererBox->addItem(impl->rendererDescriptions["rayrend"].c_str());
     impl->rendererMap.insert(std::make_pair(idx, vvRenderer::RAYREND));
+    ++idx;
+  }
+
+  if (vvRendererFactory::hasRenderer(vvRenderer::RAYRENDSIMPLE))
+  {
+    ui->rendererBox->addItem(impl->rendererDescriptions["rayrendsimple"].c_str());
+    impl->rendererMap.insert(std::make_pair(idx, vvRenderer::RAYRENDSIMPLE));
     ++idx;
   }
 
@@ -476,6 +484,9 @@ void vvPrefDialog::emitRenderer()
   {
     switch (impl->rendererMap[ui->rendererBox->currentIndex()])
     {
+    case vvRenderer::RAYRENDSIMPLE:
+      name = "rayrendsimple";
+      break;
     case vvRenderer::RAYREND:
       name = "rayrend";
       options["arch"] = impl->rayRendArchMap[ui->rayRendArchBox->currentIndex()];
