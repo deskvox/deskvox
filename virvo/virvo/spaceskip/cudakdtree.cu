@@ -71,7 +71,7 @@ public:
     // just allocate bytes
     typedef char value_type;
  
-    cached_allocator() { }
+    cached_allocator() = default;
  
     ~cached_allocator()
     {
@@ -564,6 +564,11 @@ void CudaSVT<T>::build(Tex transfunc)
         boxes_.end(),
         device_compare_morton()
         );
+//
+//    thrust::host_vector<aabbi> h_boxes(boxes_);
+//
+//    for (auto b : h_boxes)
+//        if (b.valid()) std::cout << b.min << b.max << std::endl;
 }
 
 struct device_combine
@@ -571,8 +576,8 @@ struct device_combine
   __device__
   aabbi operator()(aabbi l, aabbi r)
   {
-    l = intersect(l, *check);
-    r = intersect(r, *check);
+    l = intersect(l, check);
+    r = intersect(r, check);
 
     if (l.empty())
       l.invalidate();
@@ -583,7 +588,7 @@ struct device_combine
     return combine(l, r);
   }
 
-  aabbi* check = nullptr;
+  aabbi check;
 };
 
 template <typename T>
@@ -603,13 +608,13 @@ aabbi CudaSVT<T>::boundary(aabbi bbox, const cudaStream_t& stream) const
   vec3i max(bbox.max.x / 8, bbox.max.y / 8, bbox.max.z / 8);
 //std::cout << min << max << '\n';
   auto min_index = morton_encode3D(min.x, min.y, min.z);
-  auto max_index = std::min(morton_encode3D(max.x, max.y, max.z), (unsigned)boxes_.size());
+  auto max_index = std::min(morton_encode3D(max.x, max.y, max.z), (uint64_t)boxes_.size());
 //std::cout << min_index << ' ' << max_index << '\n';
 
-  thrust::device_vector<aabbi> check(1);
+  thrust::host_vector<aabbi> check(1);
   thrust::copy(&bbox, &bbox + 1, check.begin());
   device_combine comb;
-  comb.check = thrust::raw_pointer_cast(check.data());
+  comb.check = bbox;//thrust::raw_pointer_cast(check.data());
 
   aabbi init;
   init.invalidate();
@@ -714,21 +719,11 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  // Halting criterion (new):
-  if (len[axis] <= 8)
-    return;
-
   static const int NumBins = 16;
 
   int dl = len[axis] / NumBins;
 
-  int lmax = len[axis];
-
-  // Halting criterion 1.b) (should not really get here..)
-  if (lmax < dl)
-    return;
-
-  int num_planes = lmax / dl;
+  int num_planes = NumBins- 1;
 
   int min_cost = INT_MAX;
   int best_p = -1;
@@ -740,23 +735,18 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
 
   int vol = volume(n->bbox);
 
-  cudaStream_t streams[NumBins * 2];
-  int s = 0;
-  for (int p = 1; p < num_planes; ++p)
-  {
-    cudaStreamCreate(&streams[s]);
-    cudaStreamCreate(&streams[s+1]);
+  int off = n->bbox.min[axis];
 
+  for (int p = 1; p <= num_planes; ++p)
+  {
     aabbi ltmp = n->bbox;
     aabbi rtmp = n->bbox;
 
     ltmp.max[axis] = first + dl * p;
     rtmp.min[axis] = first + dl * p;
 
-    ltmp = svt.boundary(ltmp, streams[s]);
-    rtmp = svt.boundary(rtmp, streams[s+1]);
-
-    s += 2;
+    ltmp = svt.boundary(ltmp);
+    rtmp = svt.boundary(rtmp);
 
     int c = volume(ltmp) + volume(rtmp);
 
@@ -772,8 +762,12 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
       min_cost = c;
       lbox = ltmp;
       rbox = rtmp;
-      best_p = p;
+      best_p = p;std::cout << best_p << '\n';
     }
+
+    off += dl;
+    if (dl >= n->bbox.max[axis])
+      break;
   }
 
   // Halting criterion 2.)
@@ -921,12 +915,12 @@ std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, b
   using visionaray::vec3;
 
   std::vector<aabb> result;
-
-  impl_->traverse(impl_->root, eye, [&result,this](Impl::NodePtr const& n)
+size_t vol = 0;
+  impl_->traverse(impl_->root, eye, [&vol,&result,this](Impl::NodePtr const& n)
   {
     if (n->left == nullptr && n->right == nullptr)
     {
-      auto bbox = n->bbox;
+      auto bbox = n->bbox;vol += volume(bbox);
       bbox.min.y = impl_->vox[1] - n->bbox.max.y;
       bbox.max.y = impl_->vox[1] - n->bbox.min.y;
       bbox.min.z = impl_->vox[2] - n->bbox.max.z;
@@ -936,7 +930,7 @@ std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, b
 
       result.push_back(aabb(bmin, bmax));
     }
-  }, frontToBack);
+  }, frontToBack);vol = (impl_->vox[0] * impl_->vox[1] * impl_->vox[2]) - vol;std::cout << vol << std::endl;
 
   return result;
 }

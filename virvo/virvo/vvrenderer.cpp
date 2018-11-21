@@ -1152,6 +1152,12 @@ void vvRenderer::drawBoundingBox(vec3f const& oSize, vec3f const& oPos, const vv
 
   glLineWidth(3.0f);
 
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   // Draw faces:
   for (i=0; i<6; ++i)
   {
