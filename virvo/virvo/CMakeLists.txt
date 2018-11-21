@@ -145,6 +145,10 @@ set(VIRVO_HEADERS
   mem/new.h
   mem/swap.h
 
+  spaceskip/kdtree.h
+  spaceskip/kdtree.inl
+  spaceskip/svt.h
+
   texture/detail/prefilter.h
   texture/detail/sampler1d.h
   texture/detail/sampler3d.h
@@ -252,6 +256,8 @@ set(VIRVO_SOURCES
 
   gl/handle.cpp
   gl/util.cpp
+
+  spaceskip/kdtree.cpp
 
   vvbrickrend.cpp
   vvbsptree.cpp

@@ -21,6 +21,7 @@
 #ifndef VV_SPACESKIP_H
 #define VV_SPACESKIP_H
 
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -28,6 +29,7 @@
 #include "math/vector.h"
 #include "vvcolor.h"
 #include "vvexport.h"
+#include "vvmacros.h"
 #include "vvpixelformat.h"
 
 class vvVolDesc;
@@ -35,6 +37,9 @@ class vvVolDesc;
 namespace virvo
 {
 
+  /** Space skipping tree wrapper, internally supports multiple
+   *  construction techniques
+   */
   class SkipTree
   {
   public:
