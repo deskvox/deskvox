@@ -22,6 +22,7 @@
 
 #undef MATH_NAMESPACE
 #include "spaceskip/kdtree.h"
+#include "spaceskip/lbvh.h"
 #undef MATH_NAMESPACE
 
 #include "vvspaceskip.h"
@@ -35,6 +36,7 @@ struct SkipTree::Impl
   SkipTree::Technique technique;
 
   KdTree kdtree;
+  BVH bvh;
 };
 
 SkipTree::SkipTree(SkipTree::Technique tech)
@@ -51,6 +53,8 @@ void SkipTree::updateVolume(const vvVolDesc& vd)
 {
   if (impl_->technique == SVTKdTree)
     impl_->kdtree.updateVolume(vd);
+  else if (impl_->technique == LBVH)
+    impl_->bvh.updateVolume(vd);
 }
 
 void SkipTree::updateTransfunc(const uint8_t* data,
@@ -71,7 +75,10 @@ void SkipTree::updateTransfunc(const uint8_t* data,
     transfunc.set_address_mode(Clamp);
     transfunc.set_filter_mode(Nearest);
 
-    impl_->kdtree.updateTransfunc(transfunc);
+    if (impl_->technique == SVTKdTree)
+      impl_->kdtree.updateTransfunc(transfunc);
+    else if (impl_->technique == LBVH)
+      impl_->bvh.updateTransfunc(transfunc);
   }
 }
 
@@ -102,7 +109,10 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
 
 void SkipTree::renderGL(vvColor color)
 {
-  impl_->kdtree.renderGL(color);
+  if (impl_->technique == SVTKdTree)
+    impl_->kdtree.renderGL(color);
+  else if (impl_->technique == LBVH)
+    impl_->bvh.renderGL(color);
 }
 
 } // namespace virvo

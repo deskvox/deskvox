@@ -50,6 +50,10 @@ namespace virvo
        * "Rapid k-d Tree Construction for Sparse Volume Data"
        */
       SVTKdTree,
+
+      /** Space skipping technique based on LBVH
+       */
+      LBVH,
     };
 
     VVAPI SkipTree(Technique tech);

@@ -30,6 +30,8 @@
 #define BUILD_TIMING 1
 #define KDTREE       1
 
+class vvVolDesc;
+
 //-------------------------------------------------------------------------------------------------
 // Kd-tree (Vidal et al. 2008)
 //

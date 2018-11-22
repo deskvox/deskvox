@@ -148,6 +148,7 @@ set(VIRVO_HEADERS
 
   spaceskip/kdtree.h
   spaceskip/kdtree.inl
+  spaceskip/lbvh.h
   spaceskip/svt.h
 
   texture/detail/prefilter.h
@@ -327,6 +328,7 @@ endif(VISIONARAY_FOUND)
 
 if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
+  spaceskip/lbvh.cu
   vvcudatransfunc.cu
   vvsimplecaster.cu
 )
