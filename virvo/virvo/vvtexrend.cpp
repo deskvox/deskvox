@@ -816,7 +816,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
       // Make slice opaque if possible:
       if (instantClassification())
       {
-        updateLUT(0.0f);
+        updateLUT(_clipOpaque ? 0.0f : 1.0f);
       }
     }
   }

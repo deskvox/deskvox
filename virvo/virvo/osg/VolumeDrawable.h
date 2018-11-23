@@ -62,6 +62,7 @@ public:
     void setClipping(bool enable);
     bool getClipping() const;
     void setSingleSliceClipping(bool enable);
+    void setOpaqueClipping(bool enable);
 
     void setROIPosition(const osg::Vec3 &);
     void setROISize(float);
