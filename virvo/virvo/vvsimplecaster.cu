@@ -464,11 +464,11 @@ void vvSimpleCaster::updateTransferFunction()
     tf_ref.set_address_mode(Clamp);
     tf_ref.set_filter_mode(Nearest);
 
-    impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
-    auto data = impl_->tree.getPacked();
-    impl_->device_tree.resize(data.size());
-    bvh_node* tmp = reinterpret_cast<bvh_node*>(data.data());
-    thrust::copy(tmp, tmp + data.size(), impl_->device_tree.begin());
+    //impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+    //auto data = impl_->tree.getPacked();
+    //impl_->device_tree.resize(data.size());
+    //bvh_node* tmp = reinterpret_cast<bvh_node*>(data.data());
+    //thrust::copy(tmp, tmp + data.size(), impl_->device_tree.begin());
 }
 
 void vvSimpleCaster::updateVolumeData()
