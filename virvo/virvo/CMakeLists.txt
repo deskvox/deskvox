@@ -107,6 +107,7 @@ set(VIRVO_HEADERS
   cuda/memory.h
   cuda/symbol.h
   cuda/texture.h
+  cuda/timer.h
   cuda/utils.h
 
   fileio/exceptions.h
