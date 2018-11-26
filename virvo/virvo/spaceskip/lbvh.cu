@@ -46,7 +46,7 @@ using namespace visionaray;
 struct VSNRAY_ALIGN(16) Brick
 {
   int min_corner[3];
-  bool is_empty = true;
+  int is_empty = true;
 };
 
 
@@ -62,14 +62,17 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
 
   unsigned index = brick_offset + threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
 
-  __shared__ bool shared_empty;
+  __shared__ int shared_empty;
   shared_empty = true;
+
+  __syncthreads();
 
   bool empty = tex1D(transfunc, voxels[index]).w < 0.0001f;
   // All threads in block vote
   if (!empty)
-    shared_empty = false;
-  //if (threadIdx.x == 0 && !empty) printf("%f\n", tex1D(transfunc, voxels[index]).w);
+    atomicExch(&shared_empty, false);
+
+  __syncthreads();
 
   if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0)
   {
@@ -78,7 +81,7 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
     bricks[brick_index].min_corner[2] = blockIdx.z;
 
     if (!shared_empty)
-      bricks[brick_index].is_empty = false;
+      atomicExch(&bricks[brick_index].is_empty, false);
   }
 }
 
