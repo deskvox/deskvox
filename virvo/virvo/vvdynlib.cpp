@@ -35,6 +35,7 @@
 #endif
 
 #include "vvopengl.h"
+#include <GL/glx.h>
 
 #include "vvdynlib.h"
 
