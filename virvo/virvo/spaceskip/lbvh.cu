@@ -81,7 +81,7 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
     bricks[brick_index].min_corner[2] = blockIdx.z;
 
     if (!shared_empty)
-      atomicExch(&bricks[brick_index].is_empty, false);
+      bricks[brick_index].is_empty = false;
   }
 }
 
