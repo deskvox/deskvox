@@ -46,8 +46,131 @@ using namespace visionaray;
 struct VSNRAY_ALIGN(16) Brick
 {
   int min_corner[3];
-  int is_empty = true;
+  // After compaction, all bricks are non-empty
+  // anyway ==> reuse this field afterwards
+  union
+  {
+    unsigned morton_code;
+    int is_empty = true;
+  };
 };
+
+
+//-------------------------------------------------------------------------------------------------
+// Tree node that can be stored in device memory
+//
+
+struct Node
+{
+  aabbi bbox;
+  int left = -1;
+  int right = -1;
+  int parent = -1;
+};
+
+
+//-------------------------------------------------------------------------------------------------
+// Helpers
+//
+
+template <typename T>
+__device__
+int signum(T a)
+{
+    return (T(0.0) < a) - (a < T(0.0));
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Find node range that an inner node overlaps
+//
+
+__device__
+vec2i determine_range(Brick* bricks, int num_bricks, int i)
+{
+  auto delta = [&](int i, int j)
+  {
+    // Karras' delta(i,j) function
+    // Denotes the length of the longest common
+    // prefix between keys k_i and k_j
+
+    // Cf. Figure 4: "for simplicity, we define that
+    // delta(i,j) = -1 when j not in [0,n-1]"
+    if (j < 0 || j >= num_bricks)
+      return -1;
+
+    return __clz(bricks[i].morton_code ^ bricks[j].morton_code);
+  };
+
+  int num_inner = num_bricks - 1;
+
+  if (i == 0)
+    return { 0, num_inner };
+
+  // Determine direction of the range (+1 or -1)
+  int d = signum(delta(i, i + 1) - delta(i, i - 1));
+
+  // Compute upper bound for the length of the range
+  int delta_min = delta(i, i - d);
+  int l_max = 2;
+  while (delta(i, i + l_max * d) > delta_min)
+  {
+    l_max *= 2;
+  }
+
+  // Find the other end using binary search
+  int l = 0;
+  for (int t = l_max >> 1; t >= 1; t >>= 1)
+  {
+    if (delta(i, i + (l + t) * d) > delta_min)
+      l += t;
+  }
+
+  if (d == 1)
+    return vec2i(i, i + l * d);
+  else
+    return vec2i(i + l * d, i);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Find split positions based on Morton codes
+//
+
+__device__
+int find_split(Brick* bricks, int first, int last)
+{
+  unsigned code_first = bricks[first].morton_code;
+  unsigned code_last  = bricks[last].morton_code;
+
+  if (code_first == code_last)
+  {
+    return (first + last) / 2;
+  }
+
+  unsigned common_prefix = __clz(code_first ^ code_last);
+
+  int result = first;
+  int step = last - first;
+
+  do
+  {
+    step = (step + 1) / 2;
+    int next = result + step;
+
+    if (next < last)
+    {
+      unsigned code = bricks[next].morton_code;
+      if (code_first == code || __clz(code_first ^ code) > common_prefix)
+      {
+        result = next;
+      }
+    }
+  }
+  while (step > 1);
+
+  return result;
+}
 
 
 //-------------------------------------------------------------------------------------------------
@@ -82,6 +205,65 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
 
     if (!shared_empty)
       bricks[brick_index].is_empty = false;
+  }
+}
+
+__global__ void assignMortonCodes(Brick* bricks, int num_bricks)
+{
+  unsigned index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (index < num_bricks)
+  {
+    Brick& b = bricks[index];
+    b.morton_code = morton_encode3D(b.min_corner[0], b.min_corner[1], b.min_corner[2]);
+  }
+}
+
+__global__ void nodeSplitting(Brick* bricks, int num_bricks, Node* leaves, Node* inner)
+{
+  int num_leaves = num_bricks;
+  int num_inner = num_leaves - 1;
+
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (index < num_inner)
+  {
+    // NOTE: This is [first..last], not [first..last)!!
+    vec2i range = determine_range(bricks, num_bricks, index);
+    int first = range.x;
+    int last = range.y;
+
+    int split = find_split(bricks, first, last);
+    //printf("%d: %d %d %d\n", index, first, split, last);
+
+    int left = split;
+    int right = split + 1;
+
+    if (left == first)
+    {
+      // left child is leaf
+      inner[index].left = ~left;
+      leaves[left].parent = index;
+    }
+    else
+    {
+      // left child is inner
+      inner[index].left = left;
+      inner[left].parent = index;
+    }
+
+    if (right == last)
+    {
+      // right child is leaf
+      inner[index].right = ~right;
+      leaves[right].parent = index;
+    }
+    else
+    {
+      // right child is inner
+      inner[index].right = right;
+      inner[right].parent = index;
+    }
   }
 }
 
@@ -195,7 +377,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       thrust::raw_pointer_cast(impl_->voxels.data()),
       cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc),
       thrust::raw_pointer_cast(bricks.data()));
-  std::cout << t.elapsed() << '\n';
+  std::cout << "Find empty: " << t.elapsed() << '\n';
   t.reset();
 
   // Compact non-empty bricks to the left of the list
@@ -207,7 +389,16 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       bricks.end(),
       compact_bricks.begin(),
       [] __device__ (Brick b) { return !b.is_empty; });
-  std::cout << t.elapsed() << '\n';
+  std::cout << "Compaction: " << t.elapsed() << '\n';
+  t.reset();
+
+  size_t numNonEmptyBricks = last - compact_bricks.begin();
+  size_t numThreads = 1024;
+
+  assignMortonCodes<<<div_up(numNonEmptyBricks, numThreads), numThreads>>>(
+      thrust::raw_pointer_cast(compact_bricks.data()),
+      numNonEmptyBricks);
+  std::cout << "Assign Morton: " << t.elapsed() << '\n';
   t.reset();
 
   thrust::stable_sort(
@@ -216,11 +407,55 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       last,
       [] __device__ (Brick l, Brick r)
       {
-        auto ml = morton_encode3D(l.min_corner[0], l.min_corner[1], l.min_corner[2]);
-        auto mr = morton_encode3D(r.min_corner[0], r.min_corner[1], r.min_corner[2]);
-        return ml < mr;
+        return l.morton_code < r.morton_code;
       });
-  std::cout << t.elapsed() << '\n';
+  std::cout << "Sorting: " << t.elapsed() << '\n';
+  t.reset();
+
+#if 0
+  thrust::host_vector<Brick> h_karras_bricks(8);
+  h_karras_bricks[0].morton_code = 1;
+  h_karras_bricks[1].morton_code = 2;
+  h_karras_bricks[2].morton_code = 4;
+  h_karras_bricks[3].morton_code = 5;
+  h_karras_bricks[4].morton_code = 19;
+  h_karras_bricks[5].morton_code = 24;
+  h_karras_bricks[6].morton_code = 25;
+  h_karras_bricks[7].morton_code = 30;
+  thrust::device_vector<Brick> karras_bricks(h_karras_bricks);
+  thrust::device_vector<Node> leaves(8);
+  thrust::device_vector<Node> inner(7);
+  nodeSplitting<<<div_up(numNonEmptyBricks, numThreads), numThreads>>>(
+        thrust::raw_pointer_cast(karras_bricks.data()),
+        8,
+        thrust::raw_pointer_cast(leaves.data()),
+        thrust::raw_pointer_cast(inner.data()));
+#else
+  thrust::device_vector<Node> leaves(numNonEmptyBricks);
+  thrust::device_vector<Node> inner(numNonEmptyBricks - 1);
+  nodeSplitting<<<div_up(numNonEmptyBricks, numThreads), numThreads>>>(
+      thrust::raw_pointer_cast(compact_bricks.data()),
+      numNonEmptyBricks,
+      thrust::raw_pointer_cast(leaves.data()),
+      thrust::raw_pointer_cast(inner.data()));
+  std::cout << "Splitting: " << t.elapsed() << '\n';
+
+#endif
+#if 0
+  thrust::host_vector<Node> h_inner(inner);
+  int i = 0;
+  for (auto n : h_inner)
+  {
+    auto l = n.left >= 0 ? n.left : ~n.left;
+    auto r = n.right >= 0 ? n.right : ~n.right;
+    auto strl = n.left >= 0 ? "INNER" : "LEAF";
+    auto strr = n.right >= 0 ? "INNER" : "LEAF";
+    std::cout << i++ << ": "
+              << "Left: " << strl << '(' << l << "), "
+              << "right: " << strr << '(' << r << "), "
+              << "parent: " << n.parent << '\n';
+  }
+#endif
 }
 
 void BVH::renderGL(vvColor color) const
