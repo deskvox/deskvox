@@ -32,6 +32,7 @@
 #undef MATH_NAMESPACE
 
 #include "../cuda/timer.h"
+#include "../vvopengl.h"
 #include "../vvspaceskip.h"
 #include "../vvvoldesc.h"
 #include "lbvh.h"
@@ -561,6 +562,62 @@ virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
 
 void BVH::renderGL(vvColor color) const
 {
+  int numNodes = 0;
+  auto nodes = const_cast<BVH*>(this)->getNodes(numNodes); // TODO..
+
+  std::vector<virvo::SkipTreeNode> h_nodes(numNodes);
+  cudaMemcpy(h_nodes.data(),
+      nodes,
+      numNodes * sizeof(virvo::SkipTreeNode),
+      cudaMemcpyDeviceToHost);
+
+  for (auto n : h_nodes)
+  {
+    vec3 bmin(n.min_corner);
+    vec3 bmax(n.max_corner);
+
+    glBegin(GL_LINES);
+    glColor3f(color[0], color[1], color[2]);
+
+    glVertex3f(bmin.x, bmin.y, bmin.z);
+    glVertex3f(bmax.x, bmin.y, bmin.z);
+
+    glVertex3f(bmax.x, bmin.y, bmin.z);
+    glVertex3f(bmax.x, bmax.y, bmin.z);
+
+    glVertex3f(bmax.x, bmax.y, bmin.z);
+    glVertex3f(bmin.x, bmax.y, bmin.z);
+
+    glVertex3f(bmin.x, bmax.y, bmin.z);
+    glVertex3f(bmin.x, bmin.y, bmin.z);
+
+    //
+    glVertex3f(bmin.x, bmin.y, bmax.z);
+    glVertex3f(bmax.x, bmin.y, bmax.z);
+
+    glVertex3f(bmax.x, bmin.y, bmax.z);
+    glVertex3f(bmax.x, bmax.y, bmax.z);
+
+    glVertex3f(bmax.x, bmax.y, bmax.z);
+    glVertex3f(bmin.x, bmax.y, bmax.z);
+
+    glVertex3f(bmin.x, bmax.y, bmax.z);
+    glVertex3f(bmin.x, bmin.y, bmax.z);
+
+    //
+    glVertex3f(bmin.x, bmin.y, bmin.z);
+    glVertex3f(bmin.x, bmin.y, bmax.z);
+
+    glVertex3f(bmax.x, bmin.y, bmin.z);
+    glVertex3f(bmax.x, bmin.y, bmax.z);
+
+    glVertex3f(bmax.x, bmax.y, bmin.z);
+    glVertex3f(bmax.x, bmax.y, bmax.z);
+
+    glVertex3f(bmin.x, bmax.y, bmin.z);
+    glVertex3f(bmin.x, bmax.y, bmax.z);
+    glEnd();
+  }
 }
 
 //============================================================================
