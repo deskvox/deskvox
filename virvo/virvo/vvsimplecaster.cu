@@ -331,7 +331,7 @@ struct vvSimpleCaster::Impl
 
     virvo::SkipTree tree;
 
-    thrust::device_vector<virvo::SkipTreeNode> device_tree;
+    virvo::SkipTreeNode* device_tree = nullptr;
 };
 
 vvSimpleCaster::vvSimpleCaster(vvVolDesc* vd, vvRenderState renderState)
@@ -430,7 +430,7 @@ void vvSimpleCaster::renderVolumeGL()
     kernel.local_shading = getParameter(VV_LIGHTING);
     kernel.light         = light;
 
-    kernel.nodes         = thrust::raw_pointer_cast(impl_->device_tree.data());
+    kernel.nodes         = impl_->device_tree;
 //
 //    glDisable(GL_DEPTH_TEST);
 //
@@ -478,9 +478,8 @@ void vvSimpleCaster::updateTransferFunction()
 
     impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
     int numNodes = 0;
-    auto data = impl_->tree.getNodes(numNodes);std::cout << numNodes << '\n';
-    impl_->device_tree.resize(numNodes);
-    thrust::copy(data, data + numNodes, impl_->device_tree.begin());
+    impl_->device_tree = impl_->tree.getNodes(numNodes);
+//  std::cout << numNodes << '\n';
 }
 
 void vvSimpleCaster::updateVolumeData()
