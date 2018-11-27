@@ -82,6 +82,15 @@ void SkipTree::updateTransfunc(const uint8_t* data,
   }
 }
 
+SkipTreeNode* SkipTree::getNodes(int& numNodes)
+{
+  if (impl_->technique == LBVH)
+    return impl_->bvh.getNodes(numNodes);
+
+  numNodes = 0;
+  return nullptr;
+}
+
 std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
 {
   std::vector<aabb> result;

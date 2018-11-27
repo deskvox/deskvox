@@ -27,6 +27,10 @@
 
 #include <virvo/vvcolor.h>
 
+namespace virvo
+{
+struct SkipTreeNode;
+}
 class vvVolDesc;
 
 class BVH
@@ -42,6 +46,8 @@ public:
   void updateVolume(vvVolDesc const& vd, int channel = 0);
 
   void updateTransfunc(TransfuncTex transfunc);
+
+  virvo::SkipTreeNode* getNodes(int& numNodes);
 
   // Need OpenGL context!
   void renderGL(vvColor color) const;

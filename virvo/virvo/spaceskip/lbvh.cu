@@ -32,6 +32,7 @@
 #undef MATH_NAMESPACE
 
 #include "../cuda/timer.h"
+#include "../vvspaceskip.h"
 #include "../vvvoldesc.h"
 #include "lbvh.h"
 
@@ -75,7 +76,7 @@ struct Node
 
 template <typename T>
 __device__
-int signum(T a)
+inline int signum(T a)
 {
     return (T(0.0) < a) - (a < T(0.0));
 }
@@ -267,6 +268,83 @@ __global__ void nodeSplitting(Brick* bricks, int num_bricks, Node* leaves, Node*
   }
 }
 
+__global__ void buildHierarchy(Node* inner,
+        int num_inner,
+        Node* leaves,
+        int num_leaves,
+        Brick* bricks,
+        virvo::SkipTreeNode* nodes,
+        vec3i vox,
+        vec3 dist,
+        float scale)
+{
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (index >= num_leaves)
+    return;
+
+  // Leaf's bounding box
+  aabbi bbox(vec3i(bricks[index].min_corner), vec3i(bricks[index].min_corner) + vec3i(8,8,8));
+  leaves[index].bbox = bbox;
+
+  // Atomically combine child bounding boxes and update parents
+  int next = leaves[index].parent;
+
+  while (next >= 0)
+  {
+    atomicMin(&inner[next].bbox.min.x, bbox.min.x);
+    atomicMin(&inner[next].bbox.min.y, bbox.min.y);
+    atomicMin(&inner[next].bbox.min.z, bbox.min.z);
+    atomicMax(&inner[next].bbox.max.x, bbox.max.x);
+    atomicMax(&inner[next].bbox.max.y, bbox.max.y);
+    atomicMax(&inner[next].bbox.max.z, bbox.max.z);
+    next = inner[next].parent;
+  }
+
+  __threadfence();
+
+  // Convert aabbi to aabb. Each thread (but one) processes an inner node and a leaf
+  // Also set indices while we're at it!
+
+  if (index < num_inner)
+  {
+    auto bbox = inner[index].bbox;
+    bbox.min.y = vox[1] - inner[index].bbox.max.y;
+    bbox.max.y = vox[1] - inner[index].bbox.min.y;
+    bbox.min.z = vox[2] - inner[index].bbox.max.z;
+    bbox.max.z = vox[2] - inner[index].bbox.min.z;
+    vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
+    vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+    nodes[index].min_corner[0] = bmin.x;
+    nodes[index].min_corner[1] = bmin.y;
+    nodes[index].min_corner[2] = bmin.z;
+    nodes[index].left = inner[index].left >= 0 ? inner[index].left : num_inner + inner[index].left;
+    nodes[index].max_corner[0] = bmax.x;
+    nodes[index].max_corner[1] = bmax.y;
+    nodes[index].max_corner[2] = bmax.z;
+    nodes[index].right = inner[index].right >= 0 ? inner[index].right : num_inner + inner[index].right;
+  }
+
+//if (index < num_leaves)
+  {
+    auto bbox = leaves[index].bbox;
+    bbox.min.y = vox[1] - leaves[index].bbox.max.y;
+    bbox.max.y = vox[1] - leaves[index].bbox.min.y;
+    bbox.min.z = vox[2] - leaves[index].bbox.max.z;
+    bbox.max.z = vox[2] - leaves[index].bbox.min.z;
+    vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
+    vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+    nodes[num_inner + index].min_corner[0] = bmin.x;
+    nodes[num_inner + index].min_corner[1] = bmin.y;
+    nodes[num_inner + index].min_corner[2] = bmin.z;
+    nodes[num_inner + index].left = -1;
+    nodes[num_inner + index].max_corner[0] = bmax.x;
+    nodes[num_inner + index].max_corner[1] = bmax.y;
+    nodes[num_inner + index].max_corner[2] = bmax.z;
+    nodes[num_inner + index].right = -1;
+  }
+}
+
 
 //-------------------------------------------------------------------------------------------------
 // BVH private implementation
@@ -279,6 +357,7 @@ struct BVH::Impl
   float scale;
   // Brickwise (8x8x8) sorted on a z-order curve, "natural" layout inside!
   thrust::device_vector<float> voxels;
+  thrust::device_vector<virvo::SkipTreeNode> nodes;
 };
 
 
@@ -439,6 +518,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       thrust::raw_pointer_cast(leaves.data()),
       thrust::raw_pointer_cast(inner.data()));
   std::cout << "Splitting: " << t.elapsed() << '\n';
+  t.reset();
 
 #endif
 #if 0
@@ -456,6 +536,27 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
               << "parent: " << n.parent << '\n';
   }
 #endif
+
+  virvo::SkipTreeNode init = { FLT_MAX, FLT_MAX, FLT_MAX, -1, -FLT_MAX, -FLT_MAX, -FLT_MAX, -1 };
+  impl_->nodes.resize(inner.size() + leaves.size(), init);
+
+  buildHierarchy<<<div_up(leaves.size(), numThreads), numThreads>>>(
+      thrust::raw_pointer_cast(inner.data()),
+      inner.size(),
+      thrust::raw_pointer_cast(leaves.data()),
+      leaves.size(),
+      thrust::raw_pointer_cast(compact_bricks.data()),
+      thrust::raw_pointer_cast(impl_->nodes.data()),
+      impl_->vox,
+      impl_->dist,
+      impl_->scale);
+  std::cout << "Build hierarchy: " << t.elapsed() << '\n';
+}
+
+virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
+{
+  numNodes = impl_->nodes.size();
+  return thrust::raw_pointer_cast(impl_->nodes.data());
 }
 
 void BVH::renderGL(vvColor color) const

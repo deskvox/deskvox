@@ -36,6 +36,16 @@ class vvVolDesc;
 
 namespace virvo
 {
+  /** Compact node returned by \see SkipTree::getNodes()
+   */
+  struct VV_ALIGN(32) SkipTreeNode
+  {
+    float min_corner[3];
+    int left;
+    float max_corner[3];
+    int right;
+  };
+
 
   /** Space skipping tree wrapper, internally supports multiple
    *  construction techniques
@@ -65,6 +75,12 @@ namespace virvo
         int numEntriesY = 1, // for 2D TF
         int numEntriesZ = 1, // for 3D TF
         PixelFormat format = PF_RGBA32F);
+
+    /**
+     * @brief Get pointer to tree nodes
+     *    Not all techniques implement this function!
+     */
+    VVAPI SkipTreeNode* getNodes(int& numNodes);
 
     /**
      * @brief Produce a sorted list of bricks that contain non-empty voxels
