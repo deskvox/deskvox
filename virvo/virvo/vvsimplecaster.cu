@@ -199,17 +199,27 @@ struct Kernel
 
         auto inv_dir = 1.0f / ray.dir;
 
+        auto get_bounds = [](virvo::SkipTreeNode& n)
+        {
+            return aabb(vec3(n.min_corner), vec3(n.max_corner));
+        };
+
+        auto get_child = [](virvo::SkipTreeNode& n, int index)
+        {
+            return index == 0 ? n.left : n.right;
+        };
+
 next:
         while(!st.empty())
         {
             auto node = nodes[st.pop()];
 
-            while (!node.is_leaf())
+            while (node.left != -1 || node.right != -1)
             {
-                auto children = &nodes[node.first_child];
+                virvo::SkipTreeNode children[2] = { nodes[node.left], nodes[node.right] };
 
-                auto hr1 = intersect(ray, children[0].get_bounds(), inv_dir);
-                auto hr2 = intersect(ray, children[1].get_bounds(), inv_dir);
+                auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
+                auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
 
                 auto b1 = visionaray::any( is_closer(hr1, current) );
                 auto b2 = visionaray::any( is_closer(hr2, current) );
@@ -217,7 +227,7 @@ next:
                 if (b1 && b2)
                 {
                     unsigned near_addr = visionaray::all( hr1.tnear < hr2.tnear ) ? 0 : 1;
-                    st.push(node.get_child(!near_addr));
+                    st.push(get_child(node, !near_addr));
                     node = children[near_addr];
                 }
                 else if (b1)
@@ -235,7 +245,7 @@ next:
             }
 
             // traverse leaf
-            auto hr = intersect(ray, node.get_bounds(), inv_dir);
+            auto hr = intersect(ray, get_bounds(node), inv_dir);
             integrate(ray, max(current.tnear, hr.tnear), hr.tfar, result.color);
             current.tnear = hr.tfar;
         }
@@ -256,7 +266,7 @@ next:
     bool local_shading;
     point_light<float> light;
 
-    visionaray::bvh_node* nodes = nullptr;
+    virvo::SkipTreeNode* nodes = nullptr;
 
 };
 
@@ -305,9 +315,11 @@ public:
 
 struct vvSimpleCaster::Impl
 {
-    Impl() : sched(8, 8)
-    , tree(virvo::SkipTree::SVTKdTree)
-    {}
+    Impl()
+        : sched(8, 8)
+        , tree(virvo::SkipTree::LBVH)
+    {
+    }
 
     using R = basic_ray<float>;
 
@@ -319,7 +331,7 @@ struct vvSimpleCaster::Impl
 
     virvo::SkipTree tree;
 
-    thrust::device_vector<bvh_node> device_tree;
+    thrust::device_vector<virvo::SkipTreeNode> device_tree;
 };
 
 vvSimpleCaster::vvSimpleCaster(vvVolDesc* vd, vvRenderState renderState)
@@ -464,11 +476,11 @@ void vvSimpleCaster::updateTransferFunction()
     tf_ref.set_address_mode(Clamp);
     tf_ref.set_filter_mode(Nearest);
 
-    //impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
-    //auto data = impl_->tree.getPacked();
-    //impl_->device_tree.resize(data.size());
-    //bvh_node* tmp = reinterpret_cast<bvh_node*>(data.data());
-    //thrust::copy(tmp, tmp + data.size(), impl_->device_tree.begin());
+    impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+    int numNodes = 0;
+    auto data = impl_->tree.getNodes(numNodes);std::cout << numNodes << '\n';
+    impl_->device_tree.resize(numNodes);
+    thrust::copy(data, data + numNodes, impl_->device_tree.begin());
 }
 
 void vvSimpleCaster::updateVolumeData()
