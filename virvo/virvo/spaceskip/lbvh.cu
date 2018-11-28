@@ -23,7 +23,9 @@
 #endif
 
 #include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
+#include <thrust/sort.h>
 
 #undef MATH_NAMESPACE
 #include <visionaray/math/detail/math.h> // div_up
