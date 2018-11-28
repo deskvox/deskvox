@@ -23,6 +23,8 @@
 
 #include <memory>
 
+#include <visionaray/math/aabb.h>
+#include <visionaray/math/forward.h>
 #include <visionaray/texture/texture.h>
 
 #include <virvo/vvcolor.h>
@@ -48,6 +50,8 @@ public:
   void updateTransfunc(TransfuncTex transfunc);
 
   virvo::SkipTreeNode* getNodes(int& numNodes);
+
+  std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 
   // Need OpenGL context!
   void renderGL(vvColor color) const;

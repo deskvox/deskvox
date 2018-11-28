@@ -95,22 +95,29 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
 {
   std::vector<aabb> result;
 
+  std::vector<visionaray::aabb> leaves;
+
   if (impl_->technique == SVTKdTree)
   {
-    auto leaves = impl_->kdtree.get_leaf_nodes(
+    leaves = impl_->kdtree.get_leaf_nodes(
         visionaray::vec3(eye.x, eye.y, eye.z),
-        frontToBack
-        );
+        frontToBack);
+  }
+  else if (impl_->technique == LBVH)
+  {
+    leaves = impl_->bvh.get_leaf_nodes(
+        visionaray::vec3(eye.x, eye.y, eye.z),
+        frontToBack);
+  }
 
-    result.resize(leaves.size());
+  result.resize(leaves.size());
 
-    for (size_t i = 0; i < leaves.size(); ++i)
-    {
-      const auto& leaf = leaves[i];
+  for (size_t i = 0; i < leaves.size(); ++i)
+  {
+    const auto& leaf = leaves[i];
 
-      result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
-      result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
-    }
+    result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
+    result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
   }
 
   return result;

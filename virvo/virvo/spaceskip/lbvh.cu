@@ -560,6 +560,46 @@ virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
   return thrust::raw_pointer_cast(impl_->nodes.data());
 }
 
+std::vector<aabb> BVH::get_leaf_nodes(vec3 eye, bool frontToBack) const
+{
+  // TODO: it should also be possible to directly return
+  // a device pointer to the leaf nodes
+
+  // There are n-1 inner nodes followed by n leaves
+  int num_inner = impl_->nodes.size() / 2;
+  int num_leaves = impl_->nodes.size() - num_inner;
+
+  std::vector<virvo::SkipTreeNode> leaves(num_leaves);
+  thrust::copy(
+      impl_->nodes.data() + num_inner,
+      impl_->nodes.data() + num_inner + num_leaves,
+      leaves.data());
+
+  std::vector<aabb> result(num_leaves);
+
+  for (size_t i = 0; i < leaves.size(); ++i)
+  {
+    result[i].min = vec3(leaves[i].min_corner);
+    result[i].max = vec3(leaves[i].max_corner);
+  }
+
+  std::sort(
+      result.begin(),
+      result.end(),
+      [eye, frontToBack](aabb const& l, aabb const& r)
+      {
+        auto distl = length(eye - l.center());
+        auto distr = length(eye - r.center());
+
+        if (frontToBack)
+          return distl < distr;
+        else
+          return distr < distl;
+      });
+
+  return result;
+}
+
 void BVH::renderGL(vvColor color) const
 {
   int numNodes = 0;
