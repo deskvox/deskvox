@@ -285,7 +285,7 @@ __global__ void buildHierarchy(Node* inner,
     return;
 
   // Leaf's bounding box
-  aabbi bbox(vec3i(bricks[index].min_corner), vec3i(bricks[index].min_corner) + vec3i(8,8,8));
+  aabbi bbox(vec3i(bricks[index].min_corner)*8, vec3i(bricks[index].min_corner)*8 + vec3i(8,8,8));
   leaves[index].bbox = bbox;
 
   // Atomically combine child bounding boxes and update parents
