@@ -66,6 +66,11 @@ struct VSNRAY_ALIGN(16) Brick
 
 struct Node
 {
+  __device__ Node()
+    : bbox(vec3i(INT_MAX), vec3i(0))
+  {
+  }
+
   aabbi bbox;
   int left = -1;
   int right = -1;
@@ -321,11 +326,11 @@ __global__ void buildHierarchy(Node* inner,
     nodes[index].min_corner[0] = bmin.x;
     nodes[index].min_corner[1] = bmin.y;
     nodes[index].min_corner[2] = bmin.z;
-    nodes[index].left = inner[index].left >= 0 ? inner[index].left : num_inner + inner[index].left;
+    nodes[index].left = inner[index].left >= 0 ? inner[index].left : num_inner + ~inner[index].left;
     nodes[index].max_corner[0] = bmax.x;
     nodes[index].max_corner[1] = bmax.y;
     nodes[index].max_corner[2] = bmax.z;
-    nodes[index].right = inner[index].right >= 0 ? inner[index].right : num_inner + inner[index].right;
+    nodes[index].right = inner[index].right >= 0 ? inner[index].right : num_inner + ~inner[index].right;
   }
 
 //if (index < num_leaves)
@@ -563,7 +568,7 @@ virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
 }
 
 std::vector<aabb> BVH::get_leaf_nodes(vec3 eye, bool frontToBack) const
-{return std::vector<aabb>{};
+{
   // TODO: it should also be possible to directly return
   // a device pointer to the leaf nodes
 
