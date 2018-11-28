@@ -196,7 +196,7 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
 
   bool empty = tex1D(transfunc, voxels[index]).w < 0.0001f;
   // All threads in block vote
-  if (!empty)
+  if (shared_empty && !empty)
     atomicExch(&shared_empty, false);
 
   __syncthreads();
@@ -563,7 +563,7 @@ virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
 }
 
 std::vector<aabb> BVH::get_leaf_nodes(vec3 eye, bool frontToBack) const
-{
+{return std::vector<aabb>{};
   // TODO: it should also be possible to directly return
   // a device pointer to the leaf nodes
 
