@@ -36,6 +36,9 @@
 #include "vvtextureutil.h"
 #include "vvvoldesc.h"
 
+#include "cuda/timer.h"
+#include <iomanip>
+
 using namespace visionaray;
 
 
@@ -171,22 +174,7 @@ struct Kernel
         auto t = max(S(0.0f), hit_rec.tnear);
         auto tmax = hit_rec.tfar;
 
-#if 0//KDTREE
-        for (int i = 0; i < num_kd_tree_leaves; ++i)
-        {
-            auto kd_hit_rec = intersect(ray, kd_tree_leaves[i]);
-
-            if (kd_hit_rec.hit)
-            {
-                auto kd_t = max(t, kd_hit_rec.tnear);
-                auto kd_tmax = min(tmax, kd_hit_rec.tfar);
-
-                integrate(ray, kd_t, kd_tmax, result.color);
-
-                t = kd_tmax;
-            }
-        }
-#endif
+#if 1
 //        using HR = hit_record<R, aabb>; //decltype(hit_rec);
 //        HR current;
         visionaray::hit_record<visionaray::basic_ray<float>, visionaray::basic_aabb<float>> current;
@@ -251,9 +239,9 @@ next:
             current.tnear = hr.tfar;
         }
 
-//#else
-//    integrate(ray, t, tmax, result.color);
-//#endif
+#else
+    integrate(ray, t, tmax, result.color);
+#endif
 
         return result;
     }
@@ -472,7 +460,10 @@ void vvSimpleCaster::renderVolumeGL()
 //    cudaEventRecord(start);
 //#endif
 //
+    virvo::CudaTimer t;
     impl_->sched.frame(kernel, sparams);
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << "time to render frame: " << t.elapsed() << std::endl;
 //
 //#if FRAME_TIMING
 //    cudaEventRecord(stop);
