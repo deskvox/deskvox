@@ -175,13 +175,6 @@ struct Kernel
         auto tmax = hit_rec.tfar;
 
 #if 1
-//        using HR = hit_record<R, aabb>; //decltype(hit_rec);
-//        HR current;
-        visionaray::hit_record<visionaray::basic_ray<float>, visionaray::basic_aabb<float>> current;
-        current.tnear = t;
-        current.tfar  = tmax;
-        current.hit   = true;
-
         // traverse tree
         detail::stack<32> st;
         st.push(0);
@@ -203,15 +196,18 @@ next:
         {
             auto node = nodes[st.pop()];
 
-            while (node.left != -1 || node.right != -1)
+            while (node.left >= 0 || node.right >= 0)
             {
+                if (node.left < 0) node.left = ~node.left;
+                if (node.right < 0) node.right = ~node.right;
+
                 virvo::SkipTreeNode children[2] = { nodes[node.left], nodes[node.right] };
 
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
                 auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
 
-                bool b1 = hr1.tfar > current.tnear;
-                bool b2 = hr2.tfar > current.tnear;
+                bool b1 = hr1.tfar > t;
+                bool b2 = hr2.tfar > t;
 
                 if (b1 && b2)
                 {
@@ -235,8 +231,8 @@ next:
 
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
-            integrate(ray, max(current.tnear, hr.tnear), hr.tfar, result.color);
-            current.tnear = hr.tfar;
+            integrate(ray, max(t, hr.tnear), hr.tfar, result.color);
+            t = hr.tfar;
         }
 
 #else

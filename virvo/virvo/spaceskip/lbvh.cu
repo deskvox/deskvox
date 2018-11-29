@@ -326,11 +326,11 @@ __global__ void buildHierarchy(Node* inner,
     nodes[index].min_corner[0] = bmin.x;
     nodes[index].min_corner[1] = bmin.y;
     nodes[index].min_corner[2] = bmin.z;
-    nodes[index].left = inner[index].left >= 0 ? inner[index].left : num_inner + ~inner[index].left;
+    nodes[index].left = inner[index].left >= 0 ? inner[index].left : ~(num_inner + ~inner[index].left);
     nodes[index].max_corner[0] = bmax.x;
     nodes[index].max_corner[1] = bmax.y;
     nodes[index].max_corner[2] = bmax.z;
-    nodes[index].right = inner[index].right >= 0 ? inner[index].right : num_inner + ~inner[index].right;
+    nodes[index].right = inner[index].right >= 0 ? inner[index].right : ~(num_inner + ~inner[index].right);
   }
 
 //if (index < num_leaves)
