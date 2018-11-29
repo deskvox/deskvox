@@ -210,7 +210,7 @@ struct Kernel
         };
 
 next:
-        while(!st.empty())
+        while (!st.empty())
         {
             auto node = nodes[st.pop()];
 
@@ -221,12 +221,12 @@ next:
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
                 auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
 
-                auto b1 = visionaray::any( is_closer(hr1, current) );
-                auto b2 = visionaray::any( is_closer(hr2, current) );
+                bool b1 = hr1.tfar > current.tnear;
+                bool b2 = hr2.tfar > current.tnear;
 
                 if (b1 && b2)
                 {
-                    unsigned near_addr = visionaray::all( hr1.tnear < hr2.tnear ) ? 0 : 1;
+                    unsigned near_addr = hr1.tnear < hr2.tnear ? 0 : 1;
                     st.push(get_child(node, !near_addr));
                     node = children[near_addr];
                 }
