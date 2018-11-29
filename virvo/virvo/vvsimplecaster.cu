@@ -206,11 +206,13 @@ next:
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
                 auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
 
-                bool b1 = hr1.tfar > t;
-                bool b2 = hr2.tfar > t;
+                bool b1 = hr1.hit && hr1.tfar > t;
+                bool b2 = hr2.hit && hr2.tfar > t;
 
                 if (b1 && b2)
                 {
+                    hr1.tnear = max(t, hr1.tnear);
+                    hr2.tnear = max(t, hr2.tnear);
                     unsigned near_addr = hr1.tnear < hr2.tnear ? 0 : 1;
                     st.push(get_child(node, !near_addr));
                     node = children[near_addr];
@@ -231,8 +233,8 @@ next:
 
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
-            integrate(ray, max(t, hr.tnear), hr.tfar, result.color);
-            t = hr.tfar;
+            integrate(ray, t, hr.tfar, result.color);
+            t = max(t, hr.tfar - delta);
         }
 
 #else
