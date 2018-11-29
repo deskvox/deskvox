@@ -446,7 +446,14 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
 
 void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 {
-  cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
+#if 1
+  // Swallow last CUDA error (thrust will otherwise
+  // recognize that an error occurred previously
+  // and then just throw..)
+  // TODO: where does the error originate from??
+  cudaGetLastError();
+#endif
+  static cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
       transfunc.width(),
       transfunc.get_address_mode(),
       transfunc.get_filter_mode());
