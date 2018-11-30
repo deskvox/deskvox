@@ -457,6 +457,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       transfunc.width(),
       transfunc.get_address_mode(),
       transfunc.get_filter_mode());
+  cuda_transfunc.reset(transfunc.data()); // TODO: check the above ctor..
 
   dim3 block_size(8, 8, 8);
   dim3 grid_size(div_up(impl_->vox[0], (int)block_size.x),
