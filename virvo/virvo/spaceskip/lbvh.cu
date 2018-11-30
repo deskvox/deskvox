@@ -363,12 +363,9 @@ struct BVH::Impl
   vec3i vox;
   vec3 dist;
   float scale;
-
   // Brickwise (8x8x8) sorted on a z-order curve, "natural" layout inside!
   thrust::device_vector<float> voxels;
   thrust::device_vector<virvo::SkipTreeNode> nodes;
-
-  cuda_texture<vec4, 1> transfunc;
 };
 
 
@@ -456,10 +453,10 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   // TODO: where does the error originate from??
   cudaGetLastError();
 #endif
-  impl_->transfunc = cuda_texture<vec4, 1>(transfunc.width());
-  impl_->transfunc.reset(transfunc.data());
-  impl_->transfunc.set_address_mode(transfunc.get_address_mode());
-  impl_->transfunc.set_filter_mode(transfunc.get_filter_mode());
+  static cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
+      transfunc.width(),
+      transfunc.get_address_mode(),
+      transfunc.get_filter_mode());
 
   dim3 block_size(8, 8, 8);
   dim3 grid_size(div_up(impl_->vox[0], (int)block_size.x),
@@ -472,7 +469,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   virvo::CudaTimer t;
   findNonEmptyBricks<<<grid_size, block_size>>>(
       thrust::raw_pointer_cast(impl_->voxels.data()),
-      cuda_texture_ref<visionaray::vec4, 1>(impl_->transfunc),
+      cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc),
       thrust::raw_pointer_cast(bricks.data()));
   std::cout << "Find empty: " << t.elapsed() << '\n';
   t.reset();
