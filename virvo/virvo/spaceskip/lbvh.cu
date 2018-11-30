@@ -308,14 +308,26 @@ __global__ void buildHierarchy(Node* inner,
     atomicMax(&inner[next].bbox.max.z, bbox.max.z);
     next = inner[next].parent;
   }
+}
 
-  __threadfence();
-
+__global__ void convertToWorldspace(Node* inner,
+        int num_inner,
+        Node* leaves,
+        int num_leaves,
+        Brick* bricks,
+        virvo::SkipTreeNode* nodes,
+        vec3i vox,
+        vec3 dist,
+        float scale)
+{
   // Convert aabbi to aabb. Each thread (but one) processes an inner node and a leaf
   // Also set indices while we're at it!
 
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+
   if (index < num_inner)
   {
+    __threadfence();
     auto bbox = inner[index].bbox;
     bbox.min.y = vox[1] - inner[index].bbox.max.y;
     bbox.max.y = vox[1] - inner[index].bbox.min.y;
@@ -333,7 +345,7 @@ __global__ void buildHierarchy(Node* inner,
     nodes[index].right = inner[index].right;
   }
 
-//if (index < num_leaves)
+  if (index < num_leaves)
   {
     auto bbox = leaves[index].bbox;
     bbox.min.y = vox[1] - leaves[index].bbox.max.y;
@@ -567,6 +579,19 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       impl_->dist,
       impl_->scale);
   std::cout << "Build hierarchy: " << t.elapsed() << '\n';
+  t.reset();
+
+  convertToWorldspace<<<div_up(leaves.size(), numThreads), numThreads>>>(
+      thrust::raw_pointer_cast(inner.data()),
+      inner.size(),
+      thrust::raw_pointer_cast(leaves.data()),
+      leaves.size(),
+      thrust::raw_pointer_cast(compact_bricks.data()),
+      thrust::raw_pointer_cast(impl_->nodes.data()),
+      impl_->vox,
+      impl_->dist,
+      impl_->scale);
+  std::cout << "Convert to worldspace: " << t.elapsed() << '\n';
 }
 
 virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
