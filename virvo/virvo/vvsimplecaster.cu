@@ -196,11 +196,8 @@ next:
         {
             auto node = nodes[st.pop()];
 
-            while (node.left >= 0 || node.right >= 0)
+            while (node.left != -1 && node.right != -1)
             {
-                if (node.left < 0) node.left = ~node.left;
-                if (node.right < 0) node.right = ~node.right;
-
                 virvo::SkipTreeNode children[2] = { nodes[node.left], nodes[node.right] };
 
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
@@ -211,8 +208,6 @@ next:
 
                 if (b1 && b2)
                 {
-                    hr1.tnear = max(t, hr1.tnear);
-                    hr2.tnear = max(t, hr2.tnear);
                     unsigned near_addr = hr1.tnear < hr2.tnear ? 0 : 1;
                     st.push(get_child(node, !near_addr));
                     node = children[near_addr];
@@ -233,7 +228,7 @@ next:
 
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
-            integrate(ray, t, hr.tfar, result.color);
+            integrate(ray, hr.tnear, hr.tfar, result.color);
             t = max(t, hr.tfar - delta);
         }
 
