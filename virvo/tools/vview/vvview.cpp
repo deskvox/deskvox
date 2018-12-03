@@ -1965,8 +1965,8 @@ double vvView::performanceTest()
     totalTime = new vvStopwatch();
 
     ds->hqMode = false;
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     ds->displayCallback();
 
     printProfilingInfo();
@@ -1982,8 +1982,8 @@ double vvView::performanceTest()
       ++framesRendered;
     }
 
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
@@ -1991,8 +1991,8 @@ double vvView::performanceTest()
       ++framesRendered;
     }
 
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
