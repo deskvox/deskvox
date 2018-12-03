@@ -157,6 +157,7 @@ vvView::vvView()
   framebufferDump       = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
+  cameraFileName        = "";
   showBricks            = false;
   recordMode            = false;
   playMode              = false;
@@ -269,6 +270,9 @@ void vvView::mainLoop(int argc, char *argv[])
   ds->ov->mv.scaleLocal(mvScale);
 
   setProjectionMode(perspectiveMode);
+
+  if (!cameraFileName.empty())
+    ds->ov->loadMV(cameraFileName.c_str());
 
   // Set window title:
   if (filename!=NULL) glutSetWindowTitle(filename);
@@ -2552,6 +2556,8 @@ void vvView::displayHelpInfo()
   cerr << "-play" << endl;
   cerr << " Play camera motion from file" << endl;
   cerr << endl;
+  cerr << "-camera <path to file>" << endl;
+  cerr << " Load camera from file" << endl;
   #ifndef WIN32
   cerr << endl;
   #endif
@@ -2859,6 +2865,14 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-play")==0)
     {
       playMode = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-camera")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Camera file name unspecified" << endl;
+      }
+      cameraFileName = argv[arg];
     }
     else
     {
