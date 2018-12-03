@@ -22,12 +22,16 @@
 #error "Compile w/ option --expt-extended-lambda"
 #endif
 
+#include <iostream>
+#include <ostream>
+
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
 #include <thrust/sort.h>
 
 #undef MATH_NAMESPACE
+#include <visionaray/detail/stack.h> // TODO: detail
 #include <visionaray/math/detail/math.h> // div_up
 #include <visionaray/math/aabb.h>
 #include <visionaray/morton.h>
@@ -313,7 +317,8 @@ __global__ void convertToWorldspace(Node* inner,
         virvo::SkipTreeNode* nodes,
         vec3i vox,
         vec3 dist,
-        float scale)
+        float scale,
+        float min_volume)
 {
   // Convert aabbi to aabb. Each thread (but one) processes an inner node and a leaf
   // Also set indices while we're at it!
@@ -322,7 +327,6 @@ __global__ void convertToWorldspace(Node* inner,
 
   if (index < num_inner)
   {
-    __threadfence();
     auto bbox = inner[index].bbox;
     bbox.min.y = vox[1] - inner[index].bbox.max.y;
     bbox.max.y = vox[1] - inner[index].bbox.min.y;
@@ -330,14 +334,23 @@ __global__ void convertToWorldspace(Node* inner,
     bbox.max.z = vox[2] - inner[index].bbox.min.z;
     vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
     vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+    aabb bboxf(bmin, bmax);
     nodes[index].min_corner[0] = bmin.x;
     nodes[index].min_corner[1] = bmin.y;
     nodes[index].min_corner[2] = bmin.z;
+#if 1
+    nodes[index].left = volume(bboxf) >= min_volume ? inner[index].left : -1;
+#else
     nodes[index].left = inner[index].left;
+#endif
     nodes[index].max_corner[0] = bmax.x;
     nodes[index].max_corner[1] = bmax.y;
     nodes[index].max_corner[2] = bmax.z;
+#if 1
+    nodes[index].right = volume(bboxf) >= min_volume ? inner[index].right : -1;
+#else
     nodes[index].right = inner[index].right;
+#endif
   }
 
   if (index < num_leaves)
@@ -460,6 +473,9 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   // TODO: where does the error originate from??
   cudaGetLastError();
 #endif
+
+  std::cout << std::fixed << std::setprecision(8);
+
   static cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
       transfunc.width(),
       transfunc.get_address_mode(),
@@ -572,6 +588,9 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   std::cout << "Build hierarchy: " << t.elapsed() << '\n';
   t.reset();
 
+  vec3 rootSize = vec3(impl_->vox) * impl_->dist * impl_->scale;
+  float rootVolume = rootSize.x * rootSize.y * rootSize.z;
+  float minVolume = rootVolume / 10;
   convertToWorldspace<<<div_up(leaves.size(), numThreads), numThreads>>>(
       thrust::raw_pointer_cast(inner.data()),
       inner.size(),
@@ -580,7 +599,8 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       thrust::raw_pointer_cast(impl_->nodes.data()),
       impl_->vox,
       impl_->dist,
-      impl_->scale);
+      impl_->scale,
+      minVolume);
   std::cout << "Convert to worldspace: " << t.elapsed() << '\n';
 }
 
@@ -641,7 +661,7 @@ void BVH::renderGL(vvColor color) const
       numNodes * sizeof(virvo::SkipTreeNode),
       cudaMemcpyDeviceToHost);
 
-  for (auto n : h_nodes)
+  auto func = [color](virvo::SkipTreeNode n)
   {
     vec3 bmin(n.min_corner);
     vec3 bmax(n.max_corner);
@@ -687,6 +707,28 @@ void BVH::renderGL(vvColor color) const
     glVertex3f(bmin.x, bmax.y, bmin.z);
     glVertex3f(bmin.x, bmax.y, bmax.z);
     glEnd();
+  };
+
+  detail::stack<64> st; 
+
+  unsigned addr = 0;
+  st.push(addr);
+
+  while (!st.empty())
+  {
+    auto node = h_nodes[addr];
+
+    func(node);
+
+    if (node.left != -1 && node.right != -1)
+    {
+      addr = node.left;
+      st.push(node.right);
+    }
+    else
+    {
+      addr = st.pop();
+    }
   }
 }
 
