@@ -165,21 +165,14 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
-        auto hit_rec = intersect(ray, bbox);
-        result.hit = hit_rec.hit;
-
-        if (!hit_rec.hit)
-            return result;
-
-        auto t = max(S(0.0f), hit_rec.tnear);
-        auto tmax = hit_rec.tfar;
-
 #if 1
         // traverse tree
         detail::stack<32> st;
         st.push(0);
 
         auto inv_dir = 1.0f / ray.dir;
+
+        float t = 0.0f;
 
         auto get_bounds = [](virvo::SkipTreeNode& n)
         {
@@ -233,7 +226,16 @@ next:
         }
 
 #else
-    integrate(ray, t, tmax, result.color);
+        auto hit_rec = intersect(ray, bbox);
+        result.hit = hit_rec.hit;
+
+        if (!hit_rec.hit)
+            return result;
+
+        auto t = max(S(0.0f), hit_rec.tnear);
+        auto tmax = hit_rec.tfar;
+
+        integrate(ray, t, tmax, result.color);
 #endif
 
         return result;

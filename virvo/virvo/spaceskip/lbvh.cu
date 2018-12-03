@@ -277,14 +277,10 @@ __global__ void nodeSplitting(Brick* bricks, int num_bricks, Node* leaves, Node*
 }
 
 __global__ void buildHierarchy(Node* inner,
-        int num_inner,
         Node* leaves,
         int num_leaves,
         Brick* bricks,
-        virvo::SkipTreeNode* nodes,
-        vec3i vox,
-        vec3 dist,
-        float scale)
+        virvo::SkipTreeNode* nodes)
 {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -314,7 +310,6 @@ __global__ void convertToWorldspace(Node* inner,
         int num_inner,
         Node* leaves,
         int num_leaves,
-        Brick* bricks,
         virvo::SkipTreeNode* nodes,
         vec3i vox,
         vec3 dist,
@@ -570,14 +565,10 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 
   buildHierarchy<<<div_up(leaves.size(), numThreads), numThreads>>>(
       thrust::raw_pointer_cast(inner.data()),
-      inner.size(),
       thrust::raw_pointer_cast(leaves.data()),
       leaves.size(),
       thrust::raw_pointer_cast(compact_bricks.data()),
-      thrust::raw_pointer_cast(impl_->nodes.data()),
-      impl_->vox,
-      impl_->dist,
-      impl_->scale);
+      thrust::raw_pointer_cast(impl_->nodes.data()));
   std::cout << "Build hierarchy: " << t.elapsed() << '\n';
   t.reset();
 
@@ -586,7 +577,6 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
       inner.size(),
       thrust::raw_pointer_cast(leaves.data()),
       leaves.size(),
-      thrust::raw_pointer_cast(compact_bricks.data()),
       thrust::raw_pointer_cast(impl_->nodes.data()),
       impl_->vox,
       impl_->dist,
