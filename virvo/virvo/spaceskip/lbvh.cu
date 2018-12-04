@@ -466,6 +466,27 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
 
 void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 {
+#if 0
+  thrust::host_vector<float> h_voxels(impl_->voxels);
+  size_t empty = 0;
+  for (int z = 0; z < impl_->vox[2]; ++z)
+  {
+    for (int y = 0; y < impl_->vox[1]; ++y)
+    {
+      for (int x = 0; x < impl_->vox[0]; ++x)
+      {
+        size_t index = z * impl_->vox[0] * impl_->vox[1] + y * impl_->vox[0] + x;
+        if (tex1D(transfunc, h_voxels[index]).w < 0.0001)
+          ++empty;
+      }
+    }
+  }
+
+  size_t all = impl_->vox[0] * impl_->vox[1] * impl_->vox[2];
+  std::cout << std::setprecision(3) << std::fixed;
+  std::cout << ((float)empty / all) * 100.f << '\n';
+#endif
+
 #if 1
   // Swallow last CUDA error (thrust will otherwise
   // recognize that an error occurred previously
@@ -590,7 +611,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 
   vec3 rootSize = vec3(impl_->vox) * impl_->dist * impl_->scale;
   float rootVolume = rootSize.x * rootSize.y * rootSize.z;
-  float minVolume = rootVolume / 10;
+  float minVolume = 0.0f;//rootVolume / 10;
   convertToWorldspace<<<div_up(leaves.size(), numThreads), numThreads>>>(
       thrust::raw_pointer_cast(inner.data()),
       inner.size(),

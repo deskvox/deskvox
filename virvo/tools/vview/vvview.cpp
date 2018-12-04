@@ -2001,7 +2001,7 @@ double vvView::performanceTest()
     }
     total = totalTime->getTime();
 
-    printProfilingResult(totalTime, framesRendered);
+    //printProfilingResult(totalTime, framesRendered);
 
     delete totalTime;
   }

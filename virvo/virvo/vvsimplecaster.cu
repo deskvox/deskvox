@@ -157,7 +157,7 @@ struct Kernel
 
     template <typename R>
     VSNRAY_FUNC
-    result_record<typename R::scalar_type> operator()(R ray) const
+    result_record<typename R::scalar_type> ray_marching_naive(R ray) const
     {
         using S = typename R::scalar_type;
         using C = vector<4, S>;
@@ -165,7 +165,30 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
-#if 1
+        auto hit_rec = intersect(ray, bbox);
+        result.hit = hit_rec.hit;
+
+        if (!hit_rec.hit)
+            return result;
+
+        auto t = max(S(0.0f), hit_rec.tnear);
+        auto tmax = hit_rec.tfar;
+
+        integrate(ray, t, tmax, result.color);
+
+        return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
+    result_record<typename R::scalar_type> ray_marching_traverse_full(R ray) const
+    {
+        using S = typename R::scalar_type;
+        using C = vector<4, S>;
+
+        result_record<S> result;
+        result.color = C(0.0);
+
         // traverse tree
         detail::stack<32> st;
         st.push(0);
@@ -225,20 +248,16 @@ next:
             t = max(t, hr.tfar - delta);
         }
 
-#else
-        auto hit_rec = intersect(ray, bbox);
-        result.hit = hit_rec.hit;
-
-        if (!hit_rec.hit)
-            return result;
-
-        auto t = max(S(0.0f), hit_rec.tnear);
-        auto tmax = hit_rec.tfar;
-
-        integrate(ray, t, tmax, result.color);
-#endif
-
         return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
+    result_record<typename R::scalar_type> operator()(R ray) const
+    {
+      return ray_marching_naive(ray);
+//      return ray_marching_traverse_leaves(ray); // TODO
+//        return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -458,7 +477,7 @@ void vvSimpleCaster::renderVolumeGL()
     virvo::CudaTimer t;
     impl_->sched.frame(kernel, sparams);
     std::cout << std::fixed << std::setprecision(8);
-    std::cout << "time to render frame: " << t.elapsed() << std::endl;
+    std::cout << t.elapsed() << std::endl;
 //
 //#if FRAME_TIMING
 //    cudaEventRecord(stop);
@@ -471,6 +490,8 @@ void vvSimpleCaster::renderVolumeGL()
 
 void vvSimpleCaster::updateTransferFunction()
 {
+    for (int i = 0; i < 30; ++i)
+    {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
@@ -488,6 +509,7 @@ void vvSimpleCaster::updateTransferFunction()
     int numNodes = 0;
     impl_->device_tree = impl_->tree.getNodes(numNodes);
 //  std::cout << numNodes << '\n';
+    }
 }
 
 void vvSimpleCaster::updateVolumeData()
