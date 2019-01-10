@@ -139,7 +139,7 @@ struct Kernel
             T voxel = tex3D(volume, tex_coord);
             C color = tex1D(transfunc, voxel);
 
-            color = shade(color, -ray.dir, tex_coord);
+            //color = shade(color, -ray.dir, tex_coord);
 
             // opacity correction
             color.w = 1.0f - pow(1.0f - color.w, dt);
@@ -255,9 +255,9 @@ next:
     VSNRAY_FUNC
     result_record<typename R::scalar_type> operator()(R ray) const
     {
-      return ray_marching_naive(ray);
+//      return ray_marching_naive(ray);
 //      return ray_marching_traverse_leaves(ray); // TODO
-//        return ray_marching_traverse_full(ray);
+        return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -367,13 +367,13 @@ void vvSimpleCaster::renderVolumeGL()
 {
     if (_boundaries)
     {
-        //glLineWidth(1.0f);
+        glLineWidth(1.0f);
 
-        //glEnable(GL_LINE_SMOOTH);
-        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        glEnable(GL_LINE_SMOOTH);
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-        //glEnable(GL_BLEND);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
         glDisable(GL_LIGHTING);

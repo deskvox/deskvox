@@ -1300,8 +1300,13 @@ void vvView::optionsMenuCallback(int item)
     {
       vec3 eyePos = ds->renderer->getEyePosition();
 
+      float lightAtt[3] = { 1.0f, 0.0f, 0.0f };
+
       glEnable(GL_LIGHTING);
       glLightfv(GL_LIGHT0, GL_POSITION, &vvVector4(eyePos, 1.0f)[0]);
+      glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &lightAtt[0]);
+      glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &lightAtt[1]);
+      glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &lightAtt[2]);
     }
     ds->renderer->setParameter(vvRenderer::VV_LIGHTING, ds->useHeadLight);
     break;
