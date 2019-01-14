@@ -476,7 +476,7 @@ void load_dicom_image(vvVolDesc *vd, virvo::gdcm::dicom_meta &meta, bool verbose
   {
       meta.format = virvo::PF_R8;
   }
-  if (pf == gdcm::PixelFormat::INT16)
+  else if (pf == gdcm::PixelFormat::INT16)
   {
     meta.format = virvo::PF_R16I;
   }
@@ -494,7 +494,7 @@ void load_dicom_image(vvVolDesc *vd, virvo::gdcm::dicom_meta &meta, bool verbose
   }
   else
   {
-      VV_LOG(0) << "unsupported pixel format";
+      VV_LOG(0) << "unsupported pixel format " << pf;
   }
 }
 
