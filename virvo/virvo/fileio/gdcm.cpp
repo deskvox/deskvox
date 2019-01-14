@@ -79,6 +79,7 @@ PURPOSE.  See the above copyright notice for more information.
 #define TAG_SEQUENCE_NUMBER 0x0020,0x0011
 #define TAG_INSTANCE_NUMBER 0x0020,0x0013
 #define TAG_SLICE_LOCATION 0x0020,0x1041
+#define TAG_NUM_FRAMES 0x0028,0x0008
 
 //==============================================================================
 // Some handy utility functions
@@ -436,7 +437,14 @@ void load_dicom_image(vvVolDesc *vd, virvo::gdcm::dicom_meta &meta, bool verbose
       break;
     default: assert(0); break;
   }
-  VV_LOG(loglevel+1) << "  " << vd->vox[0] << "x" << vd->vox[1] << " pixels, " << pf.GetBitsAllocated() << " bits/pixel, slice no. " << meta.slice;
+
+  gdcm::Attribute<TAG_NUM_FRAMES> attrNumFrames;
+  if (ds.FindDataElement(attrNumFrames.GetTag()))
+  {
+    attrNumFrames.Set(ds);
+    meta.nframes = attrNumFrames.GetValue();
+  }
+  VV_LOG(loglevel+1) << "  " << vd->vox[0] << "x" << vd->vox[1] << " pixels, " << pf.GetBitsAllocated() << " bits/pixel, slice no. " << meta.slice << ", " << meta.nframes << " frames";
 
   gdcm::Attribute<TAG_SEQUENCE_NUMBER> attrSequenceNumber;
   if (ds.FindDataElement(attrSequenceNumber.GetTag()))
