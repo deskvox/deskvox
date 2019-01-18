@@ -26,6 +26,8 @@
 #include "private/work_queue.h"
 #include "vvrenderer.h"
 
+#include <iostream>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
