@@ -258,8 +258,6 @@ set(VIRVO_SOURCES
   gl/handle.cpp
   gl/util.cpp
 
-  spaceskip/kdtree.cpp
-
   vvbrickrend.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
@@ -321,6 +319,7 @@ if(VISIONARAY_FOUND)
   set(VIRVO_SOURCES
     ${VIRVO_SOURCES}
     vvspaceskip.cpp
+    spaceskip/kdtree.cpp
   )
 endif(VISIONARAY_FOUND)
 

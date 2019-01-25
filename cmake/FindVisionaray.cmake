@@ -25,10 +25,12 @@ find_library(VISIONARAY_LIBRARY
         lib
 )
 
-set(VISIONARAY_LIBRARIES ${VISIONARAY_LIBRARY})
-
 find_package_handle_standard_args(Visionaray
     DEFAULT_MSG
     VISIONARAY_INCLUDE_DIR
     VISIONARAY_LIBRARY
 )
+
+if (Visionaray_FOUND)
+    set(VISIONARAY_LIBRARIES ${VISIONARAY_LIBRARY})
+endif()
