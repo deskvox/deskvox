@@ -22,6 +22,7 @@
 #error "Compile w/ option --expt-extended-lambda"
 #endif
 
+#include <cstdint>
 #include <iostream>
 #include <ostream>
 
@@ -191,7 +192,7 @@ int find_split(Brick* bricks, int first, int last)
 //
 
 template <typename TransfuncTex>
-__global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, Brick* bricks)
+__global__ void findNonEmptyBricks(const uint8_t* voxels, TransfuncTex transfunc, Brick* bricks, vec2 mapping)
 {
   unsigned brick_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
   unsigned brick_offset = brick_index * blockDim.x * blockDim.y * blockDim.z;
@@ -203,7 +204,9 @@ __global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, 
 
   __syncthreads();
 
-  bool empty = tex1D(transfunc, voxels[index]).w < 0.0001f;
+  float fval = float(voxels[index]);
+  fval = lerp(mapping.x, mapping.y, fval / 255);
+  bool empty = tex1D(transfunc, fval).w < 0.0001f;
   // All threads in block vote
   if (shared_empty && !empty)
     atomicExch(&shared_empty, false);
@@ -383,8 +386,9 @@ struct BVH::Impl
   vec3i vox;
   vec3 dist;
   float scale;
+  vec2 mapping;
   // Brickwise (8x8x8) sorted on a z-order curve, "natural" layout inside!
-  thrust::device_vector<float> voxels;
+  thrust::device_vector<uint8_t> voxels;
   thrust::device_vector<virvo::SkipTreeNode> nodes;
 };
 
@@ -407,6 +411,7 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
   impl_->vox = vec3i(vd.vox.x, vd.vox.y, vd.vox.z);
   impl_->dist = vec3(vd.getDist().x, vd.getDist().y, vd.getDist().z);
   impl_->scale = vd._scale;
+  impl_->mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
   vec3i brick_size(8,8,8);
 
@@ -416,52 +421,59 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
 
   size_t num_voxels = num_bricks.x*brick_size.x * num_bricks.y*brick_size.y * num_bricks.z*brick_size.z;
 
-  thrust::host_vector<float> host_voxels(num_voxels);
-
-  for (int bz = 0; bz < num_bricks.z; ++bz)
+  if (vd.getBPV() == 1)
   {
-    for (int by = 0; by < num_bricks.y; ++by)
+    thrust::host_vector<uint8_t> host_voxels(num_voxels);
+
+    static const int frame = 0;
+    uint8_t* data = vd.getRaw(frame);
+  
+    for (int bz = 0; bz < num_bricks.z; ++bz)
     {
-      for (int bx = 0; bx < num_bricks.x; ++bx)
+      for (int by = 0; by < num_bricks.y; ++by)
       {
-        // Brick index
-        int brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
-        // Brick offset in voxels array
-        int brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
-
-        for (int zz = 0; zz < brick_size.z; ++zz)
+        for (int bx = 0; bx < num_bricks.x; ++bx)
         {
-          for (int yy = 0; yy < brick_size.y; ++yy)
+          // Brick index
+          int brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
+          // Brick offset in voxels array
+          int brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
+  
+          for (int zz = 0; zz < brick_size.z; ++zz)
           {
-            for (int xx = 0; xx < brick_size.x; ++xx)
+            for (int yy = 0; yy < brick_size.y; ++yy)
             {
-              // Index into voxels array
-              int index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
-
-              // Indices into voldesc
-              int x = bx * brick_size.x + xx;
-              int y = by * brick_size.y + yy;
-              int z = bz * brick_size.z + zz;
-
-              if (x < impl_->vox[0] && y < impl_->vox[1] && z < impl_->vox[2])
+              for (int xx = 0; xx < brick_size.x; ++xx)
               {
-                host_voxels[index] = vd.getChannelValue(vd.getCurrentFrame(),
-                    x,
-                    y,
-                    z,
-                    channel);
+                // Index into voxels array
+                int index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
+  
+                // Indices into voldesc
+                int x = bx * brick_size.x + xx;
+                int y = by * brick_size.y + yy;
+                int z = bz * brick_size.z + zz;
+
+                if (x < impl_->vox[0] && y < impl_->vox[1] && z < impl_->vox[2])
+                {
+                  size_t xyz = x + y * impl_->vox[0] + z * impl_->vox[0] * impl_->vox[1];
+                  host_voxels[index] = data[xyz];
+                }
+                else
+                  host_voxels[index] = uint8_t(0);
               }
-              else
-                host_voxels[index] = 0.f;
             }
           }
         }
       }
     }
-  }
 
-  impl_->voxels.resize(host_voxels.size());
-  thrust::copy(host_voxels.begin(), host_voxels.end(), impl_->voxels.begin());
+    impl_->voxels.resize(host_voxels.size());
+    thrust::copy(host_voxels.begin(), host_voxels.end(), impl_->voxels.begin());
+  }
+  else
+  {
+    std::cerr << "Not implemented for bpv=" << vd.getBPV() << '\n';
+  }
 }
 
 void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
@@ -515,7 +527,8 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   findNonEmptyBricks<<<grid_size, block_size>>>(
       thrust::raw_pointer_cast(impl_->voxels.data()),
       cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc),
-      thrust::raw_pointer_cast(bricks.data()));
+      thrust::raw_pointer_cast(bricks.data()),
+      impl_->mapping);
   std::cout << "Find empty: " << t.elapsed() << '\n';
   t.reset();
 
