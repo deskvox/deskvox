@@ -255,9 +255,9 @@ next:
     VSNRAY_FUNC
     result_record<typename R::scalar_type> operator()(R ray) const
     {
-//      return ray_marching_naive(ray);
+      return ray_marching_naive(ray);
 //      return ray_marching_traverse_leaves(ray); // TODO
-        return ray_marching_traverse_full(ray);
+//        return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -509,6 +509,27 @@ void vvSimpleCaster::updateTransferFunction()
     int numNodes = 0;
     impl_->device_tree = impl_->tree.getNodes(numNodes);
 //  std::cout << numNodes << '\n';
+    }
+    {
+    impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
+    tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
+    virvo::PixelFormat texture_format = virvo::PF_R8;
+    virvo::TextureUtil tu(vd);
+    for (int f = 0; f < vd->frames; ++f)
+    {
+        virvo::TextureUtil::Pointer tex_data = nullptr;
+
+        tex_data = tu.getTexture(virvo::vec3i(0),
+            virvo::vec3i(vd->vox),
+            texture_format,
+            virvo::TextureUtil::All,
+            f);
+
+        impl_->volumes[f] = cuda_texture<unorm<8>, 3>(vd->vox[0], vd->vox[1], vd->vox[2]);
+        impl_->volumes[f].reset(reinterpret_cast<unorm<8> const*>(tex_data));
+        impl_->volumes[f].set_address_mode(Clamp);
+        impl_->volumes[f].set_filter_mode(filter_mode);
+    }
     }
 }
 

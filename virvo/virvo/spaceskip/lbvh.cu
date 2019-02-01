@@ -195,10 +195,10 @@ int find_split(Brick* bricks, int first, int last)
 template <typename TransfuncTex>
 __global__ void findNonEmptyBricks(const uint8_t* voxels, TransfuncTex transfunc, Brick* bricks, vec2 mapping)
 {
-  unsigned brick_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
-  unsigned brick_offset = brick_index * blockDim.x * blockDim.y * blockDim.z;
+  size_t brick_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
+  size_t brick_offset = brick_index * blockDim.x * blockDim.y * blockDim.z;
 
-  unsigned index = brick_offset + threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+  size_t index = brick_offset + threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
 
   __shared__ int shared_empty;
   shared_empty = true;
@@ -489,6 +489,13 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
 
 void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 {
+#if 1
+  if (transfunc.data() == nullptr || transfunc.width() <= 1)
+  {
+    cudaFree(impl_->voxels);
+    return;
+  }
+#endif
 #if 0
   thrust::host_vector<float> h_voxels(impl_->voxels);
   size_t empty = 0;
