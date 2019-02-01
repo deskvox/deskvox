@@ -413,11 +413,11 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
   impl_->scale = vd._scale;
   impl_->mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
-  vec3i brick_size(8,8,8);
+  vector<3, size_t> brick_size(8,8,8);
 
-  vec3i num_bricks(div_up(impl_->vox[0], brick_size.x),
-      div_up(impl_->vox[1], brick_size.y),
-      div_up(impl_->vox[2], brick_size.z));
+  vector<3, size_t> num_bricks(div_up((size_t)impl_->vox[0], brick_size.x),
+      div_up((size_t)impl_->vox[1], brick_size.y),
+      div_up((size_t)impl_->vox[2], brick_size.z));
 
   size_t num_voxels = num_bricks.x*brick_size.x * num_bricks.y*brick_size.y * num_bricks.z*brick_size.z;
 
@@ -428,30 +428,30 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
     static const int frame = 0;
     uint8_t* data = vd.getRaw(frame);
   
-    for (int bz = 0; bz < num_bricks.z; ++bz)
+    for (size_t bz = 0; bz < num_bricks.z; ++bz)
     {
-      for (int by = 0; by < num_bricks.y; ++by)
+      for (size_t by = 0; by < num_bricks.y; ++by)
       {
-        for (int bx = 0; bx < num_bricks.x; ++bx)
+        for (size_t bx = 0; bx < num_bricks.x; ++bx)
         {
           // Brick index
-          int brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
+          size_t brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
           // Brick offset in voxels array
-          int brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
+          size_t brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
   
-          for (int zz = 0; zz < brick_size.z; ++zz)
+          for (size_t zz = 0; zz < brick_size.z; ++zz)
           {
-            for (int yy = 0; yy < brick_size.y; ++yy)
+            for (size_t yy = 0; yy < brick_size.y; ++yy)
             {
-              for (int xx = 0; xx < brick_size.x; ++xx)
+              for (size_t xx = 0; xx < brick_size.x; ++xx)
               {
                 // Index into voxels array
-                int index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
+                size_t index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
   
                 // Indices into voldesc
-                int x = bx * brick_size.x + xx;
-                int y = by * brick_size.y + yy;
-                int z = bz * brick_size.z + zz;
+                size_t x = bx * brick_size.x + xx;
+                size_t y = by * brick_size.y + yy;
+                size_t z = bz * brick_size.z + zz;
 
                 if (x < impl_->vox[0] && y < impl_->vox[1] && z < impl_->vox[2])
                 {
