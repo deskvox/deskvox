@@ -39,6 +39,7 @@
 #undef MATH_NAMESPACE
 
 #include "../cuda/timer.h"
+#include "../cuda/utils.h"
 #include "../vvopengl.h"
 #include "../vvspaceskip.h"
 #include "../vvvoldesc.h"
@@ -388,8 +389,13 @@ struct BVH::Impl
   float scale;
   vec2 mapping;
   // Brickwise (8x8x8) sorted on a z-order curve, "natural" layout inside!
-  thrust::device_vector<uint8_t> voxels;
+  uint8_t* voxels = nullptr;
   thrust::device_vector<virvo::SkipTreeNode> nodes;
+
+  ~Impl()
+  {
+    cudaFree(voxels);
+  }
 };
 
 
@@ -467,8 +473,13 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
       }
     }
 
-    impl_->voxels.resize(host_voxels.size());
-    thrust::copy(host_voxels.begin(), host_voxels.end(), impl_->voxels.begin());
+    bool ok = true;
+    virvo::cuda::checkError(&ok, cudaFree(impl_->voxels), "BVH::updateVolume() - cudaFree voxels");
+    virvo::cuda::checkError(&ok, cudaMalloc(&impl_->voxels, host_voxels.size() * sizeof(uint8_t)),
+                        "BVH::updateVolume() - cudaMalloc voxels");
+    virvo::cuda::checkError(&ok, cudaMemcpy(impl_->voxels, host_voxels.data(),
+                        host_voxels.size() * sizeof(uint8_t), cudaMemcpyHostToDevice),
+                        "BVH::updateVolume() - cudaMemcpy voxels");
   }
   else
   {
@@ -525,7 +536,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 
   virvo::CudaTimer t;
   findNonEmptyBricks<<<grid_size, block_size>>>(
-      thrust::raw_pointer_cast(impl_->voxels.data()),
+      impl_->voxels,
       cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc),
       thrust::raw_pointer_cast(bricks.data()),
       impl_->mapping);
