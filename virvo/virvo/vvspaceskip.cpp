@@ -53,6 +53,11 @@ SkipTree::~SkipTree()
 {
 }
 
+SkipTree::Technique SkipTree::getTechnique() const
+{
+  return impl_->technique;
+}
+
 void SkipTree::updateVolume(const vvVolDesc& vd)
 {
   if (impl_->technique == SVTKdTree)
@@ -119,7 +124,7 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
   }
   else if (impl_->technique == SVTKdTreeCU)
   {
-    auto leaves = impl_->cuda_kdtree.get_leaf_nodes(
+    leaves = impl_->cuda_kdtree.get_leaf_nodes(
         visionaray::vec3(eye.x, eye.y, eye.z),
         frontToBack
         );

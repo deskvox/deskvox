@@ -518,6 +518,8 @@ void CudaSVT<T>::build(Tex transfunc)
             height,
             depth);
   }
+  std::cout << "#boxes: " << boxes_.size() << '\n';
+  std::cout << boxes_.data() << '\n';
 
   thrust::stable_sort(
         thrust::device,
@@ -843,10 +845,18 @@ void CudaKdTree::updateVolume(vvVolDesc const& vd, int channel)
 
 void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4, 1>& transfunc)
 {
-  cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
+#if 1
+  // Swallow last CUDA error (thrust will otherwise
+  // recognize that an error occurred previously
+  // and then just throw..)
+  // TODO: where does the error originate from??
+  cudaGetLastError();
+#endif
+  static cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
       transfunc.width(),
       transfunc.get_address_mode(),
       transfunc.get_filter_mode());
+  cuda_transfunc.reset(transfunc.data()); // TODO: check the above ctor..
 
 #ifdef BUILD_TIMING
   CudaTimer timer;
@@ -876,12 +886,12 @@ std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, b
   using visionaray::vec3;
 
   std::vector<aabb> result;
-size_t vol = 0;
-  impl_->traverse(impl_->root, eye, [&vol,&result,this](Impl::NodePtr const& n)
+
+  impl_->traverse(impl_->root, eye, [&result,this](Impl::NodePtr const& n)
   {
     if (n->left == nullptr && n->right == nullptr)
     {
-      auto bbox = n->bbox;vol += volume(bbox);
+      auto bbox = n->bbox;
       bbox.min.y = impl_->vox[1] - n->bbox.max.y;
       bbox.max.y = impl_->vox[1] - n->bbox.min.y;
       bbox.min.z = impl_->vox[2] - n->bbox.max.z;
@@ -891,7 +901,7 @@ size_t vol = 0;
 
       result.push_back(aabb(bmin, bmax));
     }
-  }, frontToBack);vol = (impl_->vox[0] * impl_->vox[1] * impl_->vox[2]) - vol;std::cout << vol << std::endl;
+  }, frontToBack);
 
   return result;
 }

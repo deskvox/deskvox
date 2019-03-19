@@ -74,6 +74,8 @@ namespace virvo
     VVAPI SkipTree(Technique tech);
     VVAPI ~SkipTree();
 
+    VVAPI Technique getTechnique() const;
+
     VVAPI void updateVolume(const vvVolDesc& vd);
     VVAPI void updateTransfunc(const uint8_t* data,
         int numEntriesX,

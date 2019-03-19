@@ -165,7 +165,7 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
-        auto hit_rec = intersect(ray, bbox);
+        auto hit_rec = intersect(ray, roi);
         result.hit = hit_rec.hit;
 
         if (!hit_rec.hit)
@@ -256,14 +256,14 @@ next:
     result_record<typename R::scalar_type> operator()(R ray) const
     {
       return ray_marching_naive(ray);
-//      return ray_marching_traverse_leaves(ray); // TODO
-//        return ray_marching_traverse_full(ray);
+//    return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
     cuda_texture<vec4, 1>::ref_type transfunc;
 
     aabb bbox;
+    aabb roi;
     vec3i vox;
     float delta;
     bool local_shading;
@@ -320,7 +320,8 @@ struct vvSimpleCaster::Impl
 {
     Impl()
         : sched(8, 8)
-        , tree(virvo::SkipTree::LBVH)
+//      , tree(virvo::SkipTree::LBVH)
+        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -405,12 +406,6 @@ void vvSimpleCaster::renderVolumeGL()
         static_cast<virvo_render_target::depth_type*>(rt->deviceDepth())
         );
 
-    auto sparams = make_sched_params(
-        view_matrix,
-        proj_matrix,
-        virvo_rt
-        );
-
     // determine ray integration step size (aka delta)
     int axis = 0;
     if (vd->getSize()[1] / vd->vox[1] < vd->getSize()[axis] / vd->vox[axis])
@@ -443,54 +438,75 @@ void vvSimpleCaster::renderVolumeGL()
         light.set_quadratic_attenuation(l.quadratic_attenuation);
     }
 
+    bool lbvh = impl_->tree.getTechnique() == virvo::SkipTree::LBVH;
+    bool leaves = impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree
+               || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
+
     Kernel kernel;
 
     kernel.volume = cuda_texture<unorm<8>, 3>::ref_type(impl_->volumes[vd->getCurrentFrame()]);
     kernel.transfunc = cuda_texture<vec4, 1>::ref_type(impl_->transfunc);
 
     kernel.bbox          = aabb(vec3(bbox.min.data()), vec3(bbox.max.data()));
+    kernel.roi           = aabb(vec3(bbox.min.data()), vec3(bbox.max.data()));
     kernel.vox           = vec3i(vd->vox[0], vd->vox[1], vd->vox[2]);
     kernel.delta         = delta;
     kernel.local_shading = getParameter(VV_LIGHTING);
     kernel.light         = light;
 
-    kernel.nodes         = impl_->device_tree;
-//
-//    glDisable(GL_DEPTH_TEST);
-//
-//#if KDTREE
-//    vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
-//    auto leaves = impl_->kdtree.get_leaf_nodes(eye);
-//    thrust::device_vector<aabb> d_leaves(leaves);
-//    kernel.kd_tree_leaves = thrust::raw_pointer_cast(d_leaves.data());
-//    kernel.num_kd_tree_leaves = static_cast<int>(d_leaves.size());
-//#endif
-//
-//#if FRAME_TIMING
-//    cudaEvent_t start;
-//    cudaEvent_t stop;
-//    cudaEventCreate(&start);
-//    cudaEventCreate(&stop);
-//    cudaEventRecord(start);
-//#endif
-//
+    if (lbvh)
+        kernel.nodes         = impl_->device_tree;
+
+    std::vector<virvo::aabb> boxes;
+
+    if (leaves)
+    {
+        virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
+        bool frontToBack = false;
+        auto bricks = impl_->tree.getSortedBricks(eye, frontToBack);
+
+        boxes.insert(boxes.end(), bricks.begin(), bricks.end());
+    }
+
     virvo::CudaTimer t;
-    impl_->sched.frame(kernel, sparams);
+    if (lbvh)
+    {
+        auto sparams = make_sched_params(
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        impl_->sched.frame(kernel, sparams);
+    }
+    else if (leaves)
+    {
+        // Composite bricks in back-to-front order
+        pixel_sampler::basic_uniform_blend_type<blending::scale_factor> blend_params;
+        blend_params.sfactor = blending::One;
+        blend_params.dfactor = blending::OneMinusSrcAlpha;
+
+        auto sparams = make_sched_params(
+            blend_params,
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        for (unsigned i = 0; i < boxes.size(); ++i)
+        {
+            kernel.roi = aabb(vec3(boxes[i].min.data()), vec3(boxes[i].max.data()));
+
+            impl_->sched.frame(kernel, sparams);
+        }
+    }
     std::cout << std::fixed << std::setprecision(8);
     std::cout << t.elapsed() << std::endl;
-//
-//#if FRAME_TIMING
-//    cudaEventRecord(stop);
-//    cudaEventSynchronize(stop);
-//    float ms = 0.0f;
-//    cudaEventElapsedTime(&ms, start, stop);
-//    std::cout << std::fixed << std::setprecision(3) << "Elapsed time: " << ms << "ms\n";
-//#endif
 }
 
 void vvSimpleCaster::updateTransferFunction()
 {
-    for (int i = 0; i < 30; ++i)
+    //for (int i = 0; i < 30; ++i)
     {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
@@ -510,7 +526,7 @@ void vvSimpleCaster::updateTransferFunction()
     impl_->device_tree = impl_->tree.getNodes(numNodes);
 //  std::cout << numNodes << '\n';
     }
-    {
+    /*{
     impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
     tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     virvo::PixelFormat texture_format = virvo::PF_R8;
@@ -530,7 +546,7 @@ void vvSimpleCaster::updateTransferFunction()
         impl_->volumes[f].set_address_mode(Clamp);
         impl_->volumes[f].set_filter_mode(filter_mode);
     }
-    }
+    }*/
 }
 
 void vvSimpleCaster::updateVolumeData()
