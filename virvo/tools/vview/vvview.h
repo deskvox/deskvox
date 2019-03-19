@@ -38,6 +38,7 @@ class vvStopwatch;
 class vvObjView;
 class vvBrick;
 
+#include <string>
 #include <vector>
 
 #include <virvo/vvvecmath.h>
@@ -153,6 +154,7 @@ class vvView
     bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
     std::vector<std::string> serverFileNames;   ///< a list with file names where remote servers can find the appropriate volume data
     const char* testSuiteFileName;
+    std::string cameraFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool recordMode;                            ///< mode where camera motion is saved to file
     bool playMode;                              ///< mode where camera motion is played from file

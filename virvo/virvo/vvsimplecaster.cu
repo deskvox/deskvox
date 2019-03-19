@@ -139,7 +139,7 @@ struct Kernel
             T voxel = tex3D(volume, tex_coord);
             C color = tex1D(transfunc, voxel);
 
-            color = shade(color, -ray.dir, tex_coord);
+            //color = shade(color, -ray.dir, tex_coord);
 
             // opacity correction
             color.w = 1.0f - pow(1.0f - color.w, dt);
@@ -157,7 +157,7 @@ struct Kernel
 
     template <typename R>
     VSNRAY_FUNC
-    result_record<typename R::scalar_type> operator()(R ray) const
+    result_record<typename R::scalar_type> ray_marching_naive(R ray) const
     {
         using S = typename R::scalar_type;
         using C = vector<4, S>;
@@ -174,12 +174,28 @@ struct Kernel
         auto t = max(S(0.0f), hit_rec.tnear);
         auto tmax = hit_rec.tfar;
 
-#if 1
+        integrate(ray, t, tmax, result.color);
+
+        return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
+    result_record<typename R::scalar_type> ray_marching_traverse_full(R ray) const
+    {
+        using S = typename R::scalar_type;
+        using C = vector<4, S>;
+
+        result_record<S> result;
+        result.color = C(0.0);
+
         // traverse tree
         detail::stack<32> st;
         st.push(0);
 
         auto inv_dir = 1.0f / ray.dir;
+
+        float t = 0.0f;
 
         auto get_bounds = [](virvo::SkipTreeNode& n)
         {
@@ -232,11 +248,16 @@ next:
             t = max(t, hr.tfar - delta);
         }
 
-#else
-    integrate(ray, t, tmax, result.color);
-#endif
-
         return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
+    result_record<typename R::scalar_type> operator()(R ray) const
+    {
+      return ray_marching_naive(ray);
+//      return ray_marching_traverse_leaves(ray); // TODO
+//        return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -346,13 +367,13 @@ void vvSimpleCaster::renderVolumeGL()
 {
     if (_boundaries)
     {
-        //glLineWidth(1.0f);
+        glLineWidth(1.0f);
 
-        //glEnable(GL_LINE_SMOOTH);
-        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        glEnable(GL_LINE_SMOOTH);
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-        //glEnable(GL_BLEND);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
         glDisable(GL_LIGHTING);
@@ -456,7 +477,7 @@ void vvSimpleCaster::renderVolumeGL()
     virvo::CudaTimer t;
     impl_->sched.frame(kernel, sparams);
     std::cout << std::fixed << std::setprecision(8);
-    std::cout << "time to render frame: " << t.elapsed() << std::endl;
+    std::cout << t.elapsed() << std::endl;
 //
 //#if FRAME_TIMING
 //    cudaEventRecord(stop);
@@ -469,6 +490,8 @@ void vvSimpleCaster::renderVolumeGL()
 
 void vvSimpleCaster::updateTransferFunction()
 {
+    for (int i = 0; i < 30; ++i)
+    {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
@@ -486,6 +509,28 @@ void vvSimpleCaster::updateTransferFunction()
     int numNodes = 0;
     impl_->device_tree = impl_->tree.getNodes(numNodes);
 //  std::cout << numNodes << '\n';
+    }
+    {
+    impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
+    tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
+    virvo::PixelFormat texture_format = virvo::PF_R8;
+    virvo::TextureUtil tu(vd);
+    for (int f = 0; f < vd->frames; ++f)
+    {
+        virvo::TextureUtil::Pointer tex_data = nullptr;
+
+        tex_data = tu.getTexture(virvo::vec3i(0),
+            virvo::vec3i(vd->vox),
+            texture_format,
+            virvo::TextureUtil::All,
+            f);
+
+        impl_->volumes[f] = cuda_texture<unorm<8>, 3>(vd->vox[0], vd->vox[1], vd->vox[2]);
+        impl_->volumes[f].reset(reinterpret_cast<unorm<8> const*>(tex_data));
+        impl_->volumes[f].set_address_mode(Clamp);
+        impl_->volumes[f].set_filter_mode(filter_mode);
+    }
+    }
 }
 
 void vvSimpleCaster::updateVolumeData()

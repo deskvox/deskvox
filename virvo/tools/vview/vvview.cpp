@@ -157,6 +157,7 @@ vvView::vvView()
   framebufferDump       = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
+  cameraFileName        = "";
   showBricks            = false;
   recordMode            = false;
   playMode              = false;
@@ -269,6 +270,9 @@ void vvView::mainLoop(int argc, char *argv[])
   ds->ov->mv.scaleLocal(mvScale);
 
   setProjectionMode(perspectiveMode);
+
+  if (!cameraFileName.empty())
+    ds->ov->loadMV(cameraFileName.c_str());
 
   // Set window title:
   if (filename!=NULL) glutSetWindowTitle(filename);
@@ -1296,8 +1300,13 @@ void vvView::optionsMenuCallback(int item)
     {
       vec3 eyePos = ds->renderer->getEyePosition();
 
+      float lightAtt[3] = { 1.0f, 0.0f, 0.0f };
+
       glEnable(GL_LIGHTING);
       glLightfv(GL_LIGHT0, GL_POSITION, &vvVector4(eyePos, 1.0f)[0]);
+      glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &lightAtt[0]);
+      glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &lightAtt[1]);
+      glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &lightAtt[2]);
     }
     ds->renderer->setParameter(vvRenderer::VV_LIGHTING, ds->useHeadLight);
     break;
@@ -1961,8 +1970,8 @@ double vvView::performanceTest()
     totalTime = new vvStopwatch();
 
     ds->hqMode = false;
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     ds->displayCallback();
 
     printProfilingInfo();
@@ -1978,8 +1987,8 @@ double vvView::performanceTest()
       ++framesRendered;
     }
 
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
@@ -1987,8 +1996,8 @@ double vvView::performanceTest()
       ++framesRendered;
     }
 
-    ds->ov->reset();
-    ds->ov->mv.scaleLocal(ds->mvScale);
+    //ds->ov->reset();
+    //ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
@@ -1997,7 +2006,7 @@ double vvView::performanceTest()
     }
     total = totalTime->getTime();
 
-    printProfilingResult(totalTime, framesRendered);
+    //printProfilingResult(totalTime, framesRendered);
 
     delete totalTime;
   }
@@ -2552,6 +2561,8 @@ void vvView::displayHelpInfo()
   cerr << "-play" << endl;
   cerr << " Play camera motion from file" << endl;
   cerr << endl;
+  cerr << "-camera <path to file>" << endl;
+  cerr << " Load camera from file" << endl;
   #ifndef WIN32
   cerr << endl;
   #endif
@@ -2859,6 +2870,14 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-play")==0)
     {
       playMode = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-camera")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Camera file name unspecified" << endl;
+      }
+      cameraFileName = argv[arg];
     }
     else
     {

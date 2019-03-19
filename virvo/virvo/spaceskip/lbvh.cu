@@ -22,18 +22,24 @@
 #error "Compile w/ option --expt-extended-lambda"
 #endif
 
+#include <cstdint>
+#include <iostream>
+#include <ostream>
+
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
 #include <thrust/sort.h>
 
 #undef MATH_NAMESPACE
+#include <visionaray/detail/stack.h> // TODO: detail
 #include <visionaray/math/detail/math.h> // div_up
 #include <visionaray/math/aabb.h>
 #include <visionaray/morton.h>
 #undef MATH_NAMESPACE
 
 #include "../cuda/timer.h"
+#include "../cuda/utils.h"
 #include "../vvopengl.h"
 #include "../vvspaceskip.h"
 #include "../vvvoldesc.h"
@@ -187,19 +193,21 @@ int find_split(Brick* bricks, int first, int last)
 //
 
 template <typename TransfuncTex>
-__global__ void findNonEmptyBricks(const float* voxels, TransfuncTex transfunc, Brick* bricks)
+__global__ void findNonEmptyBricks(const uint8_t* voxels, TransfuncTex transfunc, Brick* bricks, vec2 mapping)
 {
-  unsigned brick_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
-  unsigned brick_offset = brick_index * blockDim.x * blockDim.y * blockDim.z;
+  size_t brick_index = blockIdx.z * gridDim.x * gridDim.y + blockIdx.y * gridDim.x + blockIdx.x;
+  size_t brick_offset = brick_index * blockDim.x * blockDim.y * blockDim.z;
 
-  unsigned index = brick_offset + threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+  size_t index = brick_offset + threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
 
   __shared__ int shared_empty;
   shared_empty = true;
 
   __syncthreads();
 
-  bool empty = tex1D(transfunc, voxels[index]).w < 0.0001f;
+  float fval = float(voxels[index]);
+  fval = lerp(mapping.x, mapping.y, fval / 255);
+  bool empty = tex1D(transfunc, fval).w < 0.0001f;
   // All threads in block vote
   if (shared_empty && !empty)
     atomicExch(&shared_empty, false);
@@ -277,14 +285,10 @@ __global__ void nodeSplitting(Brick* bricks, int num_bricks, Node* leaves, Node*
 }
 
 __global__ void buildHierarchy(Node* inner,
-        int num_inner,
         Node* leaves,
         int num_leaves,
         Brick* bricks,
-        virvo::SkipTreeNode* nodes,
-        vec3i vox,
-        vec3 dist,
-        float scale)
+        virvo::SkipTreeNode* nodes)
 {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -314,11 +318,11 @@ __global__ void convertToWorldspace(Node* inner,
         int num_inner,
         Node* leaves,
         int num_leaves,
-        Brick* bricks,
         virvo::SkipTreeNode* nodes,
         vec3i vox,
         vec3 dist,
-        float scale)
+        float scale,
+        float min_volume)
 {
   // Convert aabbi to aabb. Each thread (but one) processes an inner node and a leaf
   // Also set indices while we're at it!
@@ -327,7 +331,6 @@ __global__ void convertToWorldspace(Node* inner,
 
   if (index < num_inner)
   {
-    __threadfence();
     auto bbox = inner[index].bbox;
     bbox.min.y = vox[1] - inner[index].bbox.max.y;
     bbox.max.y = vox[1] - inner[index].bbox.min.y;
@@ -335,14 +338,23 @@ __global__ void convertToWorldspace(Node* inner,
     bbox.max.z = vox[2] - inner[index].bbox.min.z;
     vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
     vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+    aabb bboxf(bmin, bmax);
     nodes[index].min_corner[0] = bmin.x;
     nodes[index].min_corner[1] = bmin.y;
     nodes[index].min_corner[2] = bmin.z;
+#if 1
+    nodes[index].left = volume(bboxf) >= min_volume ? inner[index].left : -1;
+#else
     nodes[index].left = inner[index].left;
+#endif
     nodes[index].max_corner[0] = bmax.x;
     nodes[index].max_corner[1] = bmax.y;
     nodes[index].max_corner[2] = bmax.z;
+#if 1
+    nodes[index].right = volume(bboxf) >= min_volume ? inner[index].right : -1;
+#else
     nodes[index].right = inner[index].right;
+#endif
   }
 
   if (index < num_leaves)
@@ -375,9 +387,15 @@ struct BVH::Impl
   vec3i vox;
   vec3 dist;
   float scale;
+  vec2 mapping;
   // Brickwise (8x8x8) sorted on a z-order curve, "natural" layout inside!
-  thrust::device_vector<float> voxels;
+  uint8_t* voxels = nullptr;
   thrust::device_vector<virvo::SkipTreeNode> nodes;
+
+  ~Impl()
+  {
+    cudaFree(voxels);
+  }
 };
 
 
@@ -399,65 +417,106 @@ void BVH::updateVolume(vvVolDesc const& vd, int channel)
   impl_->vox = vec3i(vd.vox.x, vd.vox.y, vd.vox.z);
   impl_->dist = vec3(vd.getDist().x, vd.getDist().y, vd.getDist().z);
   impl_->scale = vd._scale;
+  impl_->mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
-  vec3i brick_size(8,8,8);
+  vector<3, size_t> brick_size(8,8,8);
 
-  vec3i num_bricks(div_up(impl_->vox[0], brick_size.x),
-      div_up(impl_->vox[1], brick_size.y),
-      div_up(impl_->vox[2], brick_size.z));
+  vector<3, size_t> num_bricks(div_up((size_t)impl_->vox[0], brick_size.x),
+      div_up((size_t)impl_->vox[1], brick_size.y),
+      div_up((size_t)impl_->vox[2], brick_size.z));
 
   size_t num_voxels = num_bricks.x*brick_size.x * num_bricks.y*brick_size.y * num_bricks.z*brick_size.z;
 
-  thrust::host_vector<float> host_voxels(num_voxels);
-
-  for (int bz = 0; bz < num_bricks.z; ++bz)
+  if (vd.getBPV() == 1)
   {
-    for (int by = 0; by < num_bricks.y; ++by)
+    thrust::host_vector<uint8_t> host_voxels(num_voxels);
+
+    static const int frame = 0;
+    uint8_t* data = vd.getRaw(frame);
+  
+    for (size_t bz = 0; bz < num_bricks.z; ++bz)
     {
-      for (int bx = 0; bx < num_bricks.x; ++bx)
+      for (size_t by = 0; by < num_bricks.y; ++by)
       {
-        // Brick index
-        int brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
-        // Brick offset in voxels array
-        int brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
-
-        for (int zz = 0; zz < brick_size.z; ++zz)
+        for (size_t bx = 0; bx < num_bricks.x; ++bx)
         {
-          for (int yy = 0; yy < brick_size.y; ++yy)
+          // Brick index
+          size_t brick_index = bz * num_bricks.x * num_bricks.y + by * num_bricks.x + bx;
+          // Brick offset in voxels array
+          size_t brick_offset = brick_index * brick_size.x * brick_size.y * brick_size.z;
+  
+          for (size_t zz = 0; zz < brick_size.z; ++zz)
           {
-            for (int xx = 0; xx < brick_size.x; ++xx)
+            for (size_t yy = 0; yy < brick_size.y; ++yy)
             {
-              // Index into voxels array
-              int index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
-
-              // Indices into voldesc
-              int x = bx * brick_size.x + xx;
-              int y = by * brick_size.y + yy;
-              int z = bz * brick_size.z + zz;
-
-              if (x < impl_->vox[0] && y < impl_->vox[1] && z < impl_->vox[2])
+              for (size_t xx = 0; xx < brick_size.x; ++xx)
               {
-                host_voxels[index] = vd.getChannelValue(vd.getCurrentFrame(),
-                    x,
-                    y,
-                    z,
-                    channel);
+                // Index into voxels array
+                size_t index = brick_offset + zz * brick_size.x * brick_size.y + yy * brick_size.x + xx;
+  
+                // Indices into voldesc
+                size_t x = bx * brick_size.x + xx;
+                size_t y = by * brick_size.y + yy;
+                size_t z = bz * brick_size.z + zz;
+
+                if (x < impl_->vox[0] && y < impl_->vox[1] && z < impl_->vox[2])
+                {
+                  size_t xyz = x + y * impl_->vox[0] + z * impl_->vox[0] * impl_->vox[1];
+                  host_voxels[index] = data[xyz];
+                }
+                else
+                  host_voxels[index] = uint8_t(0);
               }
-              else
-                host_voxels[index] = 0.f;
             }
           }
         }
       }
     }
-  }
 
-  impl_->voxels.resize(host_voxels.size());
-  thrust::copy(host_voxels.begin(), host_voxels.end(), impl_->voxels.begin());
+    bool ok = true;
+    virvo::cuda::checkError(&ok, cudaFree(impl_->voxels), "BVH::updateVolume() - cudaFree voxels");
+    virvo::cuda::checkError(&ok, cudaMalloc(&impl_->voxels, host_voxels.size() * sizeof(uint8_t)),
+                        "BVH::updateVolume() - cudaMalloc voxels");
+    virvo::cuda::checkError(&ok, cudaMemcpy(impl_->voxels, host_voxels.data(),
+                        host_voxels.size() * sizeof(uint8_t), cudaMemcpyHostToDevice),
+                        "BVH::updateVolume() - cudaMemcpy voxels");
+  }
+  else
+  {
+    std::cerr << "Not implemented for bpv=" << vd.getBPV() << '\n';
+  }
 }
 
 void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 {
+#if 1
+  if (transfunc.data() == nullptr || transfunc.width() <= 1)
+  {
+    cudaFree(impl_->voxels);
+    return;
+  }
+#endif
+#if 0
+  thrust::host_vector<float> h_voxels(impl_->voxels);
+  size_t empty = 0;
+  for (int z = 0; z < impl_->vox[2]; ++z)
+  {
+    for (int y = 0; y < impl_->vox[1]; ++y)
+    {
+      for (int x = 0; x < impl_->vox[0]; ++x)
+      {
+        size_t index = z * impl_->vox[0] * impl_->vox[1] + y * impl_->vox[0] + x;
+        if (tex1D(transfunc, h_voxels[index]).w < 0.0001)
+          ++empty;
+      }
+    }
+  }
+
+  size_t all = impl_->vox[0] * impl_->vox[1] * impl_->vox[2];
+  std::cout << std::setprecision(3) << std::fixed;
+  std::cout << ((float)empty / all) * 100.f << '\n';
+#endif
+
 #if 1
   // Swallow last CUDA error (thrust will otherwise
   // recognize that an error occurred previously
@@ -465,6 +524,9 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   // TODO: where does the error originate from??
   cudaGetLastError();
 #endif
+
+  std::cout << std::fixed << std::setprecision(8);
+
   static cuda_texture<visionaray::vec4, 1> cuda_transfunc(transfunc.data(),
       transfunc.width(),
       transfunc.get_address_mode(),
@@ -481,9 +543,10 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 
   virvo::CudaTimer t;
   findNonEmptyBricks<<<grid_size, block_size>>>(
-      thrust::raw_pointer_cast(impl_->voxels.data()),
+      impl_->voxels,
       cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc),
-      thrust::raw_pointer_cast(bricks.data()));
+      thrust::raw_pointer_cast(bricks.data()),
+      impl_->mapping);
   std::cout << "Find empty: " << t.elapsed() << '\n';
   t.reset();
 
@@ -570,27 +633,26 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
 
   buildHierarchy<<<div_up(leaves.size(), numThreads), numThreads>>>(
       thrust::raw_pointer_cast(inner.data()),
-      inner.size(),
       thrust::raw_pointer_cast(leaves.data()),
       leaves.size(),
       thrust::raw_pointer_cast(compact_bricks.data()),
-      thrust::raw_pointer_cast(impl_->nodes.data()),
-      impl_->vox,
-      impl_->dist,
-      impl_->scale);
+      thrust::raw_pointer_cast(impl_->nodes.data()));
   std::cout << "Build hierarchy: " << t.elapsed() << '\n';
   t.reset();
 
+  vec3 rootSize = vec3(impl_->vox) * impl_->dist * impl_->scale;
+  float rootVolume = rootSize.x * rootSize.y * rootSize.z;
+  float minVolume = 0.0f;//rootVolume / 10;
   convertToWorldspace<<<div_up(leaves.size(), numThreads), numThreads>>>(
       thrust::raw_pointer_cast(inner.data()),
       inner.size(),
       thrust::raw_pointer_cast(leaves.data()),
       leaves.size(),
-      thrust::raw_pointer_cast(compact_bricks.data()),
       thrust::raw_pointer_cast(impl_->nodes.data()),
       impl_->vox,
       impl_->dist,
-      impl_->scale);
+      impl_->scale,
+      minVolume);
   std::cout << "Convert to worldspace: " << t.elapsed() << '\n';
 }
 
@@ -651,7 +713,7 @@ void BVH::renderGL(vvColor color) const
       numNodes * sizeof(virvo::SkipTreeNode),
       cudaMemcpyDeviceToHost);
 
-  for (auto n : h_nodes)
+  auto func = [color](virvo::SkipTreeNode n)
   {
     vec3 bmin(n.min_corner);
     vec3 bmax(n.max_corner);
@@ -697,6 +759,28 @@ void BVH::renderGL(vvColor color) const
     glVertex3f(bmin.x, bmax.y, bmin.z);
     glVertex3f(bmin.x, bmax.y, bmax.z);
     glEnd();
+  };
+
+  detail::stack<64> st; 
+
+  unsigned addr = 0;
+  st.push(addr);
+
+  while (!st.empty())
+  {
+    auto node = h_nodes[addr];
+
+    func(node);
+
+    if (node.left != -1 && node.right != -1)
+    {
+      addr = node.left;
+      st.push(node.right);
+    }
+    else
+    {
+      addr = st.pop();
+    }
   }
 }
 

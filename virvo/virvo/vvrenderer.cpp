@@ -1095,6 +1095,8 @@ void vvRenderer::renderFPSDisplay() const
 */
 void vvRenderer::drawBoundingBox(vec3f const& oSize, vec3f const& oPos, const vvColor& color) const
 {
+auto clr = const_cast<vvColor*>(&color);
+*clr = vvColor(0.0f,0,0);
   vec3f vertvec[8];                               // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
@@ -1152,11 +1154,13 @@ void vvRenderer::drawBoundingBox(vec3f const& oSize, vec3f const& oPos, const vv
 
   glLineWidth(3.0f);
 
+#if 0
   glEnable(GL_LINE_SMOOTH);
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#endif
 
   // Draw faces:
   for (i=0; i<6; ++i)
