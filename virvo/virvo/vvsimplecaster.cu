@@ -205,9 +205,9 @@ struct Kernel
 
         const vec3f ray_rdir = 1.0f / ray.dir;
         // sign of direction determines near/far index
-        const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<int*>(&ray.dir.x) >> 31),
-                                          1 - (*reinterpret_cast<int*>(&ray.dir.y) >> 31),
-                                          1 - (*reinterpret_cast<int*>(&ray.dir.z) >> 31));
+        const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<unsigned*>(&ray.dir.x) >> 31),
+                                          1 - (*reinterpret_cast<unsigned*>(&ray.dir.y) >> 31),
+                                          1 - (*reinterpret_cast<unsigned*>(&ray.dir.z) >> 31));
 
         vec3i hit_cell;
         while (t < tmax)
@@ -219,38 +219,87 @@ struct Kernel
                     (pos.y + (bbox.size().y / 2)) / bbox.size().y,
                     (pos.z + (bbox.size().z / 2)) / bbox.size().z
                     );
-            vec3f localCoordinates = coord01 * vec3(vox);
+            vec3f localCoordinates = coord01 * vec3(vox-1);
 
             // Compute the 3D index of the cell containing the hit point.
             vec3i cellIndex = vec3i(localCoordinates) >> 4;//>> CELL_WIDTH_BITCOUNT;
+
+            // If we visited this cell before then it must not be empty.
+            if (cellIndex == hit_cell)
+            {
+                vector<3, S> tex_coord(
+                        ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
+                        (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
+                        (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
+                        );
+
+                S voxel = tex3D(volume, tex_coord);
+                C color = tex1D(transfunc, voxel);
+
+                //color = shade(color, -ray.dir, tex_coord);
+
+                // opacity correction
+                color.w = 1.0f - pow(1.0f - color.w, delta);
+
+                // premultiplied alpha
+                color.xyz() *= color.w;
+
+                // compositing
+                result.color += color * (1.0f - result.color.w);
+
+                t += delta;
+                continue;
+            }
 
             // Track the hit cell.
             hit_cell = cellIndex;
 
             // Get the volumetric value range of the cell.
-            vec2f cellRange = cell_ranges[cellIndex.z * grid_dims.x * grid_dims.y + cellIndex.y * grid_dims.x + cellIndex.x];
+            vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
 
             // Get the maximum opacity in the volumetric value range.
             int tf_width = 256;
-            float maximumOpacity = max_opacities[int(cellRange.x * 255) * tf_width + int(cellRange.y * 255)];
+            float maximumOpacity = max_opacities[int(cellRange.y * 255) * tf_width + int(cellRange.x * 255)];
+
+            // Return the hit point if the grid cell is not fully transparent.
+            if (maximumOpacity > 0.0f)
+            {
+                vector<3, S> tex_coord(
+                        ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
+                        (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
+                        (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
+                        );
+
+                S voxel = tex3D(volume, tex_coord);
+                C color = tex1D(transfunc, voxel);
+
+                //color = shade(color, -ray.dir, tex_coord);
+
+                // opacity correction
+                color.w = 1.0f - pow(1.0f - color.w, delta);
+
+                // premultiplied alpha
+                color.xyz() *= color.w;
+
+                // compositing
+                result.color += color * (1.0f - result.color.w);
+
+                t += delta;
+                continue;
+            }
 
             // Exit bound of the grid cell in world coordinates.
             vec3f farBound(cellIndex + nextCellIndex << 4/*<< CELL_WIDTH_BITCOUNT*/);
-            farBound /= vec3(vox);
+            farBound /= vec3(vox-1);
             farBound *= bbox.size();
             farBound -= vec3(bbox.size().x/2, bbox.size().y/2, bbox.size().z/2);
 
             // Identify the distance along the ray to the exit points on the cell.
             const vec3f maximum = ray_rdir * (farBound - ray.ori);
-            const float exitDist = min(min(t, maximum.x),
+            const float exitDist = min(min(tmax, maximum.x),
                                        min(maximum.y, maximum.z));
 
             const float dist = ceil(abs(exitDist - t) / delta) * delta;
-
-            if (maximumOpacity > 0.0f)
-            {
-                integrate(ray, t, t + dist, result.color);
-            }
 
             // Advance the ray so the next hit point will be outside the empty cell.
             t += dist;
