@@ -165,7 +165,7 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
-        auto hit_rec = intersect(ray, roi);
+        auto hit_rec = intersect(ray, bbox);
         result.hit = hit_rec.hit;
 
         if (!hit_rec.hit)
@@ -189,7 +189,7 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
-        auto hit_rec = intersect(ray, roi);
+        auto hit_rec = intersect(ray, bbox);
         result.hit = hit_rec.hit;
 
         if (!hit_rec.hit)
@@ -310,6 +310,33 @@ struct Kernel
 
     template <typename R>
     VSNRAY_FUNC
+    result_record<typename R::scalar_type> ray_marching_traverse_leaves(R ray) const
+    {
+        using S = typename R::scalar_type;
+        using C = vector<4, S>;
+
+        result_record<S> result;
+        result.color = C(0.0);
+
+        for (int i = 0; i < num_leaves; ++i)
+        {
+            auto hit_rec = intersect(ray, leaves[i]);
+            result.hit = hit_rec.hit;
+
+            if (!hit_rec.hit)
+                continue;
+
+            auto t = max(S(0.0), hit_rec.tnear);
+            auto tmax = hit_rec.tfar;
+
+            integrate(ray, t, tmax, result.color);
+        }
+
+        return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
     result_record<typename R::scalar_type> ray_marching_traverse_full(R ray) const
     {
         using S = typename R::scalar_type;
@@ -385,19 +412,22 @@ next:
     result_record<typename R::scalar_type> operator()(R ray) const
     {
 //    return ray_marching_naive(ray);
-//    return ray_marching_traverse_full(ray);
       return ray_marching_traverse_grid(ray);
+//    return ray_marching_traverse_leaves(ray);
+//    return ray_marching_traverse_full(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
     cuda_texture<vec4, 1>::ref_type transfunc;
 
     aabb bbox;
-    aabb roi;
     vec3i vox;
     float delta;
     bool local_shading;
     point_light<float> light;
+
+    aabb const* leaves;
+    int num_leaves;
 
     virvo::SkipTreeNode* nodes = nullptr;
 
@@ -471,6 +501,8 @@ struct vvSimpleCaster::Impl
     virvo::SkipTree tree;
 
     virvo::SkipTreeNode* device_tree = nullptr;
+
+    thrust::device_vector<aabb> d_leaves;
 
     // Ospray Grid Accelerator
     thrust::device_vector<virvo::vec2> d_cell_ranges;
@@ -588,7 +620,6 @@ void vvSimpleCaster::renderVolumeGL()
     kernel.transfunc = cuda_texture<vec4, 1>::ref_type(impl_->transfunc);
 
     kernel.bbox          = aabb(vec3(bbox.min.data()), vec3(bbox.max.data()));
-    kernel.roi           = aabb(vec3(bbox.min.data()), vec3(bbox.max.data()));
     kernel.vox           = vec3i(vd->vox[0], vd->vox[1], vd->vox[2]);
     kernel.delta         = delta;
     kernel.local_shading = getParameter(VV_LIGHTING);
@@ -597,7 +628,7 @@ void vvSimpleCaster::renderVolumeGL()
     if (lbvh)
         kernel.nodes         = impl_->device_tree;
 
-    std::vector<virvo::aabb> boxes;
+    std::vector<aabb> boxes;
 
     if (leaves)
     {
@@ -605,7 +636,12 @@ void vvSimpleCaster::renderVolumeGL()
         bool frontToBack = false;
         auto bricks = impl_->tree.getSortedBricks(eye, frontToBack);
 
-        boxes.insert(boxes.end(), bricks.begin(), bricks.end());
+        for (auto b : bricks)
+        {
+            boxes.push_back(aabb(vec3(b.min.data()), vec3(b.max.data())));
+        }
+
+        impl_->d_leaves = thrust::device_vector<aabb>(boxes);
     }
 
     virvo::CudaTimer t;
@@ -653,24 +689,15 @@ void vvSimpleCaster::renderVolumeGL()
     }
     else if (leaves)
     {
-        // Composite bricks in back-to-front order
-        pixel_sampler::basic_uniform_blend_type<blending::scale_factor> blend_params;
-        blend_params.sfactor = blending::One;
-        blend_params.dfactor = blending::OneMinusSrcAlpha;
-
+        kernel.leaves = thrust::raw_pointer_cast(impl_->d_leaves.data());
+        kernel.num_leaves = impl_->d_leaves.size();
         auto sparams = make_sched_params(
-            blend_params,
             view_matrix,
             proj_matrix,
             virvo_rt
             );
 
-        for (unsigned i = 0; i < boxes.size(); ++i)
-        {
-            kernel.roi = aabb(vec3(boxes[i].min.data()), vec3(boxes[i].max.data()));
-
-            impl_->sched.frame(kernel, sparams);
-        }
+        impl_->sched.frame(kernel, sparams);
     }
     std::cout << std::fixed << std::setprecision(8);
     std::cout << t.elapsed() << std::endl;
