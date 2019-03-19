@@ -20,12 +20,12 @@
 
 #include <cassert>
 
-#undef MATH_NAMESPACE
 #include "spaceskip/kdtree.h"
 #include "spaceskip/lbvh.h"
-#undef MATH_NAMESPACE
 
+#include "spaceskip/grid.h"
 #include "spaceskip/cudakdtree.h"
+
 #include "vvclock.h"
 #include "vvopengl.h"
 #include "vvspaceskip.h"
@@ -41,6 +41,7 @@ struct SkipTree::Impl
   KdTree kdtree;
   CudaKdTree cuda_kdtree;
   BVH bvh;
+  GridAccelerator grid;
 };
 
 SkipTree::SkipTree(SkipTree::Technique tech)
@@ -66,6 +67,8 @@ void SkipTree::updateVolume(const vvVolDesc& vd)
     impl_->cuda_kdtree.updateVolume(vd);
   else if (impl_->technique == LBVH)
     impl_->bvh.updateVolume(vd);
+  else if (impl_->technique == Grid)
+    impl_->grid.updateVolume(vd);
 }
 
 void SkipTree::updateTransfunc(const uint8_t* data,
@@ -92,6 +95,8 @@ void SkipTree::updateTransfunc(const uint8_t* data,
       impl_->cuda_kdtree.updateTransfunc(transfunc);
     else if (impl_->technique == LBVH)
       impl_->bvh.updateTransfunc(transfunc);
+    else if (impl_->technique == Grid)
+      impl_->grid.updateTransfunc(transfunc);
   }
 }
 
@@ -141,6 +146,17 @@ std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
   }
 
   return result;
+}
+
+SkipGrid SkipTree::getGrid() const
+{
+  assert(impl_->technique == Grid);
+
+  return {
+    reinterpret_cast<virvo::vec2 const*>(impl_->grid.cellRange),
+    virvo::vec3i(impl_->grid.gridDimensions.data()),
+    impl_->grid.maxOpacities
+    };
 }
 
 void SkipTree::renderGL(vvColor color)

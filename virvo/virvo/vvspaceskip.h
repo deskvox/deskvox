@@ -47,6 +47,15 @@ namespace virvo
   };
 
 
+  /**
+   */
+  struct SkipGrid
+  {
+    vec2 const* cell_ranges;
+    vec3i grid_dims;
+    float const* max_opacities;
+  };
+
   /** Space skipping tree wrapper, internally supports multiple
    *  construction techniques
    */
@@ -61,7 +70,8 @@ namespace virvo
        */
       SVTKdTree,
 
-      /** Rapid k-d Tree Construction, with CUDA
+      /** Space skipping k-d tree technique with CUDA, from
+       * "Binned k-d Tree Construction for Sparse Volume Data on Multi-Core and GPU Systems"
        */
       SVTKdTreeCU,
 
@@ -69,6 +79,11 @@ namespace virvo
        * "A Linear Time BVH Construction Algorithm for Sparse Volumes"
        */
       LBVH,
+
+      /** Space skipping technique ported from Ospray
+       * https://github.com/ospray/ospray/blob/master/ospray/volume/structured/GridAccelerator.ispc
+       */
+      Grid,
     };
 
     VVAPI SkipTree(Technique tech);
@@ -93,6 +108,11 @@ namespace virvo
      * @brief Produce a sorted list of bricks that contain non-empty voxels
      */
     VVAPI std::vector<aabb> getSortedBricks(vec3 eye, bool frontToBack = true);
+
+    /**
+     * @brief Produce grid representation (only supported if technique == Grid)
+     */
+    VVAPI SkipGrid getGrid() const;
 
 
     /**

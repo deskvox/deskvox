@@ -181,6 +181,86 @@ struct Kernel
 
     template <typename R>
     VSNRAY_FUNC
+    result_record<typename R::scalar_type> ray_marching_traverse_grid(R ray) const
+    {
+        using S = typename R::scalar_type;
+        using C = vector<4, S>;
+
+        result_record<S> result;
+        result.color = C(0.0);
+
+        auto hit_rec = intersect(ray, roi);
+        result.hit = hit_rec.hit;
+
+        if (!hit_rec.hit)
+            return result;
+
+        auto t = max(S(0.0f), hit_rec.tnear);
+        auto tmax = hit_rec.tfar;
+
+        // cf. GridAccelerator_stepRay
+
+        // Tentatively advance the ray.
+        t += delta;
+
+        const vec3f ray_rdir = 1.0f / ray.dir;
+        // sign of direction determines near/far index
+        const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<int*>(&ray.dir.x) >> 31),
+                                          1 - (*reinterpret_cast<int*>(&ray.dir.y) >> 31),
+                                          1 - (*reinterpret_cast<int*>(&ray.dir.z) >> 31));
+
+        vec3i hit_cell;
+        while (t < tmax)
+        {
+            // Compute the hit point in the local coordinate system.
+            vec3f pos = ray.ori + t * ray.dir;
+            vector<3, S> coord01(
+                    (pos.x + (bbox.size().x / 2)) / bbox.size().x,
+                    (pos.y + (bbox.size().y / 2)) / bbox.size().y,
+                    (pos.z + (bbox.size().z / 2)) / bbox.size().z
+                    );
+            vec3f localCoordinates = coord01 * vec3(vox);
+
+            // Compute the 3D index of the cell containing the hit point.
+            vec3i cellIndex = vec3i(localCoordinates) >> 4;//>> CELL_WIDTH_BITCOUNT;
+
+            // Track the hit cell.
+            hit_cell = cellIndex;
+
+            // Get the volumetric value range of the cell.
+            vec2f cellRange = cell_ranges[cellIndex.z * grid_dims.x * grid_dims.y + cellIndex.y * grid_dims.x + cellIndex.x];
+
+            // Get the maximum opacity in the volumetric value range.
+            int tf_width = 256;
+            float maximumOpacity = max_opacities[int(cellRange.x * 255) * tf_width + int(cellRange.y * 255)];
+
+            // Exit bound of the grid cell in world coordinates.
+            vec3f farBound(cellIndex + nextCellIndex << 4/*<< CELL_WIDTH_BITCOUNT*/);
+            farBound /= vec3(vox);
+            farBound *= bbox.size();
+            farBound -= vec3(bbox.size().x/2, bbox.size().y/2, bbox.size().z/2);
+
+            // Identify the distance along the ray to the exit points on the cell.
+            const vec3f maximum = ray_rdir * (farBound - ray.ori);
+            const float exitDist = min(min(t, maximum.x),
+                                       min(maximum.y, maximum.z));
+
+            const float dist = ceil(abs(exitDist - t) / delta) * delta;
+
+            if (maximumOpacity > 0.0f)
+            {
+                integrate(ray, t, t + dist, result.color);
+            }
+
+            // Advance the ray so the next hit point will be outside the empty cell.
+            t += dist;
+        }
+
+        return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
     result_record<typename R::scalar_type> ray_marching_traverse_full(R ray) const
     {
         using S = typename R::scalar_type;
@@ -255,8 +335,9 @@ next:
     VSNRAY_FUNC
     result_record<typename R::scalar_type> operator()(R ray) const
     {
-      return ray_marching_naive(ray);
+//    return ray_marching_naive(ray);
 //    return ray_marching_traverse_full(ray);
+      return ray_marching_traverse_grid(ray);
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -271,6 +352,10 @@ next:
 
     virvo::SkipTreeNode* nodes = nullptr;
 
+    // Grid stuff
+    vec2 const* cell_ranges;
+    vec3i grid_dims;
+    float const* max_opacities; // TF_WIDTH * TF_WIDTH
 };
 
 class virvo_render_target
@@ -320,8 +405,9 @@ struct vvSimpleCaster::Impl
 {
     Impl()
         : sched(8, 8)
+        , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-        , tree(virvo::SkipTree::SVTKdTreeCU)
+//      , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -336,6 +422,10 @@ struct vvSimpleCaster::Impl
     virvo::SkipTree tree;
 
     virvo::SkipTreeNode* device_tree = nullptr;
+
+    // Ospray Grid Accelerator
+    thrust::device_vector<virvo::vec2> d_cell_ranges;
+    thrust::device_vector<float> d_max_opacities;
 };
 
 vvSimpleCaster::vvSimpleCaster(vvVolDesc* vd, vvRenderState renderState)
@@ -441,6 +531,7 @@ void vvSimpleCaster::renderVolumeGL()
     bool lbvh = impl_->tree.getTechnique() == virvo::SkipTree::LBVH;
     bool leaves = impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree
                || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
+    bool grid = impl_->tree.getTechnique() == virvo::SkipTree::Grid;
 
     Kernel kernel;
 
@@ -471,6 +562,38 @@ void vvSimpleCaster::renderVolumeGL()
     virvo::CudaTimer t;
     if (lbvh)
     {
+        auto sparams = make_sched_params(
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        impl_->sched.frame(kernel, sparams);
+    }
+    else if (grid)
+    {
+        auto host_grid = impl_->tree.getGrid();
+
+        size_t len = host_grid.grid_dims.x * host_grid.grid_dims.y * host_grid.grid_dims.z;
+        impl_->d_cell_ranges.resize(len);
+
+        thrust::copy(host_grid.cell_ranges,
+                     host_grid.cell_ranges + len,
+                     impl_->d_cell_ranges.begin());
+        kernel.cell_ranges = reinterpret_cast<vec2 const*>(
+                    thrust::raw_pointer_cast(impl_->d_cell_ranges.data()));
+
+        kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
+
+        int tf_width = 256;
+        impl_->d_max_opacities.resize(tf_width*tf_width);
+
+        thrust::copy(host_grid.max_opacities,
+                     host_grid.max_opacities + tf_width*tf_width,
+                     impl_->d_max_opacities.begin());
+        kernel.max_opacities = reinterpret_cast<float const*>(
+                    thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
+
         auto sparams = make_sched_params(
             view_matrix,
             proj_matrix,

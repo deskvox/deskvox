@@ -147,6 +147,7 @@ set(VIRVO_HEADERS
   mem/swap.h
 
   spaceskip/cudakdtree.h
+  spaceskip/grid.h
   spaceskip/kdtree.h
   spaceskip/kdtree.inl
   spaceskip/lbvh.h
@@ -322,6 +323,7 @@ if(VISIONARAY_FOUND)
   set(VIRVO_SOURCES
     ${VIRVO_SOURCES}
     vvspaceskip.cpp
+    spaceskip/grid.cpp
     spaceskip/kdtree.cpp
   )
 endif(VISIONARAY_FOUND)
