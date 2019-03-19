@@ -18,27 +18,53 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_OPENGL_H
-#define VV_OPENGL_H
+#ifndef VV_CUDA_TIMER_H
+#define VV_CUDA_TIMER_H
 
-#include "vvexport.h"
+#include <cuda_runtime_api.h>
 
-#if defined(__linux__) || defined(LINUX) || defined(__APPLE__)
-#define GL_GLEXT_PROTOTYPES 1
-#ifndef GL_GLEXT_LEGACY
-# define GL_GLEXT_LEGACY 1
-#endif
-#endif
+namespace virvo
+{
 
-#include "vvplatform.h"
+class CudaTimer
+{
+public:
 
-#if defined(__APPLE__)
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
+    CudaTimer()
+    {
+        cudaEventCreate(&start_);
+        cudaEventCreate(&stop_);
 
-#endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+        reset();
+    }
+
+    ~CudaTimer()
+    {
+        cudaEventDestroy(stop_);
+        cudaEventDestroy(start_);
+    }
+
+    void reset()
+    {
+        cudaEventRecord(start_);
+    }
+
+    double elapsed() const
+    {
+        cudaEventRecord(stop_);
+        cudaEventSynchronize(stop_);
+        float ms = 0.0f;
+        cudaEventElapsedTime(&ms, start_, stop_);
+        return static_cast<double>(ms) / 1000.0;
+    }
+
+private:
+
+    cudaEvent_t start_;
+    cudaEvent_t stop_;
+
+};
+
+} // namespace virvo
+
+#endif // VV_CUDA_TIMER_H

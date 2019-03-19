@@ -18,27 +18,29 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_OPENGL_H
-#define VV_OPENGL_H
+#include <virvo/vvclock.h>
 
-#include "vvexport.h"
+template <typename Tex>
+void KdTree::updateTransfunc(Tex transfunc)
+{
+  using namespace visionaray;
 
-#if defined(__linux__) || defined(LINUX) || defined(__APPLE__)
-#define GL_GLEXT_PROTOTYPES 1
-#ifndef GL_GLEXT_LEGACY
-# define GL_GLEXT_LEGACY 1
+#ifdef BUILD_TIMING
+  vvStopwatch sw; sw.start();
 #endif
-#endif
-
-#include "vvplatform.h"
-
-#if defined(__APPLE__)
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
+  psvt.build(transfunc);
+#ifdef BUILD_TIMING
+  std::cout << std::fixed << std::setprecision(3) << "svt update: " << sw.getTime() << " sec.\n";
 #endif
 
+#ifdef BUILD_TIMING
+  sw.start();
 #endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+  root.reset(new Node);
+  root->bbox = psvt.boundary(aabbi(vec3i(0), vec3i(vox[0], vox[1], vox[2])));
+  root->depth = 0;
+  node_splitting(root);
+#ifdef BUILD_TIMING
+  std::cout << "splitting: " << sw.getTime() << " sec.\n";
+#endif
+}

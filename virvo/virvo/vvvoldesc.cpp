@@ -636,7 +636,10 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     }
     else
     {
-      cerr << "Slices merge error: volume parameters do not match." << endl;
+      cerr << "Slices merge error: volume parameters do not match: src slice "
+           << src->vox[0] << "x" << src->vox[1] << ", dest " << vox[0] << "x" << vox[1]
+           << ", src frames " << src->frames << ", dest " << frames
+           << endl;
       return TYPE_ERROR;
     }
   }

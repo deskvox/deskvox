@@ -608,7 +608,7 @@ aabbi CudaSVT<T>::boundary(aabbi bbox, const cudaStream_t& stream) const
   vec3i max(bbox.max.x / 8, bbox.max.y / 8, bbox.max.z / 8);
 //std::cout << min << max << '\n';
   auto min_index = morton_encode3D(min.x, min.y, min.z);
-  auto max_index = std::min(morton_encode3D(max.x, max.y, max.z), (uint64_t)boxes_.size());
+  auto max_index = std::min((uint64_t)morton_encode3D(max.x, max.y, max.z), (uint64_t)boxes_.size());
 //std::cout << min_index << ' ' << max_index << '\n';
 
   thrust::host_vector<aabbi> check(1);

@@ -1041,17 +1041,23 @@ void vvRayCaster::renderVolumeGL()
 {
     if (_boundaries)
     {
-        glLineWidth(1.0f);
+        //glLineWidth(1.0f);
       
-        glEnable(GL_LINE_SMOOTH);
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        //glEnable(GL_LINE_SMOOTH);
+        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
       
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
+        glDisable(GL_LIGHTING);
 
         virvo::vec4 clearColor = vvGLTools::queryClearColor();
         vvColor color(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2]);
         impl_->space_skip_tree.renderGL(color);
+
+        if (isLightingEnabled)
+            glEnable(GL_LIGHTING);
     }
 
     mat4 view_matrix;

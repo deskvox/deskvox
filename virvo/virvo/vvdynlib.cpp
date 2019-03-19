@@ -36,6 +36,11 @@
 
 #include "vvopengl.h"
 
+#include "vvconfig.h"
+#if defined(HAVE_X11) && defined(USE_X11)
+#include <GL/glx.h>
+#endif
+
 #include "vvdynlib.h"
 
 using namespace std;

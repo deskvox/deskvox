@@ -223,6 +223,11 @@ void VolumeDrawable::setSingleSliceClipping(bool enable)
     setParameter(vvRenderState::VV_CLIP_SINGLE_SLICE, enable);
 }
 
+void VolumeDrawable::setOpaqueClipping(bool enable)
+{
+    setParameter(vvRenderState::VV_CLIP_OPAQUE, enable);
+}
+
 void VolumeDrawable::setROIPosition(const osg::Vec3 &pos)
 {
 #ifdef VERBOSE

@@ -29,6 +29,7 @@
 #include "vvopengl.h"
 
 #if defined(HAVE_X11) && !defined(__APPLE__)
+#include <GL/glext.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #endif

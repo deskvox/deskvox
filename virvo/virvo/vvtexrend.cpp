@@ -816,7 +816,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
       // Make slice opaque if possible:
       if (instantClassification())
       {
-        updateLUT(0.0f);
+        updateLUT(_clipOpaque ? 0.0f : 1.0f);
       }
     }
   }
@@ -1278,7 +1278,7 @@ void vvTexRend::updateLUT(const float dist)
         // Convert float to uint8_t and copy to rgbaLUT array:
         for (size_t c=0; c<4; ++c)
         {
-          rgbaLUT[chan][i * 4 + c] = uint8_t(corr[c] * 255.0f);
+          rgbaLUT[chan][i * 4 + c] = uint8_t(corr[c] * 255.99f);
         }
       }
     }

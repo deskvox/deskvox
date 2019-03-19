@@ -40,6 +40,7 @@ struct dicom_meta
     float intercept = 0.0;
     int sequence = -1;
     int slice = -1;
+    int nframes = -1;
     double spos = 0.0;
 };
 

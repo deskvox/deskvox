@@ -28,6 +28,8 @@
  */
 #if defined(_MSC_VER)
 #define VV_ALIGN(X) __declspec(align(X))
+#elif defined(__CUDACC__)
+#define VV_ALIGN(X) __align__(X)
 #else
 #define VV_ALIGN(X) __attribute__((aligned(X)))
 #endif
@@ -56,6 +58,24 @@
 #else
 #define VV_FORCE_INLINE inline
 #endif
+
+
+
+/*! CUDA __host__ __device__
+ */
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#define VV_FUNC __device__ __host__
+#define VV_GPU_FUNC __device__
+#define VV_CPU_FUNC __host__
+#elif defined(__HCC__)
+#define VV_FUNC __attribute__((hc,cpu))
+#define VV_GPU_FUNC __attribute__((hc))
+#define VV_CPU_FUNC __attribute__((cpu))
+#else
+#define VV_FUNC
+#define VV_GPU_FUNC
+#define VV_CPU_FUNC
+#endif // __CUDACC__ || __HIPCC__
 
 
 
