@@ -22,6 +22,7 @@
 
 #undef MATH_NAMESPACE
 #include "spaceskip/kdtree.h"
+#include "spaceskip/lbvh.h"
 #undef MATH_NAMESPACE
 
 #include "spaceskip/cudakdtree.h"
@@ -39,6 +40,7 @@ struct SkipTree::Impl
 
   KdTree kdtree;
   CudaKdTree cuda_kdtree;
+  BVH bvh;
 };
 
 SkipTree::SkipTree(SkipTree::Technique tech)
@@ -57,6 +59,8 @@ void SkipTree::updateVolume(const vvVolDesc& vd)
     impl_->kdtree.updateVolume(vd);
   else if (impl_->technique == SVTKdTreeCU)
     impl_->cuda_kdtree.updateVolume(vd);
+  else if (impl_->technique == LBVH)
+    impl_->bvh.updateVolume(vd);
 }
 
 void SkipTree::updateTransfunc(const uint8_t* data,
@@ -81,47 +85,54 @@ void SkipTree::updateTransfunc(const uint8_t* data,
       impl_->kdtree.updateTransfunc(transfunc);
     else if (impl_->technique == SVTKdTreeCU)
       impl_->cuda_kdtree.updateTransfunc(transfunc);
+    else if (impl_->technique == LBVH)
+      impl_->bvh.updateTransfunc(transfunc);
   }
+}
+
+SkipTreeNode* SkipTree::getNodes(int& numNodes)
+{
+  if (impl_->technique == LBVH)
+    return impl_->bvh.getNodes(numNodes);
+
+  numNodes = 0;
+  return nullptr;
 }
 
 std::vector<aabb> SkipTree::getSortedBricks(vec3 eye, bool frontToBack)
 {
   std::vector<aabb> result;
 
+  std::vector<visionaray::aabb> leaves;
+
   if (impl_->technique == SVTKdTree)
   {
-    auto leaves = impl_->kdtree.get_leaf_nodes(
+    leaves = impl_->kdtree.get_leaf_nodes(
         visionaray::vec3(eye.x, eye.y, eye.z),
-        frontToBack
-        );
-
-    result.resize(leaves.size());
-
-    for (size_t i = 0; i < leaves.size(); ++i)
-    {
-      const auto& leaf = leaves[i];
-
-      result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
-      result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
-    }
+        frontToBack);
   }
-  // TODO: dedup!
+  else if (impl_->technique == LBVH)
+  {
+    leaves = impl_->bvh.get_leaf_nodes(
+        visionaray::vec3(eye.x, eye.y, eye.z),
+        frontToBack);
+  }
   else if (impl_->technique == SVTKdTreeCU)
   {
     auto leaves = impl_->cuda_kdtree.get_leaf_nodes(
         visionaray::vec3(eye.x, eye.y, eye.z),
         frontToBack
         );
+  }
 
-    result.resize(leaves.size());
+  result.resize(leaves.size());
 
-    for (size_t i = 0; i < leaves.size(); ++i)
-    {
-      const auto& leaf = leaves[i];
+  for (size_t i = 0; i < leaves.size(); ++i)
+  {
+    const auto& leaf = leaves[i];
 
-      result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
-      result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
-    }
+    result[i].min = virvo::vec3(leaf.min.x, leaf.min.y, leaf.min.z);
+    result[i].max = virvo::vec3(leaf.max.x, leaf.max.y, leaf.max.z);
   }
 
   return result;
@@ -133,6 +144,8 @@ void SkipTree::renderGL(vvColor color)
     impl_->kdtree.renderGL(color);
   else if (impl_->technique == SVTKdTreeCU)
     impl_->cuda_kdtree.renderGL(color);
+  else if (impl_->technique == LBVH)
+    impl_->bvh.renderGL(color);
 }
 
 } // namespace virvo

@@ -24,6 +24,9 @@
 #include "vvconfig.h"
 #endif
 
+#ifdef HAVE_CUDA
+#include "vvsimplecaster.h"
+#endif
 #include "vvdebugmsg.h"
 #include "vvdynlib.h"
 #include "vvvoldesc.h"
@@ -199,6 +202,7 @@ void init()
   rendererAliasMap["12"] = "rayrendsse4_1";
   rendererAliasMap["13"] = "rayrendavx";
   rendererAliasMap["14"] = "rayrendavx2";
+  rendererAliasMap["18"] = "rayrendsimple";
   rendererAliasMap["20"] = "serbrick";
   rendererAliasMap["21"] = "parbrick";
   rendererAliasMap["30"] = "ibr";
@@ -229,6 +233,7 @@ void init()
   rendererTypeMap["rayrendsse4_1"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendavx"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendavx2"] = vvRenderer::RAYREND;
+  rendererTypeMap["rayrendsimple"] = vvRenderer::RAYRENDSIMPLE;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
@@ -642,6 +647,10 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::VOLPACK:
     return new vvVolPack(vd, rs);
 #endif
+#ifdef HAVE_CUDA
+  case vvRenderer::RAYRENDSIMPLE:
+    return new vvSimpleCaster(vd, rs);
+#endif
   case vvRenderer::RAYREND:
   {
     // if not specified, try to deduce arch from type string
@@ -750,6 +759,12 @@ bool vvRendererFactory::hasRenderer(const std::string& name, std::string const& 
   {
     return hasRenderer(vvRenderer::PARBRICKREND);
   }
+#ifdef HAVE_CUDA
+  else if (str == "rayrendsimple")
+  {
+    return hasRenderer(vvRenderer::RAYRENDSIMPLE);
+  }
+#endif
   else
   {
     return false;
@@ -787,6 +802,12 @@ bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
 #endif
   case vvRenderer::VOLPACK:
 #ifdef HAVE_VOLPACK
+    return true;
+#else
+    return false;
+#endif
+  case vvRenderer::RAYRENDSIMPLE:
+#ifdef HAVE_CUDA
     return true;
 #else
     return false;
