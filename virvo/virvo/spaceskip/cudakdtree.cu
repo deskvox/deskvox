@@ -47,6 +47,7 @@
 
 #undef MATH_NAMESPACE
 
+#include <virvo/cuda/timer.h>
 #include <virvo/vvopengl.h>
 #include <virvo/vvvoldesc.h>
 
@@ -158,46 +159,6 @@ private:
         }
     }
 };
-
-class CudaTimer
-{
-public:
-
-    CudaTimer()
-    {
-        cudaEventCreate(&start_);
-        cudaEventCreate(&stop_);
-
-        reset();
-    }
-
-    ~CudaTimer()
-    {
-        cudaEventDestroy(stop_);
-        cudaEventDestroy(start_);
-    }
-
-    void reset()
-    {
-        cudaEventRecord(start_);
-    }
-
-    double elapsed() const
-    {
-        cudaEventRecord(stop_);
-        cudaEventSynchronize(stop_);
-        float ms = 0.0f;
-        cudaEventElapsedTime(&ms, start_, stop_);
-        return static_cast<double>(ms) / 1000.0;
-    }
-
-private:
-
-    cudaEvent_t start_;
-    cudaEvent_t stop_;
-
-};
-
 
 template <typename T>
 __host__ __device__
