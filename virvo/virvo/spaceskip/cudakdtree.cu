@@ -880,6 +880,8 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   root.bbox = impl_->svt.boundary(visionaray::aabbi(
         visionaray::vec3i(0),
         visionaray::vec3i(impl_->vox[0], impl_->vox[1], impl_->vox[2])));
+
+  impl_->nodes.clear();
   impl_->nodes.emplace_back(root);
   impl_->node_splitting(0);
 #ifdef BUILD_TIMING

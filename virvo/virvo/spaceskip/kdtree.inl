@@ -38,6 +38,8 @@ void KdTree::updateTransfunc(Tex transfunc)
 #endif
   Node root;
   root.bbox = psvt.boundary(aabbi(vec3i(0), vec3i(vox[0], vox[1], vox[2])));
+
+  nodes.clear();
   nodes.emplace_back(root);
   node_splitting(0);
 #ifdef BUILD_TIMING
