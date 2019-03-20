@@ -49,6 +49,7 @@
 
 #include <virvo/cuda/timer.h>
 #include <virvo/vvopengl.h>
+#include <virvo/vvspaceskip.h>
 #include <virvo/vvvoldesc.h>
 
 #include "cudakdtree.h"
@@ -651,6 +652,8 @@ struct CudaKdTree::Impl
   float scale;
 
   std::vector<Node> nodes;
+
+  thrust::device_vector<SkipTreeNode> d_nodes;
 };
 
 void CudaKdTree::Impl::node_splitting(int index)
@@ -740,15 +743,17 @@ void CudaKdTree::Impl::node_splitting(int index)
   nodes[index].splitpos = first + dl * best_p;
 
   nodes[index].left = static_cast<int>(nodes.size());
+  nodes[index].right = static_cast<int>(nodes.size()) + 1;
+
   Node left;
   left.bbox = lbox;
   nodes.emplace_back(left);
-  node_splitting(nodes[index].left);
 
-  nodes[index].right = static_cast<int>(nodes.size());
   Node right;
   right.bbox = rbox;
   nodes.emplace_back(right);
+
+  node_splitting(nodes[index].left);
   node_splitting(nodes[index].right);
 }
 
@@ -880,6 +885,41 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #ifdef BUILD_TIMING
   std::cout << "splitting: " << timer.elapsed() << " sec.\n";
 #endif
+}
+
+SkipTreeNode* CudaKdTree::getNodes(int& numNodes)
+{
+  using visionaray::vec3;
+
+  numNodes = static_cast<int>(impl_->nodes.size());
+
+  std::vector<SkipTreeNode> tmp(numNodes);
+
+  for (int i = 0; i < numNodes; ++i)
+  {
+    auto bbox = impl_->nodes[i].bbox;
+    bbox.min.y = impl_->vox[1] - impl_->nodes[i].bbox.max.y;
+    bbox.max.y = impl_->vox[1] - impl_->nodes[i].bbox.min.y;
+    bbox.min.z = impl_->vox[2] - impl_->nodes[i].bbox.max.z;
+    bbox.max.z = impl_->vox[2] - impl_->nodes[i].bbox.min.z;
+    vec3 bmin = (vec3(bbox.min) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
+    vec3 bmax = (vec3(bbox.max) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
+
+    tmp[i].min_corner[0] = bmin.x;
+    tmp[i].min_corner[1] = bmin.y;
+    tmp[i].min_corner[2] = bmin.z;
+    tmp[i].left          = impl_->nodes[i].left;
+
+    tmp[i].max_corner[0] = bmax.x;
+    tmp[i].max_corner[1] = bmax.y;
+    tmp[i].max_corner[2] = bmax.z;
+    tmp[i].right         = impl_->nodes[i].right;
+  }
+
+  impl_->d_nodes.resize(numNodes);
+  thrust::copy(tmp.begin(), tmp.end(), impl_->d_nodes.begin());
+
+  return thrust::raw_pointer_cast(impl_->d_nodes.data());
 }
 
 std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const

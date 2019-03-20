@@ -315,7 +315,7 @@ struct Kernel
         result.color = C(0.0);
 
         // traverse tree
-        detail::stack<32> st;
+        detail::stack<16> st;
         st.push(0);
 
         auto inv_dir = 1.0f / ray.dir;
@@ -339,7 +339,11 @@ next:
 
             while (node.left != -1 && node.right != -1)
             {
+#if 1 // left and right are stored next to each other in memory
+                auto children = &nodes[node.left];
+#else // e.g. LBVH
                 virvo::SkipTreeNode children[2] = { nodes[node.left], nodes[node.right] };
+#endif
 
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
                 auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
@@ -380,10 +384,21 @@ next:
     VSNRAY_FUNC
     result_record<typename R::scalar_type> operator()(R ray) const
     {
-//    return ray_marching_naive(ray);
-//    return ray_marching_traverse_grid(ray);
-      return ray_marching_traverse_leaves(ray);
-//    return ray_marching_traverse_full(ray);
+      switch (mode)
+      {
+      case Grid:
+        return ray_marching_traverse_grid(ray);
+
+      case Leaves:
+        return ray_marching_traverse_leaves(ray);
+
+      case Full:
+        return ray_marching_traverse_full(ray);
+
+      default:
+      case Naive:
+        return ray_marching_naive(ray);
+      }
     }
 
     cuda_texture<unorm<8>, 3>::ref_type volume;
@@ -404,6 +419,13 @@ next:
     vec2 const* cell_ranges;
     vec3i grid_dims;
     float const* max_opacities; // TF_WIDTH * TF_WIDTH
+
+    enum TraversalMode
+    {
+      Grid, Leaves, Full, Naive
+    };
+
+    TraversalMode mode;
 };
 
 class virvo_render_target
@@ -578,9 +600,9 @@ void vvSimpleCaster::renderVolumeGL()
         light.set_quadratic_attenuation(l.quadratic_attenuation);
     }
 
-    bool lbvh = impl_->tree.getTechnique() == virvo::SkipTree::LBVH;
-    bool leaves = impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree
-               || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
+    bool full = impl_->tree.getTechnique() == virvo::SkipTree::LBVH
+             || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
+    bool leaves = impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree;
     bool grid = impl_->tree.getTechnique() == virvo::SkipTree::Grid;
 
     Kernel kernel;
@@ -594,7 +616,7 @@ void vvSimpleCaster::renderVolumeGL()
     kernel.local_shading = getParameter(VV_LIGHTING);
     kernel.light         = light;
 
-    if (lbvh)
+    if (full)
         kernel.nodes         = impl_->device_tree;
 
     std::vector<aabb> boxes;
@@ -614,8 +636,9 @@ void vvSimpleCaster::renderVolumeGL()
     }
 
     //virvo::CudaTimer t;
-    if (lbvh)
+    if (full)
     {
+        kernel.mode = Kernel::Full;
         auto sparams = make_sched_params(
             view_matrix,
             proj_matrix,
@@ -626,6 +649,7 @@ void vvSimpleCaster::renderVolumeGL()
     }
     else if (grid)
     {
+        kernel.mode = Kernel::Grid;
         auto host_grid = impl_->tree.getGrid();
 
         size_t len = host_grid.grid_dims.x * host_grid.grid_dims.y * host_grid.grid_dims.z;
@@ -658,6 +682,7 @@ void vvSimpleCaster::renderVolumeGL()
     }
     else if (leaves)
     {
+        kernel.mode = Kernel::Leaves;
         kernel.leaves = thrust::raw_pointer_cast(impl_->d_leaves.data());
         kernel.num_leaves = impl_->d_leaves.size();
         auto sparams = make_sched_params(

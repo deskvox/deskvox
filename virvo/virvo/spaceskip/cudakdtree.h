@@ -39,6 +39,8 @@ class vvVolDesc;
 namespace virvo
 {
 
+  struct SkipTreeNode;
+
   class CudaKdTree
   {
   public:
@@ -49,6 +51,8 @@ namespace virvo
     void updateVolume(vvVolDesc const& vd, int channel = 0);
 
     void updateTransfunc(const visionaray::texture_ref<visionaray::vec4, 1>& transfunc);
+
+    SkipTreeNode* getNodes(int& numNodes);
 
     std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 
