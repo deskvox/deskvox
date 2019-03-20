@@ -18,9 +18,24 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef VV_HAVE_CUDA
+#include <cuda_runtime_api.h>
+#endif
+
 #include <virvo/vvopengl.h>
 
 #include "kdtree.h"
+
+#include <virvo/vvspaceskip.h>
+
+KdTree::~KdTree()
+{
+  cudaFree(d_nodes);
+}
 
 void KdTree::updateVolume(vvVolDesc const& vd, int channel)
 {
@@ -109,16 +124,71 @@ void KdTree::node_splitting(int index)
   nodes[index].splitpos = first + dl * best_p;
 
   nodes[index].left = static_cast<int>(nodes.size());
+  nodes[index].right = static_cast<int>(nodes.size()) + 1;
+
   Node left;
   left.bbox = lbox;
   nodes.emplace_back(left);
-  node_splitting(nodes[index].left);
 
-  nodes[index].right = static_cast<int>(nodes.size());
   Node right;
   right.bbox = rbox;
   nodes.emplace_back(right);
+
+  node_splitting(nodes[index].left);
   node_splitting(nodes[index].right);
+}
+
+virvo::SkipTreeNode* KdTree::getNodesDevPtr(int& numNodes)
+{
+#ifdef VV_HAVE_CUDA
+  using visionaray::vec3;
+
+  numNodes = static_cast<int>(nodes.size());
+
+  std::vector<virvo::SkipTreeNode> tmp(numNodes);
+
+  for (int i = 0; i < numNodes; ++i)
+  {
+    auto bbox = nodes[i].bbox;
+    bbox.min.y = vox[1] - nodes[i].bbox.max.y;
+    bbox.max.y = vox[1] - nodes[i].bbox.min.y;
+    bbox.min.z = vox[2] - nodes[i].bbox.max.z;
+    bbox.max.z = vox[2] - nodes[i].bbox.min.z;
+    vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
+    vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
+
+    tmp[i].min_corner[0] = bmin.x;
+    tmp[i].min_corner[1] = bmin.y;
+    tmp[i].min_corner[2] = bmin.z;
+    tmp[i].left          = nodes[i].left;
+
+    tmp[i].max_corner[0] = bmax.x;
+    tmp[i].max_corner[1] = bmax.y;
+    tmp[i].max_corner[2] = bmax.z;
+    tmp[i].right         = nodes[i].right;
+  }
+
+  cudaFree(d_nodes);
+  cudaError_t err = cudaMalloc(reinterpret_cast<void**>(&d_nodes), sizeof(virvo::SkipTreeNode) * nodes.size());
+  if (err != cudaSuccess)
+  {
+    numNodes = 0;
+    return nullptr;
+  }
+
+  err = cudaMemcpy(d_nodes, tmp.data(), sizeof(virvo::SkipTreeNode) * nodes.size(), cudaMemcpyHostToDevice);
+  if (err != cudaSuccess)
+  {
+    cudaFree(d_nodes);
+    d_nodes = nullptr;
+    numNodes = 0;
+  }
+
+  return d_nodes;
+#else
+  numNodes = 0;
+  return nullptr;
+#endif
 }
 
 std::vector<visionaray::aabb> KdTree::get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const

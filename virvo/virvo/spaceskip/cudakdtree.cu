@@ -683,7 +683,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 16;
+  static const int NumBins = 32;
 
   int dl = len[axis] / NumBins;
 

@@ -477,6 +477,7 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
+//      , tree(virvo::SkipTree::SVTKdTree)
         , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
@@ -601,8 +602,9 @@ void vvSimpleCaster::renderVolumeGL()
     }
 
     bool full = impl_->tree.getTechnique() == virvo::SkipTree::LBVH
+             || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree
              || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
-    bool leaves = impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTree;
+    bool leaves = false;
     bool grid = impl_->tree.getTechnique() == virvo::SkipTree::Grid;
 
     Kernel kernel;

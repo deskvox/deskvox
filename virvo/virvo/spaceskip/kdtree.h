@@ -32,6 +32,11 @@
 
 class vvVolDesc;
 
+namespace virvo
+{
+struct SkipTreeNode;
+}
+
 //-------------------------------------------------------------------------------------------------
 // Kd-tree (Vidal et al. 2008)
 //
@@ -46,6 +51,8 @@ struct KdTree
     int axis = -1;
     int splitpos = -1;
   };
+
+ ~KdTree();
 
   template <typename Func>
   void traverse(int index, Func f, bool frontToBack = true)
@@ -105,6 +112,8 @@ struct KdTree
 
   std::vector<Node> nodes;
 
+  virvo::SkipTreeNode* d_nodes = nullptr;
+
   visionaray::vec3i vox;
   visionaray::vec3 dist;
   float scale;
@@ -115,6 +124,8 @@ struct KdTree
   void updateTransfunc(Tex transfunc);
 
   void node_splitting(int index);
+
+  virvo::SkipTreeNode* getNodesDevPtr(int& numNodes);
 
   std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 
