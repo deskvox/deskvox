@@ -381,8 +381,8 @@ next:
     result_record<typename R::scalar_type> operator()(R ray) const
     {
 //    return ray_marching_naive(ray);
-      return ray_marching_traverse_grid(ray);
-//    return ray_marching_traverse_leaves(ray);
+//    return ray_marching_traverse_grid(ray);
+      return ray_marching_traverse_leaves(ray);
 //    return ray_marching_traverse_full(ray);
     }
 
@@ -453,9 +453,9 @@ struct vvSimpleCaster::Impl
 {
     Impl()
         : sched(8, 8)
-        , tree(virvo::SkipTree::Grid)
+//      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-//      , tree(virvo::SkipTree::SVTKdTreeCU)
+        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
