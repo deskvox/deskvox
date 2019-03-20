@@ -259,7 +259,9 @@ struct Kernel
 
             // Get the maximum opacity in the volumetric value range.
             int tf_width = 256;
-            float maximumOpacity = max_opacities[int(cellRange.y * 255) * tf_width + int(cellRange.x * 255)];
+            int rx = floor(cellRange.x * 255.0f);
+            int ry = ceil(cellRange.y * 255.0f);
+            float maximumOpacity = max_opacities[ry * tf_width + rx];
 
             // Return the hit point if the grid cell is not fully transparent.
             if (maximumOpacity > 0.0f)
@@ -321,14 +323,13 @@ struct Kernel
         for (int i = 0; i < num_leaves; ++i)
         {
             auto hit_rec = intersect(ray, leaves[i]);
-            result.hit = hit_rec.hit;
+            result.hit |= hit_rec.hit;
 
             if (!hit_rec.hit)
                 continue;
 
             auto t = max(S(0.0), hit_rec.tnear);
             auto tmax = hit_rec.tfar;
-
             integrate(ray, t, tmax, result.color);
         }
 
@@ -633,7 +634,7 @@ void vvSimpleCaster::renderVolumeGL()
     if (leaves)
     {
         virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
-        bool frontToBack = false;
+        bool frontToBack = true;
         auto bricks = impl_->tree.getSortedBricks(eye, frontToBack);
 
         for (auto b : bricks)
