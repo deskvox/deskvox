@@ -613,7 +613,7 @@ void vvSimpleCaster::renderVolumeGL()
         impl_->d_leaves = thrust::device_vector<aabb>(boxes);
     }
 
-    virvo::CudaTimer t;
+    //virvo::CudaTimer t;
     if (lbvh)
     {
         auto sparams = make_sched_params(
@@ -668,8 +668,8 @@ void vvSimpleCaster::renderVolumeGL()
 
         impl_->sched.frame(kernel, sparams);
     }
-    std::cout << std::fixed << std::setprecision(8);
-    std::cout << t.elapsed() << std::endl;
+    //std::cout << std::fixed << std::setprecision(8);
+    //std::cout << t.elapsed() << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()
