@@ -38,62 +38,63 @@ class vvVolDesc;
 
 struct KdTree
 {
-  struct Node;
-  typedef std::unique_ptr<Node> NodePtr;
-
   struct Node
   {
     visionaray::aabbi bbox;
-    NodePtr left  = nullptr;
-    NodePtr right = nullptr;
+    int left  = -1;
+    int right = -1;
     int axis = -1;
     int splitpos = -1;
   };
 
   template <typename Func>
-  void traverse(NodePtr const& n, Func f, bool frontToBack = true)
+  void traverse(int index, Func f, bool frontToBack = true)
   {
-    if (n != nullptr)
+    if (index >= 0 && index < nodes.size())
     {
+      Node const& n = nodes[index];
+
       f(n);
 
       if (frontToBack)
       {
-        traverse(n->left, f, frontToBack);
-        traverse(n->right, f, frontToBack);
+        traverse(n.left, f, frontToBack);
+        traverse(n.right, f, frontToBack);
       }
       else
       {
-        traverse(n->right, f, frontToBack);
-        traverse(n->left, f, frontToBack);
+        traverse(n.right, f, frontToBack);
+        traverse(n.left, f, frontToBack);
       }
     }
   }
 
   template <typename Func>
-  void traverse(NodePtr const& n, visionaray::vec3 eye, Func f, bool frontToBack = true) const
+  void traverse(int index, visionaray::vec3 eye, Func f, bool frontToBack = true) const
   {
-    if (n != nullptr)
+    if (index >= 0 && index < nodes.size())
     {
+      Node const& n = nodes[index];
+
       f(n);
 
-      if (n->axis >= 0)
+      if (n.axis >= 0)
       {
-        int spi = n->splitpos;
-        if (n->axis == 1 || n->axis == 2)
-          spi = vox[n->axis] - spi - 1;
-        float splitpos = (spi - vox[n->axis]/2.f) * dist[n->axis] * scale;
+        int spi = n.splitpos;
+        if (n.axis == 1 || n.axis == 2)
+          spi = vox[n.axis] - spi - 1;
+        float splitpos = (spi - vox[n.axis]/2.f) * dist[n.axis] * scale;
 
         // TODO: puh..
-        if (n->axis == 0 && eye[n->axis] < splitpos || n->axis == 1 && eye[n->axis] >= splitpos || n->axis == 2 && eye[n->axis] >= splitpos)
+        if (n.axis == 0 && eye[n.axis] < splitpos || n.axis == 1 && eye[n.axis] >= splitpos || n.axis == 2 && eye[n.axis] >= splitpos)
         {
-          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
-          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+          traverse(frontToBack ? n.left : n.right, eye, f, frontToBack);
+          traverse(frontToBack ? n.right : n.left, eye, f, frontToBack);
         }
         else
         {
-          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
-          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
+          traverse(frontToBack ? n.right : n.left, eye, f, frontToBack);
+          traverse(frontToBack ? n.left : n.right, eye, f, frontToBack);
         }
       }
     }
@@ -102,7 +103,7 @@ struct KdTree
   PartialSVT psvt;
   //SVT<uint64_t> psvt;
 
-  NodePtr root = nullptr;
+  std::vector<Node> nodes;
 
   visionaray::vec3i vox;
   visionaray::vec3 dist;
@@ -113,14 +114,14 @@ struct KdTree
   template <typename Tex>
   void updateTransfunc(Tex transfunc);
 
-  void node_splitting(NodePtr& n);
+  void node_splitting(int index);
 
   std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 
   // Need OpenGL context!
   void renderGL(vvColor color) const;
   // Need OpenGL context!
-  void renderGL(NodePtr const& n, vvColor color) const;
+  void renderGL(int index, vvColor color) const;
 };
 
 #include "kdtree.inl"

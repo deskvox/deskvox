@@ -36,9 +36,10 @@ void KdTree::updateTransfunc(Tex transfunc)
 #ifdef BUILD_TIMING
   sw.start();
 #endif
-  root.reset(new Node);
-  root->bbox = psvt.boundary(aabbi(vec3i(0), vec3i(vox[0], vox[1], vox[2])));
-  node_splitting(root);
+  Node root;
+  root.bbox = psvt.boundary(aabbi(vec3i(0), vec3i(vox[0], vox[1], vox[2])));
+  nodes.emplace_back(root);
+  node_splitting(0);
 #ifdef BUILD_TIMING
   std::cout << "splitting: " << sw.getTime() << " sec.\n";
 #endif

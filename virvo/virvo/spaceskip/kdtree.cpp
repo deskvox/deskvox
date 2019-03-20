@@ -33,16 +33,16 @@ void KdTree::updateVolume(vvVolDesc const& vd, int channel)
   psvt.reset(vd, aabbi(vec3i(0), vox), channel);
 }
 
-void KdTree::node_splitting(KdTree::NodePtr& n)
+void KdTree::node_splitting(int index)
 {
   using namespace visionaray;
 
   // Halting criterion 1.)
-  if (volume(n->bbox) < volume(root->bbox) / 10)
+  if (volume(nodes[index].bbox) < volume(nodes[0].bbox) / 10)
     return;
 
   // Split along longest axis
-  vec3i len = n->bbox.max - n->bbox.min;
+  vec3i len = nodes[index].bbox.max - nodes[index].bbox.min;
 
   int axis = 0;
   if (len.y > len.x && len.y > len.z)
@@ -64,17 +64,17 @@ void KdTree::node_splitting(KdTree::NodePtr& n)
   int min_cost = INT_MAX;
   int best_p = -1;
 
-  aabbi lbox = n->bbox;
-  aabbi rbox = n->bbox;
+  aabbi lbox = nodes[index].bbox;
+  aabbi rbox = nodes[index].bbox;
 
   int first = lbox.min[axis];
 
-  int vol = volume(n->bbox);
+  int vol = volume(nodes[index].bbox);
 
   for (int p = 1; p < num_planes; ++p)
   {
-    aabbi ltmp = n->bbox;
-    aabbi rtmp = n->bbox;
+    aabbi ltmp = nodes[index].bbox;
+    aabbi rtmp = nodes[index].bbox;
 
     ltmp.max[axis] = first + dl * p;
     rtmp.min[axis] = first + dl * p;
@@ -105,16 +105,20 @@ void KdTree::node_splitting(KdTree::NodePtr& n)
     return;
 
   // Store split plane for traversal
-  n->axis = axis;
-  n->splitpos = first + dl * best_p;
+  nodes[index].axis = axis;
+  nodes[index].splitpos = first + dl * best_p;
 
-  n->left.reset(new Node);
-  n->left->bbox = lbox;
-  node_splitting(n->left);
+  nodes[index].left = static_cast<int>(nodes.size());
+  Node left;
+  left.bbox = lbox;
+  nodes.emplace_back(left);
+  node_splitting(nodes[index].left);
 
-  n->right.reset(new Node);
-  n->right->bbox = rbox;
-  node_splitting(n->right);
+  nodes[index].right = static_cast<int>(nodes.size());
+  Node right;
+  right.bbox = rbox;
+  nodes.emplace_back(right);
+  node_splitting(nodes[index].right);
 }
 
 std::vector<visionaray::aabb> KdTree::get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const
@@ -123,15 +127,15 @@ std::vector<visionaray::aabb> KdTree::get_leaf_nodes(visionaray::vec3 eye, bool 
 
   std::vector<aabb> result;
 
-  traverse(root, eye, [&result,this](NodePtr const& n)
+  traverse(0 /*root*/, eye, [&result,this](Node const& n)
   {
-    if (n->left == nullptr && n->right == nullptr)
+    if (n.left == -1 && n.right == -1)
     {
-      auto bbox = n->bbox;
-      bbox.min.y = vox[1] - n->bbox.max.y;
-      bbox.max.y = vox[1] - n->bbox.min.y;
-      bbox.min.z = vox[2] - n->bbox.max.z;
-      bbox.max.z = vox[2] - n->bbox.min.z;
+      auto bbox = n.bbox;
+      bbox.min.y = vox[1] - n.bbox.max.y;
+      bbox.max.y = vox[1] - n.bbox.min.y;
+      bbox.min.z = vox[2] - n.bbox.max.z;
+      bbox.max.z = vox[2] - n.bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
 
@@ -144,22 +148,24 @@ std::vector<visionaray::aabb> KdTree::get_leaf_nodes(visionaray::vec3 eye, bool 
 
 void KdTree::renderGL(vvColor color) const
 {
-  renderGL(root, color);
+  renderGL(0 /*root*/, color);
 }
 
-void KdTree::renderGL(KdTree::NodePtr const& n, vvColor color) const
+void KdTree::renderGL(int index, vvColor color) const
 {
   using namespace visionaray;
 
-  if (n != nullptr)
+  if (index >= 0 && index < nodes.size())
   {
-    if (n->left == nullptr && n->right == nullptr)
+    Node const& n = nodes[index];
+
+    if (n.left == -1 && n.right == -1)
     {
-      auto bbox = n->bbox;
-      bbox.min.y = vox[1] - n->bbox.max.y;
-      bbox.max.y = vox[1] - n->bbox.min.y;
-      bbox.min.z = vox[2] - n->bbox.max.z;
-      bbox.max.z = vox[2] - n->bbox.min.z;
+      auto bbox = n.bbox;
+      bbox.min.y = vox[1] - n.bbox.max.y;
+      bbox.max.y = vox[1] - n.bbox.min.y;
+      bbox.min.z = vox[2] - n.bbox.max.z;
+      bbox.max.z = vox[2] - n.bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
 
@@ -206,7 +212,7 @@ void KdTree::renderGL(KdTree::NodePtr const& n, vvColor color) const
       glEnd();
     }
 
-    renderGL(n->left, color);
-    renderGL(n->right, color);
+    renderGL(n.left, color);
+    renderGL(n.right, color);
   }
 }

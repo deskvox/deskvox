@@ -601,49 +601,48 @@ namespace virvo
 
 struct CudaKdTree::Impl
 {
-  struct Node;
-  typedef std::unique_ptr<Node> NodePtr;
-
   struct Node
   {
     visionaray::aabbi bbox;
-    NodePtr left  = nullptr;
-    NodePtr right = nullptr;
+    int left  = -1;
+    int right = -1;
     int axis = -1;
     int splitpos = -1;
   };
 
   template <typename Func>
-  void traverse(NodePtr const& n, visionaray::vec3 eye, Func f, bool frontToBack = true) const
+  void traverse(int index, visionaray::vec3 eye, Func f, bool frontToBack = true) const
   {
-    if (n != nullptr)
+    if (index >= 0 && index < nodes.size())
     {
+      Node const& n = nodes[index];
+
       f(n);
 
-      if (n->axis >= 0)
+      if (n.axis >= 0)
       {
-        int spi = n->splitpos;
-        if (n->axis == 1 || n->axis == 2)
-          spi = vox[n->axis] - spi - 1;
-        float splitpos = (spi - vox[n->axis]/2.f) * dist[n->axis] * scale;
+        int spi = n.splitpos;
+        if (n.axis == 1 || n.axis == 2)
+          spi = vox[n.axis] - spi - 1;
+        float splitpos = (spi - vox[n.axis]/2.f) * dist[n.axis] * scale;
 
         // TODO: puh..
-        if (n->axis == 0 && eye[n->axis] < splitpos || n->axis == 1 && eye[n->axis] >= splitpos || n->axis == 2 && eye[n->axis] >= splitpos)
+        if (n.axis == 0 && eye[n.axis] < splitpos || n.axis == 1 && eye[n.axis] >= splitpos || n.axis == 2 && eye[n.axis] >= splitpos)
         {
-          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
-          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
+          traverse(frontToBack ? n.left : n.right, eye, f, frontToBack);
+          traverse(frontToBack ? n.right : n.left, eye, f, frontToBack);
         }
         else
         {
-          traverse(frontToBack ? n->right : n->left, eye, f, frontToBack);
-          traverse(frontToBack ? n->left : n->right, eye, f, frontToBack);
+          traverse(frontToBack ? n.right : n.left, eye, f, frontToBack);
+          traverse(frontToBack ? n.left : n.right, eye, f, frontToBack);
         }
       }
     }
   }
 
-  void node_splitting(NodePtr& n);
-  void renderGL(NodePtr const& n, vvColor color) const;
+  void node_splitting(int index);
+  void renderGL(int index, vvColor color) const;
 
   CudaSVT<uint16_t> svt;
 
@@ -651,29 +650,29 @@ struct CudaKdTree::Impl
   visionaray::vec3 dist;
   float scale;
 
-  NodePtr root = nullptr;
+  std::vector<Node> nodes;
 };
 
-void CudaKdTree::Impl::node_splitting(NodePtr& n)
+void CudaKdTree::Impl::node_splitting(int index)
 {
   using visionaray::aabbi;
   using visionaray::vec3i;
 
   // Expand node's bounding box so it falls on multiples of eights
-  n->bbox.min.x = max(0, round_down(n->bbox.min.x, 8));
-  n->bbox.min.y = max(0, round_down(n->bbox.min.y, 8));
-  n->bbox.min.z = max(0, round_down(n->bbox.min.z, 8));
+  nodes[index].bbox.min.x = max(0, round_down(nodes[index].bbox.min.x, 8));
+  nodes[index].bbox.min.y = max(0, round_down(nodes[index].bbox.min.y, 8));
+  nodes[index].bbox.min.z = max(0, round_down(nodes[index].bbox.min.z, 8));
 
-  n->bbox.max.x = min(vox[0], round_up(n->bbox.max.x, 8));
-  n->bbox.max.y = min(vox[1], round_up(n->bbox.max.y, 8));
-  n->bbox.max.z = min(vox[2], round_up(n->bbox.max.z, 8));
+  nodes[index].bbox.max.x = min(vox[0], round_up(nodes[index].bbox.max.x, 8));
+  nodes[index].bbox.max.y = min(vox[1], round_up(nodes[index].bbox.max.y, 8));
+  nodes[index].bbox.max.z = min(vox[2], round_up(nodes[index].bbox.max.z, 8));
 
   // Halting criterion 1.)
-  if (volume(n->bbox) < volume(root->bbox) / 10)
+  if (volume(nodes[index].bbox) < volume(nodes[0].bbox) / 10)
     return;
 
   // Split along longest axis
-  vec3i len = n->bbox.max - n->bbox.min;
+  vec3i len = nodes[index].bbox.max - nodes[index].bbox.min;
 
   int axis = 0;
   if (len.y > len.x && len.y > len.z)
@@ -690,19 +689,19 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
   int min_cost = INT_MAX;
   int best_p = -1;
 
-  aabbi lbox = n->bbox;
-  aabbi rbox = n->bbox;
+  aabbi lbox = nodes[index].bbox;
+  aabbi rbox = nodes[index].bbox;
 
   int first = lbox.min[axis];
 
-  int vol = volume(n->bbox);
+  int vol = volume(nodes[index].bbox);
 
-  int off = n->bbox.min[axis];
+  int off = nodes[index].bbox.min[axis];
 
   for (int p = 1; p <= num_planes; ++p)
   {
-    aabbi ltmp = n->bbox;
-    aabbi rtmp = n->bbox;
+    aabbi ltmp = nodes[index].bbox;
+    aabbi rtmp = nodes[index].bbox;
 
     ltmp.max[axis] = first + dl * p;
     rtmp.min[axis] = first + dl * p;
@@ -728,7 +727,7 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
     }
 
     off += dl;
-    if (dl >= n->bbox.max[axis])
+    if (dl >= nodes[index].bbox.max[axis])
       break;
   }
 
@@ -737,31 +736,37 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
     return;
 
   // Store split plane for traversal
-  n->axis = axis;
-  n->splitpos = first + dl * best_p;
+  nodes[index].axis = axis;
+  nodes[index].splitpos = first + dl * best_p;
 
-  n->left.reset(new Node);
-  n->left->bbox = lbox;
-  node_splitting(n->left);
+  nodes[index].left = static_cast<int>(nodes.size());
+  Node left;
+  left.bbox = lbox;
+  nodes.emplace_back(left);
+  node_splitting(nodes[index].left);
 
-  n->right.reset(new Node);
-  n->right->bbox = rbox;
-  node_splitting(n->right);
+  nodes[index].right = static_cast<int>(nodes.size());
+  Node right;
+  right.bbox = rbox;
+  nodes.emplace_back(right);
+  node_splitting(nodes[index].right);
 }
 
-void CudaKdTree::Impl::renderGL(CudaKdTree::Impl::NodePtr const& n, vvColor color) const
+void CudaKdTree::Impl::renderGL(int index, vvColor color) const
 {
   using visionaray::vec3;
 
-  if (n != nullptr)
+  if (index >= 0 && index < nodes.size())
   {
-    if (n->left == nullptr && n->right == nullptr)
+    Node const& n = nodes[index];
+
+    if (n.left == -1 && n.right == -1)
     {
-      auto bbox = n->bbox;
-      bbox.min.y = vox[1] - n->bbox.max.y;
-      bbox.max.y = vox[1] - n->bbox.min.y;
-      bbox.min.z = vox[2] - n->bbox.max.z;
-      bbox.max.z = vox[2] - n->bbox.min.z;
+      auto bbox = n.bbox;
+      bbox.min.y = vox[1] - n.bbox.max.y;
+      bbox.max.y = vox[1] - n.bbox.min.y;
+      bbox.min.z = vox[2] - n.bbox.max.z;
+      bbox.max.z = vox[2] - n.bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(vox)/2.f) * dist * scale;
       vec3 bmax = (vec3(bbox.max) - vec3(vox)/2.f) * dist * scale;
 
@@ -808,8 +813,8 @@ void CudaKdTree::Impl::renderGL(CudaKdTree::Impl::NodePtr const& n, vvColor colo
       glEnd();
     }
 
-    renderGL(n->left, color);
-    renderGL(n->right, color);
+    renderGL(n.left, color);
+    renderGL(n.right, color);
   }
 }
 
@@ -866,11 +871,12 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #ifdef BUILD_TIMING
   timer.reset();
 #endif
-  impl_->root.reset(new Impl::Node);
-  impl_->root->bbox = impl_->svt.boundary(visionaray::aabbi(
+  Impl::Node root;
+  root.bbox = impl_->svt.boundary(visionaray::aabbi(
         visionaray::vec3i(0),
         visionaray::vec3i(impl_->vox[0], impl_->vox[1], impl_->vox[2])));
-  impl_->node_splitting(impl_->root);
+  impl_->nodes.emplace_back(root);
+  impl_->node_splitting(0);
 #ifdef BUILD_TIMING
   std::cout << "splitting: " << timer.elapsed() << " sec.\n";
 #endif
@@ -883,15 +889,15 @@ std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, b
 
   std::vector<aabb> result;
 
-  impl_->traverse(impl_->root, eye, [&result,this](Impl::NodePtr const& n)
+  impl_->traverse(0 /*root*/, eye, [&result,this](Impl::Node const& n)
   {
-    if (n->left == nullptr && n->right == nullptr)
+    if (n.left == -1 && n.right == -1)
     {
-      auto bbox = n->bbox;
-      bbox.min.y = impl_->vox[1] - n->bbox.max.y;
-      bbox.max.y = impl_->vox[1] - n->bbox.min.y;
-      bbox.min.z = impl_->vox[2] - n->bbox.max.z;
-      bbox.max.z = impl_->vox[2] - n->bbox.min.z;
+      auto bbox = n.bbox;
+      bbox.min.y = impl_->vox[1] - n.bbox.max.y;
+      bbox.max.y = impl_->vox[1] - n.bbox.min.y;
+      bbox.min.z = impl_->vox[2] - n.bbox.max.z;
+      bbox.max.z = impl_->vox[2] - n.bbox.min.z;
       vec3 bmin = (vec3(bbox.min) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
       vec3 bmax = (vec3(bbox.max) - vec3(impl_->vox)/2.f) * impl_->dist * impl_->scale;
 
@@ -904,7 +910,7 @@ std::vector<visionaray::aabb> CudaKdTree::get_leaf_nodes(visionaray::vec3 eye, b
 
 void CudaKdTree::renderGL(vvColor color) const
 {
-  impl_->renderGL(impl_->root, color);
+  impl_->renderGL(0 /*root*/, color);
 }
 
 } // virvo
