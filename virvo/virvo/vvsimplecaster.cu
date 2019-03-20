@@ -127,15 +127,18 @@ struct Kernel
     VSNRAY_FUNC
     void integrate(R ray, T t, T tmax, C& dst, T dt) const
     {
+        auto pos = ray.ori + ray.dir * t;
+
+        vector<3, T> tex_coord(
+                ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
+                (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
+                (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
+                );
+
+        vector<3, T> inc = (ray.dir * delta / bbox.size()) * vec3(1,-1,-1);
+
         while (t < tmax)
         {
-            auto pos = ray.ori + ray.dir * t;
-            vector<3, T> tex_coord(
-                    ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
-                    (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
-                    (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
-                    );
-
             T voxel = tex3D(volume, tex_coord);
             C color = tex1D(transfunc, voxel);
 
@@ -151,6 +154,7 @@ struct Kernel
             dst += color * (1.0f - dst.w);
 
             // step on
+            tex_coord += inc;
             t += dt;
         }
     }
@@ -227,26 +231,7 @@ struct Kernel
             // If we visited this cell before then it must not be empty.
             if (cellIndex == hit_cell)
             {
-                vector<3, S> tex_coord(
-                        ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
-                        (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
-                        (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
-                        );
-
-                S voxel = tex3D(volume, tex_coord);
-                C color = tex1D(transfunc, voxel);
-
-                //color = shade(color, -ray.dir, tex_coord);
-
-                // opacity correction
-                color.w = 1.0f - pow(1.0f - color.w, delta);
-
-                // premultiplied alpha
-                color.xyz() *= color.w;
-
-                // compositing
-                result.color += color * (1.0f - result.color.w);
-
+                integrate(ray, t, t + delta, result.color);
                 t += delta;
                 continue;
             }
@@ -266,26 +251,7 @@ struct Kernel
             // Return the hit point if the grid cell is not fully transparent.
             if (maximumOpacity > 0.0f)
             {
-                vector<3, S> tex_coord(
-                        ( pos.x + (bbox.size().x / 2) ) / bbox.size().x,
-                        (-pos.y + (bbox.size().y / 2) ) / bbox.size().y,
-                        (-pos.z + (bbox.size().z / 2) ) / bbox.size().z
-                        );
-
-                S voxel = tex3D(volume, tex_coord);
-                C color = tex1D(transfunc, voxel);
-
-                //color = shade(color, -ray.dir, tex_coord);
-
-                // opacity correction
-                color.w = 1.0f - pow(1.0f - color.w, delta);
-
-                // premultiplied alpha
-                color.xyz() *= color.w;
-
-                // compositing
-                result.color += color * (1.0f - result.color.w);
-
+                integrate(ray, t, t + delta, result.color);
                 t += delta;
                 continue;
             }
@@ -320,9 +286,11 @@ struct Kernel
         result_record<S> result;
         result.color = C(0.0);
 
+        vec3 inv_dir = 1.0f / ray.dir;
+
         for (int i = 0; i < num_leaves; ++i)
         {
-            auto hit_rec = intersect(ray, leaves[i]);
+            auto hit_rec = intersect(ray, leaves[i], inv_dir);
             result.hit |= hit_rec.hit;
 
             if (!hit_rec.hit)
