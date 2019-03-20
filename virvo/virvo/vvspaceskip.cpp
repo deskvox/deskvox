@@ -100,12 +100,12 @@ void SkipTree::updateTransfunc(const uint8_t* data,
   }
 }
 
-SkipTreeNode* SkipTree::getNodes(int& numNodes)
+SkipTreeNode* SkipTree::getNodesDevPtr(int& numNodes)
 {
   if (impl_->technique == SVTKdTreeCU)
-    return impl_->cuda_kdtree.getNodes(numNodes);
+    return impl_->cuda_kdtree.getNodesDevPtr(numNodes);
   else if (impl_->technique == LBVH)
-    return impl_->bvh.getNodes(numNodes);
+    return impl_->bvh.getNodesDevPtr(numNodes);
 
   numNodes = 0;
   return nullptr;

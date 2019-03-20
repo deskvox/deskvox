@@ -99,10 +99,10 @@ namespace virvo
         PixelFormat format = PF_RGBA32F);
 
     /**
-     * @brief Get pointer to tree nodes
+     * @brief Get *CUDA device* pointer to tree nodes
      *    Not all techniques implement this function!
      */
-    VVAPI SkipTreeNode* getNodes(int& numNodes);
+    VVAPI SkipTreeNode* getNodesDevPtr(int& numNodes);
 
     /**
      * @brief Produce a sorted list of bricks that contain non-empty voxels

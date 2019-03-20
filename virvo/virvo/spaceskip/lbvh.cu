@@ -656,7 +656,7 @@ void BVH::updateTransfunc(BVH::TransfuncTex transfunc)
   std::cout << "Convert to worldspace: " << t.elapsed() << '\n';
 }
 
-virvo::SkipTreeNode* BVH::getNodes(int& numNodes)
+virvo::SkipTreeNode* BVH::getNodesDevPtr(int& numNodes)
 {
   numNodes = impl_->nodes.size();
   return thrust::raw_pointer_cast(impl_->nodes.data());
@@ -705,7 +705,7 @@ std::vector<aabb> BVH::get_leaf_nodes(vec3 eye, bool frontToBack) const
 void BVH::renderGL(vvColor color) const
 {
   int numNodes = 0;
-  auto nodes = const_cast<BVH*>(this)->getNodes(numNodes); // TODO..
+  auto nodes = const_cast<BVH*>(this)->getNodesDevPtr(numNodes); // TODO..
 
   std::vector<virvo::SkipTreeNode> h_nodes(numNodes);
   cudaMemcpy(h_nodes.data(),

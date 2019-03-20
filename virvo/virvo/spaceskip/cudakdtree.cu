@@ -887,7 +887,7 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #endif
 }
 
-SkipTreeNode* CudaKdTree::getNodes(int& numNodes)
+SkipTreeNode* CudaKdTree::getNodesDevPtr(int& numNodes)
 {
   using visionaray::vec3;
 

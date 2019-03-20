@@ -49,7 +49,7 @@ public:
 
   void updateTransfunc(TransfuncTex transfunc);
 
-  virvo::SkipTreeNode* getNodes(int& numNodes);
+  virvo::SkipTreeNode* getNodesDevPtr(int& numNodes);
 
   std::vector<visionaray::aabb> get_leaf_nodes(visionaray::vec3 eye, bool frontToBack) const;
 

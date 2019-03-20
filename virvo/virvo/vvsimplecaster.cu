@@ -716,7 +716,7 @@ void vvSimpleCaster::updateTransferFunction()
 
     impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
     int numNodes = 0;
-    impl_->device_tree = impl_->tree.getNodes(numNodes);
+    impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
     }
     /*{
