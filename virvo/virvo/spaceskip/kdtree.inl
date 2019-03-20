@@ -38,7 +38,6 @@ void KdTree::updateTransfunc(Tex transfunc)
 #endif
   root.reset(new Node);
   root->bbox = psvt.boundary(aabbi(vec3i(0), vec3i(vox[0], vox[1], vox[2])));
-  root->depth = 0;
   node_splitting(root);
 #ifdef BUILD_TIMING
   std::cout << "splitting: " << sw.getTime() << " sec.\n";

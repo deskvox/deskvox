@@ -48,7 +48,6 @@ struct KdTree
     NodePtr right = nullptr;
     int axis = -1;
     int splitpos = -1;
-    int depth;
   };
 
   template <typename Func>

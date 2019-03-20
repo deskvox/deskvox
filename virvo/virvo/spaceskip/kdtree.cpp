@@ -110,12 +110,10 @@ void KdTree::node_splitting(KdTree::NodePtr& n)
 
   n->left.reset(new Node);
   n->left->bbox = lbox;
-  n->left->depth = n->depth + 1;
   node_splitting(n->left);
 
   n->right.reset(new Node);
   n->right->bbox = rbox;
-  n->right->depth = n->depth + 1;
   node_splitting(n->right);
 }
 

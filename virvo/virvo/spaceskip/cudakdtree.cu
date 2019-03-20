@@ -611,7 +611,6 @@ struct CudaKdTree::Impl
     NodePtr right = nullptr;
     int axis = -1;
     int splitpos = -1;
-    int depth;
   };
 
   template <typename Func>
@@ -743,12 +742,10 @@ void CudaKdTree::Impl::node_splitting(NodePtr& n)
 
   n->left.reset(new Node);
   n->left->bbox = lbox;
-  n->left->depth = n->depth + 1;
   node_splitting(n->left);
 
   n->right.reset(new Node);
   n->right->bbox = rbox;
-  n->right->depth = n->depth + 1;
   node_splitting(n->right);
 }
 
@@ -873,7 +870,6 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   impl_->root->bbox = impl_->svt.boundary(visionaray::aabbi(
         visionaray::vec3i(0),
         visionaray::vec3i(impl_->vox[0], impl_->vox[1], impl_->vox[2])));
-  impl_->root->depth = 0;
   impl_->node_splitting(impl_->root);
 #ifdef BUILD_TIMING
   std::cout << "splitting: " << timer.elapsed() << " sec.\n";
