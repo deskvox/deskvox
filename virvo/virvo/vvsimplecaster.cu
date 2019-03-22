@@ -477,8 +477,8 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-      , tree(virvo::SkipTree::SVTKdTree)
-//        , tree(virvo::SkipTree::SVTKdTreeCU)
+//      , tree(virvo::SkipTree::SVTKdTree)
+        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 

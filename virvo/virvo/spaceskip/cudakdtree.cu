@@ -105,7 +105,7 @@ public:
             // throw if cuda::malloc can't satisfy the request
             try
             {
-                std::cout << "cached_allocator::allocator(): no free block found; calling cuda::malloc" << std::endl;
+                //std::cout << "cached_allocator::allocator(): no free block found; calling cuda::malloc" << std::endl;
  
                 // allocate memory and convert cuda::pointer to raw pointer
                 result = thrust::cuda::malloc<char>(num_bytes).get();
@@ -142,7 +142,7 @@ private:
  
     void free_all()
     {
-        std::cout << "cached_allocator::free_all(): cleaning up after ourselves..." << std::endl;
+        //std::cout << "cached_allocator::free_all(): cleaning up after ourselves..." << std::endl;
  
         // deallocate all outstanding blocks in both lists
         for (free_blocks_type::iterator i = free_blocks.begin();
@@ -519,8 +519,8 @@ void CudaSVT<T>::build(Tex transfunc)
             height,
             depth);
   }
-  std::cout << "#boxes: " << boxes_.size() << '\n';
-  std::cout << boxes_.data() << '\n';
+  //std::cout << "#boxes: " << boxes_.size() << '\n';
+  //std::cout << boxes_.data() << '\n';
 
   thrust::stable_sort(
         thrust::device,
@@ -661,6 +661,15 @@ void CudaKdTree::Impl::node_splitting(int index)
   using visionaray::aabbi;
   using visionaray::vec3i;
 
+  // Halting criterion 1.)
+  if (volume(nodes[index].bbox) < 16*16*16)//volume(nodes[0].bbox) / 10)
+    return;
+
+  auto s = nodes[index].bbox.size();
+  if (s.x <= 32 || s.y <= 32 || s.z <= 32)
+    return;
+
+#if 0
   // Expand node's bounding box so it falls on multiples of eights
   nodes[index].bbox.min.x = max(0, round_down(nodes[index].bbox.min.x, 8));
   nodes[index].bbox.min.y = max(0, round_down(nodes[index].bbox.min.y, 8));
@@ -669,10 +678,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   nodes[index].bbox.max.x = min(vox[0], round_up(nodes[index].bbox.max.x, 8));
   nodes[index].bbox.max.y = min(vox[1], round_up(nodes[index].bbox.max.y, 8));
   nodes[index].bbox.max.z = min(vox[2], round_up(nodes[index].bbox.max.z, 8));
-
-  // Halting criterion 1.)
-  if (volume(nodes[index].bbox) < volume(nodes[0].bbox) / 10)
-    return;
+#endif
 
   // Split along longest axis
   vec3i len = nodes[index].bbox.max - nodes[index].bbox.min;
@@ -683,7 +689,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 32;
+  static const int NumBins = 4;
 
   int dl = len[axis] / NumBins;
 
@@ -718,7 +724,7 @@ void CudaKdTree::Impl::node_splitting(int index)
     int ev = vol - c;
 
     // Halting criterion 2.)
-    if (ev <= vol / 20)
+    if (ev <= vol / 1000)
       continue;
 
     if (c < min_cost)
@@ -726,7 +732,7 @@ void CudaKdTree::Impl::node_splitting(int index)
       min_cost = c;
       lbox = ltmp;
       rbox = rtmp;
-      best_p = p;std::cout << best_p << '\n';
+      best_p = p;//std::cout << best_p << '\n';
     }
 
     off += dl;
@@ -736,6 +742,21 @@ void CudaKdTree::Impl::node_splitting(int index)
 
   // Halting criterion 2.)
   if (best_p < 0)
+    return;
+
+  // Expand node's bounding box so it falls on multiples of eights
+  lbox.min.x = max(0, round_down(lbox.min.x, 8));
+  lbox.min.y = max(0, round_down(lbox.min.y, 8));
+  lbox.min.z = max(0, round_down(lbox.min.z, 8));
+
+  rbox.min.x = max(0, round_down(rbox.min.x, 8));
+  rbox.min.y = max(0, round_down(rbox.min.y, 8));
+  rbox.min.z = max(0, round_down(rbox.min.z, 8));
+
+  auto lvol = volume(lbox);
+  auto rvol = volume(rbox);
+
+  if (lvol >= vol || rvol >= vol)
     return;
 
   // Store split plane for traversal
@@ -870,7 +891,8 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #endif
   impl_->svt.build(cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc));
 #ifdef BUILD_TIMING
-  std::cout << std::fixed << std::setprecision(8) << "svt update: " << timer.elapsed() << " sec.\n";
+  //std::cout << std::fixed << std::setprecision(8) << "svt update: " << timer.elapsed() << " sec.\n";
+  std::cout << timer.elapsed() << "\t";
 #endif
 
 #ifdef BUILD_TIMING
@@ -885,7 +907,8 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   impl_->nodes.emplace_back(root);
   impl_->node_splitting(0);
 #ifdef BUILD_TIMING
-  std::cout << "splitting: " << timer.elapsed() << " sec.\n";
+  //std::cout << "splitting: " << timer.elapsed() << " sec.\n";
+  std::cout << timer.elapsed() << "\n";
 #endif
 }
 

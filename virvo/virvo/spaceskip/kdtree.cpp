@@ -59,7 +59,7 @@ void KdTree::node_splitting(int index)
   int64_t root_vol = static_cast<int64_t>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-  //if (vol < std::max(root_vol / 5000, (int64_t)13824)) {
+  //if (vol < root_vol / 10)
   if (vol <= 8*8*8)
     return;
 
@@ -105,8 +105,8 @@ void KdTree::node_splitting(int index)
     auto ls = ltmp.size();
     auto rs = rtmp.size();
 
-    int64_t lvol = static_cast<int64_t>(ls.x) * ls.y * ls.x;
-    int64_t rvol = static_cast<int64_t>(rs.x) * rs.y * rs.x;
+    int64_t lvol = static_cast<int64_t>(ls.x) * ls.y * ls.z;
+    int64_t rvol = static_cast<int64_t>(rs.x) * rs.y * rs.z;
     int64_t c = volume(ltmp) + volume(rtmp);
 
     // empty-space volume

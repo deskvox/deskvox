@@ -2038,8 +2038,8 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
 #endif
 
   // Print profiling info:
-  cerr.setf(ios::fixed, ios::floatfield);
-  cerr.precision(3);
+  //cerr.setf(ios::fixed, ios::floatfield);
+  //cerr.precision(3);
   cerr << "*******************************************************************************" << endl;
   cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
   cerr << "Local host........................................" << localHost << endl;

@@ -31,7 +31,7 @@ void KdTree::updateTransfunc(Tex transfunc)
   psvt.build(transfunc);
 #ifdef BUILD_TIMING
   //std::cout << std::fixed << std::setprecision(3) << "svt update: " << sw.getTime() << " sec.\n";
-  std::cout << sw.getTime() << ';';
+  std::cout << sw.getTime() << '\t';
 #endif
 
 #ifdef BUILD_TIMING
@@ -45,6 +45,6 @@ void KdTree::updateTransfunc(Tex transfunc)
   node_splitting(0);
 #ifdef BUILD_TIMING
   //std::cout << "splitting: " << sw.getTime() << " sec.\n";
-  std::cout << sw.getTime() << ";\n";
+  std::cout << sw.getTime() << " \n";
 #endif
 }
