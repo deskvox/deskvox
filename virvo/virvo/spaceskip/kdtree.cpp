@@ -52,8 +52,15 @@ void KdTree::node_splitting(int index)
 {
   using namespace visionaray;
 
+  auto s = nodes[index].bbox.size();
+  int64_t vol = static_cast<int64_t>(s.x) * s.y * s.z;
+
+  auto rs = nodes[0].bbox.size();
+  int64_t root_vol = static_cast<int64_t>(rs.x) * rs.y * rs.z;
+
   // Halting criterion 1.)
-  if (volume(nodes[index].bbox) < volume(nodes[0].bbox) / 10)
+  //if (vol < std::max(root_vol / 5000, (int64_t)13824)) {
+  if (vol <= 8*8*8)
     return;
 
   // Split along longest axis
@@ -84,8 +91,6 @@ void KdTree::node_splitting(int index)
 
   int first = lbox.min[axis];
 
-  int vol = volume(nodes[index].bbox);
-
   for (int p = 1; p < num_planes; ++p)
   {
     aabbi ltmp = nodes[index].bbox;
@@ -97,13 +102,20 @@ void KdTree::node_splitting(int index)
     ltmp = psvt.boundary(ltmp);
     rtmp = psvt.boundary(rtmp);
 
-    int c = volume(ltmp) + volume(rtmp);
+    auto ls = ltmp.size();
+    auto rs = rtmp.size();
+
+    int64_t lvol = static_cast<int64_t>(ls.x) * ls.y * ls.x;
+    int64_t rvol = static_cast<int64_t>(rs.x) * rs.y * rs.x;
+    int64_t c = volume(ltmp) + volume(rtmp);
 
     // empty-space volume
-    int ev = vol - c;
+    int64_t ev = vol - c;
 
     // Halting criterion 2.)
-    if (ev <= vol / 20)
+    //if (ev <= std::max(vol / 2000, (int64_t)13824))
+    //if (ev <= 32*32*32)
+    if (ev <= vol / 1000 || vol <= 16*16*16)
       continue;
 
     if (c < min_cost)

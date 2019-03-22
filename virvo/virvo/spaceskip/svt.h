@@ -427,7 +427,9 @@ inline visionaray::aabbi PartialSVT::boundary(visionaray::aabbi bbox)
   int n = num_bricks.x * num_bricks.y * num_bricks.z;
   std::vector<aabbi> brick_boundaries(n);
 
-  parallel_for(pool, range1d<int>(0, n), [&](int b)
+  //parallel_for(pool, range1d<int>(0, n), [&](int b)
+  #pragma omp parallel for
+  for (int b = 0; b < n; ++b)
   {
     int bz = min_brick.z + b / (num_bricks.x * num_bricks.y);
     int by = min_brick.y + (b / num_bricks.x) % num_bricks.y;
@@ -454,7 +456,7 @@ inline visionaray::aabbi PartialSVT::boundary(visionaray::aabbi bbox)
 
     brick_boundaries[i].min += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
     brick_boundaries[i].max += vec3i(bx * bricksize.x, by * bricksize.y, bz * bricksize.z);
-  });
+  }//);
 
   bounds.invalidate();
 

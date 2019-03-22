@@ -477,8 +477,8 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-//      , tree(virvo::SkipTree::SVTKdTree)
-        , tree(virvo::SkipTree::SVTKdTreeCU)
+      , tree(virvo::SkipTree::SVTKdTree)
+//        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -606,6 +606,13 @@ void vvSimpleCaster::renderVolumeGL()
              || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
     bool leaves = false;
     bool grid = impl_->tree.getTechnique() == virvo::SkipTree::Grid;
+    // Naive mode:
+    if (0)
+    {
+        full = false;
+        leaves = false;
+        grid = false;
+    }
 
     Kernel kernel;
 
@@ -695,13 +702,24 @@ void vvSimpleCaster::renderVolumeGL()
 
         impl_->sched.frame(kernel, sparams);
     }
+    else
+    {
+        kernel.mode = Kernel::Naive;
+        auto sparams = make_sched_params(
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        impl_->sched.frame(kernel, sparams);
+    }
     //std::cout << std::fixed << std::setprecision(8);
     //std::cout << t.elapsed() << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()
 {
-    //for (int i = 0; i < 30; ++i)
+    for (int i = 0; i < 30; ++i)
     {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
