@@ -175,29 +175,14 @@ void swap(T& a, T& b)
 // CUDA kernels
 //
 
-template <typename Tex, typename T>
-__global__ void svt_apply_transfunc(Tex transfunc,
-      T* data,
-      const float* voxels,
-      int width,
-      int height,
-      int depth)
-{
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-  int z = blockIdx.z * blockDim.z + threadIdx.z;
-
-  if (x >= width || y >= height || z >= depth)
-    return;
-
-  int index = z * width * height + y * width + x;
-  if (tex1D(transfunc, voxels[index]).w < 0.0001)
-    data[index] = T(0);
-  else
-    data[index] = T(1);
-}
-
-__global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int height, int depth)
+template <typename Tex>
+__global__ void svt_build_boxes(Tex transfunc,
+        uint8_t* voxels,
+        aabbi* boxes,
+        int width,
+        int height,
+        int depth,
+        vec2 mapping)
 {
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -225,8 +210,12 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
   int base = z * width * height + y * width + blockIdx.x * BX * 2;
   int ai = tx;
   int bi = tx + W/2;
-  smem[ai][ty][tz] = data[base + ai];
-  smem[bi][ty][tz] = data[base + bi];
+  float aval(voxels[base + ai]);
+  float bval(voxels[base + bi]);
+  aval = lerp(mapping.x, mapping.y, aval / 255);
+  bval = lerp(mapping.x, mapping.y, bval / 255);
+  smem[ai][ty][tz] = tex1D(transfunc, aval).w < 0.0001 ? 0 : 1;
+  smem[bi][ty][tz] = tex1D(transfunc, bval).w < 0.0001 ? 0 : 1;
 
   #pragma unroll
   for (int i = 0; i < 3; ++i)
@@ -308,11 +297,11 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
 
   aabbi bounds(vec3i(0,0,0), vec3i(8,8,8));
 
-  uint16_t voxels = get_count(bounds);
+  uint16_t nvoxels = get_count(bounds);
 
   int box_index = bz * gridDim.x * gridDim.y + by * gridDim.x + bx;
 
-  if (voxels == 0)
+  if (nvoxels == 0)
   {
     // Make an invalid bounding box that we however can
     // identify as belonging to this brick!
@@ -335,7 +324,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi lbox(min_corner, bounds.max);
       lbox.min.x += x;
 
-      if (get_count(lbox) == voxels)
+      if (get_count(lbox) == nvoxels)
       {
         min_corner = lbox.min;
       }
@@ -343,7 +332,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi rbox(bounds.min, max_corner);
       rbox.max.x -= x;
 
-      if (get_count(rbox) == voxels)
+      if (get_count(rbox) == nvoxels)
       {
         max_corner = rbox.max;
       }
@@ -359,7 +348,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi lbox(min_corner, bounds.max);
       lbox.min.y += y;
 
-      if (get_count(lbox) == voxels)
+      if (get_count(lbox) == nvoxels)
       {
         min_corner = lbox.min;
       }
@@ -367,7 +356,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi rbox(bounds.min, max_corner);
       rbox.max.y -= y;
 
-      if (get_count(rbox) == voxels)
+      if (get_count(rbox) == nvoxels)
       {
         max_corner = rbox.max;
       }
@@ -383,7 +372,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi lbox(min_corner, bounds.max);
       lbox.min.z += z;
 
-      if (get_count(lbox) == voxels)
+      if (get_count(lbox) == nvoxels)
       {
         min_corner = lbox.min;
       }
@@ -391,7 +380,7 @@ __global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int hei
       aabbi rbox(bounds.min, max_corner);
       rbox.max.z -= z;
 
-      if (get_count(rbox) == voxels)
+      if (get_count(rbox) == nvoxels)
       {
         max_corner = rbox.max;
       }
@@ -418,7 +407,6 @@ struct CudaSVT
  ~CudaSVT()
   {
     cudaFree(voxels_);
-    cudaFree(data_);
   }
   void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
 
@@ -428,15 +416,14 @@ struct CudaSVT
   aabbi boundary(aabbi bbox, const cudaStream_t& stream = 0) const;
 
   // Channel values from volume description
-  float* voxels_ = nullptr;
-  // SVT array
-  T* data_ = nullptr;
+  uint8_t* voxels_ = nullptr;
   // Local bounding boxes
   thrust::device_vector<aabbi> boxes_;
 
   int width;
   int height;
   int depth;
+  vec2 mapping;
 };
 
 template <typename T>
@@ -445,37 +432,20 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   std::cout << cudaGetLastError() << '\n';
 
   cudaFree(voxels_);
-  cudaFree(data_);
 
   if (channel == -1)
     return;
 
   size_t size = bbox.size().x * bbox.size().y * bbox.size().z;
-  cudaMalloc((void**)&data_, sizeof(T) * size);
   width  = bbox.size().x;
   height = bbox.size().y;
   depth  = bbox.size().z;
+  mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
   std::vector<float> host_voxels(size);
 
-  for (int z = 0; z < depth; ++z)
-  {
-    for (int y = 0; y < height; ++y)
-    {
-      for (int x = 0; x < width; ++x)
-      {
-        size_t index = z * width * height + y * width + x;
-        host_voxels[index] = vd.getChannelValue(vd.getCurrentFrame(),
-                bbox.min.x + x,
-                bbox.min.y + y,
-                bbox.min.z + z,
-                channel);
-      }
-    }
-  }
-
-  cudaMalloc((void**)&voxels_, sizeof(float) * size);
-  cudaMemcpy(voxels_, host_voxels.data(), sizeof(float) * size, cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&voxels_, sizeof(uint8_t) * size);
+  cudaMemcpy(voxels_, vd.getRaw(), sizeof(uint8_t) * size, cudaMemcpyHostToDevice);
 
 }
 
@@ -498,25 +468,7 @@ template <typename T>
 template <typename Tex>
 void CudaSVT<T>::build(Tex transfunc)
 {
-  // Apply transfer function
-  {
-    // Launch blocks of size 16x8x8 to e.g.
-    // meet 1024 thread limit on Kepler
-    dim3 block_size(BX, BY, BZ);
-    dim3 grid_size(div_up(width,  (int)block_size.x),
-                   div_up(height, (int)block_size.y),
-                   div_up(depth,  (int)block_size.z));
-
-    svt_apply_transfunc<<<grid_size, block_size>>>(
-            transfunc,
-            data_,
-            voxels_,
-            width,
-            height,
-            depth);
-  }
-
-  // Build 8x8x8 SVTs
+  // Apply transfer function and build 8x8x8 SVTs
   {
     dim3 block_size(BX, BY, BZ);
     dim3 grid_size(div_up(width/2, (int)block_size.x),
@@ -526,11 +478,13 @@ void CudaSVT<T>::build(Tex transfunc)
     boxes_.resize(grid_size.x * grid_size.y * grid_size.z);
 
     svt_build_boxes<<<grid_size, block_size>>>(
-            data_,
+            transfunc,
+            voxels_,
             thrust::raw_pointer_cast(boxes_.data()),
             width,
             height,
-            depth);
+            depth,
+            mapping);
   }
   //std::cout << "#boxes: " << boxes_.size() << '\n';
   //std::cout << boxes_.data() << '\n';
@@ -890,7 +844,6 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   if (transfunc.data() == nullptr || transfunc.width() <= 1)
   {
     cudaFree(impl_->svt.voxels_);
-    cudaFree(impl_->svt.data_);
     return;
   }
 #endif
