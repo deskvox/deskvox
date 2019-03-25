@@ -628,11 +628,22 @@ void CudaKdTree::Impl::node_splitting(int index)
   using visionaray::aabbi;
   using visionaray::vec3i;
 
-  // Halting criterion 1.)
-  if (volume(nodes[index].bbox) < 16*16*16)//volume(nodes[0].bbox) / 10)
-    return;
+#if 1//64-bit
+  using I = int64_t;
+#else
+  using I = int32_t;
+#endif
 
   auto s = nodes[index].bbox.size();
+  int64_t vol = static_cast<int64_t>(s.x) * s.y * s.z;
+
+  auto rs = nodes[0].bbox.size();
+  I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
+
+  // Halting criterion 1.)
+  if (vol < 16*16*16)//volume(nodes[0].bbox) / 10)
+    return;
+
   if (s.x <= 32 || s.y <= 32 || s.z <= 32)
     return;
 
@@ -662,15 +673,13 @@ void CudaKdTree::Impl::node_splitting(int index)
 
   int num_planes = NumBins- 1;
 
-  int min_cost = INT_MAX;
+  I min_cost = std::numeric_limits<I>::max();
   int best_p = -1;
 
   aabbi lbox = nodes[index].bbox;
   aabbi rbox = nodes[index].bbox;
 
   int first = lbox.min[axis];
-
-  int vol = volume(nodes[index].bbox);
 
   int off = nodes[index].bbox.min[axis];
 
@@ -685,10 +694,15 @@ void CudaKdTree::Impl::node_splitting(int index)
     ltmp = svt.boundary(ltmp);
     rtmp = svt.boundary(rtmp);
 
-    int c = volume(ltmp) + volume(rtmp);
+    auto ls = ltmp.size();
+    auto rs = rtmp.size();
+
+    I lvol = static_cast<I>(ls.x) * ls.y * ls.z;
+    I rvol = static_cast<I>(rs.x) * rs.y * rs.z;
+    I c = lvol + rvol;
 
     // empty-space volume
-    int ev = vol - c;
+    I ev = vol - c;
 
     // Halting criterion 2.)
     if (ev <= vol / 1000)
