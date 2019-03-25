@@ -416,6 +416,11 @@ __global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, in
 template <typename T>
 struct CudaSVT
 {
+ ~CudaSVT()
+  {
+    cudaFree(voxels_);
+    cudaFree(data_);
+  }
   void reset(vvVolDesc const& vd, aabbi bbox, int channel = 0);
 
   template <typename Tex>
@@ -424,9 +429,9 @@ struct CudaSVT
   aabbi boundary(aabbi bbox, const cudaStream_t& stream = 0) const;
 
   // Channel values from volume description
-  thrust::device_vector<float> voxels_;
+  float* voxels_ = nullptr;
   // SVT array
-  thrust::device_vector<T> data_;
+  T* data_ = nullptr;
   // Local bounding boxes
   thrust::device_vector<aabbi> boxes_;
 
@@ -439,13 +444,20 @@ template <typename T>
 void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
 {
   std::cout << cudaGetLastError() << '\n';
+
+  cudaFree(voxels_);
+  cudaFree(data_);
+
+  if (channel == -1)
+    return;
+
   size_t size = bbox.size().x * bbox.size().y * bbox.size().z;
-  data_.resize(size);
+  cudaMalloc((void**)&data_, sizeof(T) * size);
   width  = bbox.size().x;
   height = bbox.size().y;
   depth  = bbox.size().z;
 
-  thrust::host_vector<float> host_voxels(size);
+  std::vector<float> host_voxels(size);
 
   for (int z = 0; z < depth; ++z)
   {
@@ -463,7 +475,9 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
     }
   }
 
-  voxels_ = host_voxels;
+  cudaMalloc((void**)&voxels_, sizeof(float) * size);
+  cudaMemcpy(voxels_, host_voxels.data(), sizeof(float) * size, cudaMemcpyHostToDevice);
+
 }
 
 struct device_compare_morton
@@ -496,8 +510,8 @@ void CudaSVT<T>::build(Tex transfunc)
 
     svt_apply_transfunc<<<grid_size, block_size>>>(
             transfunc,
-            thrust::raw_pointer_cast(data_.data()),
-            thrust::raw_pointer_cast(voxels_.data()),
+            data_,
+            voxels_,
             width,
             height,
             depth);
@@ -513,7 +527,7 @@ void CudaSVT<T>::build(Tex transfunc)
     boxes_.resize(grid_size.x * grid_size.y * grid_size.z);
 
     svt_build_boxes<<<grid_size, block_size>>>(
-            thrust::raw_pointer_cast(data_.data()),
+            data_,
             thrust::raw_pointer_cast(boxes_.data()),
             width,
             height,
