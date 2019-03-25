@@ -888,6 +888,14 @@ void CudaKdTree::updateVolume(vvVolDesc const& vd, int channel)
 void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4, 1>& transfunc)
 {
 #if 1
+  if (transfunc.data() == nullptr || transfunc.width() <= 1)
+  {
+    cudaFree(impl_->svt.voxels_);
+    cudaFree(impl_->svt.data_);
+    return;
+  }
+#endif
+#if 1
   // Swallow last CUDA error (thrust will otherwise
   // recognize that an error occurred previously
   // and then just throw..)
