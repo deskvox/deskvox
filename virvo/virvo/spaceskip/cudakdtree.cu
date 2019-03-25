@@ -197,8 +197,7 @@ __global__ void svt_apply_transfunc(Tex transfunc,
     data[index] = T(1);
 }
 
-template <typename T>
-__global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, int depth)
+__global__ void svt_build_boxes(uint16_t* data, aabbi* boxes, int width, int height, int depth)
 {
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -206,7 +205,7 @@ __global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, in
   if (y >= height || z >= depth)
     return;
 
-  __shared__ T smem[BX*2][BY][BZ];
+  __shared__ uint16_t smem[BX*2][BY][BZ];
 
   int bx = blockIdx.x;
   int by = blockIdx.y;
@@ -287,7 +286,7 @@ __global__ void svt_build_boxes(T* data, aabbi* boxes, int width, int height, in
   auto border_at = [&](int x, int y, int z)
   {
     if (x < 0 || y < 0 || z < 0)
-      return T(0);
+      return uint16_t(0);
     else
       return smem[x][y][z];
   };
