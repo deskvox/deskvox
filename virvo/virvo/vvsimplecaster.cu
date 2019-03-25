@@ -739,7 +739,7 @@ void vvSimpleCaster::updateTransferFunction()
     impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
     }
-    /*{
+    {
     impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
     tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     virvo::PixelFormat texture_format = virvo::PF_R8;
@@ -759,7 +759,7 @@ void vvSimpleCaster::updateTransferFunction()
         impl_->volumes[f].set_address_mode(Clamp);
         impl_->volumes[f].set_filter_mode(filter_mode);
     }
-    }*/
+    }
 }
 
 void vvSimpleCaster::updateVolumeData()

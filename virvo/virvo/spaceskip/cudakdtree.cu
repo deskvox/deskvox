@@ -207,11 +207,17 @@ __global__ void svt_build_boxes(Tex transfunc,
   if (threadIdx.x >= W/2)
     return;
 
-  int base = z * width * height + y * width + blockIdx.x * BX * 2;
+#if 1//64-bit
+  using I = int64_t;
+#else
+  using I = int32_t;
+#endif
+
+  I base = I(z) * width * height + y * width + blockIdx.x * BX * 2;
   int ai = tx;
   int bi = tx + W/2;
   float aval(voxels[base + ai]);
-  float bval(voxels[base + bi]);
+  float bval(voxels[base + bi]);//printf("%f %f\n", aval, bval);return;
   aval = lerp(mapping.x, mapping.y, aval / 255);
   bval = lerp(mapping.x, mapping.y, bval / 255);
   smem[ai][ty][tz] = tex1D(transfunc, aval).w < 0.0001 ? 0 : 1;
@@ -299,7 +305,7 @@ __global__ void svt_build_boxes(Tex transfunc,
 
   uint16_t nvoxels = get_count(bounds);
 
-  int box_index = bz * gridDim.x * gridDim.y + by * gridDim.x + bx;
+  I box_index = I(bz) * gridDim.x * gridDim.y + by * gridDim.x + bx;
 
   if (nvoxels == 0)
   {
@@ -436,10 +442,10 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   if (channel == -1)
     return;
 
-  size_t size = bbox.size().x * bbox.size().y * bbox.size().z;
+  size_t size = size_t(bbox.size().x) * bbox.size().y * bbox.size().z;
   width  = bbox.size().x;
   height = bbox.size().y;
-  depth  = bbox.size().z;
+  depth  = bbox.size().z;std::cout << width << ' ' << height << ' ' << depth << ' ' << size << '\n';
   mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
   std::vector<float> host_voxels(size);
@@ -484,7 +490,7 @@ void CudaSVT<T>::build(Tex transfunc)
             width,
             height,
             depth,
-            mapping);
+            mapping);cudaDeviceSynchronize();std::cout << cudaGetErrorString(cudaGetLastError()) << '\n';
   }
   //std::cout << "#boxes: " << boxes_.size() << '\n';
   //std::cout << boxes_.data() << '\n';
@@ -641,11 +647,11 @@ void CudaKdTree::Impl::node_splitting(int index)
   I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-  if (vol < 16*16*16)//volume(nodes[0].bbox) / 10)
+  if (vol < 8*8*8)//volume(nodes[0].bbox) / 10)
     return;
 
-  if (s.x <= 32 || s.y <= 32 || s.z <= 32)
-    return;
+  //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
+  //  return;
 
 #if 0
   // Expand node's bounding box so it falls on multiples of eights
@@ -667,7 +673,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 4;
+  static const int NumBins = 8;
 
   int dl = len[axis] / NumBins;
 
