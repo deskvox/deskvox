@@ -83,7 +83,8 @@ void KdTree::node_splitting(int index)
 
   int num_planes = lmax / dl;
 
-  int min_cost = INT_MAX;
+  //int min_cost = INT_MAX;
+  int64_t min_cost = std::numeric_limits<int64_t>::max();
   int best_p = -1;
 
   aabbi lbox = nodes[index].bbox;
@@ -107,10 +108,10 @@ void KdTree::node_splitting(int index)
 
     int64_t lvol = static_cast<int64_t>(ls.x) * ls.y * ls.z;
     int64_t rvol = static_cast<int64_t>(rs.x) * rs.y * rs.z;
-    int64_t c = volume(ltmp) + volume(rtmp);
+    int64_t c = lvol + rvol;
 
     // empty-space volume
-    int64_t ev = vol - c;
+    int64_t ev = vol - c;//std::cout << vol << ' ' << lvol << ' ' << rvol << ' ' << c << ' ' << ev << '\n';
 
     // Halting criterion 2.)
     //if (ev <= std::max(vol / 2000, (int64_t)13824))
