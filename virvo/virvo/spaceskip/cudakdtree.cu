@@ -653,17 +653,6 @@ void CudaKdTree::Impl::node_splitting(int index)
   //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
   //  return;
 
-#if 0
-  // Expand node's bounding box so it falls on multiples of eights
-  nodes[index].bbox.min.x = max(0, round_down(nodes[index].bbox.min.x, 8));
-  nodes[index].bbox.min.y = max(0, round_down(nodes[index].bbox.min.y, 8));
-  nodes[index].bbox.min.z = max(0, round_down(nodes[index].bbox.min.z, 8));
-
-  nodes[index].bbox.max.x = min(vox[0], round_up(nodes[index].bbox.max.x, 8));
-  nodes[index].bbox.max.y = min(vox[1], round_up(nodes[index].bbox.max.y, 8));
-  nodes[index].bbox.max.z = min(vox[2], round_up(nodes[index].bbox.max.z, 8));
-#endif
-
   // Split along longest axis
   vec3i len = nodes[index].bbox.max - nodes[index].bbox.min;
 
@@ -673,7 +662,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 8;
+  static const int NumBins = 16;
 
   int dl = len[axis] / NumBins;
 
@@ -694,8 +683,16 @@ void CudaKdTree::Impl::node_splitting(int index)
     aabbi ltmp = nodes[index].bbox;
     aabbi rtmp = nodes[index].bbox;
 
-    ltmp.max[axis] = first + dl * p;
-    rtmp.min[axis] = first + dl * p;
+    int pos = first + dl * p;
+    // Align on 8-voxel raster
+    pos >>= 3;
+    pos <<= 3;
+
+    if (pos < nodes[index].bbox.min[axis])
+      continue;
+
+    ltmp.max[axis] = pos;
+    rtmp.min[axis] = pos;
 
     ltmp = svt.boundary(ltmp);
     rtmp = svt.boundary(rtmp);
@@ -730,15 +727,6 @@ void CudaKdTree::Impl::node_splitting(int index)
   // Halting criterion 2.)
   if (best_p < 0)
     return;
-
-  // Expand node's bounding box so it falls on multiples of eights
-  lbox.min.x = max(0, round_down(lbox.min.x, 8));
-  lbox.min.y = max(0, round_down(lbox.min.y, 8));
-  lbox.min.z = max(0, round_down(lbox.min.z, 8));
-
-  rbox.min.x = max(0, round_down(rbox.min.x, 8));
-  rbox.min.y = max(0, round_down(rbox.min.y, 8));
-  rbox.min.z = max(0, round_down(rbox.min.z, 8));
 
   auto lvol = volume(lbox);
   auto rvol = volume(rbox);
