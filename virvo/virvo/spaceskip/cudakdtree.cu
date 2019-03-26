@@ -445,7 +445,7 @@ void CudaSVT<T>::reset(vvVolDesc const& vd, aabbi bbox, int channel)
   size_t size = size_t(bbox.size().x) * bbox.size().y * bbox.size().z;
   width  = bbox.size().x;
   height = bbox.size().y;
-  depth  = bbox.size().z;std::cout << width << ' ' << height << ' ' << depth << ' ' << size << '\n';
+  depth  = bbox.size().z;
   mapping = vec2(vd.mapping(0).x, vd.mapping(0).y);
 
   std::vector<float> host_voxels(size);
@@ -490,7 +490,7 @@ void CudaSVT<T>::build(Tex transfunc)
             width,
             height,
             depth,
-            mapping);cudaDeviceSynchronize();std::cout << cudaGetErrorString(cudaGetLastError()) << '\n';
+            mapping);
   }
   //std::cout << "#boxes: " << boxes_.size() << '\n';
   //std::cout << boxes_.data() << '\n';
@@ -641,13 +641,14 @@ void CudaKdTree::Impl::node_splitting(int index)
 #endif
 
   auto s = nodes[index].bbox.size();
-  int64_t vol = static_cast<int64_t>(s.x) * s.y * s.z;
+  I vol = static_cast<I>(s.x) * s.y * s.z;
 
   auto rs = nodes[0].bbox.size();
   I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-  if (vol < 8*8*8)//volume(nodes[0].bbox) / 10)
+  //if (vol < root_vol / 10)
+  if (vol < 8*8*8)
     return;
 
   //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
@@ -664,7 +665,8 @@ void CudaKdTree::Impl::node_splitting(int index)
 
   static const int NumBins = 8;
 
-  int dl = len[axis] / NumBins;
+  // Align on 8-voxel raster
+  int dl = max(len[axis] / NumBins, 8);
 
   int num_planes = NumBins- 1;
 
