@@ -74,8 +74,7 @@ void KdTree::node_splitting(int index)
 
   int lmax = len[axis];
 
-  static const int dl = 4; // ``we set dl to be 4 for 256^3 data sets..''
-  //  static const int dl = 8; // ``.. and 8 for 512^3 data sets.''
+  static const int dl = 8;
 
   // Halting criterion 1.b) (should not really get here..)
   if (lmax < dl)
@@ -116,7 +115,7 @@ void KdTree::node_splitting(int index)
     // Halting criterion 2.)
     //if (ev <= std::max(vol / 2000, (int64_t)13824))
     //if (ev <= 32*32*32)
-    if (ev <= vol / 1000 || vol <= 16*16*16)
+    if (ev <= vol / 1000)
       continue;
 
     if (c < min_cost)
