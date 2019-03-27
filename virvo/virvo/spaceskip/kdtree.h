@@ -28,6 +28,7 @@
 
 #define FRAME_TIMING 0
 #define BUILD_TIMING 1
+#define STATISTICS   1
 #define KDTREE       1
 
 class vvVolDesc;

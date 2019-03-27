@@ -57,6 +57,7 @@
 using namespace visionaray;
 
 #define BUILD_TIMING 1
+#define STATISTICS   1
 
 // Blocks of 16*8*8=1024 threads
 #define BX 4
@@ -893,6 +894,37 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #ifdef BUILD_TIMING
   //std::cout << "splitting: " << timer.elapsed() << " sec.\n";
   std::cout << timer.elapsed() << "\n";
+#endif
+
+#ifdef STATISTICS
+  // Number of non-empty voxels (overall)
+  thrust::host_vector<uint8_t> host_voxels(size_t(impl_->vox[0])*impl_->vox[1]*impl_->vox[2]);
+  cudaMemcpy(host_voxels.data(), impl_->svt.voxels_, sizeof(uint8_t) * host_voxels.size(), cudaMemcpyDeviceToHost);
+
+  size_t non_empty = 0;
+  for (size_t i = 0; i < host_voxels.size(); ++i)
+  {
+    float fval(host_voxels[i]);
+    fval = lerp(impl_->svt.mapping.x, impl_->svt.mapping.y, fval / 255);
+    if (tex1D(transfunc, fval).w >= 0.0001)
+      ++non_empty;
+  }
+  std::cout << non_empty << " non-empty voxels of " <<size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]<< '\n';
+  std::cout << "Occupancy: " << double(non_empty) / double(size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]) << '\n';
+
+  // Number of voxels bound in leaves
+  visionaray::vec3 eye(1,1,1);
+  size_t vol = 0;
+  impl_->traverse(0 /*root*/, eye, [&vol](Impl::Node const& n)
+  {
+    if (n.left == -1 && n.right == -1)
+    {
+      auto s = n.bbox.size();
+      vol += size_t(s.x) * s.y * s.z;
+    }
+  }, true);
+  std::cout << vol << " voxels bound in leaf nodes\n";
+  std::cout << "Fraction bound: " << double(vol) / double(size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]) << '\n';
 #endif
 }
 
