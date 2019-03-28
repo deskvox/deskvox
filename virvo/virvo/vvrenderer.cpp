@@ -1145,6 +1145,9 @@ auto clr = const_cast<vvColor*>(&color);
   // Disable lighting:
   glDisable(GL_LIGHTING);
 
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
   // Create vertex vectors:
   for (i=0; i<8; ++i)
   {
@@ -1152,9 +1155,9 @@ auto clr = const_cast<vvColor*>(&color);
     vertvec[i] *= oSize;
   }
 
-  glLineWidth(3.0f);
+  glLineWidth(5.0f);
 
-#if 0
+#if 1
   glEnable(GL_LINE_SMOOTH);
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
@@ -1813,8 +1816,8 @@ void vvRenderer::renderBoundingBox() const
   if (!_boundaries)
     return;
 
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LEQUAL);
+  //glEnable(GL_DEPTH_TEST);
+  //glDepthFunc(GL_LEQUAL);
 
   aabb bb = vd->getBoundingBox();
 
@@ -1826,8 +1829,8 @@ void vvRenderer::renderROI() const
   if (!_isROIUsed)
     return;
 
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LEQUAL);
+  //glEnable(GL_DEPTH_TEST);
+  //glDepthFunc(GL_LEQUAL);
 
   vec3f size = vd->getSize();
   vec3f probeSizeObj = size * roi_size_;
@@ -1847,7 +1850,7 @@ void vvRenderer::renderClipObjs() const
   {
     if (getParameter(act_id) && getParameter(out_id))
     {
-      glEnable(GL_DEPTH_TEST);
+      //glEnable(GL_DEPTH_TEST);
       glDepthFunc(GL_LEQUAL);
 
       vec3f size = vd->getSize();

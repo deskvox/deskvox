@@ -271,8 +271,12 @@ void vvView::mainLoop(int argc, char *argv[])
 
   setProjectionMode(perspectiveMode);
 
-  if (!cameraFileName.empty())
+  if (!cameraFileName.empty()){
     ds->ov->loadMV(cameraFileName.c_str());
+
+      float step = VV_PI / 180.0f;
+      ds->ov->mv.rotate(-90*step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
+  }
 
   // Set window title:
   if (filename!=NULL) glutSetWindowTitle(filename);

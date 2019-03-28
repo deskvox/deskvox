@@ -477,8 +477,8 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-//      , tree(virvo::SkipTree::SVTKdTree)
-        , tree(virvo::SkipTree::SVTKdTreeCU)
+      , tree(virvo::SkipTree::SVTKdTree)
+//        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -529,27 +529,6 @@ vvSimpleCaster::~vvSimpleCaster()
 
 void vvSimpleCaster::renderVolumeGL()
 {
-    if (_boundaries)
-    {
-        glLineWidth(1.0f);
-
-        glEnable(GL_LINE_SMOOTH);
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
-        glDisable(GL_LIGHTING);
-
-        virvo::vec4 clearColor = vvGLTools::queryClearColor();
-        vvColor color(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2]);
-        impl_->tree.renderGL(color);
-
-        if (isLightingEnabled)
-            glEnable(GL_LIGHTING);
-    }
-
     mat4 view_matrix;
     mat4 proj_matrix;
     recti viewport;
@@ -713,13 +692,42 @@ void vvSimpleCaster::renderVolumeGL()
 
         impl_->sched.frame(kernel, sparams);
     }
+
+    if (_boundaries)
+    {
+        glEnable(GL_DEPTH_TEST);
+        glDepthRange(0,0.95);
+        glClearDepth(1.0f);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        glLineWidth(5.0f);
+
+        //glEnable(GL_LINE_SMOOTH);
+        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
+        glDisable(GL_LIGHTING);
+
+        virvo::vec4 clearColor = vvGLTools::queryClearColor();
+        vvColor color(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2]);
+        impl_->tree.renderGL(color);
+
+        //renderBoundingBox();
+
+        if (isLightingEnabled)
+            glEnable(GL_LIGHTING);
+    }
+
     //std::cout << std::fixed << std::setprecision(8);
     //std::cout << t.elapsed() << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()
 {
-    for (int i = 0; i < 30; ++i)
+    //for (int i = 0; i < 30; ++i)
     {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
@@ -739,7 +747,7 @@ void vvSimpleCaster::updateTransferFunction()
     impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
     }
-    {
+    /*{
     impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
     tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     virvo::PixelFormat texture_format = virvo::PF_R8;
@@ -759,7 +767,7 @@ void vvSimpleCaster::updateTransferFunction()
         impl_->volumes[f].set_address_mode(Clamp);
         impl_->volumes[f].set_filter_mode(filter_mode);
     }
-    }
+    }*/
 }
 
 void vvSimpleCaster::updateVolumeData()
