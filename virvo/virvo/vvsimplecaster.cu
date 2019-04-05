@@ -315,7 +315,7 @@ struct Kernel
         result.color = C(0.0);
 
         // traverse tree
-        detail::stack<16> st;
+        detail::stack<32> st;
         st.push(0);
 
         auto inv_dir = 1.0f / ray.dir;
@@ -477,8 +477,8 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-      , tree(virvo::SkipTree::SVTKdTree)
-//        , tree(virvo::SkipTree::SVTKdTreeCU)
+//      , tree(virvo::SkipTree::SVTKdTree)
+        , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -700,7 +700,7 @@ void vvSimpleCaster::renderVolumeGL()
         glClearDepth(1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        glLineWidth(5.0f);
+        glLineWidth(3.0f);
 
         //glEnable(GL_LINE_SMOOTH);
         //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -727,6 +727,7 @@ void vvSimpleCaster::renderVolumeGL()
 
 void vvSimpleCaster::updateTransferFunction()
 {
+    for (int i = 0; i < 5; ++i)
     //for (int i = 0; i < 30; ++i)
     {
     std::vector<vec4> tf(256 * 1 * 1);
@@ -747,7 +748,7 @@ void vvSimpleCaster::updateTransferFunction()
     impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
     }
-    /*{
+    {
     impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
     tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     virvo::PixelFormat texture_format = virvo::PF_R8;
@@ -767,7 +768,7 @@ void vvSimpleCaster::updateTransferFunction()
         impl_->volumes[f].set_address_mode(Clamp);
         impl_->volumes[f].set_filter_mode(filter_mode);
     }
-    }*/
+    }
 }
 
 void vvSimpleCaster::updateVolumeData()

@@ -57,7 +57,7 @@
 using namespace visionaray;
 
 #define BUILD_TIMING 1
-#define STATISTICS   1
+#define STATISTICS   0
 
 // Blocks of 16*8*8=1024 threads
 #define BX 4
@@ -648,8 +648,8 @@ void CudaKdTree::Impl::node_splitting(int index)
   I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-  if (vol < root_vol / 10)
-  //if (vol < 8*8*8)
+  //if (vol < root_vol / 10)
+  if (vol < 8*8*8)
     return;
 
   //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
@@ -664,7 +664,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 8;
+  static const int NumBins = 7;
 
   // Align on 8-voxel raster
   int dl = max(len[axis] / NumBins, 8);
@@ -877,7 +877,7 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   impl_->svt.build(cuda_texture_ref<visionaray::vec4, 1>(cuda_transfunc));
 #ifdef BUILD_TIMING
   //std::cout << std::fixed << std::setprecision(8) << "svt update: " << timer.elapsed() << " sec.\n";
-  std::cout << timer.elapsed() << "\t";
+  //std::cout << timer.elapsed() << "\t";
 #endif
 
 #ifdef BUILD_TIMING
@@ -893,10 +893,14 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   impl_->node_splitting(0);
 #ifdef BUILD_TIMING
   //std::cout << "splitting: " << timer.elapsed() << " sec.\n";
-  std::cout << timer.elapsed() << "\n";
+  double ttt = timer.elapsed();
+  //std::cout << timer.elapsed() << "\n";
 #endif
 
-#ifdef STATISTICS
+#if 1//STATISTICS
+  static int cnt = 0;
+  if (cnt == 0)
+  {++cnt;std::cout << std::endl;
   // Number of non-empty voxels (overall)
   thrust::host_vector<uint8_t> host_voxels(size_t(impl_->vox[0])*impl_->vox[1]*impl_->vox[2]);
   cudaMemcpy(host_voxels.data(), impl_->svt.voxels_, sizeof(uint8_t) * host_voxels.size(), cudaMemcpyDeviceToHost);
@@ -925,7 +929,19 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   }, true);
   std::cout << vol << " voxels bound in leaf nodes\n";
   std::cout << "Fraction bound: " << double(vol) / double(size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]) << '\n';
+  std::cout << std::endl;
+  std::cout << "Node Splitting\n";
+  }
 #endif
+
+#ifdef BUILD_TIMING
+  std::cout << ttt << "\n";
+#endif
+
+if (cnt == 5)
+{
+    std::cout << "Rendering\n";
+}
 }
 
 SkipTreeNode* CudaKdTree::getNodesDevPtr(int& numNodes)

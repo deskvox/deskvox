@@ -275,7 +275,7 @@ void vvView::mainLoop(int argc, char *argv[])
     ds->ov->loadMV(cameraFileName.c_str());
 
       float step = VV_PI / 180.0f;
-      ds->ov->mv.rotate(-90*step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
+      //ds->ov->mv.rotate(-90*step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
   }
 
   // Set window title:
@@ -2041,6 +2041,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   if (gethostname(localHost, HOST_NAME_LEN-1)) strcpy(localHost, "n/a");
 #endif
 
+#if 0
   // Print profiling info:
   //cerr.setf(ios::fixed, ios::floatfield);
   //cerr.precision(3);
@@ -2063,6 +2064,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Proxy geometry generator.........................." << pgMode[ds->isectType] << endl;
   cerr << "Opacity correction................................" << onOffMode[ds->opCorrMode] << endl;
   cerr << "Gamma correction.................................." << onOffMode[ds->gammaMode] << endl;
+#endif
 }
 
 
@@ -2073,10 +2075,11 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   */
 void vvView::printProfilingResult(vvStopwatch* totalTime, const int framesRendered)
 {
-  cerr << "Total profiling time [sec]........................" << totalTime->getTime() << endl;
-  cerr << "Frames rendered..................................." << framesRendered << endl;
-  cerr << "Average time per frame [sec]......................" << (float(totalTime->getTime()/framesRendered)) << endl;
-  cerr << "*******************************************************************************" << endl;
+  //cerr << "Total profiling time [sec]........................" << totalTime->getTime() << endl;
+  //cerr << "Frames rendered..................................." << framesRendered << endl;
+  //cerr << "Average time per frame [sec]......................" << (float(totalTime->getTime()/framesRendered)) << endl;
+  //cerr << "*******************************************************************************" << endl;
+  cerr << (float(totalTime->getTime()/framesRendered)) << endl;
 }
 
 
