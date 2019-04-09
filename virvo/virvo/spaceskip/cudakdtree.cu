@@ -25,6 +25,7 @@
 #include <thrust/pair.h>
 #include <iostream>
 #include <map>
+#include <numeric>
 
 #include <cassert>
 #include <iostream>
