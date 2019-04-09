@@ -55,6 +55,14 @@ if(VISIONARAY_FOUND)
 endif()
 
 
+add_definitions(-DBINS=${NUM_BINS})
+
+if(DEEP_TREE)
+    add_definitions(-DDEEP)
+else()
+    add_definitions(-DSHALLOW)
+endif()
+
 if(MSVC)
     # Disable Boost autolinking when compiling w/ msvc
     add_definitions(-DBOOST_ALL_NO_LIB)

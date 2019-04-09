@@ -100,6 +100,8 @@ endif(NOT COVISE_BUILD)
 # Override the default value specified in FindCUDA.cmake
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule to the CUDA source file.")
 
+set(NUM_BINS 32 CACHE STRING "...")
+option(DEEP_TREE "For tests" ON)
 
 option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
 

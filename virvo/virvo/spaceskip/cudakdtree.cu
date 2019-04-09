@@ -648,8 +648,11 @@ void CudaKdTree::Impl::node_splitting(int index)
   I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-  //if (vol < root_vol / 10)
+#ifdef SHALLOW
+  if (vol < root_vol / 10)
+#elif defined(DEEP)
   if (vol < 8*8*8)
+#endif
     return;
 
   //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
@@ -664,7 +667,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = 7;
+  static const int NumBins = BINS;
 
   // Align on 8-voxel raster
   int dl = max(len[axis] / NumBins, 8);
@@ -899,7 +902,8 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 
 #if 1//STATISTICS
   static int cnt = 0;
-  if (cnt == 0)
+  static std::vector<double> values;
+  if (0)//cnt == 0) // Occupancy stats
   {++cnt;std::cout << std::endl;
   // Number of non-empty voxels (overall)
   thrust::host_vector<uint8_t> host_voxels(size_t(impl_->vox[0])*impl_->vox[1]*impl_->vox[2]);
@@ -935,12 +939,15 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
 #endif
 
 #ifdef BUILD_TIMING
-  std::cout << ttt << "\n";
+  if (cnt >= 100) // warm up caches!
+    values.push_back(ttt);
+  std::cerr << ttt << "\n";
 #endif
 
-if (cnt == 5)
+if (++cnt == 1100)
 {
-    std::cout << "Rendering\n";
+    std::cout << "Average node splitting time: " << std::accumulate(values.begin(), values.end(), 0.0) / values.size() << '\n';
+    std::cout << "\nRendering\n";
 }
 }
 

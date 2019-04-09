@@ -943,7 +943,7 @@ void vvView::runTest()
   // fill caches
   double cacherun = performanceTest();
 
-  const int NUM_TESTS = 10;
+  const int NUM_TESTS = 200;
   std::vector<double> ts;
   for(int i=0; i<NUM_TESTS; ++i)
   {
@@ -970,6 +970,7 @@ void vvView::runTest()
   fprintf(stdout, "%s: %f\n", "tmin", tmin);
   fprintf(stdout, "%s: %f\n", "tavg", tavg);
   fprintf(stdout, "%s: %f\n", "std deviation", dev);
+  fprintf(stdout, "%s: %f\n", "FPS", 1.f / tavg);
 }
 
 
@@ -2008,7 +2009,7 @@ double vvView::performanceTest()
       ds->displayCallback();
       ++framesRendered;
     }
-    total = totalTime->getTime();
+    total = totalTime->getTime() / framesRendered;
 
     printProfilingResult(totalTime, framesRendered);
 
@@ -2315,6 +2316,7 @@ void vvView::initGraphics(int argc, char *argv[])
     exit(-1);
   }
 
+  glutInitWindowPosition(100, 100);
   glutInitWindowSize(winWidth, winHeight);       // set initial window size
 
   // Create window title.
