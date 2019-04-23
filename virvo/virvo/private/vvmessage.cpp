@@ -21,6 +21,12 @@
 
 #include "vvmessage.h"
 
+#include <boost/version.hpp>
+
+#if BOOST_VERSION == 106900
+#define BOOST_ALLOW_DEPRECATED_HEADERS
+#endif
+
 #include <boost/uuid/uuid_generators.hpp>
 
 
