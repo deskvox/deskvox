@@ -728,7 +728,7 @@ void vvSimpleCaster::renderVolumeGL()
 void vvSimpleCaster::updateTransferFunction()
 {
     //for (int i = 0; i < 5; ++i)
-    for (int i = 0; i < 1100; ++i)
+    //for (int i = 0; i < 1100; ++i)
     {
     std::vector<vec4> tf(256 * 1 * 1);
     vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));

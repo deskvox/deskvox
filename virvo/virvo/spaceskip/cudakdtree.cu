@@ -649,11 +649,11 @@ void CudaKdTree::Impl::node_splitting(int index)
   I root_vol = static_cast<I>(rs.x) * rs.y * rs.z;
 
   // Halting criterion 1.)
-#ifdef SHALLOW
+//#ifdef SHALLOW
   if (vol < root_vol / 10)
-#elif defined(DEEP)
-  if (vol < 8*8*8)
-#endif
+//#elif defined(DEEP)
+//  if (vol < 8*8*8)
+//#endif
     return;
 
   //if (s.x <= 32 || s.y <= 32 || s.z <= 32)
