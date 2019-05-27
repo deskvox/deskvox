@@ -313,9 +313,11 @@ struct Kernel
 
         result_record<S> result;
         result.color = C(0.0);
+        result.color = C(temperature_to_rgb(0.f), 1.f);
 
         vec3 inv_dir = 1.0f / ray.dir;
 
+        int num_steps = 0;
         for (int i = 0; i < num_leaves; ++i)
         {
             auto hit_rec = intersect(ray, leaves[i], inv_dir);
@@ -356,6 +358,7 @@ struct Kernel
                 // If we visited this cell before then it must not be empty.
                 if (cellIndex == hit_cell)
                 {
+                    num_steps += 1;
                     integrate(ray, t, t + delta, result.color);
                     t += delta;
                     continue;
@@ -376,6 +379,7 @@ struct Kernel
                 // Return the hit point if the grid cell is not fully transparent.
                 if (maximumOpacity > 0.0f)
                 {
+                    num_steps += 1;
                     integrate(ray, t, t + delta, result.color);
                     t += delta;
                     continue;
@@ -399,6 +403,7 @@ struct Kernel
             }
         }
 
+        result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
         return result;
     }
 
