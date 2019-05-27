@@ -306,6 +306,104 @@ struct Kernel
 
     template <typename R>
     VSNRAY_FUNC
+    result_record<typename R::scalar_type> ray_marching_traverse_hybrid(R ray) const
+    {
+        using S = typename R::scalar_type;
+        using C = vector<4, S>;
+
+        result_record<S> result;
+        result.color = C(0.0);
+
+        vec3 inv_dir = 1.0f / ray.dir;
+
+        for (int i = 0; i < num_leaves; ++i)
+        {
+            auto hit_rec = intersect(ray, leaves[i], inv_dir);
+            result.hit |= hit_rec.hit;
+
+            if (!hit_rec.hit)
+                continue;
+
+            auto t = max(S(0.0f), hit_rec.tnear);
+            auto tmax = hit_rec.tfar;
+
+            // cf. GridAccelerator_stepRay
+
+            // Tentatively advance the ray.
+            t += delta;
+
+            const vec3f ray_rdir = 1.0f / ray.dir;
+            // sign of direction determines near/far index
+            const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<unsigned*>(&ray.dir.x) >> 31),
+                                              1 - (*reinterpret_cast<unsigned*>(&ray.dir.y) >> 31),
+                                              1 - (*reinterpret_cast<unsigned*>(&ray.dir.z) >> 31));
+
+            vec3i hit_cell;
+            while (t < tmax)
+            {
+                // Compute the hit point in the local coordinate system.
+                vec3f pos = ray.ori + t * ray.dir;
+                vector<3, S> coord01(
+                        (pos.x + (bbox.size().x / 2)) / bbox.size().x,
+                        (pos.y + (bbox.size().y / 2)) / bbox.size().y,
+                        (pos.z + (bbox.size().z / 2)) / bbox.size().z
+                        );
+                vec3f localCoordinates = coord01 * vec3(vox-1);
+
+                // Compute the 3D index of the cell containing the hit point.
+                vec3i cellIndex = vec3i(localCoordinates) >> 4;//>> CELL_WIDTH_BITCOUNT;
+
+                // If we visited this cell before then it must not be empty.
+                if (cellIndex == hit_cell)
+                {
+                    integrate(ray, t, t + delta, result.color);
+                    t += delta;
+                    continue;
+                }
+
+                // Track the hit cell.
+                hit_cell = cellIndex;
+
+                // Get the volumetric value range of the cell.
+                vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
+
+                // Get the maximum opacity in the volumetric value range.
+                int tf_width = 256;
+                int rx = floor(cellRange.x * 255.0f);
+                int ry = ceil(cellRange.y * 255.0f);
+                float maximumOpacity = max_opacities[ry * tf_width + rx];
+
+                // Return the hit point if the grid cell is not fully transparent.
+                if (maximumOpacity > 0.0f)
+                {
+                    integrate(ray, t, t + delta, result.color);
+                    t += delta;
+                    continue;
+                }
+
+                // Exit bound of the grid cell in world coordinates.
+                vec3f farBound(cellIndex + nextCellIndex << 4/*<< CELL_WIDTH_BITCOUNT*/);
+                farBound /= vec3(vox-1);
+                farBound *= bbox.size();
+                farBound -= vec3(bbox.size().x/2, bbox.size().y/2, bbox.size().z/2);
+
+                // Identify the distance along the ray to the exit points on the cell.
+                const vec3f maximum = ray_rdir * (farBound - ray.ori);
+                const float exitDist = min(min(tmax, maximum.x),
+                                           min(maximum.y, maximum.z));
+
+                const float dist = ceil(abs(exitDist - t) / delta) * delta;
+
+                // Advance the ray so the next hit point will be outside the empty cell.
+                t += dist;
+            }
+        }
+
+        return result;
+    }
+
+    template <typename R>
+    VSNRAY_FUNC
     result_record<typename R::scalar_type> ray_marching_traverse_full(R ray) const
     {
         using S = typename R::scalar_type;
@@ -402,6 +500,9 @@ next:
       case Full:
         return ray_marching_traverse_full(ray);
 
+      case Hybrid:
+        return ray_marching_traverse_hybrid(ray);
+
       default:
       case Naive:
         return ray_marching_naive(ray);
@@ -429,7 +530,7 @@ next:
 
     enum TraversalMode
     {
-      Grid, Leaves, Full, Naive
+      Grid, Leaves, Full, Naive, Hybrid
     };
 
     TraversalMode mode;
@@ -486,6 +587,7 @@ struct vvSimpleCaster::Impl
 //      , tree(virvo::SkipTree::LBVH)
         , tree(virvo::SkipTree::SVTKdTree)
 //      , tree(virvo::SkipTree::SVTKdTreeCU)
+        , grid(virvo::SkipTree::Grid)
     {
     }
 
@@ -498,6 +600,7 @@ struct vvSimpleCaster::Impl
     cuda_texture<vec4, 1> transfunc;
 
     virvo::SkipTree tree;
+    virvo::SkipTree grid; // hybrid grids: also have a grid
 
     virvo::SkipTreeNode* device_tree = nullptr;
 
@@ -592,12 +695,22 @@ void vvSimpleCaster::renderVolumeGL()
              || impl_->tree.getTechnique() == virvo::SkipTree::SVTKdTreeCU;
     bool leaves = false;
     bool grid = impl_->tree.getTechnique() == virvo::SkipTree::Grid;
+    bool hybrid = false;
     // Naive mode:
     if (0)
     {
         full = false;
         leaves = false;
         grid = false;
+        hybrid = false;
+    }
+    // Hybrid mode:
+    if (1)
+    {
+        full = false;
+        leaves = false;
+        grid = false;
+        hybrid = true;
     }
 
     Kernel kernel;
@@ -616,7 +729,7 @@ void vvSimpleCaster::renderVolumeGL()
 
     std::vector<aabb> boxes;
 
-    if (leaves)
+    if (leaves || hybrid)
     {
         virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
         bool frontToBack = true;
@@ -688,6 +801,43 @@ void vvSimpleCaster::renderVolumeGL()
 
         impl_->sched.frame(kernel, sparams);
     }
+    else if (hybrid)
+    {
+        kernel.mode = Kernel::Hybrid;
+        auto host_grid = impl_->grid.getGrid();
+
+        size_t len = host_grid.grid_dims.x * host_grid.grid_dims.y * host_grid.grid_dims.z;
+        impl_->d_cell_ranges.resize(len);
+
+        thrust::copy(host_grid.cell_ranges,
+                     host_grid.cell_ranges + len,
+                     impl_->d_cell_ranges.begin());
+        kernel.cell_ranges = reinterpret_cast<vec2 const*>(
+                    thrust::raw_pointer_cast(impl_->d_cell_ranges.data()));
+
+        kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
+
+        int tf_width = 256;
+        impl_->d_max_opacities.resize(tf_width*tf_width);
+
+        thrust::copy(host_grid.max_opacities,
+                     host_grid.max_opacities + tf_width*tf_width,
+                     impl_->d_max_opacities.begin());
+        kernel.max_opacities = reinterpret_cast<float const*>(
+                    thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
+
+        // Tree leaf nodes
+        kernel.leaves = thrust::raw_pointer_cast(impl_->d_leaves.data());
+        kernel.num_leaves = impl_->d_leaves.size();
+
+        auto sparams = make_sched_params(
+            view_matrix,
+            proj_matrix,
+            virvo_rt
+            );
+
+        impl_->sched.frame(kernel, sparams);
+    }
     else
     {
         kernel.mode = Kernel::Naive;
@@ -751,6 +901,13 @@ void vvSimpleCaster::updateTransferFunction()
     tf_ref.set_filter_mode(Nearest);
 
     impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+
+    bool hybrid = true;
+    if (hybrid)
+    {
+        impl_->grid.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+    }
+
     int numNodes = 0;
     impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
@@ -783,6 +940,10 @@ void vvSimpleCaster::updateVolumeData()
     vvRenderer::updateVolumeData();
 
     impl_->tree.updateVolume(*vd);
+
+    bool hybrid = true;
+    if (hybrid)
+        impl_->grid.updateVolume(*vd);
 
 
     // Init GPU textures
