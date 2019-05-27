@@ -313,7 +313,7 @@ struct Kernel
 
         result_record<S> result;
         result.color = C(0.0);
-        //result.color = C(temperature_to_rgb(0.f), 1.f);
+        result.color = C(temperature_to_rgb(0.f), 1.f);
 
         // traverse tree
         detail::stack<32> st;
@@ -334,6 +334,7 @@ struct Kernel
         };
 
 next:
+        int num_steps = 0; // number of integration steps
         int num_boxes = 0;
         while (!st.empty())
         {
@@ -376,8 +377,10 @@ next:
 
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
+            num_steps += (hr.tfar - hr.tnear) / delta;
             integrate(ray, hr.tnear, hr.tfar, result.color);
             //result.color = C(temperature_to_rgb(num_boxes / 120.f), 1.f);
+            result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
             t = max(t, hr.tfar - delta);
         }
 
@@ -481,8 +484,8 @@ struct vvSimpleCaster::Impl
         : sched(8, 8)
 //      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-//      , tree(virvo::SkipTree::SVTKdTree)
-        , tree(virvo::SkipTree::SVTKdTreeCU)
+        , tree(virvo::SkipTree::SVTKdTree)
+//      , tree(virvo::SkipTree::SVTKdTreeCU)
     {
     }
 
@@ -752,7 +755,7 @@ void vvSimpleCaster::updateTransferFunction()
     impl_->device_tree = impl_->tree.getNodesDevPtr(numNodes);
 //  std::cout << numNodes << '\n';
     }
-    {
+    /*{
     impl_->tree.updateTransfunc(nullptr, 1, 1, 1, virvo::PF_RGBA32F);
     tex_filter_mode filter_mode = getParameter(VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
     virvo::PixelFormat texture_format = virvo::PF_R8;
@@ -772,7 +775,7 @@ void vvSimpleCaster::updateTransferFunction()
         impl_->volumes[f].set_address_mode(Clamp);
         impl_->volumes[f].set_filter_mode(filter_mode);
     }
-    }
+    }*/
 }
 
 void vvSimpleCaster::updateVolumeData()
