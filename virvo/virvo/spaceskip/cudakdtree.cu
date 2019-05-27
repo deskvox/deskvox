@@ -652,7 +652,7 @@ void CudaKdTree::Impl::node_splitting(int index)
 //#ifdef SHALLOW
   if (vol < root_vol / 10)
 //#elif defined(DEEP)
-//  if (vol < 8*8*8)
+  //if (vol < 8*8*8)
 //#endif
     return;
 
@@ -668,7 +668,7 @@ void CudaKdTree::Impl::node_splitting(int index)
   else if (len.z > len.x && len.z > len.y)
     axis = 2;
 
-  static const int NumBins = BINS;
+  static const int NumBins = 4;//BINS;
 
   // Align on 8-voxel raster
   int dl = max(len[axis] / NumBins, 8);

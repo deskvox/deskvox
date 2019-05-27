@@ -313,6 +313,7 @@ struct Kernel
 
         result_record<S> result;
         result.color = C(0.0);
+        //result.color = C(temperature_to_rgb(0.f), 1.f);
 
         // traverse tree
         detail::stack<32> st;
@@ -333,6 +334,7 @@ struct Kernel
         };
 
 next:
+        int num_boxes = 0;
         while (!st.empty())
         {
             auto node = nodes[st.pop()];
@@ -347,6 +349,7 @@ next:
 
                 auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
                 auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
+                num_boxes += 2;
 
                 bool b1 = hr1.hit && hr1.tfar > t;
                 bool b2 = hr2.hit && hr2.tfar > t;
@@ -374,6 +377,7 @@ next:
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
             integrate(ray, hr.tnear, hr.tfar, result.color);
+            //result.color = C(temperature_to_rgb(num_boxes / 120.f), 1.f);
             t = max(t, hr.tfar - delta);
         }
 
@@ -693,7 +697,7 @@ void vvSimpleCaster::renderVolumeGL()
         impl_->sched.frame(kernel, sparams);
     }
 
-    if (_boundaries)
+    if (0)//_boundaries)
     {
         glEnable(GL_DEPTH_TEST);
         glDepthRange(0,0.95);
