@@ -315,95 +315,143 @@ struct Kernel
         result.color = C(0.0);
         //result.color = C(temperature_to_rgb(0.f), 1.f);
 
-        vec3 inv_dir = 1.0f / ray.dir;
+        // traverse tree
+        detail::stack<32> st;
+        st.push(0);
 
-        int num_steps = 0;
-        for (int i = 0; i < num_leaves; ++i)
+        auto inv_dir = 1.0f / ray.dir;
+
+        float t = 0.0f;
+
+        auto get_bounds = [](virvo::SkipTreeNode& n)
         {
-            auto hit_rec = intersect(ray, leaves[i], inv_dir);
-            result.hit |= hit_rec.hit;
+            return aabb(vec3(n.min_corner), vec3(n.max_corner));
+        };
 
-            if (!hit_rec.hit)
-                continue;
+        auto get_child = [](virvo::SkipTreeNode& n, int index)
+        {
+            return index == 0 ? n.left : n.right;
+        };
 
-            auto t = max(S(0.0f), hit_rec.tnear);
-            auto tmax = hit_rec.tfar;
+next:
+        while (!st.empty())
+        {
+            auto node = nodes[st.pop()];
 
-            // cf. GridAccelerator_stepRay
-
-            // Tentatively advance the ray.
-            t += delta;
-
-            const vec3f ray_rdir = 1.0f / ray.dir;
-            // sign of direction determines near/far index
-            const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<unsigned*>(&ray.dir.x) >> 31),
-                                              1 - (*reinterpret_cast<unsigned*>(&ray.dir.y) >> 31),
-                                              1 - (*reinterpret_cast<unsigned*>(&ray.dir.z) >> 31));
-
-            vec3i hit_cell;
-            while (t < tmax)
+            while (node.left != -1 && node.right != -1)
             {
-                // Compute the hit point in the local coordinate system.
-                vec3f pos = ray.ori + t * ray.dir;
-                vector<3, S> coord01(
-                        (pos.x + (bbox.size().x / 2)) / bbox.size().x,
-                        (pos.y + (bbox.size().y / 2)) / bbox.size().y,
-                        (pos.z + (bbox.size().z / 2)) / bbox.size().z
-                        );
-                vec3f localCoordinates = coord01 * vec3(vox-1);
+#if 1 // left and right are stored next to each other in memory
+                auto children = &nodes[node.left];
+#else // e.g. LBVH
+                virvo::SkipTreeNode children[2] = { nodes[node.left], nodes[node.right] };
+#endif
 
-                // Compute the 3D index of the cell containing the hit point.
-                vec3i cellIndex = vec3i(localCoordinates) >> 4;//>> CELL_WIDTH_BITCOUNT;
+                auto hr1 = intersect(ray, get_bounds(children[0]), inv_dir);
+                auto hr2 = intersect(ray, get_bounds(children[1]), inv_dir);
 
-                // If we visited this cell before then it must not be empty.
-                if (cellIndex == hit_cell)
+                bool b1 = hr1.hit && hr1.tfar > t;
+                bool b2 = hr2.hit && hr2.tfar > t;
+
+                if (b1 && b2)
                 {
-                    num_steps += 1;
-                    integrate(ray, t, t + delta, result.color);
-                    t += delta;
-                    continue;
+                    unsigned near_addr = hr1.tnear < hr2.tnear ? 0 : 1;
+                    st.push(get_child(node, !near_addr));
+                    node = children[near_addr];
                 }
-
-                // Track the hit cell.
-                hit_cell = cellIndex;
-
-                // Get the volumetric value range of the cell.
-                vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
-
-                // Get the maximum opacity in the volumetric value range.
-                int tf_width = 256;
-                int rx = floor(cellRange.x * 255.0f);
-                int ry = ceil(cellRange.y * 255.0f);
-                float maximumOpacity = max_opacities[ry * tf_width + rx];
-
-                // Return the hit point if the grid cell is not fully transparent.
-                if (maximumOpacity > 0.0f)
+                else if (b1)
                 {
-                    num_steps += 1;
-                    integrate(ray, t, t + delta, result.color);
-                    t += delta;
-                    continue;
+                    node = children[0];
                 }
+                else if (b2)
+                {
+                    node = children[1];
+                }
+                else
+                {
+                    goto next;
+                }
+            }
 
-                // Exit bound of the grid cell in world coordinates.
-                vec3f farBound(cellIndex + nextCellIndex << 4/*<< CELL_WIDTH_BITCOUNT*/);
-                farBound /= vec3(vox-1);
-                farBound *= bbox.size();
-                farBound -= vec3(bbox.size().x/2, bbox.size().y/2, bbox.size().z/2);
+            // traverse leaf
+            auto hr = intersect(ray, get_bounds(node), inv_dir);
+            //num_steps += (hr.tfar - hr.tnear) / delta;
+            {
+                auto t = max(S(0.0f), hr.tnear);
+                auto tmax = hr.tfar;
 
-                // Identify the distance along the ray to the exit points on the cell.
-                const vec3f maximum = ray_rdir * (farBound - ray.ori);
-                const float exitDist = min(min(tmax, maximum.x),
-                                           min(maximum.y, maximum.z));
+                // cf. GridAccelerator_stepRay
 
-                const float dist = ceil(abs(exitDist - t) / delta) * delta;
+                // Tentatively advance the ray.
+                t += delta;
 
-                // Advance the ray so the next hit point will be outside the empty cell.
-                t += dist;
+                const vec3f ray_rdir = 1.0f / ray.dir;
+                // sign of direction determines near/far index
+                const vec3i nextCellIndex = vec3i(1 - (*reinterpret_cast<unsigned*>(&ray.dir.x) >> 31),
+                                                  1 - (*reinterpret_cast<unsigned*>(&ray.dir.y) >> 31),
+                                                  1 - (*reinterpret_cast<unsigned*>(&ray.dir.z) >> 31));
+
+                vec3i hit_cell;
+                while (t < tmax)
+                {
+                    // Compute the hit point in the local coordinate system.
+                    vec3f pos = ray.ori + t * ray.dir;
+                    vector<3, S> coord01(
+                            (pos.x + (bbox.size().x / 2)) / bbox.size().x,
+                            (pos.y + (bbox.size().y / 2)) / bbox.size().y,
+                            (pos.z + (bbox.size().z / 2)) / bbox.size().z
+                            );
+                    vec3f localCoordinates = coord01 * vec3(vox-1);
+
+                    // Compute the 3D index of the cell containing the hit point.
+                    vec3i cellIndex = vec3i(localCoordinates) >> 4;//>> CELL_WIDTH_BITCOUNT;
+
+                    // If we visited this cell before then it must not be empty.
+                    if (cellIndex == hit_cell)
+                    {
+                        integrate(ray, t, t + delta, result.color);
+                        t += delta;
+                        continue;
+                    }
+
+                    // Track the hit cell.
+                    hit_cell = cellIndex;
+
+                    // Get the volumetric value range of the cell.
+                    vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
+
+                    // Get the maximum opacity in the volumetric value range.
+                    int tf_width = 256;
+                    int rx = floor(cellRange.x * 255.0f);
+                    int ry = ceil(cellRange.y * 255.0f);
+                    float maximumOpacity = max_opacities[ry * tf_width + rx];
+
+                    // Return the hit point if the grid cell is not fully transparent.
+                    if (maximumOpacity > 0.0f)
+                    {
+                        integrate(ray, t, t + delta, result.color);
+                        t += delta;
+                        continue;
+                    }
+
+                    // Exit bound of the grid cell in world coordinates.
+                    vec3f farBound(cellIndex + nextCellIndex << 4/*<< CELL_WIDTH_BITCOUNT*/);
+                    farBound /= vec3(vox-1);
+                    farBound *= bbox.size();
+                    farBound -= vec3(bbox.size().x/2, bbox.size().y/2, bbox.size().z/2);
+
+                    // Identify the distance along the ray to the exit points on the cell.
+                    const vec3f maximum = ray_rdir * (farBound - ray.ori);
+                    const float exitDist = min(min(tmax, maximum.x),
+                                               min(maximum.y, maximum.z));
+
+                    const float dist = ceil(abs(exitDist - t) / delta) * delta;
+
+                    // Advance the ray so the next hit point will be outside the empty cell.
+                    t += dist;
+                }
             }
         }
 
-        //result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
         return result;
     }
 
@@ -730,12 +778,12 @@ void vvSimpleCaster::renderVolumeGL()
     kernel.local_shading = getParameter(VV_LIGHTING);
     kernel.light         = light;
 
-    if (full)
+    if (full || hybrid)
         kernel.nodes         = impl_->device_tree;
 
     std::vector<aabb> boxes;
 
-    if (leaves || hybrid)
+    if (leaves)
     {
         virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
         bool frontToBack = true;
