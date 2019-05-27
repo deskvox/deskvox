@@ -313,7 +313,7 @@ struct Kernel
 
         result_record<S> result;
         result.color = C(0.0);
-        result.color = C(temperature_to_rgb(0.f), 1.f);
+        //result.color = C(temperature_to_rgb(0.f), 1.f);
 
         vec3 inv_dir = 1.0f / ray.dir;
 
@@ -403,7 +403,7 @@ struct Kernel
             }
         }
 
-        result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
+        //result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
         return result;
     }
 
@@ -416,7 +416,7 @@ struct Kernel
 
         result_record<S> result;
         result.color = C(0.0);
-        result.color = C(temperature_to_rgb(0.f), 1.f);
+        //result.color = C(temperature_to_rgb(0.f), 1.f);
 
         // traverse tree
         detail::stack<32> st;
@@ -480,12 +480,13 @@ next:
 
             // traverse leaf
             auto hr = intersect(ray, get_bounds(node), inv_dir);
-            num_steps += (hr.tfar - hr.tnear) / delta;
+            //num_steps += (hr.tfar - hr.tnear) / delta;
             integrate(ray, hr.tnear, hr.tfar, result.color);
-            //result.color = C(temperature_to_rgb(num_boxes / 120.f), 1.f);
-            result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
             t = max(t, hr.tfar - delta);
         }
+
+        //result.color = C(temperature_to_rgb(num_boxes / 120.f), 1.f);
+        //result.color = C(temperature_to_rgb(num_steps / 512.f), 1.f);
 
         return result;
     }
@@ -748,7 +749,7 @@ void vvSimpleCaster::renderVolumeGL()
         impl_->d_leaves = thrust::device_vector<aabb>(boxes);
     }
 
-    //virvo::CudaTimer t;
+    virvo::CudaTimer t;
     if (full)
     {
         kernel.mode = Kernel::Full;
@@ -883,8 +884,8 @@ void vvSimpleCaster::renderVolumeGL()
             glEnable(GL_LIGHTING);
     }
 
-    //std::cout << std::fixed << std::setprecision(8);
-    //std::cout << t.elapsed() << std::endl;
+    std::cout << std::fixed << std::setprecision(8);
+    std::cout << t.elapsed() << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()
