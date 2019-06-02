@@ -906,7 +906,7 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
   static std::vector<double> values;
   if (0)//cnt == 0) // Occupancy stats
   {++cnt;std::cout << std::endl;
-  // Number of non-empty voxels (overall)
+  // Number of non-empty voxels (overall), number of 26-connected voxels
   thrust::host_vector<uint8_t> host_voxels(size_t(impl_->vox[0])*impl_->vox[1]*impl_->vox[2]);
   cudaMemcpy(host_voxels.data(), impl_->svt.voxels_, sizeof(uint8_t) * host_voxels.size(), cudaMemcpyDeviceToHost);
 
@@ -918,8 +918,47 @@ void CudaKdTree::updateTransfunc(const visionaray::texture_ref<visionaray::vec4,
     if (tex1D(transfunc, fval).w >= 0.0001)
       ++non_empty;
   }
+  size_t empty_26 = 0;
+  for (size_t z=1; z<impl_->vox[2]-1; ++z)
+  {
+    for (size_t y=1; y<impl_->vox[1]-1; ++y)
+    {
+      for (size_t x=1; x<impl_->vox[0]-1; ++x)
+      {
+        size_t index = z*impl_->vox[2]*impl_->vox[1] + y*impl_->vox[1] + x;
+
+        float fval(host_voxels[index]);
+
+        
+        if (tex1D(transfunc, fval).w < 0.0001)
+        {
+          bool all26empty = true;
+          for (size_t zz=z-1; zz<=z+1; ++zz)
+          {
+            for (size_t yy=y-1; yy<=y+1; ++yy)
+            {
+              for (size_t xx=x-1; xx<=x+1; ++xx)
+              {
+                size_t index2 = zz*impl_->vox[2]*impl_->vox[1] + yy*impl_->vox[1] + xx;
+                if (tex1D(transfunc, fval).w >= 0.0001)
+                {
+                  all26empty = false;
+                  goto out;
+                }
+              }
+            }
+          }
+          out:
+          if (all26empty) ++empty_26;
+        }
+      }
+    }
+  }
   std::cout << non_empty << " non-empty voxels of " <<size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]<< '\n';
   std::cout << "Occupancy: " << double(non_empty) / double(size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]) << '\n';
+
+  std::cout << "# 26-connected empty voxels: " << empty_26 << '\n';
+  std::cout << "# 26-connected empty voxels: (relative)" << empty_26 / double(size_t(impl_->vox[0]) * impl_->vox[1] * impl_->vox[2]) << '\n';
 
   // Number of voxels bound in leaves
   visionaray::vec3 eye(1,1,1);
