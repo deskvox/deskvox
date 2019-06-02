@@ -116,6 +116,30 @@ void GridAccelerator::updateTransfunc(GridAccelerator::TransfuncTex transfunc)
   visionaray::vec4 const* arr = transfunc.data();
   int size = transfunc.size();
 
+#if 1
+  delete[] maxOpacities;
+  maxOpacities = new float[size-1];
+
+  for (int i = 0; i < size/2; ++i)
+  {
+    maxOpacities[i] = std::max(arr[2 * i].w, arr[2*i+1].w);
+  }
+
+  size_t levelBegin = 0;
+  size_t num_in = size/2;
+  size_t num_nodes = size/2;
+  while (num_in >= 2)
+  {
+    #pragma omp parallel for
+    for( size_t i = 0; i < num_in/2; i++)
+    {
+        maxOpacities[num_nodes + i] = std::max(maxOpacities[levelBegin + 2 * i], maxOpacities[levelBegin + 2 * i+1]);
+    }
+    levelBegin += num_in;
+    num_in /= 2;
+    num_nodes += num_in;
+  }
+#else
   delete[] maxOpacities;
   maxOpacities = new float[size*size];
 
@@ -131,6 +155,7 @@ void GridAccelerator::updateTransfunc(GridAccelerator::TransfuncTex transfunc)
       }
     }
   }
+#endif
 }
 
 } // virvo

@@ -246,7 +246,31 @@ struct Kernel
             int tf_width = 256;
             int rx = floor(cellRange.x * 255.0f);
             int ry = ceil(cellRange.y * 255.0f);
+#if 1 // range tree
+            float maximumOpacity = 0;
+            {
+                int lo = rx;
+                int hi = ry;
+                if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[lo]);
+                if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[hi]);
+                lo = (lo+1)>>1;
+                hi = (hi-1)>>1;
+
+                int off = 0;
+                size_t num_nodes = tf_width/2;
+                while(lo <= hi)
+                {
+                    if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[off+lo]);
+                    if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[off+hi]);
+                    lo = (lo+1)>>1;
+                    hi = (hi-1)>>1;
+                    off += num_nodes;
+                    num_nodes /= 2;
+                }
+            }
+#else
             float maximumOpacity = max_opacities[ry * tf_width + rx];
+#endif
 
             // Return the hit point if the grid cell is not fully transparent.
             if (maximumOpacity > 0.0f)
@@ -374,7 +398,31 @@ struct Kernel
                 int tf_width = 256;
                 int rx = floor(cellRange.x * 255.0f);
                 int ry = ceil(cellRange.y * 255.0f);
+#if 1 // range tree
+                float maximumOpacity = 0;
+                {
+                    int lo = rx;
+                    int hi = ry;
+                    if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[lo]);
+                    if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[hi]);
+                    lo = (lo+1)>>1;
+                    hi = (hi-1)>>1;
+
+                    int off = 0;
+                    size_t num_nodes = tf_width/2;
+                    while(lo <= hi)
+                    {
+                        if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[off+lo]);
+                        if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[off+hi]);
+                        lo = (lo+1)>>1;
+                        hi = (hi-1)>>1;
+                        off += num_nodes;
+                        num_nodes /= 2;
+                    }
+                }
+#else
                 float maximumOpacity = max_opacities[ry * tf_width + rx];
+#endif
 
                 // Return the hit point if the grid cell is not fully transparent.
                 if (maximumOpacity > 0.0f)
@@ -780,11 +828,19 @@ void vvSimpleCaster::renderVolumeGL()
         int tf_width = 256;
         impl_->d_max_opacities.resize(tf_width*tf_width);
 
+#if 1 // range tree
+        thrust::copy(host_grid.max_opacities,
+                     host_grid.max_opacities + tf_width-1,
+                     impl_->d_max_opacities.begin());
+        kernel.max_opacities = reinterpret_cast<float const*>(
+                    thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
+#else
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width*tf_width,
                      impl_->d_max_opacities.begin());
         kernel.max_opacities = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
+#endif
 
         auto sparams = make_sched_params(
             view_matrix,
@@ -826,9 +882,15 @@ void vvSimpleCaster::renderVolumeGL()
         int tf_width = 256;
         impl_->d_max_opacities.resize(tf_width*tf_width);
 
+#if 1 // range tree
+        thrust::copy(host_grid.max_opacities,
+                     host_grid.max_opacities + tf_width-1,
+                     impl_->d_max_opacities.begin());
+#else
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width*tf_width,
                      impl_->d_max_opacities.begin());
+#endif
         kernel.max_opacities = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
 
