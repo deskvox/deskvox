@@ -41,6 +41,8 @@
 
 using namespace visionaray;
 
+#define TF_WIDTH 2048
+
 
 //-------------------------------------------------------------------------------------------------
 //
@@ -243,10 +245,10 @@ struct Kernel
             vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
 
             // Get the maximum opacity in the volumetric value range.
-            int tf_width = 256;
+            int tf_width = TF_WIDTH;
             int rx = floor(cellRange.x * 255.0f);
             int ry = ceil(cellRange.y * 255.0f);
-#if 1 // range tree
+#ifdef RANGE_TREE
             float maximumOpacity = 0;
             {
                 int lo = rx;
@@ -395,10 +397,10 @@ struct Kernel
                 vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
 
                 // Get the maximum opacity in the volumetric value range.
-                int tf_width = 256;
+                int tf_width = TF_WIDTH;
                 int rx = floor(cellRange.x * 255.0f);
                 int ry = ceil(cellRange.y * 255.0f);
-#if 1 // range tree
+#ifdef RANGE_TREE
                 float maximumOpacity = 0;
                 {
                     int lo = rx;
@@ -825,10 +827,10 @@ void vvSimpleCaster::renderVolumeGL()
 
         kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
 
-        int tf_width = 256;
+        int tf_width = TF_WIDTH;
         impl_->d_max_opacities.resize(tf_width*tf_width);
 
-#if 1 // range tree
+#ifdef RANGE_TREE
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width-1,
                      impl_->d_max_opacities.begin());
@@ -879,10 +881,10 @@ void vvSimpleCaster::renderVolumeGL()
 
         kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
 
-        int tf_width = 256;
+        int tf_width = TF_WIDTH;
         impl_->d_max_opacities.resize(tf_width*tf_width);
 
-#if 1 // range tree
+#ifdef RANGE_TREE
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width-1,
                      impl_->d_max_opacities.begin());
@@ -947,7 +949,7 @@ void vvSimpleCaster::renderVolumeGL()
     }
 
     std::cout << std::fixed << std::setprecision(8);
-    std::cout << t.elapsed() << std::endl;
+    //std::cout << t.elapsed() << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()
@@ -955,8 +957,8 @@ void vvSimpleCaster::updateTransferFunction()
     //for (int i = 0; i < 5; ++i)
     //for (int i = 0; i < 1100; ++i)
     {
-    std::vector<vec4> tf(256 * 1 * 1);
-    vd->computeTFTexture(0, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
+    std::vector<vec4> tf(TF_WIDTH * 1 * 1);
+    vd->computeTFTexture(0, TF_WIDTH, 1, 1, reinterpret_cast<float*>(tf.data()));
 
     impl_->transfunc = cuda_texture<vec4, 1>(tf.size());
     impl_->transfunc.reset(tf.data());
@@ -968,12 +970,12 @@ void vvSimpleCaster::updateTransferFunction()
     tf_ref.set_address_mode(Clamp);
     tf_ref.set_filter_mode(Nearest);
 
-    impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+    impl_->tree.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), TF_WIDTH, 1, 1, virvo::PF_RGBA32F);
 
     bool hybrid = true;
     if (hybrid)
     {
-        impl_->grid.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), 256, 1, 1, virvo::PF_RGBA32F);
+        impl_->grid.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), TF_WIDTH, 1, 1, virvo::PF_RGBA32F);
     }
 
     int numNodes = 0;

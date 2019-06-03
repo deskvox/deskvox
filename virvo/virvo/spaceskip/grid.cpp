@@ -116,7 +116,7 @@ void GridAccelerator::updateTransfunc(GridAccelerator::TransfuncTex transfunc)
   visionaray::vec4 const* arr = transfunc.data();
   int size = transfunc.size();
 
-#if 1
+#ifdef RANGE_TREE
   delete[] maxOpacities;
   maxOpacities = new float[size-1];
 

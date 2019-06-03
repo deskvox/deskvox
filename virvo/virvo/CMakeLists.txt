@@ -63,6 +63,10 @@ else()
     add_definitions(-DSHALLOW)
 endif()
 
+if(RANGE_TREE)
+    add_definitions(-DRANGE_TREE)
+endif()
+
 if(MSVC)
     # Disable Boost autolinking when compiling w/ msvc
     add_definitions(-DBOOST_ALL_NO_LIB)

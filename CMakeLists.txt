@@ -102,6 +102,7 @@ set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule
 
 set(NUM_BINS 32 CACHE STRING "...")
 option(DEEP_TREE "For tests" ON)
+option(RANGE_TREE "For grid classification" ON)
 
 option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
 
