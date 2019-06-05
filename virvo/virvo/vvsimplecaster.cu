@@ -41,7 +41,7 @@
 
 using namespace visionaray;
 
-#define TF_WIDTH 2048
+#define TF_WIDTH 256
 
 
 //-------------------------------------------------------------------------------------------------
@@ -201,6 +201,20 @@ struct Kernel
         if (!hit_rec.hit)
             return result;
 
+#if defined(RANGE_TREE) && __CUDA_ARCH__ > 0
+        __shared__ float max_opacities[TF_WIDTH];
+        int index = (threadIdx.y * blockDim.x + threadIdx.x) * 4; // 8x8 blocks..
+        if (index < TF_WIDTH) {
+            max_opacities[index] = max_opacities_[index];
+            max_opacities[index+1] = max_opacities_[index+1];
+            max_opacities[index+2] = max_opacities_[index+2];
+            max_opacities[index+3] = max_opacities_[index+3];
+        }
+        __syncthreads();
+#else
+        float const* max_opacities = max_opacities_;
+#endif
+
         auto t = max(S(0.0f), hit_rec.tnear);
         auto tmax = hit_rec.tfar;
 
@@ -342,6 +356,8 @@ struct Kernel
         //result.color = C(temperature_to_rgb(0.f), 1.f);
 
         vec3 inv_dir = 1.0f / ray.dir;
+
+        float const* max_opacities = max_opacities_;
 
         int num_steps = 0;
         for (int i = 0; i < num_leaves; ++i)
@@ -582,7 +598,7 @@ next:
     // Grid stuff
     vec2 const* cell_ranges;
     vec3i grid_dims;
-    float const* max_opacities; // TF_WIDTH * TF_WIDTH
+    float const* max_opacities_; // TF_WIDTH * TF_WIDTH
 
     enum TraversalMode
     {
@@ -639,9 +655,9 @@ struct vvSimpleCaster::Impl
 {
     Impl()
         : sched(8, 8)
-//      , tree(virvo::SkipTree::Grid)
+      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-        , tree(virvo::SkipTree::SVTKdTree)
+//        , tree(virvo::SkipTree::SVTKdTree)
 //      , tree(virvo::SkipTree::SVTKdTreeCU)
         , grid(virvo::SkipTree::Grid)
     {
@@ -761,7 +777,7 @@ void vvSimpleCaster::renderVolumeGL()
         hybrid = false;
     }
     // Hybrid mode:
-    if (1)
+    if (0)
     {
         full = false;
         leaves = false;
@@ -834,13 +850,13 @@ void vvSimpleCaster::renderVolumeGL()
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width-1,
                      impl_->d_max_opacities.begin());
-        kernel.max_opacities = reinterpret_cast<float const*>(
+        kernel.max_opacities_ = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
 #else
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width*tf_width,
                      impl_->d_max_opacities.begin());
-        kernel.max_opacities = reinterpret_cast<float const*>(
+        kernel.max_opacities_ = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
 #endif
 
@@ -893,7 +909,7 @@ void vvSimpleCaster::renderVolumeGL()
                      host_grid.max_opacities + tf_width*tf_width,
                      impl_->d_max_opacities.begin());
 #endif
-        kernel.max_opacities = reinterpret_cast<float const*>(
+        kernel.max_opacities_ = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
 
         // Tree leaf nodes
