@@ -143,7 +143,7 @@ void GridAccelerator::updateTransfunc(GridAccelerator::TransfuncTex transfunc)
   delete[] maxOpacities;
   maxOpacities = new float[size*size];
 
-  // Well, size is just 256 - so what..
+  #pragma omp parallel for collapse(2)
   for (int i = 0; i < size; ++i)
   {
     for (int j = 0; j < size; ++j)
