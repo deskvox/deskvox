@@ -266,7 +266,7 @@ struct Kernel
             float maximumOpacity = 0;
             {
                 int lo = rx;
-                int hi = ry;
+                int hi = ry-1;
                 if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[lo]);
                 if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[hi]);
                 lo = (lo+1)>>1;
@@ -420,7 +420,7 @@ struct Kernel
                 float maximumOpacity = 0;
                 {
                     int lo = rx;
-                    int hi = ry;
+                    int hi = ry-1;
                     if ((lo & 1) == 1) maximumOpacity = max(maximumOpacity, max_opacities[lo]);
                     if ((hi & 1) == 0) maximumOpacity = max(maximumOpacity, max_opacities[hi]);
                     lo = (lo+1)>>1;
