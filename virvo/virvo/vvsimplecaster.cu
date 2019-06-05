@@ -201,7 +201,7 @@ struct Kernel
         if (!hit_rec.hit)
             return result;
 
-#if defined(RANGE_TREE) && __CUDA_ARCH__ > 0
+#if 0//defined(RANGE_TREE) && __CUDA_ARCH__ > 0
         __shared__ float max_opacities[TF_WIDTH];
         int index = (threadIdx.y * blockDim.x + threadIdx.x) * 4; // 8x8 blocks..
         if (index < TF_WIDTH) {
