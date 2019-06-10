@@ -21,6 +21,9 @@
 #ifndef VV_SPACESKIP_SVT_H
 #define VV_SPACESKIP_SVT_H
 
+// Produce a grid with cell size 16^3 when building up SVTs
+#define WITH_GRID 1
+
 #include <thread>
 #include <vector>
 
@@ -354,17 +357,26 @@ struct PartialSVT
 
   uint64_t get_count(visionaray::aabbi bounds) const;
 
+  uint8_t const* get_empty() const;
+  visionaray::vec3i get_empty_dims() const;
+
   visionaray::vec3i bricksize = visionaray::vec3i(32, 32, 32);
 
   visionaray::vec3i num_svts;
   std::vector<svt_t> svts;
 
   visionaray::thread_pool pool;
+
+  std::vector<uint8_t> empty_;
+
+  visionaray::aabbi bbox_;
 };
 
 inline void PartialSVT::reset(vvVolDesc const& vd, visionaray::aabbi bbox, int channel)
 {
   using namespace visionaray;
+
+  bbox_ = bbox;
 
   num_svts = vec3i(div_up(bbox.max.x, bricksize.x),
                    div_up(bbox.max.y, bricksize.y),
@@ -373,6 +385,14 @@ inline void PartialSVT::reset(vvVolDesc const& vd, visionaray::aabbi bbox, int c
   svts.resize(num_svts.x * num_svts.y * num_svts.z);
 
 
+#if WITH_GRID
+  vec3i cellsize(16, 16, 16);
+  vec3i num_cells(div_up(bbox.max.x, cellsize.x),
+                  div_up(bbox.max.y, cellsize.y),
+                  div_up(bbox.max.z, cellsize.z));
+
+  empty_.resize(cellsize.x * cellsize.y * cellsize.z);
+#endif
   // Fill with volume channel values
 
   int bz = 0;
@@ -405,9 +425,36 @@ inline void PartialSVT::build(Tex transfunc)
 {
   using namespace visionaray;
 
-  parallel_for(pool, range1d<size_t>(0, svts.size()), [this, transfunc](size_t i)
+  vec3i cellsize(16, 16, 16);
+  vec3i num_cells(div_up(bbox_.max.x, cellsize.x),
+                  div_up(bbox_.max.y, cellsize.y),
+                  div_up(bbox_.max.z, cellsize.z));
+
+  parallel_for(pool, range1d<size_t>(0, svts.size()), [this, transfunc, num_cells](size_t i)
   {
     svts[i].build(transfunc);
+
+#if WITH_GRID
+    int bz = i / (num_svts.x * num_svts.y);
+    int by = (i / num_svts.x) % num_svts.y;
+    int bx = i % num_svts.x;//std::cout << bx << ' ' << by << ' ' << bz << '\n';
+
+    for (int z=0; z<2; ++z)
+    {
+      for (int y=0; y<2; ++y)
+      {
+        for (int x=0; x<2; ++x)
+        {
+          aabbi test(vec3i(x*16,y*16,z*16), vec3i(x*16+16,y*16+16,z*16+16));
+          int index = (bz+z)*num_cells.y*num_cells.x + (by+y)*num_cells.x + (bx+x);
+          if (svts[i].get_count(test) > 0)
+            empty_[index] = uint8_t(0);
+          else
+            empty_[index] = uint8_t(1);
+        }
+      }
+    }
+#endif
   });
 }
 
@@ -515,6 +562,21 @@ inline uint64_t PartialSVT::get_count(visionaray::aabbi bounds) const
   }
 
   return count;
+}
+
+inline uint8_t const* PartialSVT::get_empty() const
+{
+  return empty_.data();
+}
+
+inline visionaray::vec3i PartialSVT::get_empty_dims() const
+{
+  using namespace visionaray;
+
+  vec3i cellsize(16, 16, 16);
+  return vec3i(div_up(bbox_.max.x, cellsize.x),
+               div_up(bbox_.max.y, cellsize.y),
+               div_up(bbox_.max.z, cellsize.z));
 }
 
 #endif // VV_SPACESKIP_SVT_H

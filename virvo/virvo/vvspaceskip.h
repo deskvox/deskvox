@@ -21,6 +21,7 @@
 #ifndef VV_SPACESKIP_H
 #define VV_SPACESKIP_H
 
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -47,9 +48,17 @@ namespace virvo
   };
 
 
+  /** Grid just storing if cell is empty or not
+   */
+  struct SimpleGrid
+  {
+    uint8_t const* cells; // empty/not empty
+    vec3i grid_dims;
+  };
+
   /**
    */
-  struct SkipGrid
+  struct MinMaxGrid
   {
     vec2 const* cell_ranges;
     vec3i grid_dims;
@@ -110,9 +119,14 @@ namespace virvo
     VVAPI std::vector<aabb> getSortedBricks(vec3 eye, bool frontToBack = true);
 
     /**
+     * @brief Produce simple grid representation
+     */
+    VVAPI SimpleGrid getSimpleGrid() const;
+
+    /**
      * @brief Produce grid representation (only supported if technique == Grid)
      */
-    VVAPI SkipGrid getGrid() const;
+    VVAPI MinMaxGrid getMinMaxGrid() const;
 
 
     /**

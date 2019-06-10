@@ -43,6 +43,8 @@ using namespace visionaray;
 
 #define TF_WIDTH 256
 
+#define SIMPLE_GRID 1
+
 
 //-------------------------------------------------------------------------------------------------
 //
@@ -201,7 +203,8 @@ struct Kernel
         if (!hit_rec.hit)
             return result;
 
-#if 0//defined(RANGE_TREE) && __CUDA_ARCH__ > 0
+#if !defined(SIMPLE_GRID)
+#if defined(RANGE_TREE) && __CUDA_ARCH__ > 0
         __shared__ float max_opacities[TF_WIDTH];
         int index = (threadIdx.y * blockDim.x + threadIdx.x) * 4; // 8x8 blocks..
         if (index < TF_WIDTH) {
@@ -213,6 +216,7 @@ struct Kernel
         __syncthreads();
 #else
         float const* max_opacities = max_opacities_;
+#endif
 #endif
 
         auto t = max(S(0.0f), hit_rec.tnear);
@@ -255,6 +259,10 @@ struct Kernel
             // Track the hit cell.
             hit_cell = cellIndex;
 
+#ifdef SIMPLE_GRID
+            uint8_t empty = cells_empty[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
+            float maximumOpacity = empty ? .0f : 1.f;
+#else
             // Get the volumetric value range of the cell.
             vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
 
@@ -286,6 +294,7 @@ struct Kernel
             }
 #else
             float maximumOpacity = max_opacities[ry * tf_width + rx];
+#endif
 #endif
 
             // Return the hit point if the grid cell is not fully transparent.
@@ -409,6 +418,11 @@ struct Kernel
                 // Track the hit cell.
                 hit_cell = cellIndex;
 
+#if SIMPLE_GRID
+
+                uint8_t empty = cells_empty[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
+                float maximumOpacity = empty ? .0f : 1.f;
+#else
                 // Get the volumetric value range of the cell.
                 vec2f cellRange = cell_ranges[(grid_dims.z-cellIndex.z-1) * grid_dims.x * grid_dims.y + (grid_dims.y-cellIndex.y-1) * grid_dims.x + cellIndex.x];
 
@@ -440,6 +454,7 @@ struct Kernel
                 }
 #else
                 float maximumOpacity = max_opacities[ry * tf_width + rx];
+#endif
 #endif
 
                 // Return the hit point if the grid cell is not fully transparent.
@@ -600,6 +615,9 @@ next:
     vec3i grid_dims;
     float const* max_opacities_; // TF_WIDTH * TF_WIDTH
 
+    // This is the data for the _simple_ grid!
+    uint8_t const* cells_empty;
+
     enum TraversalMode
     {
       Grid, Leaves, Full, Naive, Hybrid
@@ -655,9 +673,9 @@ struct vvSimpleCaster::Impl
 {
     Impl()
         : sched(8, 8)
-      , tree(virvo::SkipTree::Grid)
+//      , tree(virvo::SkipTree::Grid)
 //      , tree(virvo::SkipTree::LBVH)
-//        , tree(virvo::SkipTree::SVTKdTree)
+        , tree(virvo::SkipTree::SVTKdTree)
 //      , tree(virvo::SkipTree::SVTKdTreeCU)
         , grid(virvo::SkipTree::Grid)
     {
@@ -681,6 +699,9 @@ struct vvSimpleCaster::Impl
     // Ospray Grid Accelerator
     thrust::device_vector<virvo::vec2> d_cell_ranges;
     thrust::device_vector<float> d_max_opacities;
+
+    // Simple grid (preclassified)
+    thrust::device_vector<uint8_t> d_cells_empty;
 };
 
 vvSimpleCaster::vvSimpleCaster(vvVolDesc* vd, vvRenderState renderState)
@@ -777,7 +798,7 @@ void vvSimpleCaster::renderVolumeGL()
         hybrid = false;
     }
     // Hybrid mode:
-    if (0)
+    if (1)
     {
         full = false;
         leaves = false;
@@ -830,7 +851,7 @@ void vvSimpleCaster::renderVolumeGL()
     else if (grid)
     {
         kernel.mode = Kernel::Grid;
-        auto host_grid = impl_->tree.getGrid();
+        auto host_grid = impl_->tree.getMinMaxGrid();
 
         size_t len = host_grid.grid_dims.x * host_grid.grid_dims.y * host_grid.grid_dims.z;
         impl_->d_cell_ranges.resize(len);
@@ -884,7 +905,12 @@ void vvSimpleCaster::renderVolumeGL()
     else if (hybrid)
     {
         kernel.mode = Kernel::Hybrid;
-        auto host_grid = impl_->grid.getGrid();
+#if SIMPLE_GRID
+        auto host_grid = impl_->tree.getSimpleGrid();
+
+        kernel.cells_empty = thrust::raw_pointer_cast(impl_->d_cells_empty.data());
+#else
+        auto host_grid = impl_->grid.getMinMaxGrid();
 
         size_t len = host_grid.grid_dims.x * host_grid.grid_dims.y * host_grid.grid_dims.z;
         impl_->d_cell_ranges.resize(len);
@@ -894,8 +920,6 @@ void vvSimpleCaster::renderVolumeGL()
                      impl_->d_cell_ranges.begin());
         kernel.cell_ranges = reinterpret_cast<vec2 const*>(
                     thrust::raw_pointer_cast(impl_->d_cell_ranges.data()));
-
-        kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
 
         int tf_width = TF_WIDTH;
         impl_->d_max_opacities.resize(tf_width*tf_width);
@@ -908,9 +932,12 @@ void vvSimpleCaster::renderVolumeGL()
         thrust::copy(host_grid.max_opacities,
                      host_grid.max_opacities + tf_width*tf_width,
                      impl_->d_max_opacities.begin());
-#endif
+#endif // RANGE_TREE
         kernel.max_opacities_ = reinterpret_cast<float const*>(
                     thrust::raw_pointer_cast(impl_->d_max_opacities.data()));
+
+#endif
+        kernel.grid_dims = visionaray::vec3i(host_grid.grid_dims.data());
 
         // Tree leaf nodes
         kernel.leaves = thrust::raw_pointer_cast(impl_->d_leaves.data());
@@ -992,6 +1019,16 @@ void vvSimpleCaster::updateTransferFunction()
     if (hybrid)
     {
         impl_->grid.updateTransfunc(reinterpret_cast<const uint8_t*>(tf_ref.data()), TF_WIDTH, 1, 1, virvo::PF_RGBA32F);
+    }
+
+    auto simpleGrid = impl_->tree.getSimpleGrid();
+    if (simpleGrid.cells != nullptr)
+    {
+      size_t len = simpleGrid.grid_dims.x * simpleGrid.grid_dims.y * simpleGrid.grid_dims.z;
+      impl_->d_cells_empty.resize(len);
+      thrust::copy(simpleGrid.cells,
+                   simpleGrid.cells + len,
+                   impl_->d_cells_empty.begin());
     }
 
     int numNodes = 0;

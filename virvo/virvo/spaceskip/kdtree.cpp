@@ -228,6 +228,16 @@ std::vector<visionaray::aabb> KdTree::get_leaf_nodes(visionaray::vec3 eye, bool 
   return result;
 }
 
+uint8_t const* KdTree::get_empty() const
+{
+  return psvt.get_empty();
+}
+
+visionaray::vec3i KdTree::get_empty_dims() const
+{
+  return psvt.get_empty_dims();
+}
+
 void KdTree::renderGL(vvColor color) const
 {
   renderGL(0 /*root*/, color);
