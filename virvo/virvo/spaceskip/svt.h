@@ -447,7 +447,6 @@ inline void PartialSVT::build(Tex transfunc)
         {
           aabbi test(vec3i(x*16,y*16,z*16), vec3i(x*16+16,y*16+16,z*16+16));
           int index = (bz*2+z)*num_cells.y*num_cells.x + (by*2+y)*num_cells.x + (bx*2+x);
-          std::cout << index << '\n';
           if (svts[i].get_count(test) > 0)
             empty_[index] = uint8_t(0);
           else

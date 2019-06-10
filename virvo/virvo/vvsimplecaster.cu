@@ -43,7 +43,7 @@ using namespace visionaray;
 
 #define TF_WIDTH 256
 
-#define SIMPLE_GRID 1
+#define SIMPLE_GRID 0
 
 
 //-------------------------------------------------------------------------------------------------
