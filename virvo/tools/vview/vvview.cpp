@@ -943,7 +943,7 @@ void vvView::runTest()
   // fill caches
   double cacherun = performanceTest();
 
-  const int NUM_TESTS = 100;
+  const int NUM_TESTS = 40;
   std::vector<double> ts;
   for(int i=0; i<NUM_TESTS; ++i)
   {
