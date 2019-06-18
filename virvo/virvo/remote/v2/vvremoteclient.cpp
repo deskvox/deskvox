@@ -96,12 +96,12 @@ void vvRemoteClient::setObjectDirection(virvo::vec3f const& od)
     vvRenderer::setObjectDirection(od);
 }
 
-void vvRemoteClient::setViewingDirection(virvo::vec3f const& vd)
+void vvRemoteClient::setViewingDirection(virvo::vec3f const& vdir)
 {
     if (conn_)
-        conn_->write(makeMessage(Message::ViewingDirection, vd));
+        conn_->write(makeMessage(Message::ViewingDirection, vdir));
 
-    vvRenderer::setViewingDirection(vd);
+    vvRenderer::setViewingDirection(vdir);
 }
 
 void vvRemoteClient::setPosition(virvo::vec3f const& p)

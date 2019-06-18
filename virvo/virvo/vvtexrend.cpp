@@ -1311,10 +1311,10 @@ void vvTexRend::updateLUT(const float dist)
   in 3D texturing mode if the user is inside the volume.
   @param vd  viewing direction in object coordinates
 */
-void vvTexRend::setViewingDirection(vec3f const& vd)
+void vvTexRend::setViewingDirection(vec3f const& vdir)
 {
   vvDebugMsg::msg(3, "vvTexRend::setViewingDirection()");
-  viewDir = vd;
+  viewDir = vdir;
 }
 
 //----------------------------------------------------------------------------

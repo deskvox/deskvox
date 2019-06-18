@@ -207,9 +207,9 @@ public:
     }
 
     // Sets the compression type
-    void setCompressionType(CompressionType type)
+    void setCompressionType(CompressionType t)
     {
-        this->type = type;
+        type = t;
     }
 
     // Swap this buffer with another buffer
