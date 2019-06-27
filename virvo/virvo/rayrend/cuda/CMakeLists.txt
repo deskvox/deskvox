@@ -11,6 +11,7 @@ set(RAYREND_HEADERS
     ../../vvraycaster.h
 )
 
+add_definitions(-Dvirvo_EXPORTS)
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_ARCH_CUDA=1)
 
