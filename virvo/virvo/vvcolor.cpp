@@ -38,6 +38,22 @@ vvColor::vvColor(const float r, const float g, const float b)
   e[2] = b;
 }
 
+bool vvColor::operator==(const vvColor &rhs) const
+{
+    for (int i=0; i<3; ++i)
+    {
+        if (e[i] != rhs.e[i])
+            return false;
+    }
+
+    return true;
+}
+
+bool vvColor::operator!=(const vvColor &rhs) const
+{
+    return !(*this == rhs);
+}
+
 /// Overload RHS subscription operator.
 float vvColor::operator[](const int index) const
 {

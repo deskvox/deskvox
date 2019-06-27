@@ -54,6 +54,8 @@ class VIRVO_FILEIOEXPORT vvTFPoint
   public:
     virvo::vec3 _pos;
     float _opacity;   ///< opacity at this point in the TF [0..1]
+    bool operator==(const vvTFPoint &rhs) const;
+    bool operator!=(const vvTFPoint &rhs) const;
 
     template<class A>
     void serialize(A& a, unsigned /*version*/)
@@ -113,6 +115,9 @@ class VIRVO_FILEIOEXPORT vvTFWidget
     vvTFWidget(vvTFWidget*);
     virtual ~vvTFWidget();
 
+    virtual bool operator==(const vvTFWidget &rhs) const;
+    bool compare(const vvTFWidget &rhs) const;
+
     void setOpacity(float opacity);
     float opacity() const;
 
@@ -160,6 +165,8 @@ class VIRVO_FILEIOEXPORT vvTFBell : public vvTFWidget
     vvTFBell(vvColor, bool, float, float, float, float=0.5f, float=1.0f, float=0.5f, float=1.0f);
     vvTFBell(std::ifstream& file);
 
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     void setColor(const vvColor& col);
     void setSize(virvo::vec3 const& size);
     vvColor color() const;
@@ -202,6 +209,8 @@ class VIRVO_FILEIOEXPORT vvTFPyramid : public vvTFWidget
     vvTFPyramid(vvColor, bool, float, float, float, float, float=0.5f, float=1.0f, float=0.0f, float=0.5f, float=1.0f, float=0.0f);
     vvTFPyramid(std::ifstream& file);
 
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     void setColor(const vvColor& col);
     void setTop(virvo::vec3 const& top);
     void setBottom(virvo::vec3 const& bottom);
@@ -241,6 +250,9 @@ class VIRVO_FILEIOEXPORT vvTFColor : public vvTFWidget
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
     vvTFColor(std::ifstream& file);
+
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
 };
@@ -267,6 +279,9 @@ class VIRVO_FILEIOEXPORT vvTFSkip : public vvTFWidget
     vvTFSkip(vvTFSkip*);
     vvTFSkip(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFSkip(std::ifstream& file);
+
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -300,6 +315,9 @@ class VIRVO_FILEIOEXPORT vvTFCustom : public vvTFWidget
     vvTFCustom(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFCustom(std::ifstream& file);
     virtual ~vvTFCustom();
+
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -338,6 +356,9 @@ public:
     vvTFCustom2D(vvTFCustom2D*);
     vvTFCustom2D(std::ifstream& file);
     virtual ~vvTFCustom2D();
+
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -383,6 +404,9 @@ class VIRVO_FILEIOEXPORT vvTFCustomMap : public vvTFWidget
     vvTFCustomMap(vvTFCustomMap*);
     vvTFCustomMap(std::ifstream& file);
     virtual ~vvTFCustomMap();
+
+    virtual bool operator==(const vvTFWidget &rhs) const;
+
     virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);

@@ -83,6 +83,28 @@ vvTransFunc &vvTransFunc::operator=(vvTransFunc rhs)
   return *this;
 }
 
+bool vvTransFunc::operator==(const vvTransFunc &rhs) const
+{
+    if (_widgets.size() != rhs._widgets.size())
+        return false;
+
+    auto ito = rhs._widgets.begin();
+    for (auto it = _widgets.begin(); it != _widgets.end(); ++it)
+    {
+        if (!(*(*it) == *(*ito)))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool vvTransFunc::operator!=(const vvTransFunc &rhs) const
+{
+    return !(*this == rhs);
+}
+
 void vvTransFunc::swap(vvTransFunc &other)
 {
   std::swap(_buffer, other._buffer);

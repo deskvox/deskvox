@@ -63,6 +63,8 @@ class VIRVO_FILEIOEXPORT vvTransFunc
     vvTransFunc(const vvTransFunc &other);
     virtual ~vvTransFunc();
     vvTransFunc &operator=(vvTransFunc rhs);
+    bool operator==(const vvTransFunc &rhs) const;
+    bool operator!=(const vvTransFunc &rhs) const;
     void swap(vvTransFunc &other);
     bool isEmpty();
     void clear();

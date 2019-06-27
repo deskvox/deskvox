@@ -42,6 +42,25 @@ using virvo::vec3;
 // Class vvTFWidget and related classes
 //============================================================================
 
+bool vvTFPoint::operator==(const vvTFPoint &rhs) const
+{
+    if (_opacity != rhs._opacity)
+        return false;
+
+  for (size_t i=0; i<3; ++i)
+  {
+      if (_pos[i] != rhs._pos[i])
+          return false;
+  }
+
+  return true;
+}
+
+bool vvTFPoint::operator!=(const vvTFPoint &rhs) const
+{
+    return !(*this == rhs);
+}
+
 vvTFPoint::vvTFPoint()
 {
   for (size_t i=0; i<3; ++i)
@@ -115,6 +134,21 @@ vvTFWidget::vvTFWidget(float x, float y, float z)
 
 vvTFWidget::~vvTFWidget()
 {
+}
+
+bool vvTFWidget::operator==(const vvTFWidget &rhs) const
+{
+    return compare(rhs);
+}
+
+bool vvTFWidget::compare(const vvTFWidget &rhs) const
+{
+    if (_pos != rhs._pos)
+        return false;
+    if (_opacity != rhs._opacity)
+        return false;
+
+    return _name == rhs._name;
 }
 
 void vvTFWidget::setOpacity(float opacity)
@@ -316,6 +350,24 @@ vvTFBell::vvTFBell(std::ifstream& file) : vvTFWidget()
     VV_LOG(0) << "vvTFBell(ifstream& file) error";
   }
   _ownColor = (ownColorInt != 0);
+}
+
+bool vvTFBell::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFBell *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_ownColor != o->_ownColor)
+        return false;
+
+    if (_col != o->_col)
+        return false;
+
+    if (_size != o->_size)
+        return false;
+
+    return compare(rhs);
 }
 
 void vvTFBell::setColor(const vvColor& col)
@@ -532,6 +584,27 @@ vvTFPyramid::vvTFPyramid(std::ifstream& file) : vvTFWidget()
     VV_LOG(0) << "vvTFPyramid(ifstream& file) error";
   }
   _ownColor = (ownColorInt != 0);
+}
+
+bool vvTFPyramid::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFPyramid *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_ownColor != o->_ownColor)
+        return false;
+
+    if (_col != o->_col)
+        return false;
+
+    if (_top != o->_top)
+        return false;
+
+    if (_bottom != o->_bottom)
+        return false;
+
+    return compare(rhs);
 }
 
 void vvTFPyramid::setColor(const vvColor& col)
@@ -838,6 +911,18 @@ vvTFColor::vvTFColor(std::ifstream& file) : vvTFWidget()
   }
 }
 
+bool vvTFColor::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFColor *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_col != o->_col)
+        return false;
+
+    return compare(rhs);
+}
+
 std::string vvTFColor::toString() const
 {
   std::stringstream str;
@@ -911,6 +996,18 @@ vvTFSkip::vvTFSkip(std::ifstream& file) : vvTFWidget()
   {
     VV_LOG(0) << "vvTFSkip(ifstream& file) error";
   }
+}
+
+bool vvTFSkip::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFSkip *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_size != o->_size)
+        return false;
+
+    return compare(rhs);
 }
 
 void vvTFSkip::setSize(vec3 const& size)
@@ -1086,6 +1183,24 @@ vvTFCustom::~vvTFCustom()
     delete *iter;
   }
   _points.clear();
+}
+
+bool vvTFCustom::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFCustom *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_size != o->_size)
+        return false;
+
+    if (_points != o->_points)
+        return false;
+
+    if (_currentPoint != o->_currentPoint)
+        return false;
+
+    return compare(rhs);
 }
 
 std::string vvTFCustom::toString() const
@@ -1402,7 +1517,48 @@ vvTFCustom2D::~vvTFCustom2D()
    }
 
    if (_map != NULL)
-      delete[] _map;
+       delete[] _map;
+}
+
+bool vvTFCustom2D::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFCustom2D *>(&rhs);
+    if (!o)
+        return false;
+
+    if (_col != o->_col)
+        return false;
+
+    if (_opacity != o->_opacity)
+        return false;
+
+    if (_extrude != o->_extrude)
+        return false;
+
+    if (_centralPoint && !o->_centralPoint)
+        return false;
+    if (!_centralPoint && o->_centralPoint)
+        return false;
+
+    if (_centralPoint)
+    {
+        if (*_centralPoint != *o->_centralPoint)
+            return false;
+    }
+
+    if (_points.size() != o->_points.size())
+        return false;
+
+    auto ito = o->_points.begin();
+    for (auto it = _points.begin(); it != _points.end(); ++it)
+    {
+        if (**it != **ito)
+            return false;
+
+        ++ito;
+    }
+
+    return compare(rhs);
 }
 
 std::string vvTFCustom2D::toString() const
@@ -1830,7 +1986,18 @@ vvTFCustomMap::vvTFCustomMap(vvTFCustomMap* other)
 
 vvTFCustomMap::~vvTFCustomMap()
 {
-   delete[] _map;
+    delete[] _map;
+}
+
+bool vvTFCustomMap::operator==(const vvTFWidget &rhs) const
+{
+    auto o = dynamic_cast<const vvTFCustomMap *>(&rhs);
+    if (!o)
+        return false;
+
+    //TODO!!
+
+    return compare(rhs);
 }
 
 std::string vvTFCustomMap::toString() const

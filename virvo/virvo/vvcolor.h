@@ -30,6 +30,8 @@ class VIRVO_FILEIOEXPORT vvColor
   public:
     vvColor();
     vvColor(float, float, float);
+    bool operator==(const vvColor &rhs) const;
+    bool operator!=(const vvColor &rhs) const;
     float operator[](const int) const;
     float& operator[](const int);
     vvColor operator+(vvColor) const;
