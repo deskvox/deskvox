@@ -2772,23 +2772,23 @@ int vvConv::renameDicomFiles()
     }
     else
     {
-      boost::filesystem::path p(srcFile);
-      p.remove_filename();
-      std::string basedir = p.string();
-#ifdef WIN32
-      const char* delim = "\\";
-#else
-      const char* delim = "/";
-#endif
-      sprintf(newName , "%s%sseq%03d-loc%06d.dcm", basedir.c_str(), delim, dcmSeq, dcmSlice);
-      if (rename(oldName, newName) != 0)
+      boost::filesystem::path inpath(srcFile);
+
+      sprintf(newName, "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
+
+      boost::filesystem::path outpath(inpath);
+      outpath.remove_filename();
+      outpath /= newName;
+      std::string newpath = outpath.string();
+      
+      if (rename(oldName, newpath.c_str()) != 0)
       {
         cerr << "Could not rename " << oldName << " to " << newName << endl;
         done = true;
       }
       else
       {
-        cerr << "File " << oldName << " renamed to " << newName << endl;
+        cerr << "File " << oldName << " renamed to " << newpath << endl;
         if (!vvToolshed::increaseFilename(oldName))
         {
           cerr << "Cannot increase filename '" << oldName << "'." << endl;
