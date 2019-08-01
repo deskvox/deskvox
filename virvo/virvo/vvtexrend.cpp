@@ -1583,7 +1583,7 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
         shader->setParameterTex2D(str.str().c_str(), pixLUTName[chan]);
       }
 
-      if (_useChannelWeights)
+      if (_useChannelWeights && vd->channelWeights.size()>0)
       {
         shader->setParameterArray1f("channelWeights", &vd->channelWeights[0], vd->channelWeights.size());
       }
