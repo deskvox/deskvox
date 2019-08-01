@@ -9,7 +9,7 @@ add_definitions(-DHAVE_CONFIG_H)
 deskvox_link_libraries(virvo)
 deskvox_link_libraries(virvo_fileio)
 
-deskvox_add_tool(vserver_asio
+deskvox_add_tool(vserver
   main.cpp
   resource_manager.cpp
   resource_manager.h
