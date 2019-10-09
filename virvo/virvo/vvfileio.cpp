@@ -5454,9 +5454,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   std::locale loc;
 
-  for (auto elem : suffix)
-	  std::cout << std::tolower(elem, loc);
-  //std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+  std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
   suffix.erase(0, 1); // remove leading dot
 
   std::map<std::string, Format>::iterator format_found = formats.find(suffix);
