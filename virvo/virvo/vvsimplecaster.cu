@@ -992,7 +992,11 @@ void vvSimpleCaster::renderVolumeGL()
     }
 
     std::cout << std::fixed << std::setprecision(8);
-    //std::cout << t.elapsed() << std::endl;
+    static double avg = 0.0;
+    static size_t cnt = 0;
+    avg += t.elapsed();
+    cnt += 1;
+    std::cout << avg/cnt << std::endl;
 }
 
 void vvSimpleCaster::updateTransferFunction()

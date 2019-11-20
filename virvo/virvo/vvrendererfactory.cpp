@@ -24,6 +24,7 @@
 #include "vvconfig.h"
 #endif
 
+#include "vvoptixrenderer.h"
 #ifdef HAVE_CUDA
 #include "vvsimplecaster.h"
 #endif
@@ -203,6 +204,7 @@ void init()
   rendererAliasMap["13"] = "rayrendavx";
   rendererAliasMap["14"] = "rayrendavx2";
   rendererAliasMap["18"] = "rayrendsimple";
+  rendererAliasMap["19"] = "rayrendoptix";
   rendererAliasMap["20"] = "serbrick";
   rendererAliasMap["21"] = "parbrick";
   rendererAliasMap["30"] = "ibr";
@@ -234,6 +236,7 @@ void init()
   rendererTypeMap["rayrendavx"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendavx2"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendsimple"] = vvRenderer::RAYRENDSIMPLE;
+  rendererTypeMap["rayrendoptix"] = vvRenderer::RAYRENDOPTIX;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
@@ -651,6 +654,8 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::RAYRENDSIMPLE:
     return new vvSimpleCaster(vd, rs);
 #endif
+  case vvRenderer::RAYRENDOPTIX:
+    return new vvOptixRenderer(vd, rs);
   case vvRenderer::RAYREND:
   {
     // if not specified, try to deduce arch from type string
@@ -765,6 +770,10 @@ bool vvRendererFactory::hasRenderer(const std::string& name, std::string const& 
     return hasRenderer(vvRenderer::RAYRENDSIMPLE);
   }
 #endif
+  else if (str == "rayrendoptix")
+  {
+    return hasRenderer(vvRenderer::RAYRENDOPTIX);
+  }
   else
   {
     return false;
@@ -812,6 +821,8 @@ bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
 #else
     return false;
 #endif
+  case vvRenderer::RAYRENDOPTIX:
+    return true;
   default:
     return true;
   }

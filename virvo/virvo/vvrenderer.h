@@ -266,6 +266,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       SERBRICKREND,                               ///< serial brick renderer
       PARBRICKREND,                               ///< parallel brick renderer
       RAYRENDSIMPLE,                              ///< simple raycaster
+      RAYRENDOPTIX,                               ///< optix raycaster
       NUM_RENDERERS                               ///< keep last
     };
 

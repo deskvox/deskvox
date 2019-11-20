@@ -54,6 +54,8 @@ if(VISIONARAY_FOUND)
     deskvox_use_package(Visionaray)
 endif()
 
+include(${PROJECT_SOURCE_DIR}/cmake/configure_optix.cmake)
+set(__DESKVOX_LINK_LIBRARIES ${__DESKVOX_LINK_LIBRARIES} ${optix_LIBRARY})
 
 add_definitions(-DBINS=${NUM_BINS})
 
@@ -202,6 +204,7 @@ set(VIRVO_HEADERS
   vvmacros.h
   vvmulticast.h
   vvopengl.h
+  vvoptixrenderer.h
   vvparam.h
   vvparbrickrend.h
   vvpixelformat.h
@@ -255,6 +258,10 @@ set(VIRVO_HEADERS
   vvvoldesc.h
 )
 
+cuda_compile_and_embed(
+  ptxCode optix/renderer.cu
+)
+
 set(VIRVO_SOURCES
   private/connection.cpp
   private/connection_manager.cpp
@@ -293,6 +300,7 @@ set(VIRVO_SOURCES
   vvimageclient.cpp
   vvimageserver.cpp
   vvmulticast.cpp
+  vvoptixrenderer.cpp
   vvparam.cpp
   vvparbrickrend.cpp
   vvpixelformat.cpp
@@ -329,6 +337,7 @@ set(VIRVO_SOURCES
   vvvideo.cpp
   vvvirvo.cpp
   vvvisitor.cpp
+  ${ptxCode}
 )
 
 if(VISIONARAY_FOUND)
