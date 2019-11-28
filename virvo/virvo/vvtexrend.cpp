@@ -510,6 +510,12 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
           f);
     }
 
+    if (!texData)
+    {
+      cerr << "Could not compute texture data" << endl;
+      return UNSUPPORTED;
+    }
+
     if (newTex)
     {
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
