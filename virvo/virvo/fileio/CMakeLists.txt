@@ -50,9 +50,6 @@ set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/vvdicom.cpp
     ${VIRVO_SOURCE_DIR}/vvfileio.cpp
     ${VIRVO_SOURCE_DIR}/vvtokenizer.cpp
-    ${VIRVO_SOURCE_DIR}/vvtfwidget.cpp
-    ${VIRVO_SOURCE_DIR}/vvtoolshed.cpp
-    ${VIRVO_SOURCE_DIR}/vvtransfunc.cpp
     ${VIRVO_SOURCE_DIR}/vvvoldesc.cpp
 
     gdcm.cpp
@@ -77,6 +74,8 @@ set(VIRVO_FILEIO_DEFINITIONS
 if(DESKVOX_USE_GDCM AND GDCM_FOUND)
    deskvox_link_libraries(gdcmDSED gdcmMSFF gdcmDICT gdcmCommon)
 endif()
+
+deskvox_link_libraries(virvo_transfunc)
 
 deskvox_add_library(virvo_fileio
     ${VIRVO_FILEIO_HEADERS}

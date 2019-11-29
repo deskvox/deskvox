@@ -49,7 +49,7 @@
 /** Specifies a 3D point with an opacity.
   @see vvTFCustom
 */
-class VIRVO_FILEIOEXPORT vvTFPoint
+class VIRVO_TRANSFUNCEXPORT vvTFPoint
 {
   public:
     virvo::vec3 _pos;
@@ -77,7 +77,7 @@ class VIRVO_FILEIOEXPORT vvTFPoint
   @author Jurgen P. Schulze (jschulze@ucsd.edu)
   @see vvTransFunc
 */
-class VIRVO_FILEIOEXPORT vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFWidget
 {
   protected:
     static std::string const NO_NAME;
@@ -141,7 +141,7 @@ class VIRVO_FILEIOEXPORT vvTFWidget
 
 /** Transfer function widget shaped like a Gaussian bell.
  */
-class VIRVO_FILEIOEXPORT vvTFBell : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFBell : public vvTFWidget
 {
   protected:
     bool _ownColor;                               ///< true = use widget's own color for TF; false=use background color for TF
@@ -183,7 +183,7 @@ class VIRVO_FILEIOEXPORT vvTFBell : public vvTFWidget
 /** Pyramid-shaped transfer function widget:
   the pyramid has four sides and its tip can be flat (frustum).
 */
-class VIRVO_FILEIOEXPORT vvTFPyramid : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFPyramid : public vvTFWidget
 {
   protected:
     bool _ownColor;                               ///< true = use widget's own color for TF; false=use background color for TF
@@ -230,7 +230,7 @@ class VIRVO_FILEIOEXPORT vvTFPyramid : public vvTFWidget
 
 /** Transfer function widget specifying a color point in TF space.
  */
-class VIRVO_FILEIOEXPORT vvTFColor : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFColor : public vvTFWidget
 {
   public:
     void setColor(const vvColor& col);
@@ -259,7 +259,7 @@ class VIRVO_FILEIOEXPORT vvTFColor : public vvTFWidget
 
 /** Transfer function widget to skip an area of the transfer function when rendering.
  */
-class VIRVO_FILEIOEXPORT vvTFSkip : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFSkip : public vvTFWidget
 {
   public:
     void setSize(virvo::vec3 const& size);
@@ -293,7 +293,7 @@ class VIRVO_FILEIOEXPORT vvTFSkip : public vvTFWidget
   The widget defines a rectangular area in which the user can specify control points between
   which the opacity function will be computed linearly.
  */
-class VIRVO_FILEIOEXPORT vvTFCustom : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFCustom : public vvTFWidget
 {
   public:
     virvo::vec3 _size;       ///< width, height, depth of TF area [volume data space]
@@ -336,7 +336,7 @@ class VIRVO_FILEIOEXPORT vvTFCustom : public vvTFWidget
   Points will be used to create a custom "tent" or an "extruded" shape (basically a polyline
   with alpha value as height).
  */
-class VIRVO_FILEIOEXPORT vvTFCustom2D : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFCustom2D : public vvTFWidget
 {
 protected:
     bool _ownColor;
@@ -387,7 +387,7 @@ private:
   Transfer function widget to specify a custom transfer function.
   Values for each point in space are given.
  */
-class VIRVO_FILEIOEXPORT vvTFCustomMap : public vvTFWidget
+class VIRVO_TRANSFUNCEXPORT vvTFCustomMap : public vvTFWidget
 {
   protected:
     bool _ownColor;                // true = use widget's own color for TF; false=use background color for TF

@@ -61,7 +61,7 @@ using namespace std;
 using namespace virvo;
 
 const size_t vvVolDesc::DEFAULT_ICON_SIZE = 64;
-const size_t vvVolDesc::NUM_HDR_BINS = 256;
+const size_t vvVolDesc::NUM_HDR_BINS = vvTransFunc::NUM_HDR_BINS;
 
 //============================================================================
 // Class vvVolDesc

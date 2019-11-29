@@ -129,7 +129,7 @@ enum EndianType                               /// endianness
   VV_BIG_END                                  ///< big endian: hight-order byte is stored first
 };
 
-VIRVO_FILEIOEXPORT EndianType getEndianness();
+VIRVO_TRANSFUNCEXPORT EndianType getEndianness();
 
 }}
 
@@ -157,7 +157,7 @@ namespace serialization = toolshed::serialization;
 <LI>Basename  = vfview
 </UL>
 */
-class VIRVO_FILEIOEXPORT vvToolshed
+class VIRVO_TRANSFUNCEXPORT vvToolshed
 {
   private:
     static int progressSteps;                     ///< total number of progress steps
@@ -285,36 +285,36 @@ inline T clamp(T const& a, T const& left, T const& right)
   return a;
 }
 
-VIRVO_FILEIOEXPORT std::vector<std::string> entryList(std::string const& dir);
+VIRVO_TRANSFUNCEXPORT std::vector<std::string> entryList(std::string const& dir);
 
-VIRVO_FILEIOEXPORT bool startsWith(std::string const& string, std::string const& prefix);
-VIRVO_FILEIOEXPORT bool endsWith(std::string const& string, std::string const& suffix);
+VIRVO_TRANSFUNCEXPORT bool startsWith(std::string const& string, std::string const& prefix);
+VIRVO_TRANSFUNCEXPORT bool endsWith(std::string const& string, std::string const& suffix);
 
 namespace serialization
 {
-VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint8_t* val);
-VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint16_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint32_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, uint64_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(uint8_t* src, float* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(FILE* src, uint8_t* val);
-VIRVO_FILEIOEXPORT size_t  read(FILE* src, uint16_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(FILE* src, uint32_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(FILE* src, uint64_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(FILE* src, float* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(std::ifstream& src, uint32_t* val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  read(std::ifstream& src, uint64_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(uint8_t* src, uint8_t* val);
+VIRVO_TRANSFUNCEXPORT size_t  read(uint8_t* src, uint16_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(uint8_t* src, uint32_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(uint8_t* src, uint64_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(uint8_t* src, float* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(FILE* src, uint8_t* val);
+VIRVO_TRANSFUNCEXPORT size_t  read(FILE* src, uint16_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(FILE* src, uint32_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(FILE* src, uint64_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(FILE* src, float* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(std::ifstream& src, uint32_t* val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  read(std::ifstream& src, uint64_t* val, EndianType end = VV_BIG_END);
 
-VIRVO_FILEIOEXPORT size_t  write(uint8_t* dst, uint8_t val);
-VIRVO_FILEIOEXPORT size_t  write(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(uint8_t* dst, uint64_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(uint8_t* dst, float val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(FILE* dst, uint8_t val);
-VIRVO_FILEIOEXPORT size_t  write(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(FILE* dst, uint64_t val, EndianType end = VV_BIG_END);
-VIRVO_FILEIOEXPORT size_t  write(FILE* dst, float val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(uint8_t* dst, uint8_t val);
+VIRVO_TRANSFUNCEXPORT size_t  write(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(uint8_t* dst, uint64_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(uint8_t* dst, float val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(FILE* dst, uint8_t val);
+VIRVO_TRANSFUNCEXPORT size_t  write(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(FILE* dst, uint64_t val, EndianType end = VV_BIG_END);
+VIRVO_TRANSFUNCEXPORT size_t  write(FILE* dst, float val, EndianType end = VV_BIG_END);
 
 /* legacy functions -- DEPRECATED */
 inline uint8_t  read8(uint8_t* src);

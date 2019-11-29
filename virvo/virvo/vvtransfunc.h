@@ -32,7 +32,7 @@
   @author Jurgen P. Schulze (jschulze@ucsd.edu)
   @see vvTFWidget
 */
-class VIRVO_FILEIOEXPORT vvTransFunc
+class VIRVO_TRANSFUNCEXPORT vvTransFunc
 {
   private:
     enum                                           /// number of elements in ring buffer
@@ -45,6 +45,8 @@ class VIRVO_FILEIOEXPORT vvTransFunc
     int _discreteColors;                           ///< number of discrete colors to use for color interpolation (0 for smooth colors)
 
   public:
+    static const size_t NUM_HDR_BINS;             ///< constant value for HDR transfer functions
+
     std::vector<vvTFWidget*> _widgets;             ///< TF widget list
 
     template<class A>

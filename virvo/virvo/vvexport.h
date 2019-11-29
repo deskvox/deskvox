@@ -56,4 +56,21 @@
 
 #define VIRVO_FILEIOEXPORT VVFILEIOAPI
 
+
+//-------------------------------------------------------------------------------------------------
+// virvo_transfunc
+//
+
+#ifndef VIRVO_STATIC
+#   ifdef virvo_transfunc_EXPORTS
+#       define VVTRANSFUNCAPI VV_DLL_EXPORT
+#   else
+#       define VVTRANSFUNCAPI VV_DLL_IMPORT
+#   endif
+#else
+#   define VVTRANSFUNCAPI
+#endif
+
+#define VIRVO_TRANSFUNCEXPORT VVTRANSFUNCAPI
+
 #endif // VV_EXPORT_H

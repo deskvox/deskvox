@@ -37,11 +37,12 @@
 #include "vvdebugmsg.h"
 #include "vvtransfunc.h"
 #include "vvcudatransfunc.h"
-#include "vvvoldesc.h"
 #include "vvtoolshed.h"
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
+#include <list>
 
 using std::cerr;
 using std::endl;
@@ -50,6 +51,7 @@ using std::list;
 using virvo::vec3f;
 using virvo::vec4i;
 
+const size_t vvTransFunc::NUM_HDR_BINS = 256;
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -1277,7 +1279,7 @@ int vvTransFunc::saveBinMeshviewer(const char* filename)
   vvColor col;
   float normX;    
   unsigned int index;
-  const size_t nBins = vvVolDesc::NUM_HDR_BINS;
+  const size_t nBins =NUM_HDR_BINS;
   FILE* fp;
 
   // open file
