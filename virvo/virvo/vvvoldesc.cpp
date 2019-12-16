@@ -4798,6 +4798,40 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
     addFrame(rd, vvVolDesc::ARRAY_DELETE);
     ++frames;
     break;
+    case 5:
+    {
+      // Menger sponge of level 3
+      int levels = 3;
+      bpc = 1;
+      rd = new uint8_t[getFrameBytes()];
+      #pragma omp parallel for collapse(3)
+      for (int z=0; z<vox[2]; ++z)
+        for (int y=0; y<vox[1]; ++y)
+          for (int x=0; x<vox[0]; ++x)
+          {
+            bool skip = false;
+            vec3f size(vox);
+            for (int l=0; l<levels; ++l)
+            {
+              vec3f pos(fmodf(x,size.x),fmodf(y,size.y),fmodf(z,size.z));
+
+              vec3i trine(pos.x/size.x*3.f,
+                          pos.y/size.y*3.f,
+                          pos.z/size.z*3.f);
+
+              skip |= (trine.x == 1 && trine.y == 1 && trine.z == 1)
+                   || (trine.x == 1 && trine.y == 1)
+                   || (trine.y == 1 && trine.z == 1)
+                   || (trine.x == 1 && trine.z == 1);
+
+              size /= vec3f(3.f);
+            }
+            rd[x + y * vox[0] + size_t(z) * vox[0] * vox[1]] = skip? uint8_t(0): uint8_t(255);
+          }
+      addFrame(rd, vvVolDesc::ARRAY_DELETE);
+      ++frames;
+      break;
+    }
     default: assert(0); break;
   }
 }
