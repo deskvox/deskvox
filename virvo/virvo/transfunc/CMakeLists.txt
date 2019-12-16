@@ -7,28 +7,28 @@ deskvox_use_package(CUDA)
 endif()
 
 set(VIRVO_TRANSFUNC_HEADERS
-    ${VIRVO_SOURCE_DIR}/vvcolor.h
-    ${VIRVO_SOURCE_DIR}/vvdebugmsg.h
-    ${VIRVO_SOURCE_DIR}/vvtfwidget.h
-    ${VIRVO_SOURCE_DIR}/vvtoolshed.h
-    ${VIRVO_SOURCE_DIR}/vvtransfunc.h
+    ../vvcolor.h
+    ../vvdebugmsg.h
+    ../vvtfwidget.h
+    ../vvtoolshed.h
+    ../vvtransfunc.h
 )
 
 set(VIRVO_TRANSFUNC_SOURCES
-    ${VIRVO_SOURCE_DIR}/private/vvlog.cpp
-    ${VIRVO_SOURCE_DIR}/vvcolor.cpp
-    ${VIRVO_SOURCE_DIR}/vvdebugmsg.cpp
-    ${VIRVO_SOURCE_DIR}/vvtfwidget.cpp
-    ${VIRVO_SOURCE_DIR}/vvtoolshed.cpp
-    ${VIRVO_SOURCE_DIR}/vvtransfunc.cpp
+    ../private/vvlog.cpp
+    ../vvcolor.cpp
+    ../vvdebugmsg.cpp
+    ../vvtfwidget.cpp
+    ../vvtoolshed.cpp
+    ../vvtransfunc.cpp
 )
 
 if(DESKVOX_USE_CUDA)
     set(VIRVO_TRANSFUNC_SOURCES ${VIRVO_TRANSFUNC_SOURCES}
-        ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cpp
+        ../vvcudatransfunc.cpp
     )
 deskvox_cuda_compiles(VIRVO_TRANSFUNC_CUDA_SOURCES
-    ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cu
+    ../vvcudatransfunc.cu
 )
 endif()
 

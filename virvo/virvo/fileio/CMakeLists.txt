@@ -45,8 +45,6 @@ set(VIRVO_FILEIO_HEADERS
 set(VIRVO_FILEIO_SOURCES
     ${VIRVO_SOURCE_DIR}/private/vvlog.cpp
     ${VIRVO_SOURCE_DIR}/vvclock.cpp
-    ${VIRVO_SOURCE_DIR}/vvcolor.cpp
-    ${VIRVO_SOURCE_DIR}/vvdebugmsg.cpp
     ${VIRVO_SOURCE_DIR}/vvdicom.cpp
     ${VIRVO_SOURCE_DIR}/vvfileio.cpp
     ${VIRVO_SOURCE_DIR}/vvtokenizer.cpp
