@@ -752,6 +752,7 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
     if (numSlices > lim)
     {
       numSlices = lim;
+      sliceDistance = depth/numSlices;
       VV_LOG(1) << "Limiting number of slices to " << numSlices << std::endl;
     }
   }
