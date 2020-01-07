@@ -30,7 +30,7 @@
 
 #ifdef USE_NEXTSTEP
 #  include <mach-o/dyld.h>
-#elif defined(__linux__) || defined(LINUX) || defined(__hpux) || defined(__APPLE__) || defined(__sun)
+#elif defined(__linux__) || defined(LINUX) || defined(__hpux) || defined(__APPLE__) || defined(__sun) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <dlfcn.h>
 #endif
 

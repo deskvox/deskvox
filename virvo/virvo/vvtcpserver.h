@@ -58,7 +58,7 @@ public:
 private:
   vvTcpSocket *_listener;
   struct sockaddr_in _hostAddr;
-#if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
+#if defined(_WIN32) && defined(__GNUC__) && GNUC__ < 4
 #define socklen_t int
 #endif
   socklen_t _hostAddrlen;
