@@ -50,6 +50,7 @@
 #include "vvtokenizer.h"
 #include "vvdicom.h"
 #include "private/vvlog.h"
+#include "mem/swap.h"
 
 #if VV_HAVE_NIFTI
 #include "fileio/nifti.h"
@@ -67,17 +68,16 @@
 #include "fileio/gdcm.h"
 #endif
 
-#include <boost/detail/endian.hpp>
 #include <boost/algorithm/string.hpp>
 
 #ifdef __sun
 #define powf pow
 #endif
 
-#ifdef BOOST_LITTLE_ENDIAN
-static bool machineBigEndian = false;
-#else
+#if defined(BOOST_ENDIAN_BIG_BYTE)
 static bool machineBigEndian = true;
+#elif defined(BOOST_ENDIAN_LITTLE_BYTE)
+static bool machineBigEndian = false;
 #endif
 
 using namespace std;

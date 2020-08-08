@@ -27,6 +27,7 @@ using virvo::MessagePointer;
 vvServer::vvServer(ConnectionPointer conn)
     : conn_(conn)
 {
+    using namespace boost::placeholders;
     conn->set_handler(boost::bind(&vvServer::handler, this, _1, _2, _3));
 }
 

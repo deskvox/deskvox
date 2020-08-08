@@ -145,6 +145,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
     : vvRemoteClient(REMOTE_IBR, vd, renderState, conn, filename)
     , impl_(new Impl)
 {
+    using namespace boost::placeholders;
     conn->set_handler(boost::bind(&vvIbrClient::handler, this, _1, _2, _3));
 
     init();

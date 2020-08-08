@@ -33,8 +33,6 @@
 #include <numeric>
 #include <sstream>
 
-#include <boost/detail/endian.hpp>
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -3873,10 +3871,11 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 255);
           break;
         case 2:
-#ifdef BOOST_LITTLE_ENDIAN
+#if defined(BOOST_ENDIAN_LITTLE_BYTE)
           voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset]));
-#else
+#elif defined(BOOST_ENDIAN_BIG_BYTE)
           voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1]));
+#else
 #endif
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 65535);
           break;

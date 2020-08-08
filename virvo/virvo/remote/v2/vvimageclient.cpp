@@ -72,6 +72,7 @@ vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
     : vvRemoteClient(REMOTE_IMAGE, vd, renderState, conn, filename)
     , impl_(new Impl)
 {
+    using namespace boost::placeholders;
     conn->set_handler(boost::bind(&vvImageClient::handler, this, _1, _2, _3));
 
     init();
