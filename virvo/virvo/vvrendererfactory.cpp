@@ -152,6 +152,8 @@ static void get_cpuid(int reg[4], int type)
 
 #elif VV_ARCH == VV_ARCH_ARM
 // TODO
+#elif VV_ARCH == VV_ARCH_ARM64
+// TODO
 #else
 
 static void get_cpuid(int reg[4], int type)
@@ -160,8 +162,10 @@ static void get_cpuid(int reg[4], int type)
   (
 #ifdef __i386__
    "xchgl %%ebx, %k1; cpuid; xchgl %%ebx, %k1": "=a" (reg[EAX]), "=&r" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type), "c" (0)
-#else
+#elif defined(__x86_64__)
     "cpuid": "=a" (reg[EAX]), "=b" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type), "c" (0)
+#else
+#error "unsupported architecture for get_cpuid"
 #endif
   );
 }
@@ -267,6 +271,8 @@ static bool archSupported(std::string const& arch)
   }
 
 #if VV_ARCH == VV_ARCH_ARM
+// TODO
+#elif VV_ARCH == VV_ARCH_ARM64
 // TODO
 #else
 
