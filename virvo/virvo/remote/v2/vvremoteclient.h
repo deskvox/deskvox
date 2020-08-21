@@ -74,7 +74,7 @@ public:
     VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
 
 protected:
-    void init();
+    void init() override;
     void init_connection(virvo::ConnectionPointer conn);
 
 protected:
