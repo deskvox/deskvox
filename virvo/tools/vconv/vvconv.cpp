@@ -199,8 +199,7 @@ bool vvConv::readVolumeData()
     if (start == -1)
       start = tempname.find("_Image", 0);
 
-    char* seriesname =(char*)((tempname.substr(0, start)).c_str());
-    strcat(seriesname, ".txt");
+    std::string seriesname = tempname.substr(0, start) + ".txt";
     
     cerr << "Merging Leica Files" << endl;
     fio->mergeFiles(vd, files, increment, vvVolDesc::VV_MERGE_SLABS2VOL);
@@ -399,7 +398,7 @@ bool vvConv::readVolumeData()
                   tok->nextToken();
                   string temp = tok->sval;
           
-                  char* las = (char*)((temp.substr(1, temp.length() - 2)).c_str());
+                  std::string las = temp.substr(1, temp.length() - 2);
 
                   istringstream iss(las);
                   int curlaser;
