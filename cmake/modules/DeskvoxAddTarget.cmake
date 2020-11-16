@@ -121,7 +121,7 @@ function(deskvox_add_library name)
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
       RUNTIME DESTINATION ${ARCHSUFFIX}/bin${_category_path}
-      LIBRARY DESTINATION ${ARCHSUFFIX}/lib
+      LIBRARY DESTINATION ${COVISE_INSTALL_LIBDIR}
       ARCHIVE DESTINATION ${ARCHSUFFIX}/lib COMPONENT modules.${category}
     )
   else(COVISE_BUILD)
