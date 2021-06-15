@@ -24,6 +24,7 @@
 #include <cassert>
 #include "vvexport.h"
 #include "vvvoldesc.h"
+#include "fileio/feature.h"
 
 /** File load and save routines for volume data.
   The following file formats are supported:<BR>

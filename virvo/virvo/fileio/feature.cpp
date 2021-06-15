@@ -54,6 +54,14 @@ bool virvo::fileio::hasFeature(const char* name)
     return false;
 #endif
   }
+  else if (str == "gdcm")
+  {
+#if VV_HAVE_GDCM
+    return true;
+#else
+    return false;
+#endif
+  }
   else
   {
     return false;
