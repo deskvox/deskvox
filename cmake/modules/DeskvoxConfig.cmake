@@ -13,7 +13,7 @@ if (CMAKE_VERSION VERSION_LESS "3.1")
   if (DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   endif ()
-else ()
+elseif (NOT COVISE_BUILD)
   set (CMAKE_CXX_STANDARD 11)
 endif ()
 
