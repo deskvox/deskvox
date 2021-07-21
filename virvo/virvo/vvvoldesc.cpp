@@ -2159,9 +2159,9 @@ bool vvVolDesc::isChannelUsed(size_t m)
     {
       switch(bpc)
       {
-        case 1: if (rd[i + m] != 0) return true;
-        case 2: if (rd[i + m] != 0 || rd[i + m + 1] != 0) return true;
-        case 4: if (*((float*)rd) != 0.0f) return true;
+        case 1: if (rd[i + m] != 0) return true; break;
+        case 2: if (rd[i + m] != 0 || rd[i + m + 1] != 0) return true; break;
+        case 4: if (*((float*)rd) != 0.0f) return true; break;
       }
     }
     raw.next();
