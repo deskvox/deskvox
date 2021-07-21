@@ -105,15 +105,12 @@ uint8_t** d, vvVolDesc::DeleteType deleteType)
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(3)");
   initialize();
   setFilename(fn);
+  setChan(m);
   vox[0] = w;
   vox[1] = h;
   vox[2] = s;
   bpc    = b;
-  chan    = m;
   frames = f;
-  range_.resize(chan);
-  channelWeights.resize(chan);
-  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
   if(d)
   {
@@ -156,19 +153,17 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, flo
 
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(4)");
   initialize();
+  setChan(1);
   setFilename(fn);
   vox[0] = w;
   vox[1] = h;
   vox[2] = s;
   bpc    = 1;
-  chan    = 1;
   frames = f;
-  range_.push_back(virvo::vec2(
+  range_[0] = virvo::vec2(
         std::numeric_limits<float>::max(),
        -std::numeric_limits<float>::max()
-        ));
-  channelWeights.resize(chan);
-  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
+        );
 
   for (size_t i=0; i<f; ++i)
   {
@@ -212,13 +207,10 @@ float** g, float** b)
   vox[1] = h;
   vox[2] = s;
   bpc    = 1;
-  chan    = 3;
+  setChan(3);
   frames = f;
   frameSize = getFrameBytes();
   compSize  = getFrameVoxels();
-  range_.resize(chan);
-  channelWeights.resize(chan);
-  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
 
   // Convert float to uchar:
   for (size_t k=0; k<f; ++k)
@@ -253,11 +245,8 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
   vox[1] = h;
   vox[2] = 1;
   bpc    = 1;
-  chan    = 3;
+  setChan(3);
   frames = 1;
-  range_.resize(chan);
-  channelWeights.resize(chan);
-  std::fill(channelWeights.begin(), channelWeights.end(), 1.0f);
   uint8_t* data = new uint8_t[getFrameBytes()];
   memcpy(data, d, getFrameBytes());
   addFrame(data, ARRAY_DELETE);
@@ -280,7 +269,6 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
     vox[i]  = v->vox[i];
     dist[i] = v->dist[i];
   }
-  std::copy(v->range_.begin(), v->range_.end(), std::back_inserter(range_));
   dt     = v->dt;
   bpc    = v->bpc;
   chan   = v->chan;
@@ -288,8 +276,16 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   currentFrame = (f==-1) ? v->currentFrame : 0;
   indexChannel = -1;
 
+  range_.clear();
   std::copy(v->range_.begin(), v->range_.end(), std::back_inserter(range_));
+  zoomRange_.clear();
+  std::copy(v->zoomRange_.begin(), v->zoomRange_.end(), std::back_inserter(zoomRange_));
+  mapping_.clear();
+  std::copy(v->mapping_.begin(), v->mapping_.end(), std::back_inserter(mapping_));
+  channelWeights.clear();
   std::copy(v->channelWeights.begin(), v->channelWeights.end(), std::back_inserter(channelWeights));
+  channelNames.clear();
+  std::copy(v->channelNames.begin(), v->channelNames.end(), std::back_inserter(channelNames));
 
   // Copy icon:
   iconSize = v->iconSize;
@@ -393,8 +389,11 @@ void vvVolDesc::setDefaults()
   chan = 0;
   dist[0] = dist[1] = dist[2] = 1.0f;
   dt = 1.0f;
+  mapping_.clear();
   mapping_.push_back(vec2(0.0f, 1.0f));
+  zoomRange_.clear();
   zoomRange_.push_back(vec2(0.0f, 0.0f)); // TODO
+  range_.clear();
   range_.push_back(vec2(0.0f, 1.0f));
   pos = vec3f(0.0f, 0.0f, 0.0f);
 }
@@ -1321,12 +1320,14 @@ void vvVolDesc::setChan(int c)
   mapping_.resize(c);
   zoomRange_.resize(c);
   range_.resize(c);
+  channelWeights.resize(c);
 
   for (int i=chan; i<c; ++i)
   {
     mapping_[i]   = vec2(0.0f, 1.0f);
     zoomRange_[i] = vec2(0.0f, 1.0f);
     range_[i]     = vec2(0.0f, 1.0f);
+    channelWeights[i] = 1.0f;
   }
 
   chan = c;
