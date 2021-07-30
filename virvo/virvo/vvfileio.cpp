@@ -702,7 +702,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
         case 0:                                   // no compression
           if (fread(raw, 1, frameSize, fp) != frameSize)
           {
-            vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
+            vvDebugMsg::msg(1, "Error: Insufficient voxel data in file.");
             fclose(fp);
             delete[] raw;
             delete[] encoded;
@@ -715,7 +715,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
           {
             if (fread(encoded, 1, encodedSize, fp) != encodedSize)
             {
-              vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
+              vvDebugMsg::msg(1, "Error: Insufficient voxel data in file.");
               fclose(fp);
               delete[] raw;
               delete[] encoded;
@@ -736,7 +736,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
           {
             if (fread(raw, 1, frameSize, fp) != frameSize)
             {
-              vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
+              vvDebugMsg::msg(1, "Error: Insufficient voxel data in file.");
               fclose(fp);
               delete[] raw;
               delete[] encoded;
