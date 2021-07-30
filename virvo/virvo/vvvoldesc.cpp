@@ -3873,11 +3873,12 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 255);
           break;
         case 2:
-#if defined(BOOST_ENDIAN_LITTLE_BYTE)
+#if BOOST_ENDIAN_LITTLE_BYTE
           voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset]));
-#elif defined(BOOST_ENDIAN_BIG_BYTE)
+#elif BOOST_ENDIAN_BIG_BYTE
           voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1]));
 #else
+#error "could not determine machine endianess"
 #endif
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 65535);
           break;

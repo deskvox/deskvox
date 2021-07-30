@@ -74,9 +74,9 @@
 #define powf pow
 #endif
 
-#if defined(BOOST_ENDIAN_BIG_BYTE)
+#if BOOST_ENDIAN_BIG_BYTE
 static bool machineBigEndian = true;
-#elif defined(BOOST_ENDIAN_LITTLE_BYTE)
+#elif BOOST_ENDIAN_LITTLE_BYTE
 static bool machineBigEndian = false;
 #endif
 

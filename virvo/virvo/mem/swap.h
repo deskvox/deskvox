@@ -13,9 +13,11 @@
 #else
 #include <boost/detail/endian.hpp>
 #if defined(BOOST_LITTLE_ENDIAN)
-#define BOOST_ENDIAN_LITTLE_BYTE
+#define BOOST_ENDIAN_BIG_BYTE 0
+#define BOOST_ENDIAN_LITTLE_BYTE 1
 #elif defined(BOOST_BIG_ENDIAN)
-#define BOOST_ENDIAN_BIG_BYTE
+#define BOOST_ENDIAN_BIG_BYTE 1
+#define BOOST_ENDIAN_LITTLE_BYTE 0
 #else
 #error "unable to determine system endianness"
 #endif
@@ -47,9 +49,9 @@ enum endianness
     big_endian,
     network_endian = big_endian,
     
-    #if defined(BOOST_ENDIAN_LITTLE_BYTE)
+    #if BOOST_ENDIAN_LITTLE_BYTE
         host_endian = little_endian
-    #elif defined(BOOST_ENDIAN_BIG_BYTE)
+    #elif BOOST_ENDIAN_BIG_BYTE
         host_endian = big_endian
     #else
         #error "unable to determine system endianness"
