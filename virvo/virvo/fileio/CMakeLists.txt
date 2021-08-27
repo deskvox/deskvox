@@ -1,10 +1,8 @@
 find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
 find_package(Nifti)
 find_package(Teem)
-find_package(cfitsio)
 
 if(DESKVOX_USE_GDCM)
-    find_package(GDCM)
     if (GDCM_FOUND)
         include(${GDCM_USE_FILE})
     endif()
