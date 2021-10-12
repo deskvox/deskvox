@@ -403,6 +403,7 @@ void vvVolDesc::setDefaults()
 void vvVolDesc::removeSequence()
 {
   vvDebugMsg::msg(2, "vvVolDesc::removeSequence()");
+  frames = 0;
   if (raw.isEmpty()) return;
   raw.removeAll();
   deleteChannelNames();
@@ -1988,8 +1989,6 @@ void vvVolDesc::convertRGBPlanarToRGBInterleaved(int frame)
 */
 void vvVolDesc::toggleEndianness(int frame)
 {
-  uint8_t* rd;
-
   vvDebugMsg::msg(2, "vvVolDesc::toggleEndianness()");
   if (bpc==1) return;                             // done
 
@@ -2005,7 +2004,9 @@ void vvVolDesc::toggleEndianness(int frame)
   const size_t n = vox[0] * vox[1] * vox[2] * bpv / bpc;
   for (size_t f=startFrame; f<endFrame; ++f)
   {
-    rd = getRaw(f);
+    uint8_t *rd = getRaw(f);
+    if (!rd)
+        continue;
 
     if (bpc == 2) {
       uint16_t *r = reinterpret_cast<uint16_t *>(rd);
@@ -3872,11 +3873,12 @@ void vvVolDesc::makeSliceImage(int frame, virvo::cartesian_axis< 3 > axis, size_
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 255);
           break;
         case 2:
-#if defined(BOOST_ENDIAN_LITTLE_BYTE)
+#if BOOST_ENDIAN_LITTLE_BYTE
           voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset]));
-#elif defined(BOOST_ENDIAN_BIG_BYTE)
+#elif BOOST_ENDIAN_BIG_BYTE
           voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1]));
 #else
+#error "could not determine machine endianess"
 #endif
           voxelVal = lerp(mapping(c)[0], mapping(c)[1], voxelVal / 65535);
           break;

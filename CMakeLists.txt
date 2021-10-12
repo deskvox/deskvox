@@ -174,6 +174,10 @@ endif()
 include(DeskvoxAddTarget)
 include(DeskvoxUsePackage)
 
+if(DESKVOX_USE_GDCM)
+  find_package(GDCM)
+endif()
+find_package(cfitsio)
 
 add_subdirectory(virvo)
 if(DESKVOX_BUILD_VOX_DESK)

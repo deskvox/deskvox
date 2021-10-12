@@ -234,7 +234,8 @@ const string vvShaderFactory::getShaderDir()
   }
   else
   {
-#define STRINGIFY(x) #x
+#define STRINGIFY(x) XSTRINGIFY(x)
+#define XSTRINGIFY(x) #x
 #ifdef VIRVO_SHADER_DIR
 	  result = STRINGIFY(VIRVO_SHADER_DIR);
 #else
