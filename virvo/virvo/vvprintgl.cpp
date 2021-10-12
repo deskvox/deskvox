@@ -207,7 +207,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   glListBase(::base);
 #endif
                                                     // Draws The Display List Text
-  glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+  glCallLists((GLsizei)strlen(text), GL_UNSIGNED_BYTE, text);
 #elif defined(__APPLE__)
   size_t size = 24;
   std::string font = "Courier New";

@@ -218,7 +218,7 @@ namespace
 
     unsigned count = 0;
 
-    if (!wglChoosePixelFormatARB(hdc, attribs.get(), 0, buffer.size(), &buffer[0], &count))
+    if (!wglChoosePixelFormatARB(hdc, attribs.get(), 0, (UINT)buffer.size(), &buffer[0], &count))
       return std::vector<int>();
 
     return std::vector<int>(buffer.begin(), buffer.begin() + count);

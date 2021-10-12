@@ -3848,7 +3848,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   if (dcmSlice)
       *dcmSlice = meta.slice;
   if (dcmSPos)
-      *dcmSPos = meta.spos;
+      *dcmSPos = (float)meta.spos;
 #else
   vvDicomProperties prop;
   vvDicom dicomReader(&prop);
@@ -3935,7 +3935,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
           uint8_t* bytes = (*vd)(x, y, z); 
           int32_t voxel = (int)*reinterpret_cast<int16_t*>(bytes);
           voxel += SHRT_MIN;
-          *reinterpret_cast<uint16_t*>(bytes) = voxel;
+          *reinterpret_cast<uint16_t*>(bytes) = (uint16_t)voxel;
         }
       }
     }

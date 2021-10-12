@@ -489,7 +489,7 @@ void vvCanvas::setCurrentFrame(size_t frame)
   vvDebugMsg::msg(3, "vvCanvas::setCurrentFrame()");
 
   _renderer->setCurrentFrame(frame);
-  emit currentFrame(frame);
+  emit currentFrame((int)frame);
 
   // inform plugins of new frame
   foreach (vvPlugin* plugin, _plugins)

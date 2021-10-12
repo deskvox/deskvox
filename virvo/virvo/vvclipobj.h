@@ -51,7 +51,7 @@ public:
 
 public:
   template<class A>
-  void serialize(A& a, unsigned /*version*/)
+  void serialize(A& /*a*/, unsigned /*version*/)
   {
   }
 };
