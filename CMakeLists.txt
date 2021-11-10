@@ -144,7 +144,6 @@ if (NOT DEFINED DESKVOX_USE_QT4)
   # other CMake modules to override the default value defined here.
   option(DESKVOX_USE_QT4 "Use QT4 not QT5 if available" OFF)
 endif()
-include(Qt4-5)
 
 option(DESKVOX_USE_SSE "Use SSE intrinsic code if possible" ON)
 

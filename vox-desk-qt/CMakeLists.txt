@@ -3,6 +3,8 @@ include_directories(
   ${VOXDESK_INCLUDE_DIR}
 )
 
+include(Qt4-5)
+
 if(DESKVOX_USE_ASIO)
   add_definitions(-DDESKVOX_USE_ASIO)
 endif()
