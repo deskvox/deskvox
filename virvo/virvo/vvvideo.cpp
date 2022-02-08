@@ -37,6 +37,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 }
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(56, 60, 100)
@@ -105,7 +106,9 @@ vvVideo::vvVideo()
 #if LIBAVCODEC_VERSION_MAJOR < 54
     avcodec_init();
 #endif
+#if LIBAVCODEC_VERSION_MAJOR < 58
     avcodec_register_all();
+#endif
 #endif
     global_init_done = true;
   }
@@ -253,7 +256,7 @@ int vvVideo::createEncoder(int w, int h)
   destroyEncoder();
 
 #if defined(VV_FFMPEG)
-  AVCodec *encoder = avcodec_find_encoder((AVCodecID)codec_id);
+  const AVCodec *encoder = avcodec_find_encoder((AVCodecID)codec_id);
   if(!encoder)
   {
     vvDebugMsg::msg(1, "Error: failed to find encoder for codec id ", codec_id);
@@ -322,7 +325,11 @@ int vvVideo::createEncoder(int w, int h)
     vvDebugMsg::msg(0, "Error: failed to allocate encoding picture");
     return -1;
   }
+#if LIBAVCODEC_VERSION_MAJOR < 58
   avpicture_alloc((AVPicture *)enc_picture, enc_ctx->pix_fmt, w, h);
+#else
+  av_image_alloc(enc_picture->data, enc_picture->linesize, w, h, enc_ctx->pix_fmt, 1);
+#endif
 
   pixel_fmt = enc_ctx->pix_fmt;
 
@@ -352,9 +359,13 @@ int vvVideo::destroyEncoder()
 #if defined(VV_FFMPEG)
   if(enc_picture)
   {
-    avpicture_free((AVPicture *)enc_picture);
-    av_free(enc_picture);
-    enc_picture = NULL;
+#if LIBAVCODEC_VERSION_MAJOR < 58
+      avpicture_free((AVPicture *)enc_picture);
+#else
+      av_freep(enc_picture);
+#endif
+      av_free(enc_picture);
+      enc_picture = NULL;
   }
 
   if(enc_ctx)
@@ -388,7 +399,7 @@ int vvVideo::createDecoder(int w, int h)
   destroyDecoder();
 
 #if defined(VV_FFMPEG)
-  AVCodec *decoder = avcodec_find_decoder((AVCodecID)codec_id);
+  const AVCodec *decoder = avcodec_find_decoder((AVCodecID)codec_id);
   if(!decoder)
   {
     vvDebugMsg::msg(1, "error: failed to find decoder");
@@ -489,27 +500,34 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
   dst++;
   *(uint8_t *)dst = getColorFormat();
   dst++;
-  AVPicture src_picture;
-  avpicture_fill(&src_picture, (uint8_t *)src, AV_PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
+#if LIBAVCODEC_VERSION_MAJOR < 58
+  AVPicture src_frame;
+  avpicture_fill(&src_frame, (uint8_t *)src, AV_PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
+#else
+  AVFrame src_frame;
+  av_image_fill_arrays(src_frame.data, src_frame.linesize, (uint8_t *)src, AV_PIX_FMT_RGB24, enc_ctx->width,
+                       enc_ctx->height, 1);
+#endif
 
-  sws_scale(enc_imgconv_ctx, src_picture.data, src_picture.linesize, 0,
-      enc_ctx->height, enc_picture->data, enc_picture->linesize);
+  sws_scale(enc_imgconv_ctx, src_frame.data, src_frame.linesize, 0, enc_ctx->height, enc_picture->data,
+            enc_picture->linesize);
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 24, 102)
   *enc_size = avcodec_encode_video(enc_ctx, dst, *enc_size, enc_picture);
-#else
+#elif LIBAVCODEC_VERSION_MAJOR < 58
   AVPacket pkt;
   av_init_packet(&pkt);
-  pkt.data = (uint8_t*)dst;
+  pkt.data = (uint8_t *)dst;
   pkt.size = *enc_size;
-  int got_output=0;
+  int got_output = 0;
   int ret = avcodec_encode_video2(enc_ctx, &pkt, enc_picture, &got_output);
   if (ret < 0)
   {
-    vvDebugMsg::msg(1, "vvVideo::encodeFrame: encoding failed");
-    return -1;
+      vvDebugMsg::msg(1, "vvVideo::encodeFrame: encoding failed");
+      return -1;
   }
   *enc_size = pkt.size;
+#else
 #endif
   if(*enc_size == -1)
   {
@@ -554,7 +572,15 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
     vvDebugMsg::msg(2, "vvVideo::decodeFrame: changed codec id to ", codec_id);
     createDecoder(dec_ctx->width, dec_ctx->height);
   }
-#if LIBAVCODEC_VERSION_MAJOR > 52 || (LIBAVCODEC_VERSION_MAJOR==52 && LIBAVCODEC_VERSION_MINOR>120)
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  AVPacket pkt;
+  av_init_packet(&pkt);
+  pkt.data = (uint8_t *)src;
+  pkt.size = src_size;
+  avcodec_send_packet(dec_ctx, &pkt);
+  avcodec_receive_frame(dec_ctx, dec_picture);
+  *dst_size = dec_ctx->width * dec_ctx->height * 3;
+#elif LIBAVCODEC_VERSION_MAJOR > 52 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR > 120)
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = (uint8_t*)src;
@@ -570,10 +596,16 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
     return -1;
   }
 
-  AVPicture dst_picture;
-  avpicture_fill(&dst_picture, dst, AV_PIX_FMT_RGB24, dec_ctx->width, dec_ctx->height);
-  int ret = sws_scale(dec_imgconv_ctx, dec_picture->data, dec_picture->linesize, 0, 
-      dec_ctx->height, dst_picture.data, dst_picture.linesize);
+#if LIBAVCODEC_VERSION_MAJOR < 58
+  AVPicture dst_frame;
+  avpicture_fill(&dst_frame, dst, AV_PIX_FMT_RGB24, dec_ctx->width, dec_ctx->height);
+#else
+  AVFrame dst_frame;
+  av_image_fill_arrays(dst_frame.data, dst_frame.linesize, (uint8_t *)dst, AV_PIX_FMT_RGB24, dec_ctx->width,
+                       dec_ctx->height, 1);
+#endif
+  int ret = sws_scale(dec_imgconv_ctx, dec_picture->data, dec_picture->linesize, 0, dec_ctx->height, dst_frame.data,
+                      dst_frame.linesize);
   (void)ret;
 
   *dst_size = dec_ctx->width * dec_ctx->height * 3;
