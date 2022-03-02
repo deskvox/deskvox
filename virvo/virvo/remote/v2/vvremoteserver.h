@@ -32,7 +32,7 @@ namespace virvo
 
 class vvRenderer;
 
-class vvRemoteServer
+class VVAPI vvRemoteServer
 {
 public:
     typedef virvo::ConnectionPointer ConnectionPointer;
