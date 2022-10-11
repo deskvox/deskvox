@@ -736,10 +736,10 @@ struct volume_kernel
 
                 C color(0.0);
 
-                for (int i = 0; i < params.num_channels; ++i)
+                for (int c = 0; c < params.num_channels; ++c)
                 {
-                    S voxel  = tex3D(volumes[i], tex_coord);
-                    C colori = tex1D(params.transfuncs[i], voxel);
+                    S voxel  = tex3D(volumes[c], tex_coord);
+                    C colori = tex1D(params.transfuncs[c], voxel);
 
                     auto do_shade = params.local_shading && colori.w >= 0.1f;
 
@@ -757,7 +757,7 @@ struct volume_kernel
 
 
                         // calculate shading
-                        auto grad = gradient(volumes[i], tex_coord);
+                        auto grad = gradient(volumes[c], tex_coord);
                         auto normal = normalize(grad);
 
                         auto float_eq = [&](S const& a, S const& b) { return abs(a - b) < params.delta * S(0.5); };
