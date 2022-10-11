@@ -66,6 +66,8 @@
 #include "cuda/utils.h"
 #endif
 
+// #define DEBUGGING 1
+
 using namespace visionaray;
 
 
@@ -644,6 +646,18 @@ struct volume_kernel
     VSNRAY_FUNC
     result_record<typename R::scalar_type> operator()(R ray, int x, int y) const
     {
+#ifdef DEBUGGING
+        auto debug = [this,x,y]() {
+            return x*2==params.viewport.w && y*2==params.viewport.h;
+        };
+
+        auto crosshair = [this,x,y]() {
+            return x*2==params.viewport.w || y*2==params.viewport.h;
+        };
+#else
+        auto debug = []() { return false; };
+        auto crosshair = []() { return false; };
+#endif
         using S    = typename R::scalar_type;
         using I    = typename simd::int_type<S>::type;
         using Mask = typename simd::mask_type<S>::type;
@@ -863,6 +877,9 @@ struct volume_kernel
             t = tnext;
         }
 
+        if (crosshair()) {
+            result.color = C(1.f)-result.color;
+        }
         result.hit = hit_rec.hit;
         return result;
     }
