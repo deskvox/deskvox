@@ -1249,7 +1249,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes8.resize(vd->getChan());
         for (int c = 0; c < vd->getChan(); ++c)
         {
-            device_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() + c]);
+            device_volumes8[c] = typename volume8_type::ref_type(impl_->volumes8[vd->getCurrentFrame() * vd->getChan() + c]);
         }
         return thrust::raw_pointer_cast(device_volumes8.data());
     };
@@ -1260,7 +1260,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes16.resize(vd->getChan());
         for (int c = 0; c < vd->getChan(); ++c)
         {
-            device_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() + c]);
+            device_volumes16[c] = typename volume16_type::ref_type(impl_->volumes16[vd->getCurrentFrame() * vd->getChan() + c]);
         }
         return thrust::raw_pointer_cast(device_volumes16.data());
     };
@@ -1271,7 +1271,7 @@ void vvRayCaster::renderVolumeGL()
         device_volumes32.resize(vd->getChan());
         for (int c = 0; c < vd->getChan(); ++c)
         {
-            device_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame() + c]);
+            device_volumes32[c] = typename volume32_type::ref_type(impl_->volumes32[vd->getCurrentFrame()* vd->getChan()  + c]);
         }
         return thrust::raw_pointer_cast(device_volumes32.data());
     };
