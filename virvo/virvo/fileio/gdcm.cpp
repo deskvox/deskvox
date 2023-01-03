@@ -32,6 +32,9 @@
 #include <algorithm>
 #include <cctype>
 
+
+#include<boost/algorithm/string.hpp>
+
 namespace {
 
 /* mostly copied from GDCM: Examples/Cxx/ReadAndDumpDicomDir2.cxx */
@@ -85,20 +88,8 @@ PURPOSE.  See the above copyright notice for more information.
 // Some handy utility functions
 //==============================================================================
 
-std::string left_trim(const std::string &s) {
-  std::string ss(s);
-  ss.erase(ss.begin(), std::find_if(ss.begin(), ss.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-  return ss;
-}
-
-std::string right_trim(const std::string &s) {
-  std::string ss(s);
-  ss.erase(std::find_if(ss.rbegin(), ss.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), ss.end());
-  return ss;
-}
-
 std::string trim(const std::string &s) {
-  return left_trim(right_trim(s));
+  return boost::algorithm::trim_copy(s);
 }
 
 //==============================================================================
