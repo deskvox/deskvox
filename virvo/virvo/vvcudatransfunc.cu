@@ -57,9 +57,9 @@ __global__ void makePreintLUTCorrectKernel(int width, uchar4 *__restrict__ preIn
       tau = tau + tauc;
   }
 
-  saturate(r);
-  saturate(g);
-  saturate(b);
+  __saturatef(r);
+  __saturatef(g);
+  __saturatef(b);
 
   preIntTable[sf*width+sb] = make_uchar4(r*255.99f,g*255.99f, b*255.99f,(1.f-__expf(-tau))*255.99f); // using expf causes ptxas to die on windows quda 6.5
 }

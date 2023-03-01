@@ -170,7 +170,7 @@ bool virvo::cuda::findConfig(cudaFuncAttributes const& attr, dim3 const*& begin,
     // The current device
     int device = -1;
     // The device properties for the current device
-    cudaDeviceProp prop = cudaDevicePropDontCare;
+    cudaDeviceProp prop = {};
 
     if (cudaSuccess == cudaGetDevice(&device) && cudaSuccess == cudaGetDeviceProperties(&prop, device))
     {
