@@ -40,13 +40,13 @@ public:
 
 public:
     // Constructor.
-    VVAPI vvRemoteServer();
+    vvRemoteServer();
 
     // Destructor.
-    VVAPI virtual ~vvRemoteServer();
+    virtual ~vvRemoteServer();
 
     // Resize the frame buffer or ...
-    VVAPI virtual void resize(int w, int h);
+    virtual void resize(int w, int h);
 
     // Sends the image to the client
     virtual void renderImage(ConnectionPointer conn, MessagePointer message,
