@@ -378,6 +378,7 @@ void vvIbrClient::on_read(virvo::MessagePointer message)
 
 void vvIbrClient::on_write(virvo::MessagePointer message)
 {
+    (void)message;
 #if TIME_WRITES
     static virvo::FrameCounter counter;
 

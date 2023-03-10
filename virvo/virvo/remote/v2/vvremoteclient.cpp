@@ -34,6 +34,7 @@ namespace gl = virvo::gl;
 vvRemoteClient::vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
         virvo::ConnectionPointer conn, const std::string& /*filename*/)
     : vvRenderer(vd, renderState)
+    , conn_(conn)
 {
     rendererType = type;
 }

@@ -154,6 +154,7 @@ void vvImageClient::on_read(virvo::MessagePointer message)
 
 void vvImageClient::on_write(virvo::MessagePointer message)
 {
+    (void)message;
 #if TIME_WRITES
     static virvo::FrameCounter counter;
 

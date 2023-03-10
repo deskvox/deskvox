@@ -580,14 +580,8 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   }
   assert(it != rendererTypeMap.end());
 
-  vvTcpSocket* sock = NULL;
   std::string filename;
   std::string arch = options.arch;
-
-  if (options.sockets.size() > 0)
-  {
-    sock = options.sockets[0];
-  }
 
   if (options.filenames.size() > 0)
   {

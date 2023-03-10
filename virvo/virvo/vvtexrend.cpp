@@ -532,7 +532,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
       GLint glWidth;
       glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
 
-      if (glWidth==texels[0])
+      if (glWidth==static_cast<GLint>(texels[0]))
       {
         glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
           texFormat, GL_UNSIGNED_BYTE, &texData[0]);
@@ -746,9 +746,8 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
   // don't render an insane amount of slices
   {
     virvo::vector< 3, ssize_t > sz = maxVox - minVox;
-    ssize_t maxV = std::max(sz[0], sz[1]);
-    maxV = std::max(maxV, sz[2]);
-    ssize_t lim = maxV * 10. * std::max(_quality, 1.f);
+    size_t maxV = std::max(std::max(sz[0], sz[1]), sz[2]);
+    size_t lim = maxV * 10. * std::max(_quality, 1.f);
     if (numSlices > lim)
     {
       numSlices = lim;
@@ -1600,14 +1599,8 @@ void vvTexRend::enableShader(vvShaderProgram* shader) const
       shader->setParameterTex2D("pixLUT", pixLUTName[0]);
     }
 
-    if (_channel4Color != NULL)
-    {
-      shader->setParameter3f("chan4color", _channel4Color[0], _channel4Color[1], _channel4Color[2]);
-    }
-    if (_opacityWeights != NULL)
-    {
-      shader->setParameter4f("opWeights", _opacityWeights[0], _opacityWeights[1], _opacityWeights[2], _opacityWeights[3]);
-    }
+    shader->setParameter3f("chan4color", _channel4Color[0], _channel4Color[1], _channel4Color[2]);
+    shader->setParameter4f("opWeights", _opacityWeights[0], _opacityWeights[1], _opacityWeights[2], _opacityWeights[3]);
 
     shader->setParameter1i("preintegration", usePreIntegration ? 1 : 0);
   }

@@ -1193,7 +1193,6 @@ void vvRenderer::drawPlanePerimeter(vec3f const& oSize, vec3f const& oPos,
   vvVector3 isect[6];                             // intersection points, maximum of 6 when intersecting a plane and a volume [object space]
   vec3f boxMin,boxMax;                            // minimum and maximum box coordinates
   size_t isectCnt;
-  int j;
 
   vvDebugMsg::msg(3, "vvRenderer::drawPlanePerimeter()");
 
@@ -1231,7 +1230,7 @@ void vvRenderer::drawPlanePerimeter(vec3f const& oSize, vec3f const& oPos,
 
     // Draw line strip:
     glBegin(GL_LINE_STRIP);
-    for (j=0; j<isectCnt; ++j)
+    for (unsigned j=0; j<isectCnt; ++j)
     {
       glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
     }

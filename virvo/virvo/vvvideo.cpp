@@ -573,11 +573,10 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
     createDecoder(dec_ctx->width, dec_ctx->height);
   }
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  AVPacket pkt;
-  av_init_packet(&pkt);
-  pkt.data = (uint8_t *)src;
-  pkt.size = src_size;
-  avcodec_send_packet(dec_ctx, &pkt);
+  AVPacket *pkt = av_packet_alloc();
+  pkt->data = (uint8_t *)src;
+  pkt->size = src_size;
+  avcodec_send_packet(dec_ctx, pkt);
   avcodec_receive_frame(dec_ctx, dec_picture);
   *dst_size = dec_ctx->width * dec_ctx->height * 3;
 #elif LIBAVCODEC_VERSION_MAJOR > 52 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR > 120)
@@ -610,6 +609,9 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
 
   *dst_size = dec_ctx->width * dec_ctx->height * 3;
 
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  av_packet_free(&pkt);
+#endif
   return 0;
 #else
   (void)src;

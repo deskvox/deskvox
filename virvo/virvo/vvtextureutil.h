@@ -47,7 +47,7 @@ namespace virvo
       };
 
       /// Channels bitfield
-      typedef uint64_t Channels;
+      typedef int Channels; // for compatibility with enum
 
       /// Use with Channels bitfield
       enum { All=-1,

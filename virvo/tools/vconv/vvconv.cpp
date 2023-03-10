@@ -194,9 +194,9 @@ bool vvConv::readVolumeData()
     vd = new vvVolDesc(filename);
 
     string tempname = srcFile;
-    size_t start = tempname.find("_Series",0);
+    auto start = tempname.find("_Series",0);
 
-    if (start == -1)
+    if (start == std::string::npos)
       start = tempname.find("_Image", 0);
 
     std::string seriesname = tempname.substr(0, start) + ".txt";

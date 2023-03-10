@@ -649,11 +649,10 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
  This will typically be used for generating a volume from a sequence of files
  @return OK if successful
 */
-vvVolDesc::ErrorType vvVolDesc::mergeFrames(ssize_t slicesPerFrame)
+vvVolDesc::ErrorType vvVolDesc::mergeFrames(ssize_t slicesPerFrameArg)
 {
+  size_t slicesPerFrame = slicesPerFrameArg < 0 ? frames : slicesPerFrameArg;
   std::vector<uint8_t *> rawFrames;
-  if (slicesPerFrame < 0)
-    slicesPerFrame = frames;
 
   if (slicesPerFrame == frames)
   {
@@ -693,7 +692,7 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames(ssize_t slicesPerFrame)
   }
 
   removeSequence();
-  for (ssize_t i=0; i<rawFrames.size(); ++i)
+  for (size_t i=0; i<rawFrames.size(); ++i)
   {
     addFrame(rawFrames[i], ARRAY_DELETE);
   }
@@ -4806,7 +4805,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
       int levels = 3;
       bpc = 1;
       rd = new uint8_t[getFrameBytes()];
+#ifdef _OPENMP
       #pragma omp parallel for collapse(3)
+#endif
       for (int z=0; z<vox[2]; ++z)
         for (int y=0; y<vox[1]; ++y)
           for (int x=0; x<vox[0]; ++x)
