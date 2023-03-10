@@ -156,8 +156,8 @@ void vvCudaImg::unmap()
   }
   else if (_mapped)
   {
-    virvo::cuda::checkError(&ok, cudaThreadSynchronize(),
-                       "vvCudaImg::unmap() - cudaThreadSynchronize");
+    virvo::cuda::checkError(&ok, cudaDeviceSynchronize(),
+                       "vvCudaImg::unmap() - cudaDeviceSynchronize");
   }
   else
   {

@@ -54,7 +54,7 @@ bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bo
 
     if (syncIfDebug)
     {
-     cudaThreadSynchronize();
+     cudaDeviceSynchronize();
      err = cudaGetLastError();
     }
   }
@@ -133,8 +133,6 @@ bool virvo::cuda::initGlInterop()
   int dev;
   bool ok = true;
   if(!virvo::cuda::checkError(&ok, cudaChooseDevice(&dev, &prop), "virvo::cuda::initGlInterop (choose device)", false))
-    return false;
-  if(!virvo::cuda::checkError(&ok, cudaGLSetGLDevice(dev), "virvo::cuda::initGlInterop (set device)", false))
     return false;
 
   done = true;
