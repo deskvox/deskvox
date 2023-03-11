@@ -1,7 +1,7 @@
 project(Deskvox)
 
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 2.8.7...3.26)
 
 # Add path for custom modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
@@ -97,10 +97,6 @@ endif(NOT COVISE_BUILD)
 #
 
 
-# Override the default value specified in FindCUDA.cmake
-set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule to the CUDA source file.")
-
-
 option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
 
 option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable for Express versions." ON)
@@ -134,6 +130,29 @@ if (NOT DEFINED DESKVOX_USE_CUDA)
     option(DESKVOX_USE_CUDA "Use CUDA if available" OFF)
   else()
     option(DESKVOX_USE_CUDA "Use CUDA if available" ON)
+  endif()
+endif()
+
+if (DESKVOX_USE_CUDA)
+    if (${CMAKE_VERSION} VERSION_GREATER "3.8")
+    # use CMake's CUDA language support
+    include(CheckLanguage)
+    check_language(CUDA)
+    if (CMAKE_CUDA_COMPILER)
+      find_package(CUDAToolkit)
+    endif()
+    if (CMAKE_CUDA_COMPILER AND CUDAToolkit_FOUND)
+      enable_language(CUDA)
+      set(DESKVOX_CMAKE_CUDA TRUE)
+    else()
+      set (DESKVOX_USE_CUDA FALSE)
+    endif()
+  else()
+    # resort to old FindCUDA
+    set(DESKVOX_CMAKE_CUDA FALSE)
+    # Override the default value specified in FindCUDA.cmake
+    set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule to the CUDA source file.")
+    find_package(CUDA)
   endif()
 endif()
 

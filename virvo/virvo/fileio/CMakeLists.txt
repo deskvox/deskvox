@@ -10,8 +10,11 @@ endif()
 
 deskvox_use_package(Boost)
 if(DESKVOX_USE_CUDA)
-find_package(CUDA)
-deskvox_use_package(CUDA)
+    if(DESKVOX_CUDA_CMAKE)
+        deskvox_use_package(CUDA INCDIRS ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    else()
+        deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+    endif()
 endif()
 if(DESKVOX_USE_GDCM)
 deskvox_use_package(GDCM)
@@ -56,12 +59,12 @@ set(VIRVO_FILEIO_SOURCES
 )
 
 if(DESKVOX_USE_CUDA)
-    set(VIRVO_FILEIO_SOURCES ${VIRVO_FILEIO_SOURCES}
-        ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cpp
+  set(VIRVO_FILEIO_SOURCES ${VIRVO_FILEIO_SOURCES}
+    ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cpp
     )
-deskvox_cuda_compiles(VIRVO_FILEIO_CUDA_SOURCES
+  deskvox_cuda_compiles(VIRVO_FILEIO_CUDA_SOURCES
     ${VIRVO_SOURCE_DIR}/vvcudatransfunc.cu
-)
+    )
 endif()
 
 set(VIRVO_FILEIO_DEFINITIONS
@@ -73,6 +76,7 @@ endif()
 
 deskvox_link_libraries(virvo_transfunc)
 
+message("file: sources ${VIRVO_FILEIO_SOURCES}")
 deskvox_add_library(virvo_fileio
     ${VIRVO_FILEIO_HEADERS}
     ${VIRVO_FILEIO_SOURCES}

@@ -30,8 +30,11 @@ deskvox_use_package(Boost)
 deskvox_use_package(cfitsio)
 deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_DIRS} LIBS ${CG_LIBRARIES})
 if(DESKVOX_USE_CUDA)
-    find_package(CUDA)
-    deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+    if(DESKVOX_CUDA_CMAKE)
+        deskvox_use_package(CUDA INCDIRS ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    else()
+        deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+    endif()
 endif(DESKVOX_USE_CUDA)
 deskvox_use_package(FFMPEG)
 deskvox_use_package(GLEW)
@@ -322,9 +325,9 @@ if(VISIONARAY_FOUND)
 endif(VISIONARAY_FOUND)
 
 if(DESKVOX_USE_CUDA)
-deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
-  vvcudatransfunc.cu
-)
+  deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
+    vvcudatransfunc.cu
+  )
 endif(DESKVOX_USE_CUDA)
 
 if(DESKVOX_USE_ZEROCONF)

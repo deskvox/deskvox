@@ -2,8 +2,11 @@ find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
 
 deskvox_use_package(Boost)
 if(DESKVOX_USE_CUDA)
-find_package(CUDA)
-deskvox_use_package(CUDA)
+    if(DESKVOX_CUDA_CMAKE)
+        deskvox_use_package(CUDA INCDIRS ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    else()
+        deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+    endif()
 endif()
 
 set(VIRVO_TRANSFUNC_HEADERS
@@ -25,11 +28,11 @@ set(VIRVO_TRANSFUNC_SOURCES
 
 if(DESKVOX_USE_CUDA)
     set(VIRVO_TRANSFUNC_SOURCES ${VIRVO_TRANSFUNC_SOURCES}
-        ../vvcudatransfunc.cpp
+      ../vvcudatransfunc.cpp
     )
-deskvox_cuda_compiles(VIRVO_TRANSFUNC_CUDA_SOURCES
-    ../vvcudatransfunc.cu
-)
+    deskvox_cuda_compiles(VIRVO_TRANSFUNC_CUDA_SOURCES
+      ../vvcudatransfunc.cu
+    )
 endif()
 
 set(VIRVO_TRANSFUNC_DEFINITIONS

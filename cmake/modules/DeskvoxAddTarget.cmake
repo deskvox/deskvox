@@ -20,6 +20,11 @@ function(deskvox_cuda_compiles outfiles)
   if(NOT CUDA_FOUND)
     return()
   endif()
+  if(DESKVOX_CUDA_CMAKE)
+    # CMake 3.9 and newer supports CUDA as a language
+    set (${outfiles} ${ARGN})
+    return()
+  endif()
 
   foreach(f ${ARGN})
     if(BUILD_SHARED_LIBS)
