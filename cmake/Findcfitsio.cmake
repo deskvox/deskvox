@@ -119,8 +119,8 @@ ENDIF (CFITSIO_FOUND)
 
 # Handle REQUIRED / QUIET optional arguments.
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(Cfitsio DEFAULT_MSG
-    CFITSIO_INCLUDE_DIRS CFITSIO_LIBRARIES)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Cfitsio REQUIRED_VARS
+    CFITSIO_INCLUDE_DIRS CFITSIO_LIBRARIES NAME_MISMATCHED)
 
 # Only mark internal variables as advanced if we found cfitsio, otherwise
 # leave them visible in the standard GUI for the user to set manually.
