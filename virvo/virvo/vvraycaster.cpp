@@ -492,11 +492,11 @@ private:
 
 #ifdef VV_ARCH_CUDA
 
-struct depth_buffer_type : cuda::pixel_pack_buffer
+struct depth_buffer_type : visionaray::cuda::pixel_pack_buffer
 {
     unsigned const* data() const
     {
-        return static_cast<unsigned const*>(cuda::pixel_pack_buffer::data());
+        return static_cast<unsigned const*>(visionaray::cuda::pixel_pack_buffer::data());
     }
 };
 
