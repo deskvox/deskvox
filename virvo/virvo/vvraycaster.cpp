@@ -687,7 +687,8 @@ struct volume_kernel
                     );
 
             vector<4, S> v = Mat4(params.camera_matrix_inv) * u;
-            vector<3, S> obj = v.xyz() / v.w;
+            vector<3, S> v3(v.x, v.y, v.z);
+            vector<3, S> obj = v3 / v.w;
 
             // convert to "t" coordinates
             tmax = length(obj - ray.ori);
@@ -812,12 +813,16 @@ struct volume_kernel
 
                         auto shaded_clr = mat.shade(sr);
 
-                        colori.xyz() = mul(
-                                colori.xyz(),
+                        vector<3, S> colori3(colori.x, colori.y, colori.z);
+                        colori3 = mul(
+                                colori3,
                                 to_rgb(shaded_clr),
                                 do_shade,
-                                colori.xyz()
+                                colori3
                                 );
+                        colori.x = colori3.x;
+                        colori.y = colori3.y;
+                        colori.z = colori3.z;
                     }
 
                     if (params.opacity_correction)
@@ -826,7 +831,9 @@ struct volume_kernel
                     }
 
                     // premultiplied alpha
-                    colori.xyz() *= colori.w;
+                    colori.x *= colori.w;
+                    colori.y *= colori.w;
+                    colori.z *= colori.w;
 
                     color += colori;
                 }
@@ -1232,7 +1239,8 @@ void vvRayCaster::renderVolumeGL()
         auto l = virvo::gl::getLight(GL_LIGHT0);
         vec4 lpos(l.position.x, l.position.y, l.position.z, l.position.w);
 
-        light.set_position( (inverse(view_matrix) * lpos).xyz() );
+        vec4 lp = inverse(view_matrix) * lpos;
+        light.set_position(vec3(lp.x, lp.y, lp.z));
         light.set_cl(vec3(l.diffuse.x, l.diffuse.y, l.diffuse.z));
         light.set_kl(l.diffuse.w);
         light.set_constant_attenuation(l.constant_attenuation);
