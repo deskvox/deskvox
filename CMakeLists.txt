@@ -133,8 +133,10 @@ if (NOT DEFINED DESKVOX_USE_CUDA)
   endif()
 endif()
 
+set(DESKVOX_USE_OLD_CUDA FALSE)
+
 if (DESKVOX_USE_CUDA)
-    if (${CMAKE_VERSION} VERSION_GREATER "3.8")
+  if (${CMAKE_VERSION} VERSION_GREATER "3.8")
     # use CMake's CUDA language support
     include(CheckLanguage)
     check_language(CUDA)
@@ -145,15 +147,17 @@ if (DESKVOX_USE_CUDA)
       enable_language(CUDA)
       set(DESKVOX_CUDA_CMAKE TRUE)
     else()
-      set (DESKVOX_USE_CUDA FALSE)
+      set (DESKVOX_USE_OLD_CUDA TRUE)
     endif()
-  else()
-    # resort to old FindCUDA
-    set(DESKVOX_CUDA_CMAKE FALSE)
-    # Override the default value specified in FindCUDA.cmake
-    set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule to the CUDA source file.")
-    find_package(CUDA)
   endif()
+endif()
+
+if (DESKVOX_USE_OLD_CUDA)
+  # resort to old FindCUDA
+  set(DESKVOX_CUDA_CMAKE FALSE)
+  # Override the default value specified in FindCUDA.cmake
+  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "Attach the build rule to the CUDA source file.")
+  find_package(CUDA)
 endif()
 
 option(DESKVOX_USE_GDCM "Use gdcm if available" ON)
