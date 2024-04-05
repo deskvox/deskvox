@@ -15,7 +15,9 @@ find_package(Protokit)
 find_package(Pthreads)
 find_package(SNAPPY)
 find_package(Teem)
-find_package(Visionaray)
+if(DESKVOX_USE_VISIONARAY)
+    find_package(Visionaray)
+endif()
 find_package(VolPack)
 find_package(X11)
 if(DESKVOX_USE_GDCM)
@@ -51,7 +53,7 @@ deskvox_use_package(Teem)
 deskvox_use_package(VolPack)
 deskvox_use_package(X11)
 
-if(VISIONARAY_FOUND)
+if(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
     deskvox_use_package(Visionaray)
 endif()
 
@@ -316,13 +318,13 @@ set(VIRVO_SOURCES
   vvvisitor.cpp
 )
 
-if(VISIONARAY_FOUND)
+if(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
   set(VIRVO_SOURCES
     ${VIRVO_SOURCES}
     vvspaceskip.cpp
     spaceskip/kdtree.cpp
   )
-endif(VISIONARAY_FOUND)
+endif(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
 
 if(DESKVOX_USE_CUDA)
   deskvox_cuda_compiles(VIRVO_CUDA_SOURCES

@@ -2,6 +2,12 @@ include(CheckCXXSourceCompiles)
 
 find_package(Boost)
 find_package(GLEW )
+
+if(NOT DESKVOX_USE_VISIONARAY OR NOT VISIONARAY_FOUND)
+    message(STATUS "Visionaray disabled, not building ray casting plugins")
+    return()
+endif()
+
 find_package(Visionaray)
 
 if(NOT VISIONARAY_FOUND)

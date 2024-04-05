@@ -123,6 +123,12 @@ endif()
 
 option(DESKVOX_ENABLE_WERROR "Fail and stop if a warning is triggered" OFF)
 
+if (NOT DEFINED DESKVOX_USE_VISIONARAY)
+  # Make this an option only if the variable has not otherwise been set. Allows
+  # other CMake modules to override the default value defined here.
+  option(DESKVOX_USE_VISIONARAY "Use Visionaray if available" ON)
+endif()
+
 if (NOT DEFINED DESKVOX_USE_CUDA)
   # Make this an option only if the variable has not otherwise been set. Allows
   # other CMake modules to override the default value defined here.
