@@ -36,7 +36,6 @@
 #include <visionaray/math/math.h>
 #include <visionaray/texture/texture.h>
 #include <visionaray/aligned_vector.h>
-#include <visionaray/blending.h>
 #include <visionaray/material.h>
 #include <visionaray/packet_traits.h>
 #include <visionaray/pixel_format.h>
@@ -545,11 +544,12 @@ public:
 
     static const pixel_format CF = PF_RGBA32F;
     static const pixel_format DF = PF_UNSPECIFIED;
+    static const pixel_format AF = PF_UNSPECIFIED;
 
     using color_type = typename pixel_traits<CF>::type;
     using depth_type = typename pixel_traits<DF>::type;
 
-    using ref_type = render_target_ref<CF, DF>;
+    using ref_type = render_target_ref<CF, DF, AF>;
 
 public:
 
@@ -570,7 +570,7 @@ public:
     color_type const* color() const { return color_; }
     depth_type const* depth() const { return depth_; }
 
-    ref_type ref() { return { color(), depth(), width(), height() }; }
+    ref_type ref() { return { color(), depth(), nullptr, width(), height() }; }
 
     void begin_frame() {}
     void end_frame() {}
@@ -908,7 +908,6 @@ struct vvRayCaster::Impl
 #else
         : sched(vvToolshed::getNumProcessors())
 #endif
-        , space_skip_tree(virvo::SkipTree::SVTKdTree)
     {
 #if !defined(VV_ARCH_CUDA)
         char* num_threads = getenv("VV_NUM_THREADS");
@@ -929,9 +928,6 @@ struct vvRayCaster::Impl
     std::vector<volume32_type>      volumes32;
     std::vector<transfunc_type>     transfuncs;
     depth_buffer_type               depth_buffer;
-
-    bool                            space_skipping = false;
-    virvo::SkipTree                 space_skip_tree;
 
     // Internal storage format for textures
     virvo::PixelFormat              texture_format = virvo::PF_R8;
@@ -958,11 +954,6 @@ void vvRayCaster::Impl::updateVolumeTextures(vvVolDesc* vd, vvRenderer* renderer
     {
         updateVolumeTexturesImpl(vd, renderer, volumes32);
     }
-
-    if (space_skipping)
-    {
-        space_skip_tree.updateVolume(*vd);
-    }
 }
 
 void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*renderer*/)
@@ -977,16 +968,6 @@ void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*rend
         transfuncs[i].reset(tf.data());
         transfuncs[i].set_address_mode(Clamp);
         transfuncs[i].set_filter_mode(Nearest);
-
-        if (space_skipping)
-        {
-            space_skip_tree.updateTransfunc(
-                    reinterpret_cast<const uint8_t*>(tf.data()),
-                    256,
-                    1,
-                    1,
-                    virvo::PF_RGBA32F);
-        }
     }
 }
 
@@ -1075,10 +1056,6 @@ void vvRayCaster::renderVolumeGL()
 
         bool isLightingEnabled = glIsEnabled(GL_LIGHTING);
         glDisable(GL_LIGHTING);
-
-        virvo::vec4 clearColor = vvGLTools::queryClearColor();
-        vvColor color(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2]);
-        impl_->space_skip_tree.renderGL(color);
 
         if (isLightingEnabled)
             glEnable(GL_LIGHTING);
@@ -1381,24 +1358,8 @@ void vvRayCaster::renderVolumeGL()
     };
 #endif
 
-    std::vector<virvo::aabb> boxes;
-
-    if (impl_->space_skipping)
     {
-        virvo::vec3 eye(getEyePosition().x, getEyePosition().y, getEyePosition().z);
-        bool frontToBack = false;
-        auto bricks = impl_->space_skip_tree.getSortedBricks(eye, frontToBack);
-
-        boxes.insert(boxes.end(), bricks.begin(), bricks.end());
-    }
-    else
-    {
-        boxes.emplace_back(virvo::vec3(bbox.min.data()), virvo::vec3(bbox.max.data()));
-    }
-
-    for (unsigned i = 0; i < boxes.size(); ++i)
-    {
-        const virvo::aabb& b = boxes[i];
+        const virvo::aabb& b = bbox;
 
         // Assemble volume kernel params and call kernel
         impl_->params.bbox                      = clip_box(vec3(bbox.min.data()), vec3(bbox.max.data()));
@@ -1420,13 +1381,7 @@ void vvRayCaster::renderVolumeGL()
         impl_->params.clip_objects.begin        = clip_objects_begin();
         impl_->params.clip_objects.end          = clip_objects_end();
 
-        // Composite bricks in back-to-front order
-        pixel_sampler::basic_uniform_blend_type<blending::scale_factor> blend_params;
-        blend_params.sfactor = blending::One;
-        blend_params.dfactor = blending::OneMinusSrcAlpha;
-
         auto sparams = make_sched_params(
-            blend_params,
             view_matrix,
             proj_matrix,
             virvo_rt
@@ -1468,12 +1423,6 @@ void vvRayCaster::updateVolumeData()
 void vvRayCaster::setCurrentFrame(size_t frame)
 {
     vvRenderer::setCurrentFrame(frame);
-
-    if (impl_->space_skipping)
-    {
-        impl_->space_skip_tree.updateVolume(*vd);
-        impl_->updateTransfuncTexture(vd, this);
-    }
 }
 
 bool vvRayCaster::checkParameter(ParameterType param, vvParam const& value) const
