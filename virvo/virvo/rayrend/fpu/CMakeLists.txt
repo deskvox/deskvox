@@ -15,4 +15,4 @@ deskvox_add_library(rayrendfpu
     ${RAYREND_HEADERS}
     ${RAYREND_SOURCES}
 )
-
+target_link_libraries(rayrendfpu PUBLIC visionaray::visionaray)

@@ -1,7 +1,6 @@
 if(DESKVOX_USE_ZEROCONF)
   find_package(Bonjour)
 endif()
-find_package(Boost COMPONENTS chrono date_time filesystem serialization system thread REQUIRED)
 find_package(Cg)
 find_package(FFMPEG)
 find_package(GLEW REQUIRED)
@@ -16,8 +15,10 @@ find_package(Pthreads)
 find_package(SNAPPY)
 find_package(Teem)
 if(DESKVOX_USE_VISIONARAY)
-    find_package(Visionaray)
+    find_package(visionaray CONFIG)
 endif()
+# keep _after_ find_package(visionaray):
+find_package(Boost COMPONENTS chrono date_time filesystem serialization system thread REQUIRED)
 find_package(VolPack)
 find_package(X11)
 if(DESKVOX_USE_GDCM)
@@ -52,11 +53,6 @@ deskvox_use_package(SNAPPY)
 deskvox_use_package(Teem)
 deskvox_use_package(VolPack)
 deskvox_use_package(X11)
-
-if(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
-    deskvox_use_package(Visionaray)
-endif()
-
 
 if(MSVC)
     # Disable Boost autolinking when compiling w/ msvc
@@ -318,13 +314,13 @@ set(VIRVO_SOURCES
   vvvisitor.cpp
 )
 
-if(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
+if(DESKVOX_USE_VISIONARAY AND TARGET visionaray::visionaray)
   set(VIRVO_SOURCES
     ${VIRVO_SOURCES}
     vvspaceskip.cpp
     spaceskip/kdtree.cpp
   )
-endif(DESKVOX_USE_VISIONARAY AND VISIONARAY_FOUND)
+endif()
 
 if(DESKVOX_USE_CUDA)
   deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
@@ -436,6 +432,9 @@ deskvox_add_library(virvo
   ${VIRVO_SHADERS}
 )
 
+if(DESKVOX_USE_VISIONARAY AND TARGET visionaray::visionaray)
+  target_link_libraries(virvo PUBLIC visionaray::visionaray)
+endif()
 # MSVC + CUDA: link with legacy stdio library
 
 if (MSVC_VERSION GREATER 1800 AND DESKVOX_USE_CUDA AND CUDA_FOUND)

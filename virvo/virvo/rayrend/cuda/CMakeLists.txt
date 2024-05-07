@@ -25,6 +25,7 @@ deskvox_add_library(rayrendcuda
 )
 
 set_target_properties(rayrendcuda PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(rayrendcuda PUBLIC visionaray::visionaray)
 
 # MSVC + CUDA: link with legacy stdio library
 

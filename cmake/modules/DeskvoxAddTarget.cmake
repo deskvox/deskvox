@@ -120,7 +120,7 @@ function(deskvox_add_library name)
     __deskvox_set_target_postfixes(${name})
   endif()
 
-  target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
+  target_link_libraries(${name} PUBLIC ${__DESKVOX_LINK_LIBRARIES})
 
 
   if(COVISE_BUILD)
@@ -155,7 +155,7 @@ function(deskvox_add_plugin name)
 
   __deskvox_set_target_postfixes(${name})
 
-  target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
+  target_link_libraries(${name} PUBLIC ${__DESKVOX_LINK_LIBRARIES})
 
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
@@ -189,7 +189,7 @@ function(__deskvox_add_executable folder name)
 
   #__deskvox_set_target_postfixes(${name})
 
-  target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
+  target_link_libraries(${name} PUBLIC ${__DESKVOX_LINK_LIBRARIES})
 
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
