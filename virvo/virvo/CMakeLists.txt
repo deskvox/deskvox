@@ -15,7 +15,7 @@ find_package(Pthreads)
 find_package(SNAPPY)
 find_package(Teem)
 if(DESKVOX_USE_VISIONARAY)
-    find_package(visionaray CONFIG)
+    find_package(visionaray CONFIG EXACT 0.3.5)
 endif()
 # keep _after_ find_package(visionaray):
 find_package(Boost COMPONENTS chrono date_time filesystem serialization system thread REQUIRED)
