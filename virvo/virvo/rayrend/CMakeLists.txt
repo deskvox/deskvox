@@ -5,7 +5,7 @@ if(NOT DESKVOX_USE_VISIONARAY)
     return()
 endif()
 
-find_package(visionaray EXACT 0.3.5)
+find_package(visionaray CONFIG)
 
 if(NOT TARGET visionaray::visionaray)
     message(STATUS "Visionaray not found, not building ray casting plugins")

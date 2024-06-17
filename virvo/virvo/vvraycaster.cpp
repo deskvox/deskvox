@@ -505,7 +505,12 @@ struct depth_buffer_type
 {
     void map(recti viewport, pixel_format format)
     {
-        auto info = map_pixel_format(format);
+        if (format == PF_UNSPECIFIED)
+            return;
+
+        GLuint pixelFormat = GL_DEPTH_COMPONENT;
+        GLuint pixelType
+            = format == PF_DEPTH24_STENCIL8 ? GL_DEPTH24_STENCIL8 : GL_FLOAT;
 
         buffer.resize((viewport.w - viewport.x) * (viewport.h - viewport.y));
 
@@ -514,8 +519,8 @@ struct depth_buffer_type
                 viewport.y,
                 viewport.w,
                 viewport.h,
-                info.format,
-                info.type,
+                pixelFormat,
+                pixelType,
                 buffer.data()
                 );
     }
