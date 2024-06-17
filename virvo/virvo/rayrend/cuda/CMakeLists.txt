@@ -4,8 +4,8 @@ find_package(CUDA)
 
 deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
 
-deskvox_link_libraries(virvo)
-deskvox_link_libraries(virvo_fileio)
+#deskvox_link_libraries(virvo)
+#deskvox_link_libraries(virvo_fileio)
 
 set(RAYREND_HEADERS
     ../../vvraycaster.h
@@ -19,13 +19,11 @@ deskvox_cuda_compiles(RAYREND_CUDA_SOURCES
     ../../vvraycaster.cu
 )
 
-deskvox_add_library(rayrendcuda
-    ${RAYREND_HEADERS}
-    ${RAYREND_CUDA_SOURCES}
-)
+set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+cuda_add_library(rayrendcuda ../../vvraycaster.cu)
 
 set_target_properties(rayrendcuda PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(rayrendcuda PUBLIC visionaray::visionaray)
+target_link_libraries(rayrendcuda PUBLIC visionaray::visionaray virvo virvo_fileio)
 
 # MSVC + CUDA: link with legacy stdio library
 
