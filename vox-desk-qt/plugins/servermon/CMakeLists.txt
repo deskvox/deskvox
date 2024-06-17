@@ -20,5 +20,5 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 deskvox_add_plugin(servermon ${SERVERMON_SRC} ${SERVERMON_MOC_INC} ${SERVERMON_UI_INC})
 
-qt_use_modules(servermon Core Widgets Gui Network Xml)
+target_link_libraries(servermon PUBLIC Qt5::Core Qt5::Widgets Qt5::Gui)
 
