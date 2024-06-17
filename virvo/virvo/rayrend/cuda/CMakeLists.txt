@@ -15,10 +15,15 @@ add_definitions(-Dvirvo_EXPORTS)
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_ARCH_CUDA=1)
 
-set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
-cuda_add_library(rayrendcuda ../../vvraycaster.cu)
+if(DESKVOX_USE_OLD_CUDA)
+    set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+    cuda_add_library(rayrendcuda ../../vvraycaster.cu)
 
-set_target_properties(rayrendcuda PROPERTIES LINKER_LANGUAGE CXX)
+    set_target_properties(rayrendcuda PROPERTIES LINKER_LANGUAGE CXX)
+else()
+    add_library(rayrendcuda ../../vvraycaster.cu)
+endif()
+
 target_link_libraries(rayrendcuda PUBLIC visionaray::visionaray virvo virvo_fileio)
 
 # MSVC + CUDA: link with legacy stdio library
