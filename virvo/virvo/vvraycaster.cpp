@@ -46,12 +46,9 @@
 #include <visionaray/shade_record.h>
 #include <visionaray/variant.h>
 
-#ifdef VV_ARCH_CUDA
-#include <visionaray/cuda/pixel_pack_buffer.h>
-#endif
-
 #undef MATH_NAMESPACE
 
+#include "gl/handle.h"
 #include "gl/util.h"
 #include "private/vvgltools.h"
 #include "vvcudarendertarget.h"
@@ -62,6 +59,7 @@
 #include "vvvoldesc.h"
 
 #ifdef VV_ARCH_CUDA
+#include "cuda/graphics_resource.h"
 #include "cuda/utils.h"
 #endif
 
@@ -491,11 +489,69 @@ private:
 
 #ifdef VV_ARCH_CUDA
 
-struct depth_buffer_type : visionaray::cuda::pixel_pack_buffer
+struct depth_buffer_type
 {
+    virvo::cuda::GraphicsResource resource;
+    virvo::gl::Buffer             buffer;
+    recti                         viewport{0, 0, 0, 0};
+    pixel_format                  format{PF_UNSPECIFIED};
+    GLuint                        pixelFormat, pixelType;
+
+    void map(recti newViewport, pixel_format newFormat)
+    {
+        if (newFormat == PF_UNSPECIFIED)
+            return;
+
+        if (newViewport != viewport || newFormat != format) {
+
+            // Update state
+            viewport = newViewport;
+            format   = newFormat;
+
+            pixelFormat = GL_DEPTH_COMPONENT;
+            pixelType
+                = format == PF_DEPTH24_STENCIL8 ? GL_DEPTH24_STENCIL8 : GL_FLOAT;
+
+            // GL buffer
+            unsigned dataTypeSize = 4;
+            unsigned bufferSize
+                = (viewport.w - viewport.x) * (viewport.h - viewport.y) * dataTypeSize;
+
+            buffer.reset(virvo::gl::createBuffer());
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, buffer.get());
+            glBufferData(GL_PIXEL_PACK_BUFFER, bufferSize, 0, GL_STREAM_COPY);
+
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+            // Register buffer object with CUDA
+            resource.registerBuffer(buffer.get(), cudaGraphicsRegisterFlagsReadOnly);
+        }
+
+        // Transfer pixels
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, buffer.get());
+        glReadPixels(
+                viewport.x,
+                viewport.y,
+                viewport.w,
+                viewport.h,
+                pixelFormat,
+                pixelType,
+                0
+                );
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+        // Map graphics resource
+        resource.map();
+    }
+
+    void unmap()
+    {
+        resource.unmap();
+    }
+
     unsigned const* data() const
     {
-        return static_cast<unsigned const*>(visionaray::cuda::pixel_pack_buffer::data());
+        return static_cast<unsigned const*>(resource.devPtr());
     }
 };
 
