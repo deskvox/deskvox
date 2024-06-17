@@ -15,10 +15,6 @@ add_definitions(-Dvirvo_EXPORTS)
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_ARCH_CUDA=1)
 
-deskvox_cuda_compiles(RAYREND_CUDA_SOURCES
-    ../../vvraycaster.cu
-)
-
 set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 cuda_add_library(rayrendcuda ../../vvraycaster.cu)
 
