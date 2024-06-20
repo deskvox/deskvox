@@ -1,6 +1,9 @@
 if(DESKVOX_USE_CUDA)
 
 find_package(CUDA)
+if(NOT CUDA_FOUND)
+    return()
+endif()
 
 deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
 
