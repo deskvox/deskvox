@@ -80,8 +80,9 @@ vvRenderState::vvRenderState()
   , roi_pos_(vec3f(0.0f, 0.0f, 0.0f))
   , roi_size_(vec3f(0.5f, 0.5f, 0.5f))
   , _sphericalROI(false)
-  , _brickSize(virvo::vector< 3, size_t >(0, 0, 0))
-  , _maxBrickSize(virvo::vector< 3, size_t >(64, 64, 64))
+  , _sliceOrientation(VV_VARIABLE)
+  , _brickSize(virvo::vector<3, size_t>(0, 0, 0))
+  , _maxBrickSize(virvo::vector<3, size_t>(64, 64, 64))
   , _brickTexelOverlap(1)
   , _showBricks(false)
   , _computeBrickSize(true)
@@ -100,8 +101,10 @@ vvRenderState::vvRenderState()
   , _showTexture(true)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
-  , _visibleRegion(virvo::basic_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
-  , _paddingRegion(virvo::basic_aabb< ssize_t >(virvo::vector< 3, ssize_t >(ssize_t(0)), virvo::vector< 3, ssize_t >(std::numeric_limits<ssize_t>::max())))
+  , _visibleRegion(virvo::basic_aabb<ssize_t>(virvo::vector<3, ssize_t>(ssize_t(0)),
+                                              virvo::vector<3, ssize_t>(std::numeric_limits<ssize_t>::max())))
+  , _paddingRegion(virvo::basic_aabb<ssize_t>(virvo::vector<3, ssize_t>(ssize_t(0)),
+                                              virvo::vector<3, ssize_t>(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
   , _interpolation(virvo::Linear)
   , _earlyRayTermination(true)
@@ -163,6 +166,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_ORIENTATION:
     _orientation = value;
+    break;
+  case VV_SLICEORIENT:
+    _sliceOrientation = (SliceOrientation)value.asInt();
     break;
   case VV_PALETTE:
     _palette = value;
@@ -358,6 +364,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _boundaries;
   case VV_ORIENTATION:
     return _orientation;
+  case vvRenderer::VV_SLICEORIENT:
+    return (int)_sliceOrientation;
   case VV_PALETTE:
     return _palette;
   case VV_QUALITY_DISPLAY:
@@ -521,16 +529,17 @@ vvVolDesc* vvRenderer::getVolDesc()
   return vd;
 }
 
-virvo::cartesian_axis< 3 > vvRenderer::getPrincipalViewingAxis(mat4 const& mv,
-                                                        float& zx, float& zy, float& zz) const
+virvo::cartesian_axis<3> vvRenderer::getPrincipalViewingAxis(mat4 const &mv, mat4 const &proj, float &zx, float &zy,
+                                                             float &zz) const
 {
   mat4 invMV = inverse(mv);
+  mat4 invProj = inverse(proj);
 
   vec3 eye = getEyePosition();
 
   vec3 normal;
   vec3 origin;
-  getObjNormal(normal, origin, eye, invMV);
+  getObjNormal(normal, origin, eye, invMV, invProj);
 
   zx = normal.x;
   zy = normal.y;
@@ -568,7 +577,8 @@ void vvRenderer::init()
   }
 }
 
-void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 const& invMV, bool isOrtho) const
+void vvRenderer::getObjNormal(vec3 &normal, vec3 &origin, vec3 const &eye, mat4 const &invMV, mat4 const &invProj,
+                              bool isOrtho) const
 {
   // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -576,30 +586,61 @@ void vvRenderer::getObjNormal(vec3& normal, vec3& origin, vec3 const& eye, mat4 
   // Otherwise use objDir as the normal.
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
+
+  int orient = getParameter(VV_SLICEORIENT).asInt();
   if (getParameter(VV_CLIP_MODE))
   {
+    orient = VV_CLIPPLANE;
+  }
+  else if (orient == VV_VARIABLE)
+  {
+    if (isOrtho || viewDir == vec3f(0.0f))
+    {
+      orient = VV_ORTHO;
+    }
+    else if (!_isROIUsed && isInVolume(eye))
+    {
+      orient = VV_VIEWDIR;
+    }
+    else
+    {
+      orient = VV_OBJECTDIR;
+    }
+  }
+
+  switch (orient)
+  {
+  case VV_CLIPPLANE:
     normal = getParameter(VV_CLIP_PLANE_NORMAL);
-  }
-  else if ( isOrtho || viewDir == vec3f(0.0f) )
-  {
-    // Draw slices parallel to projection plane:
-    normal = vec3(0.0f, 0.0f, 1.0f);              // (0|0|1) is normal on projection plane
-    vec4 normal4 = invMV * vec4(normal, 1.0f);
-    normal = normal4.xyz() / normal4.w;
-    origin = vec3(0.0f, 0.0f, 0.0f);
-    vec4 origin4 = invMV * vec4(origin, 1.0f);
-    origin = origin4.xyz() / origin4.w;
-    normal -= origin;
-  }
-  else if (!_isROIUsed && isInVolume(eye))
-  {
+    break;
+  case VV_VIEWPLANE:
+    {
+      // Draw slices parallel to screen
+      normal = vec3(0.0f, 0.0f, 1.0f); // (0|0|1) is normal on projection plane
+      vec4 normal4 = invMV * (invProj * vec4(normal, 1.0f));
+      normal = -normal4.xyz() / normal4.w;
+    }
+    break;
+  case VV_ORTHO:
+    {
+      // Draw slices parallel to projection plane:
+      normal = vec3(0.0f, 0.0f, 1.0f); // (0|0|1) is normal on projection plane
+      vec4 normal4 = invMV * vec4(normal, 1.0f);
+      normal = normal4.xyz() / normal4.w;
+      origin = vec3(0.0f, 0.0f, 0.0f);
+      vec4 origin4 = invMV * vec4(origin, 1.0f);
+      origin = origin4.xyz() / origin4.w;
+      normal -= origin;
+    }
+    break;
+  case VV_VIEWDIR:
     // Draw slices perpendicular to viewing direction:
-    normal = -viewDir;                            // viewDir points away from user, the normal should point towards them
-  }
-  else
-  {
+    normal = -viewDir; // viewDir points away from user, the normal should point towards them
+    break;
+  case VV_OBJECTDIR:
     // Draw slices perpendicular to line eye->object:
     normal = -objDir;
+    break;
   }
 
   if (normal == vec3f(0.f))

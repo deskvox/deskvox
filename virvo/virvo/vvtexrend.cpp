@@ -190,7 +190,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState)
 
   rendererType = TEXREND;
   texNames = NULL;
-  _sliceOrientation = VV_VARIABLE;
   minSlice = maxSlice = -1;
   rgbaTF.resize(1);
   rgbaLUT.resize(1);
@@ -720,9 +719,11 @@ void vvTexRend::renderTex3DPlanar(mat4 const& mv)
 
   // Get projection matrix:
   vvMatrix pm = gl::getProjectionMatrix();
+  mat4 proj = pm;
+  mat4 invProj = inverse(proj);
   bool isOrtho = pm.isProjOrtho();
 
-  getObjNormal(normal, origin, eye, invMV, isOrtho);
+  getObjNormal(normal, origin, eye, invMV, invProj, isOrtho);
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
@@ -1418,9 +1419,6 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
     case vvRenderer::VV_MAX_SLICE:
       maxSlice = newValue;
       break;
-    case vvRenderer::VV_SLICEORIENT:
-      _sliceOrientation = (SliceOrientation)newValue.asInt();
-      break;
     case vvRenderer::VV_PREINT:
       vvRenderer::setParameter(param, newValue);
       updateTransferFunction();
@@ -1492,8 +1490,6 @@ vvParam vvTexRend::getParameter(ParameterType param) const
       return minSlice;
     case vvRenderer::VV_MAX_SLICE:
       return maxSlice;
-    case vvRenderer::VV_SLICEORIENT:
-      return (int)_sliceOrientation;
     case vvRenderer::VV_BINNING:
       return (int)vd->_binning;
     case vvRenderer::VV_PIX_SHADER:

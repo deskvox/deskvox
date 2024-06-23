@@ -68,15 +68,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_POST_CLASSIFICATION,                     ///< post-classification, needs shaders
       VV_MIP                                      ///< maximum intensity projection
     };
-    enum SliceOrientation                         /// Slice orientation for planar 3D textures
-    {
-      VV_VARIABLE = 0,                            ///< choose automatically
-      VV_VIEWPLANE,                               ///< parallel to view plane
-      VV_CLIPPLANE,                               ///< parallel to clip plane
-      VV_VIEWDIR,                                 ///< perpendicular to viewing direction
-      VV_OBJECTDIR,                               ///< perpendicular to line eye-object
-      VV_ORTHO                                    ///< as in orthographic projection
-    };
 
     static const int NUM_PIXEL_SHADERS;           ///< number of pixel shaders used
   private:
@@ -101,7 +92,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     int maxClipPlanes;                            ///< maximum number of OpenGL clip planes
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
-    SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     size_t _lastFrame;                            ///< last frame rendered
 
     boost::scoped_ptr<vvShaderFactory> _shaderFactory; ///< Factory for shader-creation

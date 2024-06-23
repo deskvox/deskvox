@@ -63,6 +63,17 @@ public:
   };
 
 
+  enum SliceOrientation                         /// Slice orientation for planar 3D textures
+  {
+    VV_VARIABLE = 0,                            ///< choose automatically
+    VV_VIEWPLANE,                               ///< parallel to view plane
+    VV_CLIPPLANE,                               ///< parallel to clip plane
+    VV_VIEWDIR,                                 ///< perpendicular to viewing direction
+    VV_OBJECTDIR,                               ///< perpendicular to line eye-object
+    VV_ORTHO                                    ///< as in orthographic projection
+  };
+
+
   enum ParameterType                            ///<  Names for rendering parameters
   {
     VV_QUALITY = 0,
@@ -121,7 +132,7 @@ public:
     VV_MIN_SLICE,                               ///< minimum slice index to render
     VV_MAX_SLICE,                               ///< maximum slice index to render
     VV_BINNING,                                 ///< binning type (linear, iso-value, opacity)
-    VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
+    VV_SLICEORIENT,                             ///< slice orientation for planar 3d textures
     VV_ISECT_TYPE,                              ///< proxy geometry using different shaders or the gpu
     VV_TERMINATEEARLY,                          ///< terminate rays early
     VV_OFFSCREENBUFFER,                         ///< offscreen buffer on/off
@@ -192,6 +203,7 @@ protected:
   virvo::vec3f roi_pos_;                        ///< object space coordinates of ROI midpoint [mm]
   virvo::vec3f roi_size_;                       ///< size of roi in each dimension [0..1]
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
+  SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
 
   virvo::vector< 3, size_t > _brickSize;        ///< last bricksize in x/y/z
   virvo::vector< 3, size_t > _maxBrickSize;     ///< max allowed bricksize in x/y/z
@@ -290,6 +302,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
                       virvo::vec3& origin,
                       virvo::vec3 const& eye,
                       virvo::mat4 const& invMV,
+                      virvo::mat4 const& invProj,
                       bool isOrtho = false) const;
 
     void getShadingNormal(virvo::vec3& normal,
@@ -359,7 +372,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual virvo::cartesian_axis< 3 > getPrincipalViewingAxis(virvo::mat4 const& mv, float& zx, float& zy, float& zz) const;
+    virtual virvo::cartesian_axis< 3 > getPrincipalViewingAxis(virvo::mat4 const& mv, virvo::mat4 const& proj, float& zx, float& zy, float& zz) const;
 
     // Returns the current render target
     virvo::RenderTarget const* getRenderTarget() const {
