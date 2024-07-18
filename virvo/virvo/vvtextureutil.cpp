@@ -96,7 +96,7 @@ namespace virvo
     // TODO...
 
     vec3i size = last - first;
-    return size.x * size.y * size.z * info.size;
+    return static_cast<size_t>(size.x) * static_cast<size_t>(size.y) * static_cast<size_t>(size.z) * info.size;
   }
 
 
@@ -256,7 +256,7 @@ namespace virvo
         {
           for (int x = first.x; x < last.x; ++x)
           {
-            int index = vd->rescaleVoxel(raw, 1/*byte*/, 0) * bpcDst;
+            size_t index = vd->rescaleVoxel(raw, 1 /*byte*/, 0) * bpcDst;
             dst[0] = rgba[index * 4];
             dst[1] = rgba[index * 4 + 1];
             dst[2] = rgba[index * 4 + 2];
