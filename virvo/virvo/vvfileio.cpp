@@ -2609,16 +2609,33 @@ struct vvTifData
         }
       }
 
+      ssize_t nimages = 1;
+      std::string images = getTagValue("images");
+      if (!images.empty())
+        nimages = atol(images.c_str());
+      ssize_t nslices = 1;
+      std::string slices = getTagValue("slices");
+      if (!slices.empty())
+        nslices = atol(slices.c_str());
+      ssize_t nframes = 1;
+      std::string frames = getTagValue("frames");
+      if (!frames.empty())
+        nframes = atol(frames.c_str());
+
       std::string hyperstack = getTagValue("hyperstack");
-      if (hyperstack == "true") {
-        std::string images = getTagValue("images");
-        std::string slices = getTagValue("slices");
-        std::string frames = getTagValue("frames");
-        ssize_t nimages = atol(images.c_str());
-        ssize_t nslices = atol(slices.c_str());
-        ssize_t nframes = atol(frames.c_str());
-        if (nimages == nslices*nframes) {
+      if (hyperstack == "true")
+      {
+        if (nimages == nslices * nframes)
+        {
           isHyperstack = true;
+          slicesPerFrame = nslices;
+        }
+      }
+      else
+      {
+        // large (> 4 GB) ImageJ 3D stack, data stored consecutively for all slices
+        if (nimages == nslices)
+        {
           slicesPerFrame = nslices;
         }
       }
@@ -2733,7 +2750,6 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   }
   fclose(fp);
 
-  tifData.parseDescription();
   vec3 dist = vd->getDist();
   if (tifData.resolutionUnit > 0.f)
   {
@@ -2759,12 +2775,21 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   if (tifData.isHyperstack)
   {
     slicesPerFrame = tifData.slicesPerFrame;
-    VV_LOG(2) << "TIF: hyperstack" << std::endl;
+    VV_LOG(2) << "TIF: hyperstack with " << slicesPerFrame << " slices" << std::endl;
+    vd->mergeFrames(slicesPerFrame);
+  }
+  else if (tifData.slicesPerFrame > 0)
+  {
+    VV_LOG(2) << "TIF: ImageJ stack > 4GB with " << tifData.slicesPerFrame << " slices, skipping merge" << std::endl;
+    slicesPerFrame = 1;
+  }
+  else
+  {
+    VV_LOG(2) << "TIF: single frame" << std::endl;
+    vd->mergeFrames(slicesPerFrame);
   }
 
   //std::cerr << "TIF spacing (" << tifData.dim << "D): " << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << std::endl;
-
-  vd->mergeFrames(slicesPerFrame);
 
   return err;
 }
@@ -2881,6 +2906,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       if (dataType == 2) { // Description
         std::vector<char> s = tifGetData<char>(fp, value, numValues, endian);
         tifData->description = std::string(s.begin(), s.end());
+        tifData->parseDescription();
       } else {
         return DATA_ERROR;
       }
@@ -2942,7 +2968,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       case 0x142: tileWidth  = (ushort)value; break;
       case 0x143: tileHeight = (ushort)value; break;
       case 0x144: numTiles = numValues; tileOffset = value; break;
-      case 0x80e5: vd->vox[2] = value; break;
+      case 0x80e5:
+        if (tifData->slicesPerFrame <= 1 || tifData->isHyperstack)
+        {
+          // do not override ImageJ stack information from description
+          vd->vox[2] = value;
+        }
+        break;
       default:
       if (vvDebugMsg::isActive(2))
       {
@@ -2966,12 +2998,21 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     return DATA_ERROR;
   }
 
+  if (!stripOffsets.empty() && stripOffsets[0] > 0) // load 2D TIFF?
+  {
+    if (tifData->slicesPerFrame >= 1 && !tifData->isHyperstack)
+    {
+      vd->vox[2] = tifData->slicesPerFrame;
+    }
+  }
+
   // Allocate memory for volume data:
   uint8_t *raw = new uint8_t[vd->getFrameBytes()];
 
-  if (!stripOffsets.empty() && stripOffsets[0]>0)                          // load 2D TIFF?
+  if (!stripOffsets.empty() && stripOffsets[0] > 0) // load 2D TIFF?
   {
     tifData->dim = 2;
+    size_t nslices = vd->vox[2];
     size_t rawOffset = 0;
     for (size_t i=0; i<strips; ++i)
     {
@@ -2981,14 +3022,16 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       fseek(fp, stripOffsets[i], SEEK_SET);
 #endif
       size_t bytesToRead = ((planarConfiguration == 2) ? 3 : 1) * stripByteCounts[i];
-      size_t readBytes = fread(raw+rawOffset, 1, bytesToRead, fp);
-      if (readBytes != bytesToRead)
+      size_t readSlices = fread(raw + rawOffset, bytesToRead, nslices, fp);
+      if (readSlices != nslices)
       {
-        cerr << "Error: reached end of TIFF file while reading." << endl;
+        cerr << "Error: reached end of TIFF file while reading: read " << readSlices << " instead of " << nslices
+             << " slices" << endl;
         delete[] raw;
         return DATA_ERROR;
       }
-      else rawOffset += bytesToRead;
+      else
+        rawOffset += bytesToRead * nslices;
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     ++vd->frames;
