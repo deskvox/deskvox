@@ -1,0 +1,31 @@
+---
+# BasedOnStyle:  LLVM
+AccessModifierOffset: -2
+AlignEscapedNewlines: DontAlign
+AlignTrailingComments: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLambdasOnASingleLine: Inline
+AlwaysBreakTemplateDeclarations: true
+BreakBeforeBraces: Allman
+BreakConstructorInitializersBeforeComma: true
+ColumnLimit:     120
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 0
+ContinuationIndentWidth: 2
+IndentWidth:     2
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+ObjCBlockIndentWidth: 2
+PenaltyExcessCharacter: 50
+ReflowComments:  false
+SortIncludes:    false
+SortUsingDeclarations: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeRangeBasedForLoopColon: false
+TabWidth:        2
+---
+Language:        Cpp
+---
+Language:        ObjC
