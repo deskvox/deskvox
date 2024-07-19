@@ -533,8 +533,14 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     dt     = src->dt;
     raw.merge(&src->raw);
     for (size_t i=0; i<3; ++i) dist[i] = src->dist[i];
-    range_.resize(src->range_.size());
-    std::copy(src->range_.begin(), src->range_.end(), range_.begin());
+    range_.clear();
+    std::copy(src->range_.begin(), src->range_.end(), std::back_inserter(range_));
+    mapping_.clear();
+    std::copy(src->mapping_.begin(), src->mapping_.end(), std::back_inserter(mapping_));
+    zoomRange_.clear();
+    std::copy(src->zoomRange_.begin(), src->zoomRange_.end(), std::back_inserter(zoomRange_));
+    channelWeights.clear();
+    std::copy(src->channelWeights.begin(), src->channelWeights.end(), std::back_inserter(channelWeights));
     for (int i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
@@ -574,6 +580,10 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
       }
       for (int i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
       chan += src->chan;                          // update target channel number
+      std::copy(src->range_.begin(), src->range_.end(), std::back_inserter(range_));
+      std::copy(src->mapping_.begin(), src->mapping_.end(), std::back_inserter(mapping_));
+      std::copy(src->zoomRange_.begin(), src->zoomRange_.end(), std::back_inserter(zoomRange_));
+      std::copy(src->channelWeights.begin(), src->channelWeights.end(), std::back_inserter(channelWeights));
       src->removeSequence();                      // delete copied frames from source
       return OK;
     }
@@ -1736,6 +1746,7 @@ void vvVolDesc::convertRGB24toRGB8()
     raw.next();
   }
   chan = 1;
+  // FIXME: adjust range_
 }
 
 //----------------------------------------------------------------------------
@@ -3559,6 +3570,7 @@ void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
   if (size_t(ptr+4 - buffer) <= bufSize)
     chan = virvo::serialization::read32(ptr);
   else return;
+  setChan(chan); // allocate per-channel data
   ptr += 4;
   assert(ptr + 1 - buffer >= 0);
   if (size_t(ptr+1 - buffer) <= bufSize)
@@ -3743,6 +3755,7 @@ void vvVolDesc::deserializeAttributesOLD(uint8_t* buffer, size_t bufSize)
   if (size_t(ptr+1 - buffer) <= bufSize)
     chan = virvo::serialization::read8(ptr);
   else return;
+  setChan(chan); // allocate per-channel data
   ptr += 1;
 }
 
@@ -4690,8 +4703,12 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
   }
   chan = 4;
 
-  // Adjust channel names:
+  // Adjust per-channel data
   channelNames.push_back("");
+  range_.push_back(vec2(0.0f, 1.0f));
+  mapping_.push_back(vec2(0.0f, 1.0f));
+  zoomRange_.push_back(vec2(0.0f, 0.0f)); // TODO
+  channelWeights.push_back(1.f);
 }
 
 //----------------------------------------------------------------------------
