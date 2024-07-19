@@ -139,7 +139,7 @@ bool vvRenderState::checkParameter(ParameterType param, vvParam const& value) co
 
 void vvRenderState::setParameter(ParameterType param, const vvParam& value)
 {
-  vvDebugMsg::msg(3, "vvRenderState::setParameter()");
+  vvDebugMsg::msg(4, "vvRenderState::setParameter()");
 
   switch (param)
   {
@@ -344,7 +344,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
 
 vvParam vvRenderState::getParameter(ParameterType param) const
 {
-  vvDebugMsg::msg(3, "vvRenderState::getParameter()");
+  vvDebugMsg::msg(4, "vvRenderState::getParameter()");
 
   switch (param)
   {
@@ -1619,7 +1619,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
 */
 void vvRenderer::setParameter(ParameterType param, const vvParam& value)
 {
-  vvDebugMsg::msg(3, "vvRenderer::setParameter()");
+  vvDebugMsg::msg(4, "vvRenderer::setParameter()");
   vvRenderState::setParameter(param, value);
 }
 
@@ -1630,7 +1630,7 @@ void vvRenderer::setParameter(ParameterType param, const vvParam& value)
 */
 vvParam vvRenderer::getParameter(ParameterType param) const
 {
-  vvDebugMsg::msg(3, "vvRenderer::getParameter()");
+  vvDebugMsg::msg(4, "vvRenderer::getParameter()");
   return vvRenderState::getParameter(param);
 }
 

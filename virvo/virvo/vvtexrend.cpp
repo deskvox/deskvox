@@ -1387,7 +1387,7 @@ bool vvTexRend::checkParameter(ParameterType param, vvParam const& value) const
 // see parent
 void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 {
-  vvDebugMsg::msg(3, "vvTexRend::setParameter()");
+  vvDebugMsg::msg(4, "vvTexRend::setParameter()");
   switch (param)
   {
     case vvRenderer::VV_POST_CLASSIFICATION:
@@ -1482,7 +1482,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 // see parent for comments
 vvParam vvTexRend::getParameter(ParameterType param) const
 {
-  vvDebugMsg::msg(3, "vvTexRend::getParameter()");
+  vvDebugMsg::msg(4, "vvTexRend::getParameter()");
 
   switch (param)
   {
