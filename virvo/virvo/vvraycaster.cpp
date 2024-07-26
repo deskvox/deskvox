@@ -508,9 +508,15 @@ struct depth_buffer_type
             viewport = newViewport;
             format   = newFormat;
 
-            pixelFormat = GL_DEPTH_COMPONENT;
-            pixelType
-                = format == PF_DEPTH24_STENCIL8 ? GL_DEPTH24_STENCIL8 : GL_FLOAT;
+            if (format == PF_DEPTH24_STENCIL8) {
+                pixelFormat = GL_DEPTH_STENCIL;
+                pixelType = GL_UNSIGNED_INT_24_8;
+            } else if (format == PF_DEPTH32F) {
+                pixelFormat = GL_DEPTH_COMPONENT;
+                pixelType = GL_FLOAT;
+            } else {
+                std::cerr << "invalid pixel format: " << (int)format << '\n';
+            }
 
             // GL buffer
             unsigned dataTypeSize = 4;
@@ -564,9 +570,16 @@ struct depth_buffer_type
         if (format == PF_UNSPECIFIED)
             return;
 
-        GLuint pixelFormat = GL_DEPTH_COMPONENT;
-        GLuint pixelType
-            = format == PF_DEPTH24_STENCIL8 ? GL_DEPTH24_STENCIL8 : GL_FLOAT;
+        GLuint pixelFormat, pixelType;
+        if (format == PF_DEPTH24_STENCIL8) {
+            pixelFormat = GL_DEPTH_STENCIL;
+            pixelType = GL_UNSIGNED_INT_24_8;
+        } else if (format == PF_DEPTH32F) {
+            pixelFormat = GL_DEPTH_COMPONENT;
+            pixelType = GL_FLOAT;
+        } else {
+            std::cerr << "invalid pixel format: " << (int)format << '\n';
+        }
 
         buffer.resize((viewport.w - viewport.x) * (viewport.h - viewport.y));
 
