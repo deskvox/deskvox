@@ -817,11 +817,11 @@ struct volume_kernel
             if (!visionaray::all(clipped))
             {
                 auto pos = ray.ori + ray.dir * t;
-                auto tex_coord = vector<3, S>(
-                        ( pos.x + (params.bbox.size().x / 2) ) / params.bbox.size().x,
-                        (-pos.y + (params.bbox.size().y / 2) ) / params.bbox.size().y,
-                        (-pos.z + (params.bbox.size().z / 2) ) / params.bbox.size().z
-                        );
+                vector<3, S> tex_coord(
+                    ((pos.x - params.bbox.min.x) / params.bbox.size().x),
+                    1.f-((pos.y - params.bbox.min.y) / params.bbox.size().y),
+                    1.f-((pos.z - params.bbox.min.z) / params.bbox.size().z))
+                    ;
 
                 C color(0.0);
 
