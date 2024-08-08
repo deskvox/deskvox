@@ -134,7 +134,7 @@ GLenum gl::getError(char const* file, int line)
     GLenum err = glGetError();
 
     if (err != GL_NO_ERROR)
-        fprintf(stderr, "%s(%d) : GL error: %s\n", file, line, gluErrorString(err));
+        fprintf(stderr, "%s(%d) : GL error: %s\n", file, line, glewGetErrorString(err));
 
     return err;
 }

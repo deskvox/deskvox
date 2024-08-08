@@ -9,6 +9,11 @@
 #include <string.h>
 
 #include <virvo/vvopengl.h>
+#if defined(__APPLE__)
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
 
 #include <iostream>
 

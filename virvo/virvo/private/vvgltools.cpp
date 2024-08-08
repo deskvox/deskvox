@@ -128,7 +128,7 @@ void vvGLTools::printGLError(const char* msg)
   const GLenum err = glGetError();
   if(err != GL_NO_ERROR)
   {
-    const char* str = (const char*)gluErrorString(err);
+    const char* str = (const char*)glewGetErrorString(err);
     cerr << "GL error: " << msg << ", " << str << endl;
   }
 }
@@ -351,7 +351,7 @@ std::string virvo::gltools::lastError(const std::string& file, int line)
   const GLenum err = glGetError();
   if(err != GL_NO_ERROR)
   {
-    std::string str(reinterpret_cast<const char*>(gluErrorString(err)));
+    std::string str(reinterpret_cast<const char*>(glewGetErrorString(err)));
     out << file << ":" << line << ": OpenGL error: " << str;
   }
   return out.str();
