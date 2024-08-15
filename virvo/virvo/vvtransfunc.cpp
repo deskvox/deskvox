@@ -40,6 +40,7 @@
 #include "vvtoolshed.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -171,6 +172,74 @@ void vvTransFunc::clear()
 */
 void vvTransFunc::populateDefaultWidgets()
 {
+  // First try to load from VV_TF_PATH:
+  const char* tfEnv = "VV_TF_PATH";
+  if (getenv(tfEnv))
+  {
+    std::cerr << "Environment variable " << tfEnv << " found: " << getenv(tfEnv) << std::endl;
+    std::string tfDir = getenv(tfEnv);
+
+    namespace fs = std::filesystem;
+    fs::path path(tfDir);
+
+    if (fs::exists(path) && fs::is_directory(path)) {
+      fs::directory_iterator end;
+      for (fs::directory_iterator it(path); it != end; ++it) {
+        fs::path p = fs::canonical(*it);
+        vvTransFunc tf;
+        std::cerr << "Try loading " << p.filename().string() << std::endl;
+        if (tf.load(p.string())) {
+          int numColorWidgets = false;
+          int numAlphaWidgets = false;
+          for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+               it != tf._widgets.end(); ++it)
+          {
+            if (dynamic_cast<vvTFColor *>(*it)) numColorWidgets++;
+            if (dynamic_cast<vvTFPyramid *>(*it)) numAlphaWidgets++;
+            if (dynamic_cast<vvTFBell *>(*it)) numAlphaWidgets++;
+            if (dynamic_cast<vvTFSkip *>(*it)) numAlphaWidgets++;
+          }
+
+          std::cerr << "#colors: " << numColorWidgets << ", #alpha: " << numAlphaWidgets << std::endl;
+
+          if (numColorWidgets)
+            defaultColors.emplace_back();
+
+          if (numAlphaWidgets)
+            defaultAlpha.emplace_back();
+
+          for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+               it != tf._widgets.end(); ++it)
+          {
+            if (dynamic_cast<vvTFColor *>(*it))
+              defaultColors.back().push_back(new vvTFColor((vvTFColor *)*it));
+
+            if (dynamic_cast<vvTFPyramid *>(*it))
+              defaultAlpha.back().push_back(new vvTFPyramid((vvTFPyramid *)*it));
+
+            if (dynamic_cast<vvTFBell *>(*it))
+              defaultAlpha.back().push_back(new vvTFBell((vvTFBell *)*it));
+
+            if (dynamic_cast<vvTFSkip *>(*it))
+              defaultAlpha.back().push_back(new vvTFSkip((vvTFSkip *)*it));
+          }
+        } else {
+          std::cerr << "Not in VTF format!" << std::endl;
+        }
+      }
+    }
+
+    std::cerr << "Loaded " << defaultColors.size() << " default color maps and "
+              << defaultAlpha.size() << " default alpha maps" << std::endl;
+
+    if (defaultColors.size() || defaultAlpha.size())
+      return;
+
+    std::cerr << "Setting up internal defaults...\n";
+  }
+
+
+  // Else use hard-coded defaults:
   // Colors:
 
   defaultColors.resize(9);
@@ -204,11 +273,11 @@ void vvTransFunc::populateDefaultWidgets()
   defaultColors[4].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
   defaultColors[4].push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 1.f));
 
-  // red ramp
+  // green ramp
   defaultColors[5].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
   defaultColors[5].push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), 1.f));
 
-  // red ramp
+  // blue ramp
   defaultColors[6].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
   defaultColors[6].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 1.f));
 
