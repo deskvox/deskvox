@@ -1,4 +1,4 @@
-find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
+find_package(Boost COMPONENTS serialization REQUIRED)
 
 deskvox_use_package(Boost)
 if(DESKVOX_USE_CUDA)

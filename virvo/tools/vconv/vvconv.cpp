@@ -36,7 +36,7 @@
 #include "vvtoolshed.h"
 #include <sstream>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 using namespace std;
 
@@ -2771,11 +2771,11 @@ int vvConv::renameDicomFiles()
     }
     else
     {
-      boost::filesystem::path inpath(srcFile);
+      std::filesystem::path inpath(srcFile);
 
       sprintf(newName, "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
 
-      boost::filesystem::path outpath(inpath);
+      std::filesystem::path outpath(inpath);
       outpath.remove_filename();
       outpath /= newName;
       std::string newpath = outpath.string();
