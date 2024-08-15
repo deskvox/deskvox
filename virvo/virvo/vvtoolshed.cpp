@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <errno.h>
 #include "vvplatform.h"
@@ -2491,7 +2491,7 @@ std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
 {
     std::vector<std::string> result;
 
-    namespace filesystem = boost::filesystem;
+    namespace filesystem = std::filesystem;
 
     filesystem::path path(dir);
 
