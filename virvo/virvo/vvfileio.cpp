@@ -32,7 +32,7 @@
 #endif
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <math.h>
 #include <limits.h>
@@ -5482,7 +5482,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   _sections = sec;
 
-  namespace fs = boost::filesystem;
+  namespace fs = std::filesystem;
 
   std::map<std::string, Format> formats = supported_formats();
 

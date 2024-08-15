@@ -1,4 +1,4 @@
-find_package(Boost COMPONENTS filesystem serialization system REQUIRED)
+find_package(Boost COMPONENTS serialization REQUIRED)
 find_package(Nifti)
 find_package(Teem)
 
