@@ -47,7 +47,11 @@ class VIRVO_TRANSFUNCEXPORT vvTransFunc
   public:
     static const size_t NUM_HDR_BINS;             ///< constant value for HDR transfer functions
 
-    std::vector<vvTFWidget*> _widgets;             ///< TF widget list
+    typedef std::vector<vvTFWidget*> Widgets;
+    Widgets _widgets;             ///< TF widget list
+
+    static std::vector<Widgets> defaultColors;
+    static std::vector<Widgets> defaultAlpha;
 
     template<class A>
     void serialize(A& a, unsigned /*version*/)
@@ -71,6 +75,7 @@ class VIRVO_TRANSFUNCEXPORT vvTransFunc
     bool isEmpty();
     void clear();
     void deleteColorWidgets();
+    void populateDefaultWidgets();
     void setDefaultColors(int, float, float);
     int  getNumDefaultColors();
     void setDefaultAlpha(int, float, float);

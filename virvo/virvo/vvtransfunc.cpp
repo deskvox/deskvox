@@ -53,6 +53,9 @@ using virvo::vec4i;
 
 const size_t vvTransFunc::NUM_HDR_BINS = 256;
 
+std::vector<vvTransFunc::Widgets> vvTransFunc::defaultColors = {};
+std::vector<vvTransFunc::Widgets> vvTransFunc::defaultAlpha = {};
+
 //----------------------------------------------------------------------------
 /// Constructor
 vvTransFunc::vvTransFunc()
@@ -163,6 +166,93 @@ void vvTransFunc::clear()
 }
 
 //----------------------------------------------------------------------------
+/** build up the static default{Colors|Alpha} lists; the widget positions.
+ Widget positions are normalized, i.e., need to be scaled by min/max when used!
+*/
+void vvTransFunc::populateDefaultWidgets()
+{
+  // Colors:
+
+  defaultColors.resize(9);
+  // bright colors
+  // Set RGBA table to bright colors (range: blue->green->red):
+  defaultColors[0].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 0.f));
+  defaultColors[0].push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), 0.33f));
+  defaultColors[0].push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), 0.67f));
+  defaultColors[0].push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 1.f));
+
+  // hue gradient
+  // Set RGBA table to maximum intensity and value HSB colors:
+  defaultColors[1].push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 0.f));
+  defaultColors[1].push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), 0.2f));
+  defaultColors[1].push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), 0.4f));
+  defaultColors[1].push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), 0.6f));
+  defaultColors[1].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 0.8f));
+  defaultColors[1].push_back(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), 1.f));
+
+  // grascale ramp
+  // Set RGBA table to grayscale ramp (range: black->white).
+  defaultColors[2].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
+  defaultColors[2].push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 1.f));
+
+  // white
+  // Set RGBA table to all white values:
+  defaultColors[3].push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 0.f));
+  defaultColors[3].push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 1.f));
+
+  // red ramp
+  defaultColors[4].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
+  defaultColors[4].push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 1.f));
+
+  // red ramp
+  defaultColors[5].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
+  defaultColors[5].push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), 1.f));
+
+  // red ramp
+  defaultColors[6].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.f));
+  defaultColors[6].push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 1.f));
+
+  // cool to warm map
+  // see http://www.cs.unm.edu/~kmorel/documents/ColorMaps/ColorMapsExpanded.pdf
+  defaultColors[7].push_back(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), 0.f));
+  defaultColors[7].push_back(new vvTFColor(vvColor(0.552f, 0.690f, 0.996f), 0.25f));
+  defaultColors[7].push_back(new vvTFColor(vvColor(0.866f, 0.866f, 0.866f), 0.5f));
+  defaultColors[7].push_back(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), 0.75f));
+  defaultColors[7].push_back(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), 1.f));
+
+  // 'Fire' color table from ImageJ
+#if 0
+  const int r[] = {0, 0, 1, 25, 49, 73, 98,122,146,162,173,184,195,207,217,229,240,252,255,255,255,255,255,255,255,255,255,255,255,255,255,255};
+  const int g[] = {0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 14, 35, 57, 79,101,117,133,147,161,175,190,205,219,234,248,255,255,255,255};
+  const int b[] = {0,61,96,130,165,192,220,227,210,181,151,122, 93, 64, 35,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 35, 98,160,223,255};
+  const int n = sizeof(r)/sizeof(r[0]);
+  const float d = (max-min)/(n-1);
+  float x = min;
+#else
+  const int r[] = {0, 0,122,195,255,255,255};
+  const int g[] = {0, 0,  0,  0,117,234,255};
+  const int b[] = {0,61,227, 93,  0,  0,255};
+  const int k[] = {0, 1,  7, 12, 18, 26, 31}; 
+  const int n = sizeof(r)/sizeof(r[0]);
+#endif
+  for (int i=0; i<n; ++i) {
+    defaultColors[8].push_back(new vvTFColor(vvColor(r[i]/255.f, g[i]/255.f, b[i]/255.f), k[i]/float(k[n-1])));
+  }
+
+  // Alpha:
+  defaultAlpha.resize(3);
+
+  // ascending (0->1)
+  defaultAlpha[0].push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 1.0f, 2.0f, 0.0f));
+
+  // descending (1->0)
+  defaultAlpha[1].push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 0.0f, 2.0f, 0.0f));
+
+  // opaque (all 1)
+  defaultAlpha[2].push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 0.5f, 1.0f, 1.0f));
+}
+
+//----------------------------------------------------------------------------
 /** Set default color values in the global color transfer function.
  All previous color widgets are deleted, other widgets are not affected.
  @param index color scheme
@@ -171,83 +261,19 @@ void vvTransFunc::clear()
 void vvTransFunc::setDefaultColors(int index, float min, float max)
 {
   deleteWidgets(vvTFWidget::TF_COLOR);
-  switch (index)
+
+  if (defaultColors.empty()) {
+    populateDefaultWidgets();
+  }
+
+  for (unsigned i=0; i<defaultColors[index].size(); ++i)
   {
-    case 0:                                       // bright colors
-    default:
-      // Set RGBA table to bright colors (range: blue->green->red):
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.33f + min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.67f + min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max));
-      break;
-
-    case 1:                                       // hue gradient
-      // Set RGBA table to maximum intensity and value HSB colors:
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.2f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), (max-min) * 0.4f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.6f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), (max-min) * 0.8f + min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), max));
-      break;
-
-    case 2:                                       // grayscale ramp
-      // Set RGBA table to grayscale ramp (range: black->white).
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max));
-      break;
-
-    case 3:                                       // white
-      // Set RGBA table to all white values:
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max));
-      break;
-
-    case 4:                                       // red ramp
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max));
-      break;
-
-    case 5:                                       // green ramp
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), max));
-      break;
-
-    case 6:                                       // blue ramp
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
-      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max));
-      break;
-
-    case 7:                                       // cool to warm map
-      // see http://www.cs.unm.edu/~kmorel/documents/ColorMaps/ColorMapsExpanded.pdf
-      _widgets.push_back(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), min));
-      _widgets.push_back(new vvTFColor(vvColor(0.552f, 0.690f, 0.996f), (max-min) * 0.25f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.866f, 0.866f, 0.866f), (max-min) * 0.5f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), (max-min) * 0.75f + min));
-      _widgets.push_back(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), max));
-      break;
-
-    case 8: {                                     // 'Fire' color table from ImageJ
-#if 0
-      const int r[] = {0, 0, 1, 25, 49, 73, 98,122,146,162,173,184,195,207,217,229,240,252,255,255,255,255,255,255,255,255,255,255,255,255,255,255};
-      const int g[] = {0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 14, 35, 57, 79,101,117,133,147,161,175,190,205,219,234,248,255,255,255,255};
-      const int b[] = {0,61,96,130,165,192,220,227,210,181,151,122, 93, 64, 35,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 35, 98,160,223,255};
-      const int n = sizeof(r)/sizeof(r[0]);
-      const float d = (max-min)/(n-1);
-      float x = min;
-#else
-      const int r[] = {0, 0,122,195,255,255,255};
-      const int g[] = {0, 0,  0,  0,117,234,255};
-      const int b[] = {0,61,227, 93,  0,  0,255};
-      const int k[] = {0, 1,  7, 12, 18, 26, 31}; 
-      const int n = sizeof(r)/sizeof(r[0]);
-      const float d = (max-min)/(k[n-1]);
-#endif
-      for (int i=0; i<n; ++i) {
-        _widgets.push_back(new vvTFColor(vvColor(r[i]/255.f, g[i]/255.f, b[i]/255.f), d*k[i]));
-      }
-      break;
+    vvTFColor *col = dynamic_cast<vvTFColor *>(defaultColors[index][i]);
+    if (col) {
+      float x = col->pos()[0] * (max-min) + min;
+      _widgets.push_back(new vvTFColor(col->color(), x));
+    } else {
+      assert(0);
     }
   }
 }
@@ -256,7 +282,7 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
 /// Returns the number of default color schemes.
 int vvTransFunc::getNumDefaultColors()
 {
-  return 9;
+  return defaultColors.size();
 }
 
 //----------------------------------------------------------------------------
@@ -268,24 +294,41 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
 {
   vvDebugMsg::msg(2, "vvTransFunc::setDefaultAlpha()");
 
+  if (defaultAlpha.empty()) {
+    populateDefaultWidgets();
+  }
+
   deleteWidgets(vvTFWidget::TF_PYRAMID);
   deleteWidgets(vvTFWidget::TF_BELL);
   deleteWidgets(vvTFWidget::TF_CUSTOM);
   deleteWidgets(vvTFWidget::TF_CUSTOM_2D);
   deleteWidgets(vvTFWidget::TF_MAP);
   deleteWidgets(vvTFWidget::TF_SKIP);
-  switch (index)
+
+  for (unsigned i=0; i<defaultAlpha[index].size(); ++i)
   {
-    case 0:                                       // ascending (0->1)
-    default:
-      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, max, 2.0f * (max-min), 0.0f));
-      break;
-    case 1:                                       // descending (1->0)
-      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, min, 2.0f * (max-min), 0.0f));
-      break;
-    case 2:                                       // opaque (all 1)
-      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, (max-min)/2.0f+min, max-min, max-min));
-      break;
+    vvTFPyramid *pyr = dynamic_cast<vvTFPyramid *>(defaultAlpha[index][i]);
+    if (pyr) {
+      float x = pyr->pos()[0] * (max-min) + min;
+      float wb = pyr->bottom()[0] * (max-min);
+      float wt = pyr->top()[0] * (max-min);
+      _widgets.push_back(new vvTFPyramid(pyr->color(), false, pyr->opacity(), x, wb, wt));
+    }
+
+    vvTFBell *bell = dynamic_cast<vvTFBell *>(defaultAlpha[index][i]);
+    if (bell) {
+      float x = bell->pos()[0] * (max-min) + min;
+      float w = bell->size()[0] * (max-min);
+      float h = bell->size()[1];
+      _widgets.push_back(new vvTFBell(bell->color(), false, bell->opacity(), x, w, h));
+    }
+
+    vvTFSkip *skip = dynamic_cast<vvTFSkip *>(defaultAlpha[index][i]);
+    if (skip) {
+      float x = skip->pos()[0] * (max-min) + min;
+      float w = skip->size()[0] * (max-min);
+      _widgets.push_back(new vvTFSkip(skip->opacity(), x, w));
+    }
   }
 }
 
@@ -293,7 +336,7 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
 /// Returns the number of default alpha schemes.
 int vvTransFunc::getNumDefaultAlpha()
 {
-  return 3;
+  return defaultAlpha.size();
 }
 
 //----------------------------------------------------------------------------
