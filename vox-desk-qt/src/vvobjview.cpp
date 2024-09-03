@@ -25,6 +25,11 @@
 
 // OpenGL:
 #include <vvopengl.h>
+#if defined(__APPLE__)
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
 
 // Virvo:
 #include <vvdebugmsg.h>
