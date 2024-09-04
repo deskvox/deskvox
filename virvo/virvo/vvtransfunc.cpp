@@ -44,6 +44,7 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <set>
 
 using std::cerr;
 using std::endl;
@@ -183,12 +184,14 @@ void vvTransFunc::populateDefaultWidgets()
     fs::path path(tfDir);
 
     if (fs::exists(path) && fs::is_directory(path)) {
-      fs::directory_iterator end;
-      for (fs::directory_iterator it(path); it != end; ++it) {
-        fs::path p = fs::canonical(*it);
+      std::set<fs::path> sorted_by_name;
+      for (auto &entry : fs::directory_iterator(path))
+        sorted_by_name.insert(entry.path());
+      for (auto &filename : sorted_by_name) {
+        std::string p = filename;
         vvTransFunc tf;
-        std::cerr << "Try loading " << p.filename().string() << std::endl;
-        if (tf.load(p.string())) {
+        std::cerr << "Try loading " << p << std::endl;
+        if (tf.load(p)) {
           int numColorWidgets = false;
           int numAlphaWidgets = false;
           for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
