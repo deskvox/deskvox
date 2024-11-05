@@ -1,9 +1,4 @@
-if(DESKVOX_USE_CUDA)
-
-find_package(CUDA)
-if(NOT CUDA_FOUND)
-    return()
-endif()
+if(DESKVOX_USE_CUDA AND (DESKVOX_USE_OLD_CUDA OR DESKVOX_CUDA_CMAKE))
 
 deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
 
@@ -19,6 +14,11 @@ add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_ARCH_CUDA=1)
 
 if(DESKVOX_USE_OLD_CUDA)
+    find_package(CUDA)
+    if(NOT CUDA_FOUND)
+        return()
+    endif()
+
     set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
     cuda_add_library(rayrendcuda ../../vvraycaster.cu)
 
@@ -35,4 +35,4 @@ if (MSVC_VERSION GREATER 1800 AND DESKVOX_USE_CUDA AND CUDA_FOUND)
     target_link_libraries(rayrendcuda legacy_stdio_definitions.lib)
 endif()
 
-endif(DESKVOX_USE_CUDA)
+endif(DESKVOX_USE_CUDA AND (DESKVOX_USE_OLD_CUDA OR DESKVOX_CUDA_CMAKE))
