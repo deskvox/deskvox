@@ -3,6 +3,9 @@ project(Deskvox)
 
 cmake_minimum_required(VERSION 2.8.7...3.26)
 
+set (CMAKE_CXX_STANDARD 17)
+set (CXX_STANDARD_REQUIRED ON)
+
 # Add path for custom modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
