@@ -179,12 +179,12 @@ endif()
 
 option(DESKVOX_USE_SSE "Use SSE intrinsic code if possible" ON)
 
-option(DESKVOX_USE_ASIO "Use Boost.ASIO" ON)
+option(DESKVOX_USE_ASIO "Use Boost.ASIO" OFF)
 
 option(DESKVOX_USE_RAYREND_BSPLINE "Enable B-spline interpolation in RayRend" ON)
 option(DESKVOX_USE_RAYREND_CSPLINE "Enable C-spline interpolation in RayRend" ON)
 
-option(DESKVOX_USE_ZEROCONF "Enable zeroconf features based on Bonjour API" ON)
+option(DESKVOX_USE_ZEROCONF "Enable zeroconf features based on Bonjour API" OFF)
 
 # All options referred to from DeskvoxHandleOptions have to be specified BEFORE this include,
 # otherwise options will not be correctly set on first cmake run
