@@ -125,9 +125,9 @@ function(deskvox_add_library name)
 
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
-      RUNTIME DESTINATION ${ARCHSUFFIX}/bin${_category_path}
+      RUNTIME DESTINATION ${COVISE_ARCHSUFFIX}/bin${_category_path}
       LIBRARY DESTINATION ${COVISE_INSTALL_LIBDIR}
-      ARCHIVE DESTINATION ${ARCHSUFFIX}/lib COMPONENT modules.${category}
+      ARCHIVE DESTINATION ${COVISE_ARCHSUFFIX}/lib COMPONENT modules.${category}
     )
   else(COVISE_BUILD)
     install(TARGETS ${name}
@@ -159,9 +159,9 @@ function(deskvox_add_plugin name)
 
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
-      RUNTIME DESTINATION ${ARCHSUFFIX}/bin
-      LIBRARY DESTINATION ${ARCHSUFFIX}/lib
-      ARCHIVE DESTINATION ${ARCHSUFFIX}/lib
+      RUNTIME DESTINATION ${COVISE_ARCHSUFFIX}/bin
+      LIBRARY DESTINATION ${COVISE_ARCHSUFFIX}/lib
+      ARCHIVE DESTINATION ${COVISE_ARCHSUFFIX}/lib
     )
   else(COVISE_BUILD)
     install(TARGETS ${name}
@@ -193,7 +193,7 @@ function(__deskvox_add_executable folder name)
 
   if(COVISE_BUILD)
     install(TARGETS ${name} EXPORT covise-targets
-        RUNTIME DESTINATION ${ARCHSUFFIX}/bin
+        RUNTIME DESTINATION ${COVISE_ARCHSUFFIX}/bin
     )
   else(COVISE_BUILD)
     install(TARGETS ${name} RUNTIME DESTINATION bin)
