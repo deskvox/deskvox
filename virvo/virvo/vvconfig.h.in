@@ -89,6 +89,3 @@
 #if VV_HAVE_VOLPACK
 #define HAVE_VOLPACK
 #endif
-#if VV_HAVE_X11
-#define HAVE_X11
-#endif

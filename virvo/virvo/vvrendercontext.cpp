@@ -50,7 +50,7 @@
 namespace gl = virvo::gl;
 
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #endif
@@ -234,7 +234,7 @@ struct ContextArchData
   vvCocoaGLContext* cocoaContext;
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
   GLXContext glxContext;
   Display* display;
   Drawable drawable;
@@ -278,7 +278,7 @@ vvRenderContext::~vvRenderContext()
     delete _archData->cocoaContext;
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
     glXDestroyContext(_archData->display, _archData->glxContext);
     switch (_options.type)
     {
@@ -319,7 +319,7 @@ bool vvRenderContext::makeCurrent() const
     return _archData->cocoaContext->makeCurrent();
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
 #endif
 
@@ -340,7 +340,7 @@ void vvRenderContext::swapBuffers() const
     _archData->cocoaContext->swapBuffers();
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
     glXSwapBuffers(_archData->display, _archData->drawable);
 #endif
 
@@ -364,7 +364,7 @@ void vvRenderContext::resize(int w, int h)
       _archData->cocoaContext->resize(w, h);
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
       switch (_options.type)
       {
       case vvContextOptions::VV_PBUFFER:
@@ -407,7 +407,7 @@ bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
   return false;
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
   Display* dpy = glXGetCurrentDisplay();
 
   if (dpy == NULL)
@@ -466,7 +466,7 @@ void vvRenderContext::init()
   _initialized = true;
 #endif
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
   _archData->display = XOpenDisplay(_options.displayName.c_str());
 
   _archData->attributes.push_back(GLX_RGBA);
@@ -636,7 +636,7 @@ bool vvRenderContext::initPbuffer()
 {
   vvDebugMsg::msg(3, "vvRenderContext::initPbuffer()");
 
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
   int nelements;
   _archData->fbConfigs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
                                            &(_archData->attributes)[1], &nelements); // first entry (GLX_RGBA) in attributes list confuses pbuffers

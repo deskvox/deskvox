@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include "vvopengl.h"
 
-#if defined(HAVE_X11) && !defined(__APPLE__)
+#if defined(USE_X11)
 #include <GL/glext.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -45,7 +45,7 @@
 
 using virvo::vec4f;
 
-#if defined(HAVE_X11) && !defined(__APPLE__)
+#if defined(USE_X11)
 Display* dsp = NULL;
 #endif
 
@@ -130,7 +130,7 @@ vvPrintGL::vvPrintGL()
   SelectObject(hDC, font);                        // Selects The Font We Want
 
   wglUseFontBitmaps(hDC, 32, 96, ::base);         // Builds 96 Characters Starting At Character 32
-#elif defined(HAVE_X11) && !defined(__APPLE__)
+#elif defined(USE_X11)
   if (dsp == NULL)
   {
     dsp = XOpenDisplay(NULL);

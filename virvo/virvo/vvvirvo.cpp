@@ -112,7 +112,7 @@ bool virvo::hasFeature(const char* name)
   }
   else if (str == "x11")
   {
-#ifdef HAVE_X11
+#ifdef USE_X11
     return true;
 #else
     return false;

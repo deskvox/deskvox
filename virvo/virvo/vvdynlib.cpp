@@ -37,7 +37,7 @@
 #include "vvopengl.h"
 
 #include "vvconfig.h"
-#if defined(HAVE_X11) && defined(USE_X11)
+#if defined(USE_X11)
 #include <GL/glx.h>
 #endif
 
