@@ -739,15 +739,15 @@ bool vvBaseVector3<T>::isectRayTriangle(const vvBaseVector3<T>& rayPt,
   // Compute three triangle side normals and check if intersection point lies on same
   // side as third triangle point, respectively:
   sideNormal.planeNormalPPV(tri1, tri2, normal);
-  if (vvVecmath::sgn(tri3->distPointPlane(sideNormal, tri1)) ==
+  if (vvVecmath::sgn(tri3.distPointPlane(sideNormal, tri1)) ==
     vvVecmath::sgn(this->distPointPlane(sideNormal, tri1)))
   {
     sideNormal.planeNormalPPV(tri1, tri3, normal);
-    if (vvVecmath::sgn(tri2->distPointPlane(sideNormal, tri1)) ==
+    if (vvVecmath::sgn(tri2.distPointPlane(sideNormal, tri1)) ==
       vvVecmath::sgn(this->distPointPlane(sideNormal, tri1)))
     {
       sideNormal.planeNormalPPV(tri2, tri3, normal);
-      if (vvVecmath::sgn(tri1->distPointPlane(sideNormal, tri2)) ==
+      if (vvVecmath::sgn(tri1.distPointPlane(sideNormal, tri2)) ==
         vvVecmath::sgn(this->distPointPlane(sideNormal, tri2)))
       {
         return true;
