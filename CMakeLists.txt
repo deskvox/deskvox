@@ -17,11 +17,6 @@ if(POLICY CMP0020)
     cmake_policy( SET CMP0020 NEW)
 endif()
 
-# allow LOCATION to be used in build-targets we might change to $<TARGET_FILE> if we need a newer CMAKE version
-if (POLICY CMP0026)
-    cmake_policy( SET CMP0026 OLD)
-endif()
-
 if(POLICY CMP0042)
    # default to finding shlibs relative to @rpath on MacOS
    cmake_policy(SET CMP0042 NEW)
