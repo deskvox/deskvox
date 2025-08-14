@@ -8,7 +8,7 @@
 #include <virvo/math/simd/intrinsics.h> // VV_ARCH
 
 #if VV_CXX_GCC || VV_CXX_CLANG
-#if VV_ARCH == VV_ARCH_ARM
+#if VV_ARCH == VV_ARCH_ARM || VV_ARCH == VV_ARCH_ARM64
 
 // TODO:!!!
 
