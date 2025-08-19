@@ -18,7 +18,7 @@ if(DESKVOX_USE_VISIONARAY)
     find_package(visionaray CONFIG)
 endif()
 # keep _after_ find_package(visionaray):
-find_package(Boost COMPONENTS chrono date_time serialization system thread REQUIRED)
+find_package(Boost COMPONENTS chrono date_time serialization thread OPTIONAL_COMPONENTS system REQUIRED)
 find_package(VolPack)
 if(DESKVOX_USE_GDCM)
   if (GDCM_FOUND)
