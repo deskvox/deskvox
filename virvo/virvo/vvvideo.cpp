@@ -370,8 +370,7 @@ int vvVideo::destroyEncoder()
 
   if(enc_ctx)
   {
-    avcodec_close(enc_ctx);
-    av_free(enc_ctx);
+    avcodec_free_context(&enc_ctx);
     enc_ctx = NULL;
   }
 
@@ -460,8 +459,7 @@ int vvVideo::destroyDecoder()
 
   if(dec_ctx)
   {
-    avcodec_close(dec_ctx);
-    free(dec_ctx);
+    avcodec_free_context(&dec_ctx);
     dec_ctx = NULL;
   }
 
