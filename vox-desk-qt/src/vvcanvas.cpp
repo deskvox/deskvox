@@ -53,13 +53,13 @@ struct vvCanvas::Impl
   mat4 last_rotation;
 };
 
-vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
-  : QGLWidget(format, parent)
+vvCanvas::vvCanvas(const QSurfaceFormat& format, const QString& filename, QWidget* parent)
+  : QOpenGLWidget(parent)
   , impl(new Impl)
   , _vd(NULL)
   , _renderer(NULL)
   , _projectionType(vox::vvObjView::PERSPECTIVE)
-  , _doubleBuffering(format.doubleBuffer())
+  , _doubleBuffering(format.swapBehavior() != QSurfaceFormat::SingleBuffer)
   , _lighting(false)
   , _headlight(false)
   , _superSamples(format.samples())
@@ -73,6 +73,8 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _updateStencilBuffer(true)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
+
+  setFormat(format);
 
   if (filename != "")
   {
@@ -300,7 +302,7 @@ void vvCanvas::resizeGL(int w, int h)
     _ov.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
   }
   _updateStencilBuffer = true;
-  updateGL();
+  update();
 
   emit resized(QSize(w, h));
 }
@@ -335,7 +337,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     }
     break;
   }
-  case Qt::MidButton:
+  case Qt::MiddleButton:
   {
     const float pixelInWorld = _ov.getViewportWidth() / static_cast<float>(width());
     const float dx = static_cast<float>(event->pos().x() - _lastMousePos.x());
@@ -354,7 +356,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     break;
   }
   _lastMousePos = event->pos();
-  updateGL();
+  update();
 }
 
 void vvCanvas::mousePressEvent(QMouseEvent* event)
@@ -404,7 +406,7 @@ void vvCanvas::mouseReleaseEvent(QMouseEvent* event)
   // default mouse release event
   _mouseButton = Qt::NoButton;
   _renderer->setParameter(vvRenderer::VV_QUALITY, _stillQuality);
-  updateGL();
+  update();
 }
 
 void vvCanvas::init()
@@ -497,7 +499,7 @@ void vvCanvas::setCurrentFrame(size_t frame)
     plugin->timestep();
   }
 
-  updateGL();
+  update();
 }
 
 void vvCanvas::render(int w, int h, unsigned eye, unsigned clearMask)
@@ -656,7 +658,7 @@ void vvCanvas::setRenderer(const std::string& name, const vvRendererFactory::Opt
   _currentRenderer = name;
   _currentOptions = options;
   createRenderer();
-  updateGL();
+  update();
 }
 
 void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& value)
@@ -713,7 +715,7 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
   default:
     break;
   }
-  updateGL();
+  update();
 }
 
 void vvCanvas::setParameter(vvRenderer::ParameterType param, const vvParam& value)
@@ -724,7 +726,7 @@ void vvCanvas::setParameter(vvRenderer::ParameterType param, const vvParam& valu
   if (_renderer != NULL)
   {
     _renderer->setParameter(param, value);
-    updateGL();
+    update();
   }
 }
 
@@ -774,7 +776,7 @@ void vvCanvas::addTFWidget(vvTFWidget* widget)
 void vvCanvas::updateTransferFunction()
 {
   _renderer->updateTransferFunction();
-  updateGL();
+  update();
 }
 
 void vvCanvas::undoTransferFunction()
@@ -895,7 +897,7 @@ void vvCanvas::enableLighting(bool enabled)
 {
   setParameter(vvRenderState::VV_LIGHTING, enabled);
   setParameter(vvParameters::VV_LIGHTING, enabled);
-  updateGL();
+  update();
 }
 
 void vvCanvas::showLightSource(bool show)
@@ -927,14 +929,14 @@ void vvCanvas::showLightSource(bool show)
     li->setVisible(_lightVisible);
   }
 
-  updateGL();
+  update();
 }
 
 void vvCanvas::enableHeadlight(bool enable)
 {
   _headlight = enable;
 
-  updateGL();
+  update();
 }
 
 void vvCanvas::editLightPosition(bool edit)
@@ -973,7 +975,7 @@ void vvCanvas::editLightPosition(bool edit)
       }
     }
   }
-  updateGL();
+  update();
 }
 
 void vvCanvas::setLightAttenuation(vec3f const& att)
@@ -984,7 +986,7 @@ void vvCanvas::setLightAttenuation(vec3f const& att)
   QSettings settings;
   settings.setValue("canvas/lightattenuation", qatt);
 
-  updateGL();
+  update();
 }
 
 void vvCanvas::resetCamera()
@@ -992,7 +994,7 @@ void vvCanvas::resetCamera()
   _ov.resetObject();
   _ov.resetCamera();
 
-  updateGL();
+  update();
 }
 
 void vvCanvas::repeatLastRotation()
@@ -1000,7 +1002,7 @@ void vvCanvas::repeatLastRotation()
   vvDebugMsg::msg(3, "vvCanvas::repeatLastRotation()");
 
   _ov._camera.multiplyRight(impl->last_rotation);
-  updateGL();
+  update();
 
   const float spindelay = 0.05f;
   const float delay = std::abs(spindelay * 1000.0f);
@@ -1015,6 +1017,6 @@ void vvCanvas::setLightPos(vec3f const& pos)
   QSettings settings;
   settings.setValue("canvas/lightpos", qpos);
 
-  updateGL();
+  update();
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

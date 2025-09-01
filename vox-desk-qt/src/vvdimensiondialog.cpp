@@ -83,7 +83,7 @@ void vvDimensionDialog::setDist(vec3f const& dist)
   vvDebugMsg::msg(3, "vvDimensionDialog::setDist()");
 
   _canvas->getVolDesc()->setDist(dist);
-  _canvas->updateGL();
+  _canvas->update();
   updateGui(dist);
 }
 

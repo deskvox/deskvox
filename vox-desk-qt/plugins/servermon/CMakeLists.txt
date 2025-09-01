@@ -20,5 +20,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 deskvox_add_plugin(servermon ${SERVERMON_SRC} ${SERVERMON_MOC_INC} ${SERVERMON_UI_INC})
 
-target_link_libraries(servermon PUBLIC Qt5::Core Qt5::Widgets Qt5::Gui)
-
+if(DESKVOX_USE_QT5)
+    target_link_libraries(servermon PUBLIC Qt5::Core Qt5::Widgets Qt5::Gui)
+else()
+    target_link_libraries(servermon PUBLIC Qt6::Core Qt6::Widgets Qt6::Gui)
+endif()

@@ -166,10 +166,10 @@ endif()
 
 option(DESKVOX_USE_GDCM "Use gdcm if available" ON)
 
-if (NOT DEFINED DESKVOX_USE_QT4)
+if (NOT DEFINED DESKVOX_USE_QT5)
   # Make this an option only if the variable has not otherwise been set. Allows
   # other CMake modules to override the default value defined here.
-  option(DESKVOX_USE_QT4 "Use QT4 not QT5 if available" OFF)
+  option(DESKVOX_USE_QT5 "Use Qt5 not Qt6 if available" OFF)
 endif()
 
 option(DESKVOX_USE_SSE "Use SSE intrinsic code if possible" ON)

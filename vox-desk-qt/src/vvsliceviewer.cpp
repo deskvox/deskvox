@@ -171,10 +171,11 @@ void vvSliceViewer::updateUi()
 
 void vvSliceViewer::mouseMoveEvent(QMouseEvent* event)
 {
+  auto pixmap = impl_->ui->frame->pixmap(Qt::ReturnByValue);
   double xd = (event->pos().x() - impl_->ui->frame->pos().x() - 1)
-                / (double)impl_->ui->frame->pixmap()->width();
+                / (double)pixmap.width();
   double yd = (event->pos().y() - impl_->ui->frame->pos().y() - 1)
-                / (double)impl_->ui->frame->pixmap()->height();
+                / (double)pixmap.height();
 
   int x = 0, y = 0, z = 0;
   int flipped_x = 0, flipped_y = 0, flipped_z = 0;
@@ -226,8 +227,9 @@ void vvSliceViewer::mousePressEvent(QMouseEvent* event)
 
 void vvSliceViewer::resizeEvent(QResizeEvent* /*event*/)
 {
-  int width = impl_->ui->frame->pixmap()->width();
-  int height = impl_->ui->frame->pixmap()->height();
+  auto pixmap = impl_->ui->frame->pixmap(Qt::ReturnByValue);
+  int width = pixmap.width();
+  int height = pixmap.height();
   impl_->ui->viewSizeLabel->setText(QString::number(width) + " x " + QString::number(height));
   paint();
 }

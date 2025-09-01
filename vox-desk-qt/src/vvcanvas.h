@@ -30,7 +30,7 @@
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvtfwidget.h>
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <QList>
 #include <QMouseEvent>
 
@@ -41,14 +41,14 @@ class vvInteractor;
 class vvPlugin;
 class QTimer;
 
-class vvCanvas : public QGLWidget
+class vvCanvas : public QOpenGLWidget
 {
 
   Q_OBJECT
   Q_DISABLE_COPY(vvCanvas)
 
 public:
-  vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
+  vvCanvas(const QSurfaceFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
 
   void setVolDesc(vvVolDesc* vd);

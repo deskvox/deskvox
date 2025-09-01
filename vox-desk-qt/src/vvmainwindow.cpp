@@ -144,17 +144,21 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 
   // widgets and dialogs
   const int superSamples = 0;
-  QGLFormat format;
-  format.setDoubleBuffer(true);
-  format.setDepth(true);
-  format.setRgba(true);
-  format.setAlpha(true);
-  format.setAccum(true);
-  format.setStencil(true); // needed for interlaced stereo
+  QSurfaceFormat format;
+  format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+  format.setDepthBufferSize(24);
+  //format.setRgba(true);
+  format.setAlphaBufferSize(8);
+  //format.setAccum(true);
+  format.setStencilBufferSize(8); // needed for interlaced stereo
   if (superSamples > 0)
   {
-    format.setSampleBuffers(true);
+    //format.setSampleBuffers(true);
     format.setSamples(superSamples);
+  }
+  else
+  {
+    format.setSamples(0);
   }
 
   QString fn = "";

@@ -305,14 +305,14 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   impl->stereoModeMap.insert(std::make_pair(idx, vox::Mono));
   ++idx;
 
-  if (_canvas->format().stencil())
+  if (_canvas->format().stencilBufferSize() > 0)
   {
     ui->stereoModeBox->addItem("Interlaced (Lines)");
     impl->stereoModeMap.insert(std::make_pair(idx, vox::InterlacedLines));
     ++idx;
   }
 
-  if (_canvas->format().stencil())
+  if (_canvas->format().stencilBufferSize() > 0)
   {
     ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
     impl->stereoModeMap.insert(std::make_pair(idx, vox::InterlacedCheckerboard));
