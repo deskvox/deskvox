@@ -2682,7 +2682,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       }
     }
     else if ((vvToolshed::strCompare(argv[arg], "-q") == 0)
-          |  (vvToolshed::strCompare(argv[arg], "-quality") == 0))
+          || (vvToolshed::strCompare(argv[arg], "-quality") == 0))
     {
       if ((++arg)>=argc)
       {
