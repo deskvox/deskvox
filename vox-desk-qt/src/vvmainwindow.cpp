@@ -189,7 +189,9 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   {
     QAction* action = new QAction((*it).c_str(), this);
     connect(action, SIGNAL(triggered()), this, SLOT(onRecentVolumeTriggered()));
-    impl_->ui->menuRecentVolumes->insertAction(*impl_->ui->menuRecentVolumes->actions().begin(), action);
+    const auto acts = impl_->ui->menuRecentVolumes->actions();
+    QAction *before = acts.empty() ? nullptr : acts.first();
+    impl_->ui->menuRecentVolumes->insertAction(before, action);
   }
 
   if (fn != "")
