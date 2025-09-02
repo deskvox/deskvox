@@ -4,6 +4,10 @@ include_directories(
 )
 
 include(Qt4-5)
+find_qt()
+if(NOT QT_FOUND)
+    return()
+endif()
 
 if(DESKVOX_USE_ASIO)
   add_definitions(-DDESKVOX_USE_ASIO)
