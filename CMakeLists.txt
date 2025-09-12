@@ -201,7 +201,7 @@ include(DeskvoxAddTarget)
 include(DeskvoxUsePackage)
 
 if(DESKVOX_USE_GDCM)
-  find_package(GDCM)
+  find_package(GDCM CONFIG)
 endif()
 find_package(cfitsio)
 
