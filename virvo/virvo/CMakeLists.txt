@@ -449,5 +449,5 @@ endif()
 # MSVC + CUDA: link with legacy stdio library
 
 if (MSVC_VERSION GREATER 1800 AND DESKVOX_USE_CUDA AND CUDA_FOUND)
-    target_link_libraries(virvo legacy_stdio_definitions.lib)
+    target_link_libraries(virvo PUBLIC legacy_stdio_definitions.lib)
 endif()

@@ -188,7 +188,7 @@ void vvTransFunc::populateDefaultWidgets()
       for (auto &entry : fs::directory_iterator(path))
         sorted_by_name.insert(entry.path());
       for (auto &filename : sorted_by_name) {
-        std::string p = filename;
+        std::string p = filename.string();
         vvTransFunc tf;
         std::cerr << "Try loading " << p << std::endl;
         if (tf.load(p)) {
