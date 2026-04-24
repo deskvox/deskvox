@@ -25,6 +25,7 @@
 #include <math.h>
 
 #include "vvvecmath.h"
+#include "math/vector.h"
 
 #ifdef __sun
 #define sinf sin
