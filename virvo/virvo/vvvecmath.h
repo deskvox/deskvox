@@ -24,7 +24,7 @@
 #include <float.h>
 #include <iostream>
 
-#include "math/forward.h"
+#include "math/vector.h"
 
 #include "vvexport.h"
 #include "vvinttypes.h"
