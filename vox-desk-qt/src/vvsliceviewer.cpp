@@ -94,6 +94,7 @@ vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
   connect(impl_->ui->fwdFwdButton, SIGNAL(clicked()), this, SLOT(onFwdFwdClicked()));
   connect(impl_->ui->backButton, SIGNAL(clicked()), this, SLOT(onBackClicked()));
   connect(impl_->ui->backBackButton, SIGNAL(clicked()), this, SLOT(onBackBackClicked()));
+  connect(impl_->ui->screenshotButton, SIGNAL(clicked()), this, SLOT(screenshot()));
 
   paint();
   updateUi();
@@ -254,6 +255,40 @@ void vvSliceViewer::onNewFrame(int frame)
 void vvSliceViewer::update()
 {
   paint();
+}
+
+void vvSliceViewer::screenshot()
+{
+  if (!_vd)
+    return;
+
+  std::vector<uchar> texture;
+  QImage img = getSlice(_vd, &texture, impl_->slice, impl_->axis);
+  if (!img.isNull())
+  {
+    int s = std::min(impl_->ui->frame->width(), impl_->ui->frame->height());
+    img = img.scaled(s, s, Qt::KeepAspectRatioByExpanding);
+    if (impl_->ui->horizontalBox->isChecked() || impl_->ui->verticalBox->isChecked())
+    {
+      img = img.mirrored(impl_->ui->horizontalBox->isChecked(), impl_->ui->verticalBox->isChecked());
+    }
+
+    std::stringstream str;
+    str << _vd->getFilename();
+    switch (impl_->axis)
+    {
+    case virvo::cartesian_axis<3>::X: str << "_X_"; break;
+    case virvo::cartesian_axis<3>::Y: str << "_Y_"; break;
+    case virvo::cartesian_axis<3>::Z: str << "_Z_"; break;
+    default: assert(0); break;
+    }
+    str << impl_->slice << ".png";
+    std::string fn = str.str();
+    if (img.save(fn.c_str()))
+      std::cout << "Saved slice image to: " << fn << '\n';
+    else
+      std::cerr << "Error saving image to file: " << fn << '\n';
+  }
 }
 
 void vvSliceViewer::setSlice(int slice)

@@ -53,6 +53,7 @@ public slots:
   void onNewVolDesc(vvVolDesc* vd);
   void onNewFrame(int frame);
   void update();
+  void screenshot();
 private slots:
   void setSlice(int slice);
   void updateAxis(bool checked);
