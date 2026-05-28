@@ -324,9 +324,22 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
   }
 
   // default mouse move event
-  switch (_mouseButton)
+  enum Interaction { Rotate, Pan, Zoom, None, } interaction;
+
+  if (_mouseButton == Qt::LeftButton && event->modifiers() == Qt::NoModifier)
+    interaction = Rotate;
+  else if (_mouseButton == Qt::LeftButton && (event->modifiers() & Qt::AltModifier))
+    interaction = Pan;
+  else if (_mouseButton == Qt::MiddleButton)
+    interaction = Pan;
+  else if (_mouseButton == Qt::RightButton)
+    interaction = Zoom;
+  else
+    interaction = None;
+
+  switch (interaction)
   {
-  case Qt::LeftButton:
+  case Rotate:
   {
     impl->last_rotation = _ov._camera.trackballRotation(width(), height(),
       _lastMousePos.x(), _lastMousePos.y(),
@@ -337,7 +350,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     }
     break;
   }
-  case Qt::MiddleButton:
+  case Pan:
   {
     const float pixelInWorld = _ov.getViewportWidth() / static_cast<float>(width());
     const float dx = static_cast<float>(event->pos().x() - _lastMousePos.x());
@@ -346,7 +359,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     _ov._camera.translate(pan[0], -pan[1], 0.0f);
     break;
   }
-  case Qt::RightButton:
+  case Zoom:
   {
     const float factor = event->pos().y() - _lastMousePos.y();
     _ov._camera.translate(0.0f, 0.0f, factor);
