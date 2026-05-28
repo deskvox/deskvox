@@ -266,6 +266,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(impl_->clipDialog, SIGNAL(opaque(bool)), impl_->canvas, SLOT(setClipOpaque(bool)));
   connect(impl_->clipDialog, SIGNAL(perimeter(bool)), impl_->canvas, SLOT(setClipPerimeter(bool)));
 
+  connect(impl_->sliceViewer, SIGNAL(clipPlane(bool, virvo::vec3f const&, virvo::vec3f const&)), impl_->canvas, SLOT(setClipPlane(bool, virvo::vec3f const&, virvo::vec3f const&)));
+
   connect(impl_->lightDialog, SIGNAL(enabled(bool)), impl_->canvas, SLOT(enableLighting(bool)));
   connect(impl_->lightDialog, SIGNAL(showLightSource(bool)), impl_->canvas, SLOT(showLightSource(bool)));
   connect(impl_->lightDialog, SIGNAL(enableHeadlight(bool)), impl_->canvas, SLOT(enableHeadlight(bool)));

@@ -21,6 +21,8 @@
 #ifndef VV_SLICEVIEWER_H
 #define VV_SLICEVIEWER_H
 
+#include <virvo/math/forward.h>
+
 #include <QDialog>
 
 #include <memory>
@@ -33,6 +35,8 @@ class vvSliceViewer : public QDialog
   Q_OBJECT
   Q_DISABLE_COPY(vvSliceViewer)
 
+signals:
+  void clipPlane(bool active, virvo::vec3f const& n, virvo::vec3f const& o) const;
 public:
   vvSliceViewer(vvVolDesc* vd, QWidget* parent = 0);
  ~vvSliceViewer();
@@ -62,6 +66,8 @@ private slots:
   void onFwdFwdClicked();
   void onBackClicked();
   void onBackBackClicked();
+  // clipping in main viewport:
+  void emitClipPlane() const;
 };
 
 #endif

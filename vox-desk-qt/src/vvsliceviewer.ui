@@ -186,6 +186,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="clipPlaneBox">
+         <property name="text">
+          <string>Show as clip plane in main viewport</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="screenshotButton">
          <property name="text">
           <string>Screenshot</string>

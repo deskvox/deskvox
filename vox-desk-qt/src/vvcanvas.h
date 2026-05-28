@@ -145,6 +145,8 @@ public slots:
   void setClipSingleSlice(bool active);
   void setClipOpaque(bool active);
   void setClipPerimeter(bool active);
+  // single function, just active, normal, and origin
+  void setClipPlane(bool active, virvo::vec3f const& n, virvo::vec3f const& o);
 
   void enableLighting(bool enabled);
   void showLightSource(bool show);

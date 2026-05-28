@@ -96,6 +96,17 @@ vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
   connect(impl_->ui->backBackButton, SIGNAL(clicked()), this, SLOT(onBackBackClicked()));
   connect(impl_->ui->screenshotButton, SIGNAL(clicked()), this, SLOT(screenshot()));
 
+  // clipping in main viewport:
+  connect(impl_->ui->clipPlaneBox, SIGNAL(clicked(bool)), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->sliceSlider, SIGNAL(sliderMoved(int)), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->xaxisButton, SIGNAL(clicked(bool)), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->yaxisButton, SIGNAL(clicked(bool)), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->zaxisButton, SIGNAL(clicked(bool)), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->fwdButton, SIGNAL(clicked()), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->fwdFwdButton, SIGNAL(clicked()), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->backButton, SIGNAL(clicked()), this, SLOT(emitClipPlane()));
+  connect(impl_->ui->backBackButton, SIGNAL(clicked()), this, SLOT(emitClipPlane()));
+
   paint();
   updateUi();
 }
@@ -352,5 +363,45 @@ void vvSliceViewer::onBackClicked()
 void vvSliceViewer::onBackBackClicked()
 {
   setSlice(0);
+}
+
+void vvSliceViewer::emitClipPlane() const
+{
+  if (!impl_->ui->clipPlaneBox->isChecked()) {
+    emit(clipPlane(false, {}, {}));
+    return;
+  }
+
+  size_t width;
+  size_t height;
+  size_t slices;
+  size_t slice = impl_->slice;
+  auto axis = impl_->axis;
+  _vd->getVolumeSize(axis, width, height, slices);
+
+  float slice01{0.f};
+  switch ((int)axis) {
+  case 0: slice01 = float(slice)/(width-1); break;
+  case 1: slice01 = float(slice)/(height-1); break;
+  case 2: slice01 = float(slice)/(slices-1); break;
+  default: break;
+  }
+  slice01 = fmaxf(slice01,0.f);
+  slice01 = fminf(slice01,1.f);
+
+  auto size = _vd->getBoundingBox().size();
+  float extend = size[(int)axis];
+  float offset = slice01*extend-extend*0.5f;
+
+  virvo::vec3f n(0,0,1);
+  virvo::vec3f o(offset,0,0);
+  switch ((int)axis) {
+  case 0: n = {1.f,0.f,0.f}; o = {offset,0.f,0.f}; break;
+  case 1: n = {0.f,1.f,0.f}; o = {0.f,-offset,0.f}; break;
+  case 2: n = {0.f,0.f,1.f}; o = {0.f,0.f,-offset}; break;
+  default: break;
+  }
+
+  emit(clipPlane(true, n, o));
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

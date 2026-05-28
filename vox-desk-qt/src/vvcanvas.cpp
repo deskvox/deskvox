@@ -906,6 +906,13 @@ void vvCanvas::setClipPerimeter(bool active)
   setParameter(vvRenderState::VV_CLIP_OUTLINE0, active);
 }
 
+void vvCanvas::setClipPlane(bool active, virvo::vec3f const& n, virvo::vec3f const& o)
+{
+  enableClipping(active);
+  setClipNormal(n);
+  setClipOrigin(o);
+}
+
 void vvCanvas::enableLighting(bool enabled)
 {
   setParameter(vvRenderState::VV_LIGHTING, enabled);
