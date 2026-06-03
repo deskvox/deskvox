@@ -1755,6 +1755,8 @@ void vvView::viewMenuCallback(int item)
   case 0:                                     // bounding box
     ds->boundariesMode = !ds->boundariesMode;
     ds->renderer->setParameter(vvRenderState::VV_BOUNDARIES, ds->boundariesMode);
+    // Use opposite color for object boundaries:
+    ds->renderer->setParameter(vvRenderState::VV_BOUND_COLOR, vvColor(1.f-ds->bgColor[0], 1.f-ds->bgColor[1], 1.f-ds->bgColor[2]));
     cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
     break;
   case 1:                                     // axis orientation
@@ -1804,11 +1806,7 @@ void vvView::viewMenuCallback(int item)
                                         // black
     else
       ds->bgColor[0] = ds->bgColor[1] = ds->bgColor[2] = 0.0f;
-    // background color is only a property of the display window
-    //ds->renderer->setParameterV3(VV_BG_COLOR, ds->bgColor);
-      // Use opposite color for object boundaries:
-      //ds->renderer->setBoundariesColor(1.0f-ds->bgColor[0], 1.0f-ds->bgColor[1], 1.0f-ds->bgColor[2]);
-break;
+    break;
   case 7:                                     // auto-rotation mode
     ds->rotationMode = !ds->rotationMode;
     if (!ds->rotationMode)
