@@ -820,7 +820,7 @@ void vvRenderer::renderHUD() const
   @return memory space to which volume was rendered. This need not be the same
           as data, if internal space is used.
 */
-void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
+void vvRenderer::renderVolumeRGB(int w, int h, uchar* data, virvo::PixelFormat format)
 {
   GLint viewPort[4];                              // x, y, width, height of viewport
   int x, y;
@@ -829,6 +829,8 @@ void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
   int srcWidth, srcHeight;                        // actually used area of source image
 
   vvDebugMsg::msg(3, "vvRenderer::renderVolumeRGB(), size: ", w, h);
+
+  virvo::PixelFormatInfo info = virvo::mapPixelFormat(format);
 
   // Save GL state:
   glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -839,8 +841,8 @@ void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
   glPixelStorei(GL_PACK_ALIGNMENT, 1);            // Important command: default value is 4, so allocated memory wouldn't suffice
 
   // Read image data:
-  std::vector< uchar > screenshot(viewPort[2] * viewPort[3] * 3);
-  glReadPixels(0, 0, viewPort[2], viewPort[3], GL_RGB, GL_UNSIGNED_BYTE, &screenshot[0]);
+  std::vector< uchar > screenshot(viewPort[2] * viewPort[3] * info.components);
+  glReadPixels(0, 0, viewPort[2], viewPort[3], info.format, info.type, &screenshot[0]);
 
   // Restore GL state:
   glPopAttrib();
@@ -873,11 +875,11 @@ void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
   {
     for (x=0; x<w; ++x)
     {
-      dstIndex = 3 * (x + (h - y - 1) * w);
+      dstIndex = info.components * (x + (h - y - 1) * w);
       srcX = offX + srcWidth  * x / w;
       srcY = offY + srcHeight * y / h;
-      srcIndex = 3 * (srcX + srcY * viewPort[2]);
-      memcpy(data + dstIndex, &screenshot[0] + srcIndex, 3);
+      srcIndex = info.components * (srcX + srcY * viewPort[2]);
+      memcpy(data + dstIndex, &screenshot[0] + srcIndex, info.components);
     }
   }
 }

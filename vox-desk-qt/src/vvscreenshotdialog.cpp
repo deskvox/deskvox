@@ -105,13 +105,13 @@ void vvScreenshotDialog::takePicture()
   }
 
   // reserve RGB image space
-  std::vector<uint8_t> image(static_cast<size_t>(w * h * 3));
+  std::vector<uint8_t> image(static_cast<size_t>(w * h * 4));
 
   // render screenshot to memory
   if (_canvas->getRenderer() != NULL)
   {
     _canvas->makeCurrent();
-    _canvas->getRenderer()->renderVolumeRGB(w, h, &image[0]);
+    _canvas->getRenderer()->renderVolumeRGB(w, h, &image[0], virvo::PF_RGBA8);
   }
 
   // search for unused file name
@@ -119,17 +119,15 @@ void vvScreenshotDialog::takePicture()
   const int base = 10;
   for (int i = 0; i < 100000; ++i)
   {
-    QString suffix = "-" + QString("%2").arg(i, fieldWidth, base, QChar('0')) + ".tif";
+    QString suffix = "-" + QString("%2").arg(i, fieldWidth, base, QChar('0')) + ".png";
     QString filename = impl_->ui->dirEdit->text() + QDir::separator() + impl_->ui->baseNameEdit->text() + suffix;
     QFileInfo info(filename);
     if (!info.isFile())
     {
       const QByteArray ba = filename.toLatin1();
-      vvVolDesc* vd = new vvVolDesc(ba.data(), static_cast<size_t>(w), static_cast<size_t>(h), &image[0]);
       vvDebugMsg::msg(0, "Writing screenshot to file: ", ba.data());
-      vvFileIO fio;
-      fio.saveVolumeData(vd, false);
-      delete vd;
+      QImage output(image.data(), w, h, QImage::Format_RGBA8888);
+      output.save(filename, "PNG");
       return;
     }
   }

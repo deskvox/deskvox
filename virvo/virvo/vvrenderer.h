@@ -27,6 +27,7 @@
 #include "vvmacros.h"
 #include "vvparam.h"
 #include "vvinttypes.h"
+#include "vvpixelformat.h"
 #include "vvrendertarget.h"
 
 #include <boost/scoped_ptr.hpp>
@@ -324,7 +325,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     // Public methods that should be redefined by subclasses:
     virtual RendererType getRendererType() const;
     virtual void  renderVolumeGL();
-    virtual void  renderVolumeRGB(int, int, uchar*);
+    virtual void  renderVolumeRGB(int, int, uchar*, virvo::PixelFormat format = virvo::PF_RGB8);
     virtual void  renderMultipleVolume();
     virtual void  updateTransferFunction();
     virtual void  updateVolumeData();
