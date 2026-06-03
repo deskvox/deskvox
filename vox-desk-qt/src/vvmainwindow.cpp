@@ -707,15 +707,16 @@ void vvMainWindow::onBackgroundColorTriggered()
 {
   vvDebugMsg::msg(3, "vvMainWindow::onBackgroundColorTriggered()");
 
-  vvColor bgcolor = impl_->canvas->getParameter(vvParameters::VV_BG_COLOR);
+  virvo::vec4f bgcolor = impl_->canvas->getParameter(vvParameters::VV_BG_COLOR);
   QColor initial;
   initial.setRedF(bgcolor[0]);
   initial.setGreenF(bgcolor[1]);
   initial.setBlueF(bgcolor[2]);
-  QColor qcolor = QColorDialog::getColor(initial);
+  initial.setAlphaF(bgcolor[3]);
+  QColor qcolor = QColorDialog::getColor(initial, nullptr, "Select Color", QColorDialog::ShowAlphaChannel);
   if (qcolor.isValid())
   {
-    vvColor color(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
+    virvo::vec4f color(qcolor.redF(), qcolor.greenF(), qcolor.blueF(), qcolor.alphaF());
     impl_->canvas->setParameter(vvParameters::VV_BG_COLOR, color);
     QSettings settings;
     settings.setValue("canvas/bgcolor", qcolor);

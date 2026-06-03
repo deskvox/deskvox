@@ -83,7 +83,7 @@ private:
 
   vox::vvObjView _ov;
   vox::vvObjView::ProjectionType _projectionType;
-  vvColor _bgColor;
+  virvo::vec4f _bgColor;
   virvo::vec3f light_pos_;
   virvo::vec3f light_att_;
   bool _doubleBuffering;
