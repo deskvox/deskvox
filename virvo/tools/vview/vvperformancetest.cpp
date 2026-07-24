@@ -228,7 +228,7 @@ void vvPerformanceTest::writeResultFiles()
   #endif
 
     char brickFile[HOST_NAME_LEN + 4];
-    sprintf(brickFile, "%s.csv", localHost);
+    snprintf(brickFile, sizeof(brickFile), "%s.csv", localHost);
     FILE* handle;
     const bool fileExists = (handle = fopen(brickFile, "r"));
     if (fileExists)

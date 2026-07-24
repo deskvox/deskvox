@@ -2773,7 +2773,7 @@ int vvConv::renameDicomFiles()
     {
       std::filesystem::path inpath(srcFile);
 
-      sprintf(newName, "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
+      snprintf(newName, sizeof(newName), "seq%03d-loc%06d.dcm", dcmSeq, dcmSlice);
 
       std::filesystem::path outpath(inpath);
       outpath.remove_filename();

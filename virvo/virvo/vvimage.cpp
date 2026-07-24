@@ -167,7 +167,7 @@ static void checksum(const uchar *img, short height, short width)
     }
   }
   char buf[100];
-  sprintf(buf, "check sum: 0x%08x, last: 0x%08x", sum, *(uint32_t*)&img[width*height-4]);
+  snprintf(buf, sizeof(buf), "check sum: 0x%08x, last: 0x%08x", sum, *(uint32_t*)&img[width*height-4]);
   vvDebugMsg::msg(0, buf);
 }
 

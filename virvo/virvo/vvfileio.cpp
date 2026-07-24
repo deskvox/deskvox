@@ -3131,7 +3131,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
     strcat(filenames[i], buffer);
     if (vd->vox[2] > 1)
     {
-      sprintf(buffer, "-%0*d.tif", digits, static_cast<int32_t>(i));
+      snprintf(buffer, sizeof(buffer), "-%0*d.tif", digits, static_cast<int32_t>(i));
       strcat(filenames[i], buffer);
     }
     else strcat(filenames[i], ".tif");
@@ -5321,7 +5321,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
     strcat(filenames[i], buffer);
     if (vd->vox[2] > 1)
     {
-      sprintf(buffer, "-%0*d.", digits, static_cast<int32_t>(i));
+      snprintf(buffer, sizeof(buffer), "-%0*d.", digits, static_cast<int32_t>(i));
       strcat(filenames[i], buffer);
     }
     else strcat(filenames[i], ".");
@@ -5703,7 +5703,7 @@ bool vvFileIO::parseLeicaFilename(const string fileName, int32_t& slice, int32_t
 */
 void vvFileIO::makeLeicaFilename(const char* baseName, int32_t slice, int32_t channel, char* filename)
 {
-  sprintf(filename, "%s_z%03d_ch%02d.tif", baseName, slice, channel);
+  snprintf(filename, sizeof(filename), "%s_z%03d_ch%02d.tif", baseName, slice, channel);
 }
 
 //----------------------------------------------------------------------------
@@ -5730,12 +5730,12 @@ bool vvFileIO::changeLeicaFilename(string& fileName, int32_t slice, int32_t chan
   // Make slice and channel IDs:
   if (slice > -1)
   {
-    sprintf(sliceText, "%03d", slice);
+    snprintf(sliceText, sizeof(sliceText), "%03d", slice);
     fileName.replace(slicePos, 3, sliceText);
   }
   if (channel > -1)
   {
-    sprintf(channelText, "%02d", channel);
+    snprintf(channelText, sizeof(channelText), "%02d", channel);
     fileName.replace(channelPos, 2, channelText);
   }
   return true;

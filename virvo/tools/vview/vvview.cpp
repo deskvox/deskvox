@@ -1176,7 +1176,7 @@ void vvView::rendererMenuCallback(int item)
   if (item>=0 && item<=16)
   {
     char type[100];
-    sprintf(type, "%d", item);
+    snprintf(type, sizeof(type), "%d", item);
 
     ds->createRenderer(type, ds->currentOptions);
   }
