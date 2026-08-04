@@ -65,33 +65,31 @@
 
 // #define DEBUGGING 1
 
-using namespace visionaray;
-
 
 //-------------------------------------------------------------------------------------------------
 // Global typedefs
 //
 
 #if defined(VV_ARCH_CUDA)
-using ray_type          = basic_ray<float>;
-using sched_type        = cuda_sched<ray_type>;
-using transfunc_type    = cuda_texture<vec4,      1>;
-using volume8_type      = cuda_texture<unorm< 8>, 3>;
-using volume16_type     = cuda_texture<unorm<16>, 3>;
-using volume32_type     = cuda_texture<float,     3>;
+using ray_type          = visionaray::basic_ray<float>;
+using sched_type        = visionaray::cuda_sched<ray_type>;
+using transfunc_type    = visionaray::cuda_texture<visionaray::vec4,      1>;
+using volume8_type      = visionaray::cuda_texture<visionaray::unorm< 8>, 3>;
+using volume16_type     = visionaray::cuda_texture<visionaray::unorm<16>, 3>;
+using volume32_type     = visionaray::cuda_texture<float,     3>;
 #else
 #if defined(VV_ARCH_SSE2) || defined(VV_ARCH_SSE4_1)
-using ray_type = basic_ray<simd::float4>;
+using ray_type = visionaray::basic_ray<visionaray::simd::float4>;
 #elif defined(VV_ARCH_AVX) || defined(VV_ARCH_AVX2)
-using ray_type = basic_ray<simd::float8>;
+using ray_type = visionaray::basic_ray<visionaray::simd::float8>;
 #else
-using ray_type = basic_ray<float>;
+using ray_type = visionaray::basic_ray<float>;
 #endif
-using sched_type        = tiled_sched<ray_type>;
-using transfunc_type    = texture<vec4,      1>;
-using volume8_type      = texture<unorm< 8>, 3>;
-using volume16_type     = texture<unorm<16>, 3>;
-using volume32_type     = texture<float,     3>;
+using sched_type        = visionaray::tiled_sched<ray_type>;
+using transfunc_type    = visionaray::texture<visionaray::vec4,      1>;
+using volume8_type      = visionaray::texture<visionaray::unorm< 8>, 3>;
+using volume16_type     = visionaray::texture<visionaray::unorm<16>, 3>;
+using volume32_type     = visionaray::texture<float,     3>;
 #endif
 
 //-------------------------------------------------------------------------------------------------
@@ -106,36 +104,36 @@ using volume32_type     = texture<float,     3>;
 
 template <typename T, typename Tex>
 VSNRAY_FUNC
-inline vector<3, T> gradient(Tex const& tex, vector<3, T> tex_coord)
+inline visionaray::vector<3, T> gradient(Tex const& tex, visionaray::vector<3, T> tex_coord)
 {
-    vector<3, T> s1;
-    vector<3, T> s2;
+    visionaray::vector<3, T> s1;
+    visionaray::vector<3, T> s2;
 
     float DELTA = 0.01f;
 
-    s1.x = tex3D(tex, tex_coord + vector<3, T>(DELTA, 0.0f, 0.0f));
-    s2.x = tex3D(tex, tex_coord - vector<3, T>(DELTA, 0.0f, 0.0f));
+    s1.x = visionaray::tex3D(tex, tex_coord + visionaray::vector<3, T>(DELTA, 0.0f, 0.0f));
+    s2.x = visionaray::tex3D(tex, tex_coord - visionaray::vector<3, T>(DELTA, 0.0f, 0.0f));
     // signs for y and z are swapped because of texture orientation
-    s1.y = tex3D(tex, tex_coord - vector<3, T>(0.0f, DELTA, 0.0f));
-    s2.y = tex3D(tex, tex_coord + vector<3, T>(0.0f, DELTA, 0.0f));
-    s1.z = tex3D(tex, tex_coord - vector<3, T>(0.0f, 0.0f, DELTA));
-    s2.z = tex3D(tex, tex_coord + vector<3, T>(0.0f, 0.0f, DELTA));
+    s1.y = visionaray::tex3D(tex, tex_coord - visionaray::vector<3, T>(0.0f, DELTA, 0.0f));
+    s2.y = visionaray::tex3D(tex, tex_coord + visionaray::vector<3, T>(0.0f, DELTA, 0.0f));
+    s1.z = visionaray::tex3D(tex, tex_coord - visionaray::vector<3, T>(0.0f, 0.0f, DELTA));
+    s2.z = visionaray::tex3D(tex, tex_coord + visionaray::vector<3, T>(0.0f, 0.0f, DELTA));
 
     return s2 - s1;
 }
 
 template <typename F, typename I>
 VSNRAY_FUNC
-inline F normalize_depth(I const& depth, pixel_format depth_format, F /* */)
+inline F normalize_depth(I const& depth, visionaray::pixel_format depth_format, F /* */)
 {
-    if (depth_format == PF_DEPTH24_STENCIL8)
+    if (depth_format == visionaray::PF_DEPTH24_STENCIL8)
     {
         auto d = (depth & 0xFFFFFF00) >> 8;
         return F(d) / 16777215.0f;
     }
 
     // Assume PF_DEPTH32F
-    return reinterpret_as_float(depth);
+    return visionaray::reinterpret_as_float(depth);
 }
 
 template <typename I1, typename I2, typename Params>
@@ -145,11 +143,11 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
     // Get depth value from visionaray buffer
     // dst format equals src format because our implementation
     // takes care of the conversion itself in the rendering kernel
-    if (params.depth_format == PF_DEPTH24_STENCIL8)
+    if (params.depth_format == visionaray::PF_DEPTH24_STENCIL8)
     {
-        detail::pixel_access::get( // detail (TODO?)!
-                pixel_format_constant<PF_DEPTH24_STENCIL8>{},   // dst format
-                pixel_format_constant<PF_DEPTH24_STENCIL8>{},   // src format
+        visionaray::detail::pixel_access::get( // detail (TODO?)!
+                visionaray::pixel_format_constant<visionaray::PF_DEPTH24_STENCIL8>{},   // dst format
+                visionaray::pixel_format_constant<visionaray::PF_DEPTH24_STENCIL8>{},   // src format
                 x,
                 y,
                 params.viewport.w,
@@ -161,9 +159,9 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
     else
     {
         // Assume PF_DEPTH32F
-        detail::pixel_access::get( // detail (TODO?)!
-                pixel_format_constant<PF_DEPTH32F>{},           // dst format
-                pixel_format_constant<PF_DEPTH32F>{},           // src format
+        visionaray::detail::pixel_access::get( // detail (TODO?)!
+                visionaray::pixel_format_constant<visionaray::PF_DEPTH32F>{},           // dst format
+                visionaray::pixel_format_constant<visionaray::PF_DEPTH32F>{},           // src format
                 x,
                 y,
                 params.viewport.w,
@@ -175,7 +173,7 @@ inline void get_depth(I1 x, I1 y, I2& depth_raw, Params const& params)
 }
 
 VSNRAY_FUNC
-inline vec3 gatherv(vec3 const* base_addr, int index)
+inline visionaray::vec3 gatherv(visionaray::vec3 const* base_addr, int index)
 {
     return base_addr[index];
 }
@@ -183,26 +181,26 @@ inline vec3 gatherv(vec3 const* base_addr, int index)
 template <
     typename T,
     typename I,
-    typename = typename std::enable_if<simd::is_simd_vector<T>::value>::type
+    typename = typename std::enable_if<visionaray::simd::is_simd_vector<T>::value>::type
     >
 VSNRAY_CPU_FUNC
-inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
+inline visionaray::vector<3, T> gatherv(visionaray::vector<3, T> const* base_addr, I const& index)
 {
     // basically like visionaray::simd::gather, but
     // base_addr points to vec3's of simd-vectors
 
-    typename simd::aligned_array<I>::type indices;
-    store(indices, index);
+    typename visionaray::simd::aligned_array<I>::type indices;
+    visionaray::store(indices, index);
 
-    array<vector<3, float>, simd::num_elements<T>::value> arr;
+    visionaray::array<visionaray::vector<3, float>, visionaray::simd::num_elements<T>::value> arr;
 
-    for (int i = 0; i < simd::num_elements<T>::value; ++i)
+    for (int i = 0; i < visionaray::simd::num_elements<T>::value; ++i)
     {
-        auto vecs = unpack(base_addr[indices[i]]);
+        auto vecs = visionaray::simd::unpack(base_addr[indices[i]]);
         arr[i] = vecs[i];
     }
 
-    return simd::pack(arr);
+    return visionaray::simd::pack(arr);
 }
 
 
@@ -210,50 +208,50 @@ inline vector<3, T> gatherv(vector<3, T> const* base_addr, I const& index)
 // Clip sphere, hit_record stores both tnear and tfar (in contrast to basic_sphere)!
 //
 
-struct clip_sphere : basic_sphere<float>
+struct clip_sphere : visionaray::basic_sphere<float>
 {
 };
 
 template <typename T>
 struct clip_sphere_hit_record
 {
-    using M = typename simd::mask_type<T>::type;
+    using M = typename visionaray::simd::mask_type<T>::type;
 
     M hit   = M(false);
-    T tnear =  numeric_limits<T>::max();
-    T tfar  = -numeric_limits<T>::max();
+    T tnear =  visionaray::numeric_limits<T>::max();
+    T tfar  = -visionaray::numeric_limits<T>::max();
 };
 
 template <typename T>
 VSNRAY_FUNC
-inline clip_sphere_hit_record<T> intersect(basic_ray<T> const& ray, clip_sphere const& sphere)
+inline clip_sphere_hit_record<T> intersect(visionaray::basic_ray<T> const& ray, clip_sphere const& sphere)
 {
 
-    typedef basic_ray<T> ray_type;
-    typedef vector<3, T> vec_type;
+    typedef visionaray::basic_ray<T> ray_type;
+    typedef visionaray::vector<3, T> vec_type;
 
     ray_type r = ray;
     r.ori -= vec_type( sphere.center );
 
-    auto A = dot(r.dir, r.dir);
-    auto B = dot(r.dir, r.ori) * T(2.0);
-    auto C = dot(r.ori, r.ori) - sphere.radius * sphere.radius;
+    auto A = visionaray::dot(r.dir, r.dir);
+    auto B = visionaray::dot(r.dir, r.ori) * T(2.0);
+    auto C = visionaray::dot(r.ori, r.ori) - sphere.radius * sphere.radius;
 
     // solve Ax**2 + Bx + C
     auto disc = B * B - T(4.0) * A * C;
     auto valid = disc >= T(0.0);
 
-    auto root_disc = select(valid, sqrt(disc), disc);
+    auto root_disc = visionaray::select(valid, visionaray::sqrt(disc), disc);
 
-    auto q = select( B < T(0.0), T(-0.5) * (B - root_disc), T(-0.5) * (B + root_disc) );
+    auto q = visionaray::select( B < T(0.0), T(-0.5) * (B - root_disc), T(-0.5) * (B + root_disc) );
 
     auto t1 = q / A;
     auto t2 = C / q;
 
     clip_sphere_hit_record<T> result;
     result.hit = valid;
-    result.tnear   = select( valid, select( t1 > t2, t2, t1 ), T(-1.0) );
-    result.tfar    = select( valid, select( t1 > t2, t1, t2 ), T(-1.0) );
+    result.tnear   = visionaray::select( valid, visionaray::select( t1 > t2, t2, t1 ), T(-1.0) );
+    result.tfar    = visionaray::select( valid, visionaray::select( t1 > t2, t1, t2 ), T(-1.0) );
     return result;
 }
 
@@ -264,8 +262,8 @@ inline clip_sphere_hit_record<T> intersect(basic_ray<T> const& ray, clip_sphere 
 
 struct clip_cone
 {
-    vec3 tip;       // position of the cone's tip
-    vec3 axis;      // unit vector pointing from tip into the cone
+    visionaray::vec3 tip;       // position of the cone's tip
+    visionaray::vec3 axis;      // unit vector pointing from tip into the cone
     float theta;    // *half* angle between axis and cone surface
 };
 
@@ -276,46 +274,46 @@ struct clip_cone_hit_record : clip_sphere_hit_record<T>
 
 template <typename T>
 VSNRAY_FUNC
-inline clip_cone_hit_record<T> intersect(basic_ray<T> const& ray, clip_cone const& cone)
+inline clip_cone_hit_record<T> intersect(visionaray::basic_ray<T> const& ray, clip_cone const& cone)
 {
-    using R = basic_ray<T>;
-    using V = vector<3, T>;
+    using R = visionaray::basic_ray<T>;
+    using V = visionaray::vector<3, T>;
 
     R r = ray;
     r.ori -= V(cone.tip);
 
-    T cos2_theta(cos(cone.theta) * cos(cone.theta));
+    T cos2_theta(visionaray::cos(cone.theta) * visionaray::cos(cone.theta));
 
-    auto A = dot(r.dir, V(cone.axis)) * dot(r.dir, V(cone.axis)) - cos2_theta;
-    auto B = T(2.0) * (dot(r.dir, V(cone.axis)) * dot(r.ori, V(cone.axis)) - dot(r.dir, r.ori) * cos2_theta);
-    auto C = dot(r.ori, V(cone.axis)) * dot(r.ori, V(cone.axis)) - dot(r.ori, r.ori) * cos2_theta;
+    auto A = visionaray::dot(r.dir, V(cone.axis)) * visionaray::dot(r.dir, V(cone.axis)) - cos2_theta;
+    auto B = T(2.0) * (visionaray::dot(r.dir, V(cone.axis)) * visionaray::dot(r.ori, V(cone.axis)) - visionaray::dot(r.dir, r.ori) * cos2_theta);
+    auto C = visionaray::dot(r.ori, V(cone.axis)) * visionaray::dot(r.ori, V(cone.axis)) - visionaray::dot(r.ori, r.ori) * cos2_theta;
 
     // solve Ax**2 + Bx + C
     auto disc = B * B - T(4.0) * A * C;
     auto valid = disc >= T(0.0);
 
-    auto root_disc = select(valid, sqrt(disc), disc);
+    auto root_disc = visionaray::select(valid, visionaray::sqrt(disc), disc);
 
-    auto q = select( B < T(0.0), T(-0.5) * (B - root_disc), T(-0.5) * (B + root_disc) );
+    auto q = visionaray::select( B < T(0.0), T(-0.5) * (B - root_disc), T(-0.5) * (B + root_disc) );
 
     auto t1 = q / A;
     auto t2 = C / q;
 
     auto isect_pos1 = V(ray.ori) + V(ray.dir) * t1;
-    auto hits_shadow_cone1 = dot(isect_pos1 - V(cone.tip), V(cone.axis)) > T(0.0);
+    auto hits_shadow_cone1 = visionaray::dot(isect_pos1 - V(cone.tip), V(cone.axis)) > T(0.0);
 
     auto isect_pos2 = V(ray.ori) + V(ray.dir) * t2;
-    auto hits_shadow_cone2 = dot(isect_pos2 - V(cone.tip), V(cone.axis)) > T(0.0);
+    auto hits_shadow_cone2 = visionaray::dot(isect_pos2 - V(cone.tip), V(cone.axis)) > T(0.0);
 
-    t1 = select(hits_shadow_cone1, T(-1.0), t1);
-    t2 = select(hits_shadow_cone2, T(-1.0), t2);
+    t1 = visionaray::select(hits_shadow_cone1, T(-1.0), t1);
+    t2 = visionaray::select(hits_shadow_cone2, T(-1.0), t2);
 
-    valid &= dot(ray.dir, V(cone.axis)) >= T(0.0);
+    valid &= visionaray::dot(ray.dir, V(cone.axis)) >= T(0.0);
 
     clip_cone_hit_record<T> result;
     result.hit = valid;
-    result.tnear   = select( valid, select( t1 > t2, t2, t1 ), T(-1.0) );
-    result.tfar    = select( valid, select( t1 > t2, t1, t2 ), T(-1.0) );
+    result.tnear   = visionaray::select( valid, visionaray::select( t1 > t2, t2, t1 ), T(-1.0) );
+    result.tfar    = visionaray::select( valid, visionaray::select( t1 > t2, t1, t2 ), T(-1.0) );
     return result;
 }
 
@@ -325,31 +323,31 @@ inline clip_cone_hit_record<T> intersect(basic_ray<T> const& ray, clip_cone cons
 // plane normal of the box' side where the ray entered
 //
 
-struct clip_box : basic_aabb<float>
+struct clip_box : visionaray::basic_aabb<float>
 {
-    using base_type = basic_aabb<float>;
+    using base_type = visionaray::basic_aabb<float>;
 
     clip_box() = default;
-    VSNRAY_FUNC clip_box(vec3 const& min, vec3 const& max)
+    VSNRAY_FUNC clip_box(visionaray::vec3 const& min, visionaray::vec3 const& max)
         : base_type(min, max)
     {
     }
 };
 
 template <typename T>
-struct clip_box_hit_record : hit_record<basic_ray<T>, basic_aabb<float>>
+struct clip_box_hit_record : visionaray::hit_record<visionaray::basic_ray<T>, visionaray::basic_aabb<float>>
 {
-    vector<3, T> normal;
+    visionaray::vector<3, T> normal;
 };
 
 template <typename T>
 VSNRAY_FUNC
-inline clip_box_hit_record<T> intersect(basic_ray<T> const& ray, clip_box const& box)
+inline clip_box_hit_record<T> intersect(visionaray::basic_ray<T> const& ray, clip_box const& box)
 {
-    auto hr = intersect(ray, static_cast<clip_box::base_type>(box));
+    auto hr = visionaray::intersect(ray, static_cast<clip_box::base_type>(box));
 
     // calculate normal
-    vector<3, float> normals[6] {
+    visionaray::vector<3, float> normals[6] {
             {  1.0f,  0.0f,  0.0f },
             { -1.0f,  0.0f,  0.0f },
             {  0.0f,  1.0f,  0.0f },
@@ -359,16 +357,16 @@ inline clip_box_hit_record<T> intersect(basic_ray<T> const& ray, clip_box const&
             };
 
     auto isect_pos = ray.ori + ray.dir * hr.tnear;
-    auto dir = normalize(isect_pos - vector<3, T>(box.center()));
-    auto cosa = dot(dir, vector<3, T>(normals[0]));
+    auto dir = visionaray::normalize(isect_pos - visionaray::vector<3, T>(box.center()));
+    auto cosa = visionaray::dot(dir, visionaray::vector<3, T>(normals[0]));
 
-    vector<3, T> normal(normals[0]);
+    visionaray::vector<3, T> normal(normals[0]);
 
     for (int i = 1; i < 6; ++i)
     {
-        T dp    = dot(dir, vector<3, T>(normals[i]));
-        normal  = select(dp > cosa, normals[i], normal);
-        cosa    = select(dp > cosa, dp, cosa);
+        T dp    = visionaray::dot(dir, visionaray::vector<3, T>(normals[i]));
+        normal  = visionaray::select(dp > cosa, normals[i], normal);
+        cosa    = visionaray::select(dp > cosa, dp, cosa);
     }
 
     clip_box_hit_record<T> result;
@@ -384,7 +382,7 @@ inline clip_box_hit_record<T> intersect(basic_ray<T> const& ray, clip_box const&
 // Clip plane (just another name for plane)
 //
 
-using clip_plane = basic_plane<3, float>;
+using clip_plane = visionaray::basic_plane<3, float>;
 
 
 //-------------------------------------------------------------------------------------------------
@@ -401,8 +399,8 @@ public:
     struct RT
     {
         int num_intervals;
-        vector<2, T> intervals[MAX_INTERVALS];
-        vector<3, T> normal;
+        visionaray::vector<2, T> intervals[MAX_INTERVALS];
+        visionaray::vector<3, T> normal;
     };
 
     using return_type = RT;
@@ -411,7 +409,7 @@ public:
 
     // Create with ray and tnear / tfar obtained from ray / bbox intersection
     VSNRAY_FUNC
-    clip_object_visitor(basic_ray<T> const& ray, T const& tnear, T const& tfar)
+    clip_object_visitor(visionaray::basic_ray<T> const& ray, T const& tnear, T const& tfar)
         : ray_(ray)
         , tnear_(tnear)
         , tfar_(tfar)
@@ -422,13 +420,13 @@ public:
     VSNRAY_FUNC
     return_type operator()(clip_plane const& ref) const
     {
-        auto hit_rec = intersect(ray_, ref);
-        auto ndotd = dot(ray_.dir, vector<3, T>(ref.normal));
+        auto hit_rec = visionaray::intersect(ray_, ref);
+        auto ndotd = visionaray::dot(ray_.dir, visionaray::vector<3, T>(ref.normal));
 
         return_type result;
         result.num_intervals = 1;
-        result.intervals[0].x = select(ndotd >  0.0f, hit_rec.t, tnear_);
-        result.intervals[0].y = select(ndotd <= 0.0f, hit_rec.t, tfar_);
+        result.intervals[0].x = visionaray::select(ndotd >  0.0f, hit_rec.t, tnear_);
+        result.intervals[0].y = visionaray::select(ndotd <= 0.0f, hit_rec.t, tfar_);
         result.normal     = ref.normal;
         return result;
     }
@@ -437,14 +435,14 @@ public:
     VSNRAY_FUNC
     return_type operator()(clip_sphere const& ref) const
     {
-        using V = vector<3, T>;
+        using V = visionaray::vector<3, T>;
 
         auto hit_rec = intersect(ray_, ref);
 
         return_type result;
         result.num_intervals = 1;
-        result.intervals[0].x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
-        result.intervals[0].y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
+        result.intervals[0].x = visionaray::select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
+        result.intervals[0].y = visionaray::select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
 
         // normal at tfar, pointing inwards
         V isect_pos = ray_.ori + result.intervals[0].y * ray_.dir;
@@ -457,26 +455,26 @@ public:
     VSNRAY_FUNC
     return_type operator()(clip_cone const& ref) const
     {
-        using V = vector<3, T>;
+        using V = visionaray::vector<3, T>;
 
         auto hit_rec = intersect(ray_, ref);
 
         return_type result;
         result.num_intervals = 1;
-        result.intervals[0].x = select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
-        result.intervals[0].y = select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
+        result.intervals[0].x = visionaray::select(hit_rec.tnear > tnear_, hit_rec.tnear, tnear_);
+        result.intervals[0].y = visionaray::select(hit_rec.tfar  < tfar_,  hit_rec.tfar,  tfar_);
 
         // normal at tfar, pointing inwards
         V isect_pos = ray_.ori + result.intervals[0].y * ray_.dir;
         V tmp = isect_pos - V(ref.tip);
-        result.normal = normalize(tmp * dot(V(ref.axis), tmp) / dot(tmp, tmp) - V(ref.axis));
+        result.normal = visionaray::normalize(tmp * visionaray::dot(V(ref.axis), tmp) / visionaray::dot(tmp, tmp) - V(ref.axis));
 
         return result;
     }
 
 private:
 
-    basic_ray<T>    ray_;
+    visionaray::basic_ray<T>    ray_;
     T               tnear_;
     T               tfar_;
 };
@@ -493,13 +491,13 @@ struct depth_buffer_type
 {
     virvo::cuda::GraphicsResource resource;
     virvo::gl::Buffer             buffer;
-    recti                         viewport{0, 0, 0, 0};
-    pixel_format                  format{PF_UNSPECIFIED};
+    visionaray::recti                         viewport{0, 0, 0, 0};
+    visionaray::pixel_format                  format{visionaray::PF_UNSPECIFIED};
     GLuint                        pixelFormat, pixelType;
 
-    void map(recti newViewport, pixel_format newFormat)
+    void map(visionaray::recti newViewport, visionaray::pixel_format newFormat)
     {
-        if (newFormat == PF_UNSPECIFIED)
+        if (newFormat == visionaray::PF_UNSPECIFIED)
             return;
 
         if (newViewport != viewport || newFormat != format) {
@@ -508,10 +506,10 @@ struct depth_buffer_type
             viewport = newViewport;
             format   = newFormat;
 
-            if (format == PF_DEPTH24_STENCIL8) {
+            if (format == visionaray::PF_DEPTH24_STENCIL8) {
                 pixelFormat = GL_DEPTH_STENCIL;
                 pixelType = GL_UNSIGNED_INT_24_8;
-            } else if (format == PF_DEPTH32F) {
+            } else if (format == visionaray::PF_DEPTH32F) {
                 pixelFormat = GL_DEPTH_COMPONENT;
                 pixelType = GL_FLOAT;
             } else {
@@ -565,16 +563,16 @@ struct depth_buffer_type
 
 struct depth_buffer_type
 {
-    void map(recti viewport, pixel_format format)
+    void map(visionaray::recti viewport, visionaray::pixel_format format)
     {
-        if (format == PF_UNSPECIFIED)
+        if (format == visionaray::PF_UNSPECIFIED)
             return;
 
         GLuint pixelFormat, pixelType;
-        if (format == PF_DEPTH24_STENCIL8) {
+        if (format == visionaray::PF_DEPTH24_STENCIL8) {
             pixelFormat = GL_DEPTH_STENCIL;
             pixelType = GL_UNSIGNED_INT_24_8;
-        } else if (format == PF_DEPTH32F) {
+        } else if (format == visionaray::PF_DEPTH32F) {
             pixelFormat = GL_DEPTH_COMPONENT;
             pixelType = GL_FLOAT;
         } else {
@@ -603,7 +601,7 @@ struct depth_buffer_type
         return buffer.data();
     }
 
-    aligned_vector<unsigned> buffer;
+    visionaray::aligned_vector<unsigned> buffer;
 };
 
 #endif
@@ -616,14 +614,14 @@ class virvo_render_target
 {
 public:
 
-    static const pixel_format CF = PF_RGBA32F;
-    static const pixel_format DF = PF_UNSPECIFIED;
-    static const pixel_format AF = PF_UNSPECIFIED;
+    static const visionaray::pixel_format CF = visionaray::PF_RGBA32F;
+    static const visionaray::pixel_format DF = visionaray::PF_UNSPECIFIED;
+    static const visionaray::pixel_format AF = visionaray::PF_UNSPECIFIED;
 
-    using color_type = typename pixel_traits<CF>::type;
-    using depth_type = typename pixel_traits<DF>::type;
+    using color_type = typename visionaray::pixel_traits<CF>::type;
+    using depth_type = typename visionaray::pixel_traits<DF>::type;
 
-    using ref_type = render_target_ref<CF, DF, AF>;
+    using ref_type = visionaray::render_target_ref<CF, DF, AF>;
 
 public:
 
@@ -671,7 +669,7 @@ struct volume_kernel_params
         DRR
     };
 
-    using clip_object    = variant<clip_plane, clip_sphere, clip_cone>;
+    using clip_object    = visionaray::variant<clip_plane, clip_sphere, clip_cone>;
     using transfunc_ref  = typename transfunc_type::ref_type;
 
     clip_box                    bbox;
@@ -679,17 +677,17 @@ struct volume_kernel_params
     float                       delta;
     int                         num_channels;
     transfunc_ref const*        transfuncs;
-    vec2 const*                 ranges;
+    visionaray::vec2 const*                 ranges;
     unsigned const*             depth_buffer;
-    pixel_format                depth_format;
+    visionaray::pixel_format                depth_format;
     projection_mode             mode;
     bool                        depth_test;
     bool                        opacity_correction;
     bool                        early_ray_termination;
     bool                        local_shading;
-    mat4                        camera_matrix_inv;
-    recti                       viewport;
-    point_light<float>          light;
+    visionaray::mat4                        camera_matrix_inv;
+    visionaray::recti                       viewport;
+    visionaray::point_light<float>          light;
 
     struct
     {
@@ -718,7 +716,7 @@ struct volume_kernel
 
     template <typename R>
     VSNRAY_FUNC
-    result_record<typename R::scalar_type> operator()(R ray, int x, int y) const
+    visionaray::result_record<typename R::scalar_type> operator()(R ray, int x, int y) const
     {
 #ifdef DEBUGGING
         auto debug = [this,x,y]() {
@@ -733,12 +731,12 @@ struct volume_kernel
         auto crosshair = []() { return false; };
 #endif
         using S    = typename R::scalar_type;
-        using I    = typename simd::int_type<S>::type;
-        using Mask = typename simd::mask_type<S>::type;
-        using Mat4 = matrix<4, 4, S>;
-        using C    = vector<4, S>;
+        using I    = typename visionaray::simd::int_type<S>::type;
+        using Mask = typename visionaray::simd::mask_type<S>::type;
+        using Mat4 = visionaray::matrix<4, 4, S>;
+        using C    = visionaray::vector<4, S>;
 
-        result_record<S> result;
+        visionaray::result_record<S> result;
         result.color = C(0.0);
 
         auto hit_rec = intersect(ray, params.roi);
@@ -752,34 +750,34 @@ struct volume_kernel
             get_depth(x, y, depth_raw, params);
             S depth = normalize_depth(depth_raw, params.depth_format, S{});
 
-            vector<3, S> win(expand_pixel<S>().x(x), expand_pixel<S>().y(y), depth);
-            vector<4, S> u(
+            visionaray::vector<3, S> win(visionaray::expand_pixel<S>().x(x), visionaray::expand_pixel<S>().y(y), depth);
+            visionaray::vector<4, S> u(
                     S(2.0 * (win[0] - params.viewport[0]) / params.viewport[2] - 1.0),
                     S(2.0 * (win[1] - params.viewport[1]) / params.viewport[3] - 1.0),
                     S(2.0 * win[2] - 1.0),
                     S(1.0)
                     );
 
-            vector<4, S> v = Mat4(params.camera_matrix_inv) * u;
-            vector<3, S> v3(v.x, v.y, v.z);
-            vector<3, S> obj = v3 / v.w;
+            visionaray::vector<4, S> v = Mat4(params.camera_matrix_inv) * u;
+            visionaray::vector<3, S> v3(v.x, v.y, v.z);
+            visionaray::vector<3, S> obj = v3 / v.w;
 
             // convert to "t" coordinates
-            tmax = length(obj - ray.ori);
+            tmax = visionaray::length(obj - ray.ori);
         }
 
 
-        auto t = max(S(0.0f), hit_rec.tnear);
-        tmax = min(hit_rec.tfar, tmax);
+        auto t = visionaray::max(S(0.0f), hit_rec.tnear);
+        tmax = visionaray::min(hit_rec.tfar, tmax);
 
 
         // calculate intervals clipped by planes, spheres, etc., along with the
         // normals of the farthest intersection in view direction
         const int MaxClipIntervals = 64;
-        vector<2, S> clip_intervals[MaxClipIntervals];
-        vector<3, S> clip_normals[MaxClipIntervals];
+        visionaray::vector<2, S> clip_intervals[MaxClipIntervals];
+        visionaray::vector<3, S> clip_normals[MaxClipIntervals];
 
-        auto num_clip_objects = min(
+        auto num_clip_objects = visionaray::min(
                 MaxClipIntervals - 1, // room for bbox normal, which is the last clip object
                 static_cast<int>(params.clip_objects.end - params.clip_objects.begin)
                 );
@@ -787,7 +785,7 @@ struct volume_kernel
         for (auto it = params.clip_objects.begin; it != params.clip_objects.end; ++it)
         {
             clip_object_visitor<S> visitor(ray, t, tmax);
-            auto clip_data = apply_visitor(visitor, *it);
+            auto clip_data = visionaray::apply_visitor(visitor, *it);
 
             clip_intervals[it - params.clip_objects.begin] = clip_data.intervals[0];
             clip_normals[it - params.clip_objects.begin] = clip_data.normal;
@@ -807,7 +805,7 @@ struct volume_kernel
             for (int i = 0; i < num_clip_objects; ++i)
             {
                 clipped |= t >= clip_intervals[i].x && t <= clip_intervals[i].y;
-                tnext = select(
+                tnext = visionaray::select(
                         t >= clip_intervals[i].x && t <= clip_intervals[i].y && tnext < clip_intervals[i].y,
                         clip_intervals[i].y,
                         tnext
@@ -817,7 +815,7 @@ struct volume_kernel
             if (!visionaray::all(clipped))
             {
                 auto pos = ray.ori + ray.dir * t;
-                vector<3, S> tex_coord(
+                visionaray::vector<3, S> tex_coord(
                     ((pos.x - params.bbox.min.x) / params.bbox.size().x),
                     1.f-((pos.y - params.bbox.min.y) / params.bbox.size().y),
                     1.f-((pos.z - params.bbox.min.z) / params.bbox.size().z))
@@ -827,18 +825,18 @@ struct volume_kernel
 
                 for (int c = 0; c < params.num_channels; ++c)
                 {
-                    S voxel  = tex3D(volumes[c], tex_coord);
-                    C colori = tex1D(params.transfuncs[c], voxel);
+                    S voxel  = visionaray::tex3D(volumes[c], tex_coord);
+                    C colori = visionaray::tex1D(params.transfuncs[c], voxel);
 
                     auto do_shade = params.local_shading && colori.w >= 0.1f;
 
                     if (visionaray::any(do_shade))
                     {
                         // TODO: make this modifiable
-                        plastic<S> mat;
-                        mat.ca() = from_rgb(vector<3, S>(0.3f, 0.3f, 0.3f));
-                        mat.cd() = from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f));
-                        mat.cs() = from_rgb(vector<3, S>(0.8f, 0.8f, 0.8f));
+                        visionaray::plastic<S> mat;
+                        mat.ca() = visionaray::from_rgb(visionaray::vector<3, S>(0.3f, 0.3f, 0.3f));
+                        mat.cd() = visionaray::from_rgb(visionaray::vector<3, S>(0.8f, 0.8f, 0.8f));
+                        mat.cs() = visionaray::from_rgb(visionaray::vector<3, S>(0.8f, 0.8f, 0.8f));
                         mat.ka() = 1.0f;
                         mat.kd() = 1.0f;
                         mat.ks() = 1.0f;
@@ -847,12 +845,12 @@ struct volume_kernel
 
                         // calculate shading
                         auto grad = gradient(volumes[c], tex_coord);
-                        auto normal = normalize(grad);
+                        auto normal = visionaray::normalize(grad);
 
-                        auto float_eq = [&](S const& a, S const& b) { return abs(a - b) < params.delta * S(0.5); };
+                        auto float_eq = [&](S const& a, S const& b) { return visionaray::abs(a - b) < params.delta * S(0.5); };
 
                         Mask at_boundary = float_eq(t, hit_rec.tnear);
-                        I clip_normal_index = select(
+                        I clip_normal_index = visionaray::select(
                                 at_boundary,
                                 I(num_clip_objects), // bbox normal is stored at last position in the list
                                 I(0)
@@ -861,36 +859,36 @@ struct volume_kernel
                         for (int i = 0; i < num_clip_objects; ++i)
                         {
                             Mask hit = float_eq(t, clip_intervals[i].y + params.delta); // TODO: understand why +delta
-                            clip_normal_index = select(hit, I(i), clip_normal_index);
+                            clip_normal_index = visionaray::select(hit, I(i), clip_normal_index);
                             at_boundary |= hit;
                         }
 
                         if (visionaray::any(at_boundary))
                         {
                             auto boundary_normal = gatherv(clip_normals, clip_normal_index);
-                            normal = select(
+                            normal = visionaray::select(
                                     at_boundary,
                                     boundary_normal * colori.w + normal * (S(1.0) - colori.w),
                                     normal
                                     );
                         }
 
-                        do_shade &= length(grad) != 0.0f;
+                        do_shade &= visionaray::length(grad) != 0.0f;
 
-                        shade_record<S> sr;
+                        visionaray::shade_record<S> sr;
                         sr.normal = normal;
                         sr.geometric_normal = normal;
                         sr.view_dir = -ray.dir;
-                        sr.tex_color = vector<3, S>(1.0);
-                        sr.light_dir = normalize(params.light.position());
+                        sr.tex_color = visionaray::vector<3, S>(1.0);
+                        sr.light_dir = visionaray::normalize(params.light.position());
                         sr.light_intensity = params.light.intensity(pos);
 
                         auto shaded_clr = mat.shade(sr);
 
-                        vector<3, S> colori3(colori.x, colori.y, colori.z);
-                        colori3 = mul(
+                        visionaray::vector<3, S> colori3(colori.x, colori.y, colori.z);
+                        colori3 = visionaray::mul(
                                 colori3,
-                                to_rgb(shaded_clr),
+                                visionaray::to_rgb(shaded_clr),
                                 do_shade,
                                 colori3
                                 );
@@ -901,7 +899,7 @@ struct volume_kernel
 
                     if (params.opacity_correction)
                     {
-                        colori.w = 1.0f - pow(1.0f - colori.w, params.delta);
+                        colori.w = 1.0f - visionaray::pow(1.0f - colori.w, params.delta);
                     }
 
                     // premultiplied alpha
@@ -916,7 +914,7 @@ struct volume_kernel
                 // compositing
                 if (params.mode == Params::AlphaCompositing)
                 {
-                    result.color += select(
+                    result.color += visionaray::select(
                             t < tmax && !clipped,
                             color * (1.0f - result.color.w),
                             C(0.0)
@@ -930,23 +928,23 @@ struct volume_kernel
                 }
                 else if (params.mode == Params::MaxIntensity)
                 {
-                    result.color = select(
+                    result.color = visionaray::select(
                             t < tmax && !clipped,
-                            max(color, result.color),
+                            visionaray::max(color, result.color),
                             result.color
                             );
                 }
                 else if (params.mode == Params::MinIntensity)
                 {
-                    result.color = select(
+                    result.color = visionaray::select(
                             t < tmax && !clipped,
-                            min(color, result.color),
+                            visionaray::min(color, result.color),
                             result.color
                             );
                 }
                 else if (params.mode == Params::DRR)
                 {
-                    result.color += select(
+                    result.color += visionaray::select(
                             t < tmax && !clipped,
                             color,
                             C(0.0)
@@ -1035,13 +1033,13 @@ void vvRayCaster::Impl::updateTransfuncTexture(vvVolDesc* vd, vvRenderer* /*rend
     transfuncs.resize(vd->tf.size());
     for (size_t i = 0; i < vd->tf.size(); ++i)
     {
-        aligned_vector<vec4> tf(256 * 1 * 1);
+        visionaray::aligned_vector<visionaray::vec4> tf(256 * 1 * 1);
         vd->computeTFTexture(i, 256, 1, 1, reinterpret_cast<float*>(tf.data()));
 
         transfuncs[i] = transfunc_type(tf.size());
         transfuncs[i].reset(tf.data());
-        transfuncs[i].set_address_mode(Clamp);
-        transfuncs[i].set_filter_mode(Nearest);
+        transfuncs[i].set_address_mode(visionaray::Clamp);
+        transfuncs[i].set_filter_mode(visionaray::Nearest);
     }
 }
 
@@ -1050,8 +1048,8 @@ void vvRayCaster::Impl::updateVolumeTexturesImpl(vvVolDesc* vd, vvRenderer* rend
 {
     using Volume = typename Volumes::value_type;
 
-    tex_filter_mode filter_mode = renderer->getParameter(vvRenderer::VV_SLICEINT).asInt() == virvo::Linear ? Linear : Nearest;
-    tex_address_mode address_mode = Clamp;
+    visionaray::tex_filter_mode filter_mode = renderer->getParameter(vvRenderer::VV_SLICEINT).asInt() == virvo::Linear ? visionaray::Linear : visionaray::Nearest;
+    visionaray::tex_address_mode address_mode = visionaray::Clamp;
 
     volumes.resize(vd->frames * vd->getChan());
 
@@ -1135,9 +1133,9 @@ void vvRayCaster::renderVolumeGL()
             glEnable(GL_LIGHTING);
     }
 
-    mat4 view_matrix;
-    mat4 proj_matrix;
-    recti viewport;
+    visionaray::mat4 view_matrix;
+    visionaray::mat4 proj_matrix;
+    visionaray::recti viewport;
 
     glGetFloatv(GL_MODELVIEW_MATRIX, view_matrix.data());
     glGetFloatv(GL_PROJECTION_MATRIX, proj_matrix.data());
@@ -1170,7 +1168,7 @@ void vvRayCaster::renderVolumeGL()
     auto bbox = vd->getBoundingBox();
 
     // Get OpenGL depth buffer to clip against
-    pixel_format depth_format = PF_UNSPECIFIED;
+    visionaray::pixel_format depth_format = visionaray::PF_UNSPECIFIED;
 
     bool depth_test = glIsEnabled(GL_DEPTH_TEST);
 
@@ -1196,13 +1194,13 @@ void vvRayCaster::renderVolumeGL()
         // TODO: make this more general
         // 24-bit depth buffer and 8-bit stencil buffer
         // is however a quite common case
-        depth_format = (depth_bits == 24 && stencil_bits == 8) ? PF_DEPTH24_STENCIL8 : PF_DEPTH32F;
+        depth_format = (depth_bits == 24 && stencil_bits == 8) ? visionaray::PF_DEPTH24_STENCIL8 : visionaray::PF_DEPTH32F;
 
 #ifdef __APPLE__
         // PIXEL_PACK_BUFFER with unsigned does not work
         // on Mac OS X, default to 32-bit floating point
         // depth buffer
-        depth_format = PF_DEPTH32F;
+        depth_format = visionaray::PF_DEPTH32F;
 #endif
 
         impl_->depth_buffer.map(viewport, depth_format);
@@ -1210,7 +1208,7 @@ void vvRayCaster::renderVolumeGL()
     }
 
     // assemble clip objects
-    aligned_vector<typename Impl::params_type::clip_object> clip_objects;
+    visionaray::aligned_vector<typename Impl::params_type::clip_object> clip_objects;
 
 #if 0
     // OpenGL clip planes
@@ -1257,22 +1255,22 @@ void vvRayCaster::renderVolumeGL()
             if (auto plane = boost::dynamic_pointer_cast<vvClipPlane>(obj))
             {
                 clip_plane pl;
-                pl.normal = vec3(plane->normal.x, plane->normal.y, plane->normal.z);
+                pl.normal = visionaray::vec3(plane->normal.x, plane->normal.y, plane->normal.z);
                 pl.offset = plane->offset;
                 clip_objects.push_back(pl);
             }
             else if (auto sphere = boost::dynamic_pointer_cast<vvClipSphere>(obj))
             {
                 clip_sphere sp;
-                sp.center = vec3(sphere->center.x, sphere->center.y, sphere->center.z);
+                sp.center = visionaray::vec3(sphere->center.x, sphere->center.y, sphere->center.z);
                 sp.radius = sphere->radius;
                 clip_objects.push_back(sp);
             }
             else if (auto cone = boost::dynamic_pointer_cast<vvClipCone>(obj))
             {
                 clip_cone co;
-                co.tip = vec3(cone->tip.x, cone->tip.y, cone->tip.z);
-                co.axis = vec3(cone->axis.x, cone->axis.y, cone->axis.z);
+                co.tip = visionaray::vec3(cone->tip.x, cone->tip.y, cone->tip.z);
+                co.axis = visionaray::vec3(cone->axis.x, cone->axis.y, cone->axis.z);
                 co.theta = cone->theta;
                 clip_objects.push_back(co);
             }
@@ -1282,17 +1280,17 @@ void vvRayCaster::renderVolumeGL()
 
 
     // Lights
-    point_light<float> light;
+    visionaray::point_light<float> light;
 
     if (getParameter(VV_LIGHTING))
     {
         assert( glIsEnabled(GL_LIGHTING) );
         auto l = virvo::gl::getLight(GL_LIGHT0);
-        vec4 lpos(l.position.x, l.position.y, l.position.z, l.position.w);
+        visionaray::vec4 lpos(l.position.x, l.position.y, l.position.z, l.position.w);
 
-        vec4 lp = inverse(view_matrix) * lpos;
-        light.set_position(vec3(lp.x, lp.y, lp.z));
-        light.set_cl(vec3(l.diffuse.x, l.diffuse.y, l.diffuse.z));
+        visionaray::vec4 lp = visionaray::inverse(view_matrix) * lpos;
+        light.set_position(visionaray::vec3(lp.x, lp.y, lp.z));
+        light.set_cl(visionaray::vec3(l.diffuse.x, l.diffuse.y, l.diffuse.z));
         light.set_kl(l.diffuse.w);
         light.set_constant_attenuation(l.constant_attenuation);
         light.set_linear_attenuation(l.linear_attenuation);
@@ -1345,12 +1343,12 @@ void vvRayCaster::renderVolumeGL()
         return thrust::raw_pointer_cast(device_transfuncs.data());
     };
 
-    thrust::device_vector<vec2> device_ranges;
+    thrust::device_vector<visionaray::vec2> device_ranges;
     auto ranges_data = [&]()
     {
         for (int c = 0; c < vd->getChan(); ++c)
         {
-            device_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
+            device_ranges.push_back(visionaray::vec2(vd->range(c).x, vd->range(c).y));
         }
 
         return thrust::raw_pointer_cast(device_ranges.data());
@@ -1367,7 +1365,7 @@ void vvRayCaster::renderVolumeGL()
         return clip_objects_begin() + device_objects.size();
     };
 #else
-    aligned_vector<typename volume8_type::ref_type>  host_volumes8;
+    visionaray::aligned_vector<typename volume8_type::ref_type>  host_volumes8;
     auto volumes8_data = [&]()
     {
         host_volumes8.resize(vd->getChan());
@@ -1378,7 +1376,7 @@ void vvRayCaster::renderVolumeGL()
         return host_volumes8.data();
     };
 
-    aligned_vector<typename volume16_type::ref_type> host_volumes16;
+    visionaray::aligned_vector<typename volume16_type::ref_type> host_volumes16;
     auto volumes16_data = [&]()
     {
         host_volumes16.resize(vd->getChan());
@@ -1389,7 +1387,7 @@ void vvRayCaster::renderVolumeGL()
         return host_volumes16.data();
     };
 
-    aligned_vector<typename volume32_type::ref_type> host_volumes32;
+    visionaray::aligned_vector<typename volume32_type::ref_type> host_volumes32;
     auto volumes32_data = [&]()
     {
         host_volumes32.resize(vd->getChan());
@@ -1400,7 +1398,7 @@ void vvRayCaster::renderVolumeGL()
         return host_volumes32.data();
     };
 
-    aligned_vector<typename transfunc_type::ref_type> host_transfuncs(impl_->transfuncs.size());
+    visionaray::aligned_vector<typename transfunc_type::ref_type> host_transfuncs(impl_->transfuncs.size());
     auto transfuncs_data = [&]()
     {
         for (size_t i = 0; i < impl_->transfuncs.size(); ++i)
@@ -1410,12 +1408,12 @@ void vvRayCaster::renderVolumeGL()
         return host_transfuncs.data();
     };
 
-    aligned_vector<vec2> host_ranges;
+    visionaray::aligned_vector<visionaray::vec2> host_ranges;
     auto ranges_data = [&]()
     {
         for (int c = 0; c < vd->getChan(); ++c)
         {
-            host_ranges.push_back(vec2(vd->range(c).x, vd->range(c).y));
+            host_ranges.push_back(visionaray::vec2(vd->range(c).x, vd->range(c).y));
         }
 
         return host_ranges.data();
@@ -1436,8 +1434,8 @@ void vvRayCaster::renderVolumeGL()
         const virvo::aabb& b = bbox;
 
         // Assemble volume kernel params and call kernel
-        impl_->params.bbox                      = clip_box(vec3(bbox.min.data()), vec3(bbox.max.data()));
-        impl_->params.roi                       = clip_box(vec3(b.min.data()), vec3(b.max.data()));
+        impl_->params.bbox                      = clip_box(visionaray::vec3(bbox.min.data()), visionaray::vec3(bbox.max.data()));
+        impl_->params.roi                       = clip_box(visionaray::vec3(b.min.data()), visionaray::vec3(b.max.data()));
         impl_->params.delta                     = delta;
         impl_->params.num_channels              = vd->getChan();
         impl_->params.transfuncs                = transfuncs_data();
@@ -1449,13 +1447,13 @@ void vvRayCaster::renderVolumeGL()
         impl_->params.opacity_correction        = getParameter(VV_OPCORR);
         impl_->params.early_ray_termination     = getParameter(VV_TERMINATEEARLY);
         impl_->params.local_shading             = getParameter(VV_LIGHTING);
-        impl_->params.camera_matrix_inv         = inverse(proj_matrix * view_matrix);
+        impl_->params.camera_matrix_inv         = visionaray::inverse(proj_matrix * view_matrix);
         impl_->params.viewport                  = viewport;
         impl_->params.light                     = light;
         impl_->params.clip_objects.begin        = clip_objects_begin();
         impl_->params.clip_objects.end          = clip_objects_end();
 
-        auto sparams = make_sched_params(
+        auto sparams = visionaray::make_sched_params(
             view_matrix,
             proj_matrix,
             virvo_rt
@@ -1538,7 +1536,7 @@ void vvRayCaster::setParameter(ParameterType param, vvParam const& value)
             if (_interpolation != static_cast< virvo::tex_filter_mode >(value.asInt()))
             {
                 _interpolation = static_cast< virvo::tex_filter_mode >(value.asInt());
-                tex_filter_mode filter_mode = _interpolation == virvo::Linear ? Linear : Nearest;
+                visionaray::tex_filter_mode filter_mode = _interpolation == virvo::Linear ? visionaray::Linear : visionaray::Nearest;
 
                 for (auto& tex : impl_->volumes8)
                 {
