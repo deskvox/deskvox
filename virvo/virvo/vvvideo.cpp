@@ -264,7 +264,13 @@ int vvVideo::createEncoder(int w, int h)
   }
 
   AVPixelFormat fmt = AV_PIX_FMT_YUV420P;
-  const AVPixelFormat *pix = encoder->pix_fmts;
+  const AVPixelFormat *pix = nullptr;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 0)
+  avcodec_get_supported_config(enc_ctx, encoder,
+            AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **) &pix, NULL);
+#else
+  pix = encoder->pix_fmts;
+#endif
   if(pix)
     fmt = *pix;
   while(pix && *pix != -1)

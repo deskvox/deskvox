@@ -69,12 +69,12 @@ private:
   int max_key_interval;
 
   // ffmpeg
-  AVCodecContext *enc_ctx;
-  AVCodecContext *dec_ctx;
-  AVFrame *enc_picture;
-  AVFrame *dec_picture;
-  SwsContext *enc_imgconv_ctx;
-  SwsContext *dec_imgconv_ctx;
+  AVCodecContext *enc_ctx = nullptr;
+  AVCodecContext *dec_ctx = nullptr;
+  AVFrame *enc_picture = nullptr;
+  AVFrame *dec_picture = nullptr;
+  SwsContext *enc_imgconv_ctx = nullptr;
+  SwsContext *dec_imgconv_ctx = nullptr;
   int codec_id;
   int pixel_fmt;
 
